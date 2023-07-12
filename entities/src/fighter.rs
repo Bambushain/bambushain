@@ -20,3 +20,10 @@ impl Ord for Fighter {
         self.job.to_lowercase().cmp(&other.job.to_lowercase())
     }
 }
+
+#[derive(Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateFighter {
+    pub level: String,
+    pub gear_score: String
+}
