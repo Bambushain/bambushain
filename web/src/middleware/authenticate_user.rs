@@ -43,7 +43,7 @@ impl<S, B> Service<ServiceRequest> for AuthenticateUserMiddleware<S> where S: Se
         };
 
         if !auth_header.starts_with("Sheef") {
-            return Box::pin(async { Err(ErrorUnauthorized("no auth present")) });
+            return box_pin!(Err(ErrorUnauthorized("no auth present")));
         }
 
         let token = auth_header.strip_prefix("Sheef ").expect("Sheef should be appended");
@@ -53,7 +53,7 @@ impl<S, B> Service<ServiceRequest> for AuthenticateUserMiddleware<S> where S: Se
 
         let user = match get_user_by_token(&username.to_string(), &token.to_string()) {
             Some(user) => user,
-            None => return Box::pin(async { Err(ErrorUnauthorized("no auth present")) })
+            None => return box_pin!(Err(ErrorUnauthorized("no auth present")))
         };
         req.extensions_mut().insert(AuthenticationState {
             token: token.to_string(),
@@ -61,9 +61,6 @@ impl<S, B> Service<ServiceRequest> for AuthenticateUserMiddleware<S> where S: Se
         });
 
         let fut = self.service.call(req);
-        Box::pin(async move {
-            let res = fut.await?;
-            Ok(res)
-        })
+        box_pin!(fut.await)
     }
 }

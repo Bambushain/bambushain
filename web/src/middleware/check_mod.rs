@@ -35,18 +35,15 @@ impl<S, B> Service<ServiceRequest> for CheckModMiddleware<S> where S: Service<Se
             let extensions = req.extensions();
             let state = extensions.get::<AuthenticationState>();
             if state.is_none() {
-                return Box::pin(async { Err(ErrorForbidden("You need to be mod")) });
+                return box_pin!(Err(ErrorForbidden("You need to be mod")));
             }
             state.unwrap().user.is_mod
         };
         if is_mod {
             let fut = self.service.call(req);
-            Box::pin(async move {
-                let res = fut.await?;
-                Ok(res)
-            })
+            box_pin!(fut.await)
         } else {
-            Box::pin(async { Err(ErrorForbidden("You need to be mod")) })
+            box_pin!(Err(ErrorForbidden("You need to be mod")))
         }
     }
 }
