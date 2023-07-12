@@ -1,7 +1,8 @@
-use std::fs::remove_file;
+use std::fs::{remove_dir_all, remove_file};
 use log::warn;
 use sheef_entities::user::User;
 use crate::{EmptyResult, persist_entity, read_entity, read_entity_dir, validate_database_dir};
+use crate::token::get_user_token_dir;
 
 pub(crate) fn validate_user_dir() -> String {
     let path = vec![validate_database_dir(), "user".to_string()].join("/");
@@ -97,7 +98,10 @@ pub fn change_password(username: &String, password: &String) -> EmptyResult {
     }
 
     match persist_entity(validate_user_dir(), username, user) {
-        Ok(_) => Ok(()),
+        Ok(_) => {
+            let _ = remove_dir_all(get_user_token_dir(username.to_string()).expect("User token dir cannot be empty"));
+            Ok(())
+        }
         Err(_) => Err(())
     }
 }

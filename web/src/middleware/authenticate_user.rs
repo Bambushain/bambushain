@@ -47,7 +47,7 @@ impl<S, B> Service<ServiceRequest> for AuthenticateUserMiddleware<S> where S: Se
         }
 
         let token = auth_header.strip_prefix("Sheef ").expect("Sheef should be appended");
-        let mut split_token = token.split("/");
+        let mut split_token = token.split('/');
         let username = split_token.next().expect("Username should be present");
         let token = split_token.last().expect("Token should be present");
 

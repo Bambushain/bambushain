@@ -1,9 +1,9 @@
 use actix_web::{HttpMessage, HttpRequest, HttpResponse, web};
 use actix_web::http::StatusCode;
-use actix_web::web::{Json, Path};
 use serde::Deserialize;
 use sheef_entities::{User, user};
-use crate::web::middleware::authenticate_user::AuthenticationState;
+use sheef_entities::authentication::ChangePassword;
+use crate::middleware::authenticate_user::AuthenticationState;
 
 #[derive(Deserialize)]
 pub struct UserPathInfo {
@@ -20,14 +20,14 @@ pub async fn get_users() -> HttpResponse {
     }))).await;
     match data {
         Ok(users) => match users {
-            Some(users) => HttpResponse::Ok().json(Json(users.collect::<Vec<User>>())),
+            Some(users) => HttpResponse::Ok().json(web::Json(users.collect::<Vec<User>>())),
             None => HttpResponse::new(StatusCode::NOT_FOUND),
         }
         Err(_) => HttpResponse::new(StatusCode::NOT_FOUND)
     }
 }
 
-pub async fn get_user(info: Path<UserPathInfo>) -> HttpResponse {
+pub async fn get_user(info: web::Path<UserPathInfo>) -> HttpResponse {
     let data = web::block(move || match sheef_database::user::get_user(&info.username) {
         Some(u) => Some(User {
             username: u.username,
@@ -41,14 +41,14 @@ pub async fn get_user(info: Path<UserPathInfo>) -> HttpResponse {
         .await;
     match data {
         Ok(user) => match user {
-            Some(user) => HttpResponse::Ok().json(Json(user)),
+            Some(user) => HttpResponse::Ok().json(web::Json(user)),
             None => HttpResponse::new(StatusCode::NOT_FOUND),
         }
         Err(_) => HttpResponse::new(StatusCode::NOT_FOUND)
     }
 }
 
-pub async fn create_user(user: Json<user::User>) -> HttpResponse {
+pub async fn create_user(user: web::Json<user::User>) -> HttpResponse {
     let data = web::block(move || match sheef_database::user::create_user(&user.username, &user.password, user.is_mod, user.is_main_group, &user.gear_level, &user.job, user.is_hidden) {
         Some(u) => Some(User {
             username: u.username,
@@ -62,14 +62,14 @@ pub async fn create_user(user: Json<user::User>) -> HttpResponse {
         .await;
     match data {
         Ok(user) => match user {
-            Some(user) => HttpResponse::Created().json(Json(user)),
+            Some(user) => HttpResponse::Created().json(web::Json(user)),
             None => HttpResponse::new(StatusCode::NOT_FOUND),
         }
         Err(_) => HttpResponse::new(StatusCode::NOT_FOUND)
     }
 }
 
-pub async fn delete_user(info: Path<UserPathInfo>, _req: HttpRequest) -> HttpResponse {
+pub async fn delete_user(info: web::Path<UserPathInfo>, _req: HttpRequest) -> HttpResponse {
     if match _req.extensions().get::<AuthenticationState>() {
         Some(state) => state,
         None => return HttpResponse::new(StatusCode::CONFLICT)
@@ -86,7 +86,7 @@ pub async fn delete_user(info: Path<UserPathInfo>, _req: HttpRequest) -> HttpRes
     }
 }
 
-pub async fn add_mod_user(info: Path<UserPathInfo>, _req: HttpRequest) -> HttpResponse {
+pub async fn add_mod_user(info: web::Path<UserPathInfo>, _req: HttpRequest) -> HttpResponse {
     if match _req.extensions().get::<AuthenticationState>() {
         Some(state) => state,
         None => return HttpResponse::new(StatusCode::CONFLICT)
@@ -103,7 +103,7 @@ pub async fn add_mod_user(info: Path<UserPathInfo>, _req: HttpRequest) -> HttpRe
     }
 }
 
-pub async fn remove_mod_user(info: Path<UserPathInfo>, _req: HttpRequest) -> HttpResponse {
+pub async fn remove_mod_user(info: web::Path<UserPathInfo>, _req: HttpRequest) -> HttpResponse {
     if match _req.extensions().get::<AuthenticationState>() {
         Some(state) => state,
         None => return HttpResponse::new(StatusCode::CONFLICT)
@@ -120,7 +120,7 @@ pub async fn remove_mod_user(info: Path<UserPathInfo>, _req: HttpRequest) -> Htt
     }
 }
 
-pub async fn add_main_group_user(info: Path<UserPathInfo>, _req: HttpRequest) -> HttpResponse {
+pub async fn add_main_group_user(info: web::Path<UserPathInfo>) -> HttpResponse {
     match web::block(move || sheef_database::user::change_main_group(&info.username, true)).await {
         Ok(res) => match res {
             Ok(_) => HttpResponse::new(StatusCode::NO_CONTENT),
@@ -130,12 +130,26 @@ pub async fn add_main_group_user(info: Path<UserPathInfo>, _req: HttpRequest) ->
     }
 }
 
-pub async fn remove_main_group_user(info: Path<UserPathInfo>) -> HttpResponse {
+pub async fn remove_main_group_user(info: web::Path<UserPathInfo>) -> HttpResponse {
     match web::block(move || sheef_database::user::change_main_group(&info.username, false)).await {
         Ok(res) => match res {
             Ok(_) => HttpResponse::new(StatusCode::NO_CONTENT),
             Err(_) => HttpResponse::new(StatusCode::INTERNAL_SERVER_ERROR),
         }
+        Err(_) => HttpResponse::new(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+pub async fn change_password(info: web::Path<UserPathInfo>, body: web::Json<ChangePassword>, _req: HttpRequest) -> HttpResponse {
+    if match _req.extensions().get::<AuthenticationState>() {
+        Some(state) => state,
+        None => return HttpResponse::new(StatusCode::CONFLICT)
+    }.user.username == info.username {
+        return HttpResponse::new(StatusCode::CONFLICT);
+    };
+
+    match sheef_database::user::change_password(&info.username.to_string(), &body.new_password) {
+        Ok(_) => HttpResponse::new(StatusCode::NO_CONTENT),
         Err(_) => HttpResponse::new(StatusCode::INTERNAL_SERVER_ERROR),
     }
 }

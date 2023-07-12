@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-use bcrypt::{BcryptError, hash};
+use bcrypt::{BcryptError, hash, verify};
 use serde::{Serialize, Deserialize};
 
 #[derive(Serialize, Deserialize, Eq, PartialEq)]
@@ -42,6 +42,20 @@ impl User {
                 Ok(())
             }
             Err(err) => Err(err)
+        }
+    }
+
+    pub fn validate_password(&self, password: &String) -> bool {
+        verify(password, self.password.as_str()).unwrap_or(false)
+    }
+
+    pub fn to_web_user(&self) -> WebUser {
+        WebUser {
+            username: self.username.to_string(),
+            is_mod: self.is_mod,
+            is_main_group: self.is_main_group,
+            gear_level: self.gear_level.to_string(),
+            job: self.job.to_string(),
         }
     }
 }

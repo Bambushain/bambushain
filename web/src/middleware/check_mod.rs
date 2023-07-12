@@ -3,7 +3,7 @@ use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Tr
 use actix_web::{Error, HttpMessage};
 use actix_web::error::ErrorForbidden;
 use futures_util::future::LocalBoxFuture;
-use crate::web::middleware::authenticate_user::AuthenticationState;
+use crate::middleware::authenticate_user::AuthenticationState;
 
 pub struct CheckMod;
 

@@ -5,9 +5,11 @@
       <sourceFolder url="file://$MODULE_DIR$/database/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/entities/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/web/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/database/target" />
       <excludeFolder url="file://$MODULE_DIR$/entities/target" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
+      <excludeFolder url="file://$MODULE_DIR$/web/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

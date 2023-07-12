@@ -1007,9 +1007,9 @@ dependencies = [
 
 [[package]]
 name = "regex-automata"
-version = "0.3.2"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "83d3daa6976cffb758ec878f108ba0e062a45b2d6ca3a2cca965338855476caf"
+checksum = "39354c10dd07468c2e73926b23bb9c2caca74c5501e38a35da70406f1d923310"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -1161,13 +1161,22 @@ name = "sheef_planing"
 version = "0.1.0"
 dependencies = [
  "actix-web",
+ "log",
+ "sheef_web",
+ "stderrlog",
+]
+
+[[package]]
+name = "sheef_web"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
  "futures-util",
  "log",
  "serde",
  "serde_json",
  "sheef_database",
  "sheef_entities",
- "stderrlog",
 ]
 
 [[package]]

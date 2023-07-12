@@ -6,11 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-sheef_database = { path = "database" }
-sheef_entities = { path = "entities" }
-serde = "1.0.171"
-serde_json = "1.0.100"
-actix-web = "4.3.1"
 stderrlog = "0.5.4"
 log = "0.4.19"
-futures-util = "0.3.28"
+actix-web = "4.3.1"
+sheef_web = { path = "web" }
