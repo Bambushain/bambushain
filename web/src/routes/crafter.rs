@@ -1,9 +1,8 @@
-use actix_web::{HttpMessage, HttpRequest, HttpResponse, web};
+use actix_web::{HttpRequest, HttpResponse, web};
 use actix_web::http::StatusCode;
 use serde::Deserialize;
 use sheef_entities::Crafter;
 use sheef_entities::crafter::UpdateCrafter;
-use crate::middleware::authenticate_user::AuthenticationState;
 
 #[derive(Deserialize)]
 pub struct CrafterPathInfo {
