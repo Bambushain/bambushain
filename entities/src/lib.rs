@@ -16,3 +16,4 @@ pub use authentication::Login;
 pub use kill::Kill;
 pub use mount::Mount;
 pub use savage_mount::SavageMount;
+pub use user::UpdateProfile;

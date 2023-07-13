@@ -17,3 +17,9 @@ pub struct LoginResult {
 pub struct ChangePassword {
     pub new_password: String,
 }
+
+#[derive(Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq)]
+pub struct ChangeMyPassword {
+    pub old_password: String,
+    pub new_password: String,
+}

@@ -106,7 +106,7 @@ pub fn change_password(username: &String, password: &String) -> EmptyResult {
     }
 }
 
-pub fn update_me(username: &String, job: String, gear_level: String) -> EmptyResult {
+pub fn update_me(username: &String, job: &String, gear_level: &String) -> EmptyResult {
     let mut user = match get_user(username) {
         Some(user) => user,
         None => {
@@ -115,8 +115,8 @@ pub fn update_me(username: &String, job: String, gear_level: String) -> EmptyRes
         }
     };
 
-    user.gear_level = gear_level;
-    user.job = job;
+    user.gear_level = gear_level.to_string();
+    user.job = job.to_string();
 
     match persist_entity(validate_user_dir(), username, user) {
         Ok(_) => Ok(()),
@@ -126,4 +126,14 @@ pub fn update_me(username: &String, job: String, gear_level: String) -> EmptyRes
 
 pub fn user_exists(username: &String) -> bool {
     path_exists!(vec![validate_user_dir(), format!("{}.yaml", username)].join("/"))
+}
+
+pub fn change_my_password(username: &String, old_password: &String, new_password: &String) -> EmptyResult {
+    if let Some(user) = get_user(username) {
+        if user.validate_password(old_password) {
+            return change_password(username, new_password);
+        }
+    }
+
+    Err(())
 }

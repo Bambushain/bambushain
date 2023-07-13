@@ -1,0 +1,540 @@
+GET http://localhost:8070/api/my/profile
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 43
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "job": "Test 2",
+  "gearLevel": "321"
+}
+
+<> 2023-07-13T175612.200.json
+
+###
+
+PUT http://localhost:8070/api/my/profile
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 43
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "job": "Test 2",
+  "gearLevel": "321"
+}
+
+###
+
+GET http://localhost:8070/api/my/profile
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 22
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "name": "Test 2"
+}
+
+<> 2023-07-13T175535.200.json
+
+###
+
+GET http://localhost:8070/api/my/profile
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 22
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "name": "Test 2"
+}
+
+<> 2023-07-13T175254.200.json
+
+###
+
+GET http://localhost:8070/api/user/bone/kill
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 22
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "name": "Test 2"
+}
+
+<> 2023-07-13T132337.200.json
+
+###
+
+GET http://localhost:8070/api/user/bone/kill/asd
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 22
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "name": "Test 2"
+}
+
+###
+
+PUT http://localhost:8070/api/user/bone/kill/asd
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 22
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "name": "Test 2"
+}
+
+###
+
+DELETE http://localhost:8070/api/user/bone/kill/asd
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 22
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "name": "Test 2"
+}
+
+###
+
+PUT http://localhost:8070/api/user/bone/kill/asd
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 22
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "name": "Test 2"
+}
+
+###
+
+DELETE http://localhost:8070/api/my/kill/asd
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 22
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "name": "Test 2"
+}
+
+###
+
+PUT http://localhost:8070/api/my/kill/asd
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 22
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "name": "Test 2"
+}
+
+###
+
+PUT http://localhost:8070/api/my/kill/asd
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 22
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "name": "Test 2"
+}
+
+###
+
+PUT http://localhost:8070/api/my/kill/asd
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 22
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "name": "Test 2"
+}
+
+###
+
+PUT http://localhost:8070/api/my/kill/asd
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 22
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "name": "Test 2"
+}
+
+###
+
+PUT http://localhost:8070/api/my/kill/asd
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 22
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "name": "Test 2"
+}
+
+###
+
+PUT http://localhost:8070/api/my/kill/asd
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 22
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "name": "Test 2"
+}
+
+###
+
+PUT http://localhost:8070/api/my/kill/Test
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 22
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "name": "Test 2"
+}
+
+###
+
+GET http://localhost:8070/api/my/kill
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 22
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "name": "Test 2"
+}
+
+<> 2023-07-13T123557.200.json
+
+###
+
+GET http://localhost:8070/api/user/azami/kill
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 22
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "name": "Test 2"
+}
+
+<> 2023-07-13T123552.200.json
+
+###
+
+GET http://localhost:8070/api/user/azami/kill
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 22
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "name": "Test 2"
+}
+
+<> 2023-07-13T123226.200.json
+
+###
+
+GET http://localhost:8070/api/my/kill
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 22
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "name": "Test 2"
+}
+
+<> 2023-07-13T123213.200.json
+
+###
+
+DELETE http://localhost:8070/api/kill/Test%202
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 22
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "name": "Test 2"
+}
+
+###
+
+DELETE http://localhost:8070/api/kill/Test
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 22
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "name": "Test 2"
+}
+
+###
+
+GET http://localhost:8070/api/kill/Test
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 22
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "name": "Test 2"
+}
+
+###
+
+GET http://localhost:8070/api/kill/Test
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 22
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "name": "Test 2"
+}
+
+###
+
+GET http://localhost:8070/api/kill/Test%202
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 22
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "name": "Test 2"
+}
+
+<> 2023-07-13T122936.200.json
+
+###
+
+GET http://localhost:8070/api/kill/Test%202
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 22
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "name": "Test 2"
+}
+
+<> 2023-07-13T122541.200.json
+
+###
+
+GET http://localhost:8070/api/kill/Test
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 22
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "name": "Test 2"
+}
+
+<> 2023-07-13T122537.200.json
+
+###
+
+GET http://localhost:8070/api/kill/Test
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 22
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "name": "Test 2"
+}
+
+###
+
+PUT http://localhost:8070/api/kill/Test
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 22
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "name": "Test 2"
+}
+
+###
+
+POST http://localhost:8070/api/kill
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 20
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "name": "Test"
+}
+
+<> 2023-07-13T122302.201.json
+
+###
+
+GET http://localhost:8070/api/kill
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 24
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "available": false
+}
+
+<> 2023-07-13T122248.200.json
+
+###
+
+GET http://localhost:8070/api/kill
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 24
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "available": false
+}
+
+<> 2023-07-13T120524.200.json
+
+###
+
+GET http://localhost:8070/api/kill
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 24
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "available": false
+}
+
+<> 2023-07-13T115901.200.json
+
+###
+
+GET http://localhost:8070/api/kill
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 24
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "available": false
+}
+
+<> 2023-07-13T114420.200.json
+
+###
+
+GET http://localhost:8070/api/kill
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 24
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "available": false
+}
+
+<> 2023-07-13T114357.200.json
+
+###
+

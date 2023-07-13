@@ -70,3 +70,10 @@ pub struct WebUser {
     pub gear_level: String,
     pub job: String,
 }
+
+#[derive(Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateProfile {
+    pub gear_level: String,
+    pub job: String,
+}

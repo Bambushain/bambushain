@@ -10,7 +10,7 @@ use sheef_backend::routes::fighter::{create_fighter, delete_fighter, get_fighter
 use sheef_backend::routes::kill::{activate_kill_for_me, activate_kill_for_user, create_kill, deactivate_kill_for_me, deactivate_kill_for_user, delete_kill, get_kills, get_kills_for_user, get_my_kills, get_users_for_kill, update_kill};
 use sheef_backend::routes::savage_mount::{activate_savage_mount_for_me, activate_savage_mount_for_user, create_savage_mount, deactivate_savage_mount_for_me, deactivate_savage_mount_for_user, delete_savage_mount, get_savage_mounts, get_savage_mounts_for_user, get_my_savage_mounts, get_users_for_savage_mount, update_savage_mount};
 use sheef_backend::routes::mount::{activate_mount_for_me, activate_mount_for_user, create_mount, deactivate_mount_for_me, deactivate_mount_for_user, delete_mount, get_mounts, get_mounts_for_user, get_my_mounts, get_users_for_mount, update_mount};
-use sheef_backend::routes::user::{add_main_group_user, add_mod_user, change_password, create_user, delete_user, get_user, get_users, remove_main_group_user, remove_mod_user};
+use sheef_backend::routes::user::{add_main_group_user, add_mod_user, change_my_password, change_password, create_user, delete_user, get_profile, get_user, get_users, remove_main_group_user, remove_mod_user, update_profile};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -36,6 +36,15 @@ async fn main() -> std::io::Result<()> {
             .route("/api/user/{username}/main", put().to(add_main_group_user).wrap(CheckMod).wrap(AuthenticateUser))
             .route("/api/user/{username}/main", delete().to(remove_main_group_user).wrap(CheckMod).wrap(AuthenticateUser))
             .route("/api/user/{username}/password", put().to(change_password).wrap(CheckMod).wrap(AuthenticateUser))
+            .route("/api/user/{username}/kill", get().to(get_kills_for_user).wrap(AuthenticateUser))
+            .route("/api/user/{username}/kill/{kill}", put().to(activate_kill_for_user).wrap(AuthenticateUser))
+            .route("/api/user/{username}/kill/{kill}", delete().to(deactivate_kill_for_user).wrap(AuthenticateUser))
+            .route("/api/user/{username}/mount", get().to(get_mounts_for_user).wrap(AuthenticateUser))
+            .route("/api/user/{username}/mount/{mount}", put().to(activate_mount_for_user).wrap(AuthenticateUser))
+            .route("/api/user/{username}/mount/{mount}", delete().to(deactivate_mount_for_user).wrap(AuthenticateUser))
+            .route("/api/user/{username}/savage-mount", get().to(get_savage_mounts_for_user).wrap(AuthenticateUser))
+            .route("/api/user/{username}/savage-mount/{savage_mount}", put().to(activate_savage_mount_for_user).wrap(AuthenticateUser))
+            .route("/api/user/{username}/savage-mount/{savage_mount}", delete().to(deactivate_savage_mount_for_user).wrap(AuthenticateUser))
 
             .route("/api/crafter", get().to(get_crafters).wrap(AuthenticateUser))
             .route("/api/crafter", post().to(create_crafter).wrap(AuthenticateUser))
@@ -53,38 +62,33 @@ async fn main() -> std::io::Result<()> {
             .route("/api/calendar/{year}/{month}/{day}", get().to(get_day_details).wrap(AuthenticateUser))
             .route("/api/calendar/{year}/{month}/{day}", put().to(update_day_details).wrap(AuthenticateUser))
 
-            .route("/api/user/{username}/kill", get().to(get_kills_for_user).wrap(AuthenticateUser))
-            .route("/api/user/{username}/kill/{kill}", put().to(activate_kill_for_user).wrap(AuthenticateUser))
-            .route("/api/user/{username}/kill/{kill}", delete().to(deactivate_kill_for_user).wrap(AuthenticateUser))
             .route("/api/kill", get().to(get_kills).wrap(AuthenticateUser))
             .route("/api/kill", post().to(create_kill).wrap(AuthenticateUser))
             .route("/api/kill/{kill}", get().to(get_users_for_kill).wrap(AuthenticateUser))
             .route("/api/kill/{kill}", put().to(update_kill).wrap(AuthenticateUser))
             .route("/api/kill/{kill}", delete().to(delete_kill).wrap(AuthenticateUser))
-            .route("/api/my/kill", get().to(get_my_kills).wrap(AuthenticateUser))
-            .route("/api/my/kill/{kill}", put().to(activate_kill_for_me).wrap(AuthenticateUser))
-            .route("/api/my/kill/{kill}", delete().to(deactivate_kill_for_me).wrap(AuthenticateUser))
 
-            .route("/api/user/{username}/mount", get().to(get_mounts_for_user).wrap(AuthenticateUser))
-            .route("/api/user/{username}/mount/{mount}", put().to(activate_mount_for_user).wrap(AuthenticateUser))
-            .route("/api/user/{username}/mount/{mount}", delete().to(deactivate_mount_for_user).wrap(AuthenticateUser))
             .route("/api/mount", get().to(get_mounts).wrap(AuthenticateUser))
             .route("/api/mount", post().to(create_mount).wrap(AuthenticateUser))
             .route("/api/mount/{mount}", get().to(get_users_for_mount).wrap(AuthenticateUser))
             .route("/api/mount/{mount}", put().to(update_mount).wrap(AuthenticateUser))
             .route("/api/mount/{mount}", delete().to(delete_mount).wrap(AuthenticateUser))
-            .route("/api/my/mount", get().to(get_my_mounts).wrap(AuthenticateUser))
-            .route("/api/my/mount/{mount}", put().to(activate_mount_for_me).wrap(AuthenticateUser))
-            .route("/api/my/mount/{mount}", delete().to(deactivate_mount_for_me).wrap(AuthenticateUser))
 
-            .route("/api/user/{username}/savage-mount", get().to(get_savage_mounts_for_user).wrap(AuthenticateUser))
-            .route("/api/user/{username}/savage-mount/{savage_mount}", put().to(activate_savage_mount_for_user).wrap(AuthenticateUser))
-            .route("/api/user/{username}/savage-mount/{savage_mount}", delete().to(deactivate_savage_mount_for_user).wrap(AuthenticateUser))
             .route("/api/savage-mount", get().to(get_savage_mounts).wrap(AuthenticateUser))
             .route("/api/savage-mount", post().to(create_savage_mount).wrap(AuthenticateUser))
             .route("/api/savage-mount/{savage_mount}", get().to(get_users_for_savage_mount).wrap(AuthenticateUser))
             .route("/api/savage-mount/{savage_mount}", put().to(update_savage_mount).wrap(AuthenticateUser))
             .route("/api/savage-mount/{savage_mount}", delete().to(delete_savage_mount).wrap(AuthenticateUser))
+
+            .route("/api/my/profile", get().to(get_profile).wrap(AuthenticateUser))
+            .route("/api/my/profile", put().to(update_profile).wrap(AuthenticateUser))
+            .route("/api/my/password", put().to(change_my_password).wrap(AuthenticateUser))
+            .route("/api/my/kill", get().to(get_my_kills).wrap(AuthenticateUser))
+            .route("/api/my/kill/{kill}", put().to(activate_kill_for_me).wrap(AuthenticateUser))
+            .route("/api/my/kill/{kill}", delete().to(deactivate_kill_for_me).wrap(AuthenticateUser))
+            .route("/api/my/mount", get().to(get_my_mounts).wrap(AuthenticateUser))
+            .route("/api/my/mount/{mount}", put().to(activate_mount_for_me).wrap(AuthenticateUser))
+            .route("/api/my/mount/{mount}", delete().to(deactivate_mount_for_me).wrap(AuthenticateUser))
             .route("/api/my/savage-mount", get().to(get_my_savage_mounts).wrap(AuthenticateUser))
             .route("/api/my/savage-mount/{savage_mount}", put().to(activate_savage_mount_for_me).wrap(AuthenticateUser))
             .route("/api/my/savage-mount/{savage_mount}", delete().to(deactivate_savage_mount_for_me).wrap(AuthenticateUser))
