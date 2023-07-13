@@ -1,3 +1,47 @@
+HEAD http://localhost:8070/api/login
+Content-Type: application/json
+Content-Length: 43
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "job": "Test 2",
+  "gearLevel": "321"
+}
+
+###
+
+HEAD http://localhost:8070/api/login
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 43
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "job": "Test 2",
+  "gearLevel": "321"
+}
+
+###
+
+HEAD http://localhost:8070/api/login
+Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
+Content-Type: application/json
+Content-Length: 43
+Connection: Keep-Alive
+User-Agent: Apache-HttpClient/4.5.14 (Java/17.0.7)
+Accept-Encoding: br,deflate,gzip,x-gzip
+
+{
+  "job": "Test 2",
+  "gearLevel": "321"
+}
+
+###
+
 GET http://localhost:8070/api/my/profile
 Authorization: Sheef azami/6tdf96MZ7kzOnapBeIOmAFfvTRdWLgKQV9ESvWXSRiszK3xbUo_9iSZI5SrkgjZQrlvoQEIZM1AkvfZ7-dAdzw
 Content-Type: application/json

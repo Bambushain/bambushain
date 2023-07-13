@@ -19,6 +19,22 @@
             </SchemaInfo>
           </value>
         </entry>
+        <entry key="trunk.yaml schema">
+          <value>
+            <SchemaInfo>
+              <option name="name" value="trunk.yaml schema" />
+              <option name="relativePathToSchema" value="https://static.trunk.io/pub/trunk-yaml-schema.json" />
+              <option name="applicationDefined" value="true" />
+              <option name="patterns">
+                <list>
+                  <Item>
+                    <option name="path" value="rusty/Trunk.toml" />
+                  </Item>
+                </list>
+              </option>
+            </SchemaInfo>
+          </value>
+        </entry>
       </map>
     </state>
   </component>
