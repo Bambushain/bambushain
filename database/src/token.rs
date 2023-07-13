@@ -1,4 +1,4 @@
-use std::fs::{File, metadata, remove_file};
+use std::fs::{File, remove_file};
 use std::time::{SystemTime, UNIX_EPOCH};
 use bcrypt::verify;
 use log::warn;
@@ -92,11 +92,7 @@ pub fn get_user_by_token(username: &String, token: &String) -> Option<User> {
         None => return None,
     };
 
-    let exists = match metadata(vec![token_dir, token.to_string()].join("/")) {
-        Ok(res) => res.is_file(),
-        Err(_) => false,
-    };
-    if exists {
+    if path_exists!(vec![token_dir, token.to_string()].join("/")) {
         get_user(username)
     } else {
         None

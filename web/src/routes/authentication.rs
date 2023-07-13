@@ -7,9 +7,9 @@ use crate::middleware::authenticate_user::AuthenticationState;
 pub async fn login(body: web::Json<Login>) -> HttpResponse {
     let data = web::block(move || validate_auth_and_create_token(&body.username, &body.password)).await;
     if let Ok(Some(result)) = data {
-        HttpResponse::Ok().json(web::Json(result))
+        ok_json!(result)
     } else {
-        HttpResponse::new(StatusCode::NOT_FOUND)
+        not_found!()
     }
 }
 
@@ -27,5 +27,5 @@ pub async fn logout(req: HttpRequest) -> HttpResponse {
 
     remove_token(&username, &token);
 
-    HttpResponse::new(StatusCode::NO_CONTENT)
+    no_content!()
 }

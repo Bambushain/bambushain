@@ -1,6 +1,8 @@
-use std::fs::{create_dir_all, File, metadata, remove_dir_all, remove_file, rename};
+use std::fs::{create_dir_all, File, remove_dir_all, remove_file, rename};
 use log::{error, warn};
+use sheef_utils::sort_strings_insensitive;
 use crate::{EmptyResult, validate_database_dir};
+use crate::user::user_exists;
 
 fn validate_kill_dir() -> String {
     let path = vec![validate_database_dir(), "kill".to_string()].join("/");
@@ -68,12 +70,12 @@ pub fn deactivate_kill_for_user(kill: &String, username: &String) -> EmptyResult
     }
 }
 
-pub fn get_kills() -> Option<impl Iterator<Item=String>> {
-    Some(match std::fs::read_dir(validate_kill_dir()) {
+pub fn get_kills() -> Vec<String> {
+    let mut kills = match std::fs::read_dir(validate_kill_dir()) {
         Ok(dir) => dir,
         Err(err) => {
             error!("Failed to load kill dirs {}", err);
-            return None;
+            return vec![];
         }
     }.filter_map(|item| match item {
         Ok(entry) => match entry.path().is_dir() {
@@ -81,30 +83,29 @@ pub fn get_kills() -> Option<impl Iterator<Item=String>> {
             false => None
         },
         Err(_) => None
-    }))
+    }).collect::<Vec<String>>();
+    sort_strings_insensitive!(kills);
+    kills
 }
 
-pub fn get_kills_for_user(username: &String) -> Option<impl Iterator<Item=String> + '_> {
-    let kills = match get_kills() {
-        Some(kills) => kills,
-        None => return None
-    };
-    Some(kills.filter_map(|kill| {
-        let kill_path = vec![validate_kill_dir(), kill.to_string(), username.to_string()].join("/");
-        let has_user = match metadata(kill_path) {
-            Ok(res) => res.is_file(),
-            Err(_) => false,
-        };
-        match has_user {
+pub fn get_kills_for_user(username: &String) -> Option<Vec<String>> {
+    let kills = get_kills();
+    if !user_exists(username) {
+        return None;
+    }
+    let mut for_user = kills.into_iter().filter_map(|kill| {
+        match path_exists!(vec![validate_kill_dir(), kill.to_string(), username.to_string()].join("/")) {
             true => Some(kill),
             false => None
         }
-    }))
+    }).collect::<Vec<String>>();
+    sort_strings_insensitive!(for_user);
+    Some(for_user)
 }
 
-pub fn get_users_for_kill(kill: &String) -> Option<impl Iterator<Item=String>> {
+pub fn get_users_for_kill(kill: &String) -> Option<Vec<String>> {
     let path = vec![validate_kill_dir(), kill.to_string()].join("/");
-    Some(match std::fs::read_dir(path) {
+    let mut users_for_kill = match std::fs::read_dir(path) {
         Ok(dir) => dir,
         Err(err) => {
             error!("Failed to load kill dirs {}", err);
@@ -116,5 +117,11 @@ pub fn get_users_for_kill(kill: &String) -> Option<impl Iterator<Item=String>> {
             false => None
         },
         Err(_) => None
-    }))
+    }.filter(user_exists)).collect::<Vec<String>>();
+    sort_strings_insensitive!(users_for_kill);
+    Some(users_for_kill)
+}
+
+pub fn kill_exists(kill: &String) -> bool {
+    path_exists!(vec![validate_kill_dir(), kill.to_string()].join("/"))
 }

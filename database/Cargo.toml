@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 sheef_entities = { path = "../entities" }
+sheef_utils = { path = "../utils" }
 serde_yaml = "0.9.22"
 serde = { version = "1.0.171", features = ["derive"] }
 bcrypt = "0.15.0"

@@ -343,6 +343,7 @@ dependencies = [
  "serde_yaml",
  "sha2",
  "sheef_entities",
+ "sheef_utils",
 ]
 
 [[package]]
@@ -353,6 +354,10 @@ dependencies = [
  "chrono",
  "serde",
 ]
+
+[[package]]
+name = "sheef_utils"
+version = "0.1.0"
 
 [[package]]
 name = "subtle"

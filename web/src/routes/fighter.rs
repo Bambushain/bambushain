@@ -1,6 +1,6 @@
 use actix_web::{HttpRequest, HttpResponse, web};
-use actix_web::http::StatusCode;
 use serde::Deserialize;
+use sheef_database::fighter::fighter_exists;
 use sheef_entities::Fighter;
 use sheef_entities::fighter::UpdateFighter;
 
@@ -12,49 +12,41 @@ pub struct FighterPathInfo {
 pub async fn get_fighters(req: HttpRequest) -> HttpResponse {
     let username = username!(req);
     let data = web::block(move || sheef_database::fighter::get_fighters(&username)).await;
-    if let Ok(Some(fighters)) = data {
-        HttpResponse::Ok().json(web::Json(fighters))
-    } else {
-        HttpResponse::new(StatusCode::NOT_FOUND)
-    }
+    ok_or_not_found!(data)
 }
 
-pub async fn get_fighter(info: web::Path<FighterPathInfo>, req: HttpRequest) -> HttpResponse {
+pub async fn get_fighter(path: web::Path<FighterPathInfo>, req: HttpRequest) -> HttpResponse {
     let username = username!(req);
-    let data = web::block(move || sheef_database::fighter::get_fighter(&username, &info.job)).await;
-    if let Ok(Some(fighter)) = data {
-        HttpResponse::Ok().json(web::Json(fighter))
-    } else {
-        HttpResponse::new(StatusCode::NOT_FOUND)
-    }
+    let data = web::block(move || sheef_database::fighter::get_fighter(&username, &path.job)).await;
+    ok_or_not_found!(data)
 }
 
 pub async fn create_fighter(body: web::Json<Fighter>, req: HttpRequest) -> HttpResponse {
     let username = username!(req);
     let data = web::block(move || sheef_database::fighter::create_fighter(&username, &body.job, &body.level, &body.gear_score)).await;
-    if let Ok(Some(fighter)) = data {
-        HttpResponse::Created().json(web::Json(fighter))
+    if let Ok(Some(crafter)) = data {
+        created_json!(crafter)
     } else {
-        HttpResponse::new(StatusCode::INTERNAL_SERVER_ERROR)
+        internal_server_error!()
     }
 }
 
-pub async fn update_fighter(body: web::Json<UpdateFighter>, info: web::Path<FighterPathInfo>, req: HttpRequest) -> HttpResponse {
+pub async fn update_fighter(body: web::Json<UpdateFighter>, path: web::Path<FighterPathInfo>, req: HttpRequest) -> HttpResponse {
     let username = username!(req);
-    let data = web::block(move || sheef_database::fighter::update_fighter(&username, &info.job, &body.level, &body.gear_score)).await;
-    if let Ok(Ok(_)) = data {
-        HttpResponse::new(StatusCode::NO_CONTENT)
-    } else {
-        HttpResponse::new(StatusCode::INTERNAL_SERVER_ERROR)
+    if !fighter_exists(&username, &path.job) {
+        return not_found!();
     }
+
+    let data = web::block(move || sheef_database::fighter::update_fighter(&username, &path.job, &body.level, &body.gear_score)).await;
+    no_content_or_internal_server_error!(data)
 }
 
-pub async fn delete_fighter(info: web::Path<FighterPathInfo>, req: HttpRequest) -> HttpResponse {
+pub async fn delete_fighter(path: web::Path<FighterPathInfo>, req: HttpRequest) -> HttpResponse {
     let username = username!(req);
-    let data = web::block(move || sheef_database::fighter::delete_fighter(&username, &info.job)).await;
-    if let Ok(Ok(_)) = data {
-        HttpResponse::new(StatusCode::NO_CONTENT)
-    } else {
-        HttpResponse::new(StatusCode::INTERNAL_SERVER_ERROR)
+    if !fighter_exists(&username, &path.job) {
+        return not_found!();
     }
+
+    let data = web::block(move || sheef_database::fighter::delete_fighter(&username, &path.job)).await;
+    no_content_or_internal_server_error!(data)
 }

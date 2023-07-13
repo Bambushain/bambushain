@@ -1,6 +1,8 @@
-use std::fs::{create_dir_all, File, metadata, remove_dir_all, remove_file, rename};
+use std::fs::{create_dir_all, File, remove_dir_all, remove_file, rename};
 use log::{error, warn};
+use sheef_utils::sort_strings_insensitive;
 use crate::{EmptyResult, validate_database_dir};
+use crate::user::user_exists;
 
 fn validate_savage_mount_dir() -> String {
     let path = vec![validate_database_dir(), "savageMount".to_string()].join("/");
@@ -68,12 +70,12 @@ pub fn deactivate_savage_mount_for_user(savage_mount: &String, username: &String
     }
 }
 
-pub fn get_savage_mounts() -> Option<impl Iterator<Item=String>> {
-    Some(match std::fs::read_dir(validate_savage_mount_dir()) {
+pub fn get_savage_mounts() -> Vec<String> {
+    match std::fs::read_dir(validate_savage_mount_dir()) {
         Ok(dir) => dir,
         Err(err) => {
             error!("Failed to load savage mount dirs {}", err);
-            return None;
+            return vec![];
         }
     }.filter_map(|item| match item {
         Ok(entry) => match entry.path().is_dir() {
@@ -81,33 +83,30 @@ pub fn get_savage_mounts() -> Option<impl Iterator<Item=String>> {
             false => None
         },
         Err(_) => None
-    }))
+    }).collect::<Vec<String>>()
 }
 
-pub fn get_savage_mounts_for_user(username: &String) -> Option<impl Iterator<Item=String> + '_> {
-    let savage_mounts = match get_savage_mounts() {
-        Some(savage_mounts) => savage_mounts,
-        None => return None
-    };
-    Some(savage_mounts.filter_map(|savage_mount| {
-        let savage_mount_path = vec![validate_savage_mount_dir(), savage_mount.to_string(), username.to_string()].join("/");
-        let has_user = match metadata(savage_mount_path) {
-            Ok(res) => res.is_file(),
-            Err(_) => false,
-        };
-        match has_user {
+pub fn get_savage_mounts_for_user(username: &String) -> Option<Vec<String>> {
+    let savage_mounts = get_savage_mounts();
+    if !user_exists(username) {
+        return None;
+    }
+    let mut for_user = savage_mounts.into_iter().filter_map(|savage_mount| {
+        match path_exists!(vec![validate_savage_mount_dir(), savage_mount.to_string(), username.to_string()].join("/")) {
             true => Some(savage_mount),
             false => None
         }
-    }))
+    }).collect::<Vec<String>>();
+    sort_strings_insensitive!(for_user);
+    Some(for_user)
 }
 
-pub fn get_users_for_savage_mount(savage_mount: &String) -> Option<impl Iterator<Item=String>> {
+pub fn get_users_for_savage_mount(savage_mount: &String) -> Option<Vec<String>> {
     let path = vec![validate_savage_mount_dir(), savage_mount.to_string()].join("/");
-    Some(match std::fs::read_dir(path) {
+    let mut users_for_savage_mount = match std::fs::read_dir(path) {
         Ok(dir) => dir,
         Err(err) => {
-            error!("Failed to load savage mount dirs {}", err);
+            error!("Failed to load savage_mount dirs {}", err);
             return None;
         }
     }.filter_map(|item| match item {
@@ -116,5 +115,11 @@ pub fn get_users_for_savage_mount(savage_mount: &String) -> Option<impl Iterator
             false => None
         },
         Err(_) => None
-    }))
+    }.filter(user_exists)).collect::<Vec<String>>();
+    sort_strings_insensitive!(users_for_savage_mount);
+    Some(users_for_savage_mount)
+}
+
+pub fn savage_mount_exists(savage_mount: &String) -> bool {
+    path_exists!(vec![validate_savage_mount_dir(), savage_mount.to_string()].join("/"))
 }

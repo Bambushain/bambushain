@@ -3,6 +3,12 @@ use std::fs::File;
 use log::{error, warn};
 use serde::{Deserialize, Serialize};
 
+macro_rules! path_exists {
+    ($path:expr) => {
+        std::fs::metadata($path).is_ok()
+    };
+}
+
 pub(crate) fn validate_database_dir() -> String {
     let path = vec![current_dir().expect("Current dir is not available").into_os_string().to_str().unwrap(), "data"].join("/");
     let result = std::fs::create_dir_all(path.as_str());

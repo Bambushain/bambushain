@@ -1,6 +1,8 @@
-use std::fs::{create_dir_all, File, metadata, remove_dir_all, remove_file, rename};
+use std::fs::{create_dir_all, File, remove_dir_all, remove_file, rename};
 use log::{error, warn};
+use sheef_utils::sort_strings_insensitive;
 use crate::{EmptyResult, validate_database_dir};
+use crate::user::user_exists;
 
 fn validate_mount_dir() -> String {
     let path = vec![validate_database_dir(), "mount".to_string()].join("/");
@@ -68,12 +70,12 @@ pub fn deactivate_mount_for_user(mount: &String, username: &String) -> EmptyResu
     }
 }
 
-pub fn get_mounts() -> Option<impl Iterator<Item=String>> {
-    Some(match std::fs::read_dir(validate_mount_dir()) {
+pub fn get_mounts() -> Vec<String> {
+    match std::fs::read_dir(validate_mount_dir()) {
         Ok(dir) => dir,
         Err(err) => {
             error!("Failed to load mount dirs {}", err);
-            return None;
+            return vec![];
         }
     }.filter_map(|item| match item {
         Ok(entry) => match entry.path().is_dir() {
@@ -81,30 +83,27 @@ pub fn get_mounts() -> Option<impl Iterator<Item=String>> {
             false => None
         },
         Err(_) => None
-    }))
+    }).collect::<Vec<String>>()
 }
 
-pub fn get_mounts_for_user(username: &String) -> Option<impl Iterator<Item=String> + '_> {
-    let mounts = match get_mounts() {
-        Some(mounts) => mounts,
-        None => return None
-    };
-    Some(mounts.filter_map(|mount| {
-        let mount_path = vec![validate_mount_dir(), mount.to_string(), username.to_string()].join("/");
-        let has_user = match metadata(mount_path) {
-            Ok(res) => res.is_file(),
-            Err(_) => false,
-        };
-        match has_user {
+pub fn get_mounts_for_user(username: &String) -> Option<Vec<String>> {
+    let mounts = get_mounts();
+    if !user_exists(username) {
+        return None;
+    }
+    let mut for_user = mounts.into_iter().filter_map(|mount| {
+        match path_exists!(vec![validate_mount_dir(), mount.to_string(), username.to_string()].join("/")) {
             true => Some(mount),
             false => None
         }
-    }))
+    }).collect::<Vec<String>>();
+    sort_strings_insensitive!(for_user);
+    Some(for_user)
 }
 
-pub fn get_users_for_mount(mount: &String) -> Option<impl Iterator<Item=String>> {
+pub fn get_users_for_mount(mount: &String) -> Option<Vec<String>> {
     let path = vec![validate_mount_dir(), mount.to_string()].join("/");
-    Some(match std::fs::read_dir(path) {
+    let mut users_for_mount = match std::fs::read_dir(path) {
         Ok(dir) => dir,
         Err(err) => {
             error!("Failed to load mount dirs {}", err);
@@ -116,5 +115,11 @@ pub fn get_users_for_mount(mount: &String) -> Option<impl Iterator<Item=String>>
             false => None
         },
         Err(_) => None
-    }))
+    }.filter(user_exists)).collect::<Vec<String>>();
+    sort_strings_insensitive!(users_for_mount);
+    Some(users_for_mount)
+}
+
+pub fn mount_exists(mount: &String) -> bool {
+    path_exists!(vec![validate_mount_dir(), mount.to_string()].join("/"))
 }

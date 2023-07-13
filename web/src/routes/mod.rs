@@ -1,16 +1,74 @@
 macro_rules! username {
     ($req:ident) => {
         {
-            use crate::middleware::authenticate_user::AuthenticationState;
             use actix_web::HttpMessage;
+            let extensions = $req.extensions();
+            let state = extensions.get::<crate::middleware::authenticate_user::AuthenticationState>().expect("AuthenticationState should be set");
+            state.user.username.to_string()
+        }
+    };
+}
 
-            let u = {
-                let extensions = $req.extensions();
-                let state = extensions.get::<AuthenticationState>().expect("AuthenticationState should be set");
-                state.user.username.to_string()
-            };
+macro_rules! not_found {
+    () => {
+        {
+            actix_web::HttpResponse::new(actix_web::http::StatusCode::NOT_FOUND)
+        }
+    };
+}
 
-            u
+macro_rules! no_content {
+    () => {
+        {
+            actix_web::HttpResponse::new(actix_web::http::StatusCode::NO_CONTENT)
+        }
+    };
+}
+
+macro_rules! internal_server_error {
+    () => {
+        {
+            actix_web::HttpResponse::new(actix_web::http::StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    };
+}
+
+macro_rules! no_content_or_internal_server_error {
+    ($data:expr) => {
+        {
+            if let Ok(Ok(_)) = $data {
+                no_content!()
+            } else {
+                internal_server_error!()
+            }
+        }
+    };
+}
+
+macro_rules! ok_or_not_found {
+    ($data:expr) => {
+        {
+            if let Ok(Some(data)) = $data {
+                ok_json!(data)
+            } else {
+                not_found!()
+            }
+        }
+    };
+}
+
+macro_rules! ok_json {
+    ($data:expr) => {
+        {
+            actix_web::HttpResponse::Ok().json(actix_web::web::Json($data))
+        }
+    };
+}
+
+macro_rules! created_json {
+    ($data:expr) => {
+        {
+            actix_web::HttpResponse::Created().json(actix_web::web::Json($data))
         }
     };
 }
@@ -20,3 +78,6 @@ pub mod authentication;
 pub mod crafter;
 pub mod fighter;
 pub mod calendar;
+pub mod kill;
+pub mod mount;
+pub mod savage_mount;

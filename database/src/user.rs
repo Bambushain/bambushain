@@ -1,4 +1,4 @@
-use std::fs::{metadata, remove_dir_all, remove_file};
+use std::fs::{remove_dir_all, remove_file};
 use log::warn;
 use sheef_entities::user::User;
 use crate::{EmptyResult, persist_entity, read_entity, read_entity_dir, validate_database_dir};
@@ -125,9 +125,5 @@ pub fn update_me(username: &String, job: String, gear_level: String) -> EmptyRes
 }
 
 pub fn user_exists(username: &String) -> bool {
-    if let Ok(meta) = metadata(vec![validate_user_dir(), format!("{}.yaml", username)].join("/")) {
-        meta.is_file()
-    } else {
-        false
-    }
+    path_exists!(vec![validate_user_dir(), format!("{}.yaml", username)].join("/"))
 }

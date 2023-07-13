@@ -107,3 +107,14 @@ pub fn delete_crafter(username: &String, job: &String) -> EmptyResult {
         }
     }
 }
+
+pub fn crafter_exists(username: &String, job: &String) -> bool {
+    let crafter_dir = match get_user_crafter_dir(username) {
+        Some(dir) => dir,
+        None => {
+            warn!("Failed to get user fighter dir");
+            return false;
+        }
+    };
+    path_exists!(vec![crafter_dir, format!("{}.yaml", job)].join("/"))
+}

@@ -38,18 +38,19 @@ macro_rules! date_from_values {
             }
         }
     };
+    ($year:expr, $month:expr) => {
+        date_from_values!($year, $month, 1)
+    };
 }
 
 pub async fn get_calendar(query: Query<CalendarQueryInfo>) -> HttpResponse {
-    if NaiveDate::from_ymd_opt(query.year, query.month, 1).is_none() {
-        return HttpResponse::new(StatusCode::UNPROCESSABLE_ENTITY);
-    }
+    date_from_values!(query.year, query.month);
 
     let data = web::block(move || sheef_database::event::get_events_for_month(query.year, query.month)).await;
     if let Ok(Some(calendar)) = data {
-        HttpResponse::Ok().json(Json(calendar))
+        ok_json!(calendar)
     } else {
-        HttpResponse::new(StatusCode::NO_CONTENT)
+        no_content!()
     }
 }
 
@@ -58,9 +59,9 @@ pub async fn get_day_details(path: Path<DayDetailsPathInfo>, req: HttpRequest) -
     let username = username!(req);
     let data = web::block(move || sheef_database::event::get_event(&username, &date)).await;
     if let Ok(Some(event)) = data {
-        HttpResponse::Ok().json(Json(event))
+        ok_json!(event)
     } else {
-        HttpResponse::new(StatusCode::NOT_FOUND)
+        not_found!()
     }
 }
 
@@ -69,8 +70,8 @@ pub async fn update_day_details(path: Path<DayDetailsPathInfo>, body: Json<SetEv
     let username = username!(req);
     let data = web::block(move || sheef_database::event::set_event(&username, &body.time, body.available, &date)).await;
     if let Ok(Some(event)) = data {
-        HttpResponse::Ok().json(Json(event))
+        ok_json!(event)
     } else {
-        HttpResponse::new(StatusCode::NOT_FOUND)
+        not_found!()
     }
 }
