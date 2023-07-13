@@ -1,0 +1,26 @@
+version: 2
+updates:
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: daily
+  - package-ecosystem: cargo
+    directory: /backend
+    schedule:
+      interval: daily
+  - package-ecosystem: cargo
+    directory: /database
+    schedule:
+      interval: daily
+  - package-ecosystem: cargo
+    directory: /entities
+    schedule:
+      interval: daily
+  - package-ecosystem: cargo
+    directory: /utils
+    schedule:
+      interval: daily
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
