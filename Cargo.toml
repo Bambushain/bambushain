@@ -9,4 +9,4 @@ edition = "2021"
 stderrlog = "0.5.4"
 log = "0.4.19"
 actix-web = "4.3.1"
-sheef_web = { path = "web" }
+sheef_backend = { path = "backend" }

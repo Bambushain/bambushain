@@ -1134,6 +1134,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "sheef_backend"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "chrono",
+ "futures-util",
+ "log",
+ "serde",
+ "serde_json",
+ "sheef_database",
+ "sheef_entities",
+]
+
+[[package]]
 name = "sheef_database"
 version = "0.1.0"
 dependencies = [
@@ -1163,27 +1177,13 @@ version = "0.1.0"
 dependencies = [
  "actix-web",
  "log",
- "sheef_web",
+ "sheef_backend",
  "stderrlog",
 ]
 
 [[package]]
 name = "sheef_utils"
 version = "0.1.0"
-
-[[package]]
-name = "sheef_web"
-version = "0.1.0"
-dependencies = [
- "actix-web",
- "chrono",
- "futures-util",
- "log",
- "serde",
- "serde_json",
- "sheef_database",
- "sheef_entities",
-]
 
 [[package]]
 name = "signal-hook-registry"

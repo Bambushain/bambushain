@@ -3,7 +3,7 @@ use actix_web::{HttpRequest, HttpResponse, web};
 use serde::Deserialize;
 use sheef_database::savage_mount::savage_mount_exists;
 use sheef_database::user::user_exists;
-use sheef_entities::Savage_Mount;
+use sheef_entities::SavageMount;
 use crate::routes::user::UserPathInfo;
 
 #[derive(Deserialize)]
@@ -13,7 +13,7 @@ pub struct SavageMountUsernamePathInfo {
 }
 
 #[derive(Deserialize)]
-pub struct Savage_MountPathInfo {
+pub struct SavageMountPathInfo {
     pub savage_mount: String,
 }
 
@@ -49,7 +49,7 @@ pub async fn get_savage_mounts_for_user(path: web::Path<UserPathInfo>) -> HttpRe
     }
 }
 
-pub async fn get_users_for_savage_mount(path: web::Path<Savage_MountPathInfo>) -> HttpResponse {
+pub async fn get_users_for_savage_mount(path: web::Path<SavageMountPathInfo>) -> HttpResponse {
     let data = web::block(move || sheef_database::savage_mount::get_users_for_savage_mount(&path.savage_mount)).await;
     if let Ok(Some(savage_mounts)) = data {
         ok_json!(savage_mounts)
@@ -63,7 +63,7 @@ pub async fn get_my_savage_mounts(req: HttpRequest) -> HttpResponse {
     get_savage_mounts_for_user(web::Path::<UserPathInfo>::from(UserPathInfo { username })).await
 }
 
-pub async fn activate_savage_mount_for_user(path: web::Path<Savage_MountUsernamePathInfo>) -> HttpResponse {
+pub async fn activate_savage_mount_for_user(path: web::Path<SavageMountUsernamePathInfo>) -> HttpResponse {
     if !savage_mount_exists(&path.savage_mount) || !user_exists(&path.username) {
         return not_found!()
     }
@@ -72,12 +72,12 @@ pub async fn activate_savage_mount_for_user(path: web::Path<Savage_MountUsername
     no_content_or_internal_server_error!(data)
 }
 
-pub async fn activate_savage_mount_for_me(path: web::Path<Savage_MountPathInfo>, req: HttpRequest) -> HttpResponse {
+pub async fn activate_savage_mount_for_me(path: web::Path<SavageMountPathInfo>, req: HttpRequest) -> HttpResponse {
     let username = username!(req);
-    activate_savage_mount_for_user(web::Path::<Savage_MountUsernamePathInfo>::from(Savage_MountUsernamePathInfo { username, savage_mount: path.savage_mount.to_string() })).await
+    activate_savage_mount_for_user(web::Path::<SavageMountUsernamePathInfo>::from(SavageMountUsernamePathInfo { username, savage_mount: path.savage_mount.to_string() })).await
 }
 
-pub async fn deactivate_savage_mount_for_user(path: web::Path<Savage_MountUsernamePathInfo>) -> HttpResponse {
+pub async fn deactivate_savage_mount_for_user(path: web::Path<SavageMountUsernamePathInfo>) -> HttpResponse {
     if !savage_mount_exists(&path.savage_mount) || !user_exists(&path.username) {
         return not_found!()
     }
@@ -86,12 +86,12 @@ pub async fn deactivate_savage_mount_for_user(path: web::Path<Savage_MountUserna
     no_content_or_internal_server_error!(data)
 }
 
-pub async fn deactivate_savage_mount_for_me(path: web::Path<Savage_MountPathInfo>, req: HttpRequest) -> HttpResponse {
+pub async fn deactivate_savage_mount_for_me(path: web::Path<SavageMountPathInfo>, req: HttpRequest) -> HttpResponse {
     let username = username!(req);
-    deactivate_savage_mount_for_user(web::Path::<Savage_MountUsernamePathInfo>::from(Savage_MountUsernamePathInfo { username, savage_mount: path.savage_mount.to_string() })).await
+    deactivate_savage_mount_for_user(web::Path::<SavageMountUsernamePathInfo>::from(SavageMountUsernamePathInfo { username, savage_mount: path.savage_mount.to_string() })).await
 }
 
-pub async fn delete_savage_mount(path: web::Path<Savage_MountPathInfo>) -> HttpResponse {
+pub async fn delete_savage_mount(path: web::Path<SavageMountPathInfo>) -> HttpResponse {
     if !savage_mount_exists(&path.savage_mount) {
         return not_found!()
     }
@@ -100,17 +100,17 @@ pub async fn delete_savage_mount(path: web::Path<Savage_MountPathInfo>) -> HttpR
     no_content_or_internal_server_error!(data)
 }
 
-pub async fn create_savage_mount(body: web::Json<Savage_Mount>) -> HttpResponse {
+pub async fn create_savage_mount(body: web::Json<SavageMount>) -> HttpResponse {
     let savage_mount = body.name.to_string();
     let data = web::block(move || sheef_database::savage_mount::create_savage_mount(&body.name)).await;
     if let Ok(Ok(_)) = data {
-        created_json!(Savage_Mount { name: savage_mount })
+        created_json!(SavageMount { name: savage_mount })
     } else {
         internal_server_error!()
     }
 }
 
-pub async fn update_savage_mount(path: web::Path<Savage_MountPathInfo>, body: web::Json<Savage_Mount>) -> HttpResponse {
+pub async fn update_savage_mount(path: web::Path<SavageMountPathInfo>, body: web::Json<SavageMount>) -> HttpResponse {
     if !savage_mount_exists(&path.savage_mount) {
         return not_found!()
     }
