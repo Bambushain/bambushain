@@ -9,7 +9,7 @@ pub async fn login(body: web::Json<Login>) -> HttpResponse {
     if let Ok(Some(result)) = data {
         ok_json!(result)
     } else {
-        not_found!()
+        HttpResponse::new(StatusCode::UNAUTHORIZED)
     }
 }
 

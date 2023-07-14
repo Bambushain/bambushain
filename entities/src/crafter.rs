@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Eq, PartialEq, Clone)]
 pub struct Crafter {
     pub job: String,
     pub level: String,
@@ -19,7 +19,7 @@ impl Ord for Crafter {
     }
 }
 
-#[derive(Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq, Clone)]
 pub struct UpdateCrafter {
     pub level: String,
 }

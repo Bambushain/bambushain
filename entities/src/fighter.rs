@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Eq, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Fighter {
     pub job: String,
@@ -21,7 +21,7 @@ impl Ord for Fighter {
     }
 }
 
-#[derive(Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateFighter {
     pub level: String,

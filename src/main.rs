@@ -34,12 +34,12 @@ static_file_str!("../rusty/dist/rusty_sheef.js", "application/javascript", rusty
 static_file_str!("../rusty/dist/index.html", "text/html", index_html);
 static_file_bytes!("../rusty/dist/rusty_sheef_bg.wasm", "application/wasm", rusty_sheef_bg_wasm);
 static_file_bytes!("../rusty/dist/favicon.png", "image/png", favicon_png);
+static_file_bytes!("../rusty/dist/login.png", "image/png", login_png);
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     stderrlog::new()
-        .module(module_path!())
-        .verbosity(log::Level::Trace)
+        .verbosity(log::Level::Info)
         .init()
         .unwrap();
 
@@ -122,8 +122,8 @@ async fn main() -> std::io::Result<()> {
             .route("/static/rusty_sheef.js", web::get().to(rusty_sheef_js))
             .route("/static/rusty_sheef_bg.wasm", web::get().to(rusty_sheef_bg_wasm))
             .route("/static/favicon.png", web::get().to(favicon_png))
+            .route("/static/login.png", web::get().to(login_png))
             .default_service(web::route().guard(guard::Get()).to(index_html))
-            .default_service(web::route().guard(guard::Not(guard::Get())).to(HttpResponse::MethodNotAllowed))
     })
         .bind(("0.0.0.0", 8070))?
         .run()

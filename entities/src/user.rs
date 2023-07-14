@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use bcrypt::{BcryptError, hash, verify};
 use serde::{Serialize, Deserialize};
 
-#[derive(Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Eq, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct User {
     pub username: String,
@@ -61,7 +61,7 @@ impl User {
 }
 
 
-#[derive(Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct WebUser {
     pub username: String,
@@ -71,7 +71,7 @@ pub struct WebUser {
     pub job: String,
 }
 
-#[derive(Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateProfile {
     pub gear_level: String,

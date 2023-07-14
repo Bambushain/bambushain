@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Eq, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Event {
     pub username: String,
@@ -25,7 +25,7 @@ impl Ord for Event {
     }
 }
 
-#[derive(Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Eq, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Calendar {
     pub year: i32,
@@ -35,7 +35,7 @@ pub struct Calendar {
     pub events: BTreeMap<String, Vec<Event>>,
 }
 
-#[derive(Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct SetEvent {
     pub available: bool,
