@@ -97,3 +97,28 @@ table tbody tr:nth-child(2n+1) th {
 [data-msg=info] {
     --msg-background: #cff4fc;
 }
+
+[data-theme=dark] [data-msg=positive] {
+    --msg-background: #051b11;
+}
+
+[data-theme=dark] [data-msg=negative] {
+    --msg-background: #2c0b0e;
+}
+
+[data-theme=dark] [data-msg=info] {
+    --msg-background: #032830;
+}
+
+li[aria-current] {
+    --background-color: var(--primary-focus);
+}
+
+button[data-inline] {
+    display: inline;
+    width: auto;
+}
+
+[data-msg] + fieldset {
+    margin-top: var(--spacing);
+}

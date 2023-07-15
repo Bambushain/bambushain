@@ -20,7 +20,7 @@ impl Display for AppRoute {
 
 #[derive(Clone, Routable, PartialEq)]
 pub enum SheefRoute {
-    #[at("/calendar")]
+    #[at("/sheef/calendar")]
     #[not_found]
     Calendar,
 }

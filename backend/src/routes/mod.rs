@@ -60,7 +60,7 @@ macro_rules! ok_or_not_found {
 macro_rules! ok_json {
     ($data:expr) => {
         {
-            actix_web::HttpResponse::Ok().json(actix_web::web::Json($data))
+            actix_web::HttpResponse::Ok().json($data)
         }
     };
 }
@@ -68,7 +68,7 @@ macro_rules! ok_json {
 macro_rules! created_json {
     ($data:expr) => {
         {
-            actix_web::HttpResponse::Created().json(actix_web::web::Json($data))
+            actix_web::HttpResponse::Created().json($data)
         }
     };
 }

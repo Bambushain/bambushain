@@ -7,6 +7,7 @@ mod routing;
 mod pages;
 mod api;
 mod storage;
+mod ui;
 
 fn main() {
     if is_logging_on() {
@@ -15,4 +16,9 @@ fn main() {
     }
     log::info!("Starting sheef");
     yew::Renderer::<App>::new().render();
+
+    log::debug!("Append modal container");
+    let element = gloo::utils::document().create_element("div").expect("Failed to create div");
+    element.set_id("modal-container");
+    gloo::utils::body().append_child(&element).expect("Failed to append child");
 }

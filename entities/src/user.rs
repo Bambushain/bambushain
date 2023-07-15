@@ -61,7 +61,7 @@ impl User {
 }
 
 
-#[derive(Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq, Clone, Default, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct WebUser {
     pub username: String,

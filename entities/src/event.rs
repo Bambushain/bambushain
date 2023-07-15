@@ -1,9 +1,9 @@
 use std::cmp::Ordering;
-use std::collections::BTreeMap;
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
+use crate::user::WebUser;
 
-#[derive(Serialize, Deserialize, Eq, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Eq, PartialEq, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Event {
     pub username: String,
@@ -11,6 +11,8 @@ pub struct Event {
     pub available: bool,
     #[serde(skip)]
     pub date: NaiveDate,
+    #[serde(default)]
+    pub user: WebUser,
 }
 
 impl PartialOrd<Self> for Event {
@@ -25,14 +27,30 @@ impl Ord for Event {
     }
 }
 
-#[derive(Serialize, Deserialize, Eq, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct Calendar {
     pub year: i32,
     pub month: u32,
-    pub first_day: u32,
-    pub last_day: u32,
-    pub events: BTreeMap<String, Vec<Event>>,
+    pub days: Vec<CalendarDay>,
+}
+
+#[derive(Serialize, Deserialize, Eq, PartialEq, Clone)]
+pub struct CalendarDay {
+    pub date: NaiveDate,
+    pub events: Vec<Event>,
+}
+
+impl PartialOrd for CalendarDay {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.date.partial_cmp(&other.date)
+    }
+}
+
+impl Ord for CalendarDay {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.date.cmp(&other.date)
+    }
 }
 
 #[derive(Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq, Clone)]

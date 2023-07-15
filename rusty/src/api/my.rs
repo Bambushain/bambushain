@@ -3,21 +3,26 @@ use async_trait::async_trait;
 use bounce::prelude::*;
 use bounce::query::{Mutation, MutationResult, Query, QueryResult};
 use serde::{Deserialize, Serialize};
-use crate::api::{ErrorCode, get, login};
+use crate::api::{ErrorCode, get};
+use crate::api::authentication::login;
 use crate::storage::{delete_token, set_token};
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone, Deserialize, Serialize)]
-pub struct Profile(sheef_entities::User);
+pub struct Profile {
+    pub user: sheef_entities::User,
+}
 
 impl From<sheef_entities::User> for Profile {
     fn from(value: sheef_entities::User) -> Self {
-        Profile(value)
+        Self {
+            user: value
+        }
     }
 }
 
-async fn get_my_profile() -> Result<Profile, ErrorCode> {
+async fn get_my_profile() -> Result<sheef_entities::User, ErrorCode> {
     log::debug!("Get my profile");
-    get::<Profile>("/api/my/profile").await
+    get::<sheef_entities::User>("/api/my/profile").await
 }
 
 #[async_trait(? Send)]
@@ -27,7 +32,7 @@ impl Query for Profile {
 
     async fn query(_states: &BounceStates, _input: Rc<Self::Input>) -> QueryResult<Self> {
         match get_my_profile().await {
-            Ok(user) => Ok(user.into()),
+            Ok(user) => Ok(Rc::new(user.into())),
             Err(err) => {
                 delete_token();
                 Err(err)

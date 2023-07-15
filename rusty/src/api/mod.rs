@@ -2,12 +2,13 @@ use std::convert::Into;
 use std::fmt::{Debug, Display, Formatter};
 use std::ops::Deref;
 use std::rc::Rc;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
 use crate::storage::get_token;
 
 pub mod authentication;
 pub mod my;
+pub mod calendar;
 
 macro_rules! error_code {
     ($name:tt,$code:literal) => {
@@ -15,7 +16,7 @@ macro_rules! error_code {
     };
 }
 
-#[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
+#[derive(Ord, PartialOrd, Eq, PartialEq, Clone, Serialize, Deserialize)]
 pub struct ErrorCode(i32);
 
 impl Debug for ErrorCode {
@@ -51,7 +52,9 @@ macro_rules! handle_response {
                     let status = response.status();
                     log::debug!("Response status code is {}", status);
                     if 199 < status && 300 > status {
-                        response.json::<OUT>().await
+                        let text = response.text().await.unwrap();
+                        log::trace!("Response body: {text}");
+                        serde_json::from_str(text.as_str())
                     } else {
                         log::debug!("Request status code is not in success range (200-299)");
                         return Err(ErrorCode::from(response.status() as i32));
@@ -77,6 +80,25 @@ macro_rules! handle_response {
     };
 }
 
+macro_rules! handle_response_code {
+    ($response:expr) => {
+        {
+            match $response {
+                Ok(response) => {
+                    log::debug!("Request executed successfully");
+                    let status = response.status();
+                    log::debug!("Response status code is {}", status);
+                    ErrorCode(status.into())
+                }
+                Err(err) => {
+                    log::warn!("Request failed to execute {}", err);
+                    SEND_ERROR
+                }
+            }
+        }
+    };
+}
+
 pub async fn get<OUT>(uri: impl Into<String>) -> Result<OUT, ErrorCode> where OUT: DeserializeOwned {
     let into_uri = uri.into();
     let token = get_token().unwrap_or_default();
@@ -88,6 +110,19 @@ pub async fn get<OUT>(uri: impl Into<String>) -> Result<OUT, ErrorCode> where OU
         .await;
 
     handle_response!(response)
+}
+
+pub async fn delete(uri: impl Into<String>) -> ErrorCode {
+    let into_uri = uri.into();
+    let token = get_token().unwrap_or_default();
+    log::debug!("Use auth token {}", token);
+    log::debug!("Execute get request against {}", &into_uri);
+    let response = gloo::net::http::Request::delete(into_uri.as_str())
+        .header("Authorization", format!("Sheef {}", token).as_str())
+        .send()
+        .await;
+
+    handle_response_code!(response)
 }
 
 pub async fn post<IN, OUT>(uri: impl Into<String>, body: Rc<IN>) -> Result<OUT, ErrorCode> where IN: Serialize, OUT: DeserializeOwned {
@@ -110,4 +145,22 @@ pub async fn post<IN, OUT>(uri: impl Into<String>, body: Rc<IN>) -> Result<OUT, 
     handle_response!(response)
 }
 
-pub use authentication::login;
+pub async fn put<IN, OUT>(uri: impl Into<String>, body: Rc<IN>) -> Result<OUT, ErrorCode> where IN: Serialize, OUT: DeserializeOwned {
+    let into_uri = uri.into();
+    let token = get_token().unwrap_or_default();
+    log::debug!("Use auth token {}", token);
+    let token = get_token().unwrap_or_default();
+
+    log::debug!("Execute put request against {}", &into_uri);
+    let response = match gloo::net::http::Request::put(into_uri.as_str())
+        .header("Authorization", format!("Sheef {}", token).as_str())
+        .json(body.deref()) {
+        Ok(request) => request.send().await,
+        Err(err) => {
+            log::warn!("Serialize failed {}", err);
+            return Err(JSON_SERIALIZE_ERROR);
+        }
+    };
+
+    handle_response!(response)
+}

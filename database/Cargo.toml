@@ -9,9 +9,11 @@ edition = "2021"
 sheef_entities = { path = "../entities" }
 sheef_utils = { path = "../utils" }
 serde_yaml = "0.9.22"
-serde = { version = "1.0.171", features = ["derive"] }
 bcrypt = "0.15.0"
-log = "0.4.19"
 sha2 = "0.10.7"
 base64 = "0.21.2"
-chrono = { version = "0.4.26", features = ["serde"] }
+
+log = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }
