@@ -20,7 +20,17 @@ impl Display for AppRoute {
 
 #[derive(Clone, Routable, PartialEq)]
 pub enum SheefRoute {
-    #[at("/sheef/calendar")]
+    #[at("/sheef")]
     #[not_found]
+    Home,
+    #[at("/sheef/calendar")]
     Calendar,
+    #[at("/sheef/crew")]
+    Crew,
+}
+
+impl Display for SheefRoute {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.to_path().as_str())
+    }
 }

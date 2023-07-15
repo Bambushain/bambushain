@@ -2,7 +2,7 @@ use std::ops::Deref;
 use std::rc::Rc;
 use async_trait::async_trait;
 use bounce::BounceStates;
-use bounce::query::{Mutation, MutationResult, Query, QueryResult};
+use bounce::query::{Query, QueryResult};
 use chrono::{Datelike, NaiveDate};
 use serde::{Deserialize, Serialize};
 use sheef_entities::event::SetEvent;
@@ -62,20 +62,7 @@ impl From<&UpdateEvent> for SetEvent {
     }
 }
 
-async fn update_event_availability(update_event: Rc<UpdateEvent>) -> Result<sheef_entities::Event, ErrorCode> {
-    log::debug!("Update event availability on {} to {}", update_event.time, update_event.available);
-    put::<SetEvent, sheef_entities::Event>(format!("/api/calendar/{}/{}/{}", update_event.date.year(), update_event.date.month(), update_event.date.day()), Rc::new(update_event.deref().into())).await
-}
-
-#[derive(PartialEq, Clone, Eq)]
-pub struct UpdateEventMutation {}
-
-#[async_trait(? Send)]
-impl Mutation for UpdateEventMutation {
-    type Input = UpdateEvent;
-    type Error = ErrorCode;
-
-    async fn run(_states: &BounceStates, input: Rc<Self::Input>) -> MutationResult<Self> {
-        update_event_availability(input).await.map(|_| UpdateEventMutation {}.into())
-    }
+pub async fn update_event_availability(update_event: SetEvent, date: NaiveDate) -> Result<sheef_entities::Event, ErrorCode> {
+    log::debug!("Update event availability on {} to {}", date, update_event.available);
+    put(format!("/api/calendar/{}/{}/{}", date.year(), date.month(), date.day()), Rc::new(update_event)).await
 }

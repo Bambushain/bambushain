@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use std::fmt::{Display, Formatter};
 use bcrypt::{BcryptError, hash, verify};
 use serde::{Serialize, Deserialize};
 
@@ -69,6 +70,12 @@ pub struct WebUser {
     pub is_main_group: bool,
     pub gear_level: String,
     pub job: String,
+}
+
+impl Display for WebUser {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(serde_json::to_string(self).unwrap_or(self.username.clone()).as_str())
+    }
 }
 
 #[derive(Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq, Clone)]

@@ -23,6 +23,10 @@ pub async fn get_fighter(path: web::Path<FighterPathInfo>, req: HttpRequest) -> 
 
 pub async fn create_fighter(body: web::Json<Fighter>, req: HttpRequest) -> HttpResponse {
     let username = username!(req);
+    if fighter_exists(&username, &body.job) {
+        return conflict!();
+    }
+
     let data = web::block(move || sheef_database::fighter::create_fighter(&username, &body.job, &body.level, &body.gear_score)).await;
     if let Ok(Some(crafter)) = data {
         created_json!(crafter)

@@ -65,7 +65,7 @@ pub async fn get_my_kills(req: HttpRequest) -> HttpResponse {
 
 pub async fn activate_kill_for_user(path: web::Path<KillUsernamePathInfo>) -> HttpResponse {
     if !kill_exists(&path.kill) || !user_exists(&path.username) {
-        return not_found!()
+        return not_found!();
     }
 
     let data = web::block(move || sheef_database::kill::activate_kill_for_user(&path.kill, &path.username)).await;
@@ -79,7 +79,7 @@ pub async fn activate_kill_for_me(path: web::Path<KillPathInfo>, req: HttpReques
 
 pub async fn deactivate_kill_for_user(path: web::Path<KillUsernamePathInfo>) -> HttpResponse {
     if !kill_exists(&path.kill) || !user_exists(&path.username) {
-        return not_found!()
+        return not_found!();
     }
 
     let data = web::block(move || sheef_database::kill::deactivate_kill_for_user(&path.kill, &path.username)).await;
@@ -93,7 +93,7 @@ pub async fn deactivate_kill_for_me(path: web::Path<KillPathInfo>, req: HttpRequ
 
 pub async fn delete_kill(path: web::Path<KillPathInfo>) -> HttpResponse {
     if !kill_exists(&path.kill) {
-        return not_found!()
+        return not_found!();
     }
 
     let data = web::block(move || sheef_database::kill::delete_kill(&path.kill)).await;
@@ -102,6 +102,10 @@ pub async fn delete_kill(path: web::Path<KillPathInfo>) -> HttpResponse {
 
 pub async fn create_kill(body: web::Json<Kill>) -> HttpResponse {
     let kill = body.name.to_string();
+    if kill_exists(&body.name) {
+        return conflict!();
+    }
+
     let data = web::block(move || sheef_database::kill::create_kill(&body.name)).await;
     if let Ok(Ok(_)) = data {
         created_json!(Kill { name: kill })
@@ -112,7 +116,7 @@ pub async fn create_kill(body: web::Json<Kill>) -> HttpResponse {
 
 pub async fn update_kill(path: web::Path<KillPathInfo>, body: web::Json<Kill>) -> HttpResponse {
     if !kill_exists(&path.kill) {
-        return not_found!()
+        return not_found!();
     }
 
     let data = web::block(move || sheef_database::kill::update_kill(&path.kill, &body.name)).await;

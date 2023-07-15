@@ -114,11 +114,23 @@ li[aria-current] {
     --background-color: var(--primary-focus);
 }
 
-button[data-inline] {
+button {
     display: inline;
     width: auto;
 }
 
 [data-msg] + fieldset {
     margin-top: var(--spacing);
+}
+
+.gap-row {
+    gap: 1rem;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.gap-row-right {
+    gap: 1rem;
+    display: flex;
+    justify-content: flex-end;
 }

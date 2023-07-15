@@ -9,6 +9,14 @@ macro_rules! username {
     };
 }
 
+macro_rules! no_content {
+    () => {
+        {
+            actix_web::HttpResponse::new(actix_web::http::StatusCode::NO_CONTENT)
+        }
+    };
+}
+
 macro_rules! not_found {
     () => {
         {
@@ -17,10 +25,10 @@ macro_rules! not_found {
     };
 }
 
-macro_rules! no_content {
+macro_rules! conflict {
     () => {
         {
-            actix_web::HttpResponse::new(actix_web::http::StatusCode::NO_CONTENT)
+            actix_web::HttpResponse::new(actix_web::http::StatusCode::CONFLICT)
         }
     };
 }

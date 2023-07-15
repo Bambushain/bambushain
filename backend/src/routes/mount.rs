@@ -102,6 +102,10 @@ pub async fn delete_mount(path: web::Path<MountPathInfo>) -> HttpResponse {
 
 pub async fn create_mount(body: web::Json<Mount>) -> HttpResponse {
     let mount = body.name.to_string();
+    if mount_exists(&body.name) {
+        return conflict!();
+    }
+
     let data = web::block(move || sheef_database::mount::create_mount(&body.name)).await;
     if let Ok(Ok(_)) = data {
         created_json!(Mount { name: mount })

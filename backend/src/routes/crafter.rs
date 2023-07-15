@@ -23,6 +23,10 @@ pub async fn get_crafter(info: web::Path<CrafterPathInfo>, req: HttpRequest) -> 
 
 pub async fn create_crafter(body: web::Json<Crafter>, req: HttpRequest) -> HttpResponse {
     let username = username!(req);
+    if crafter_exists(&username, &body.job) {
+        return conflict!();
+    }
+
     let data = web::block(move || sheef_database::crafter::create_crafter(&username, &body.job, &body.level)).await;
     if let Ok(Some(crafter)) = data {
         created_json!(crafter)

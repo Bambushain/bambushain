@@ -2,13 +2,14 @@ use std::rc::Rc;
 use chrono::{Datelike, Local, Month, Months, NaiveDate};
 use yew::prelude::*;
 use bounce::helmet::Helmet;
-use bounce::query::{use_mutation, use_query_value};
+use bounce::query::use_query_value;
 use bounce::use_atom_value;
 use num_traits::FromPrimitive;
 use serde::{Deserialize, Serialize};
 use web_sys::HtmlInputElement;
 use yew_router::prelude::*;
-use crate::api::calendar::{Calendar, UpdateEvent, UpdateEventMutation};
+use sheef_entities::event::SetEvent;
+use crate::api::calendar::{Calendar, update_event_availability};
 use crate::routing::SheefRoute;
 use crate::storage::CurrentUser;
 use crate::ui::modal::PicoModal;
@@ -78,12 +79,6 @@ fn month_to_german(month: u32) -> AttrValue {
 }
 
 #[derive(Properties, PartialEq, Clone)]
-struct DayEditState {
-    available: bool,
-    time: AttrValue,
-}
-
-#[derive(Properties, PartialEq, Clone)]
 struct UpdateDayModalProps {
     date: NaiveDate,
     available: bool,
@@ -95,65 +90,78 @@ struct UpdateDayModalProps {
 fn update_day_modal(props: &UpdateDayModalProps) -> Html {
     log::debug!("Render the update modal");
     let error_state = use_state(|| false);
-    let day_edit_state = use_state(|| DayEditState {
-        time: props.time.clone(),
-        available: props.available,
-    });
-    let update_event = use_mutation::<UpdateEventMutation>();
+    let loading_state = use_state(|| false);
+    let available_state = use_state(|| false);
+
+    let time_state = use_state(|| AttrValue::from(""));
+
     let calendar_query_state = use_query_value::<Calendar>(Rc::new((props.date.year(), props.date.month())));
+
+    let on_close = props.on_close.clone();
+
     let on_date_save = {
         let error_state = error_state.clone();
-        let day_edit_state = day_edit_state.clone();
+        let loading_state = loading_state.clone();
+        let available_state = available_state.clone();
+
+        let time_state = time_state.clone();
+
         let date = props.date;
-        let on_close = props.on_close.clone();
+
+        let on_close = on_close.clone();
+
         Callback::from(move |evt: SubmitEvent| {
             log::debug!("The form for updating event was submitted");
             evt.prevent_default();
-            let on_close = on_close.clone();
-            let update_event = update_event.clone();
-            let day_edit_state = day_edit_state.clone();
+            loading_state.set(true);
+
             let error_state = error_state.clone();
+            let loading_state = loading_state.clone();
+            let available_state = available_state.clone();
+
+            let time_state = time_state.clone();
+
             let calendar_query_state = calendar_query_state.clone();
+
+            let on_close = on_close.clone();
+
+            let data = SetEvent {
+                time: (*time_state).to_string(),
+                available: *available_state,
+            };
+
+            let on_close = on_close.clone();
             yew::platform::spawn_local(async move {
-                let data = UpdateEvent {
-                    time: day_edit_state.time.to_string(),
-                    available: day_edit_state.available,
-                    date,
-                };
                 log::debug!("Save the data in the system");
-                match update_event.run(data).await {
+                match update_event_availability(data, date).await {
                     Ok(_) => {
                         log::debug!("Saving was successful, refresh the calendar and close the modal");
-                        yew::platform::spawn_local(async move {
-                            let _ = calendar_query_state.refresh().await;
-                            on_close.emit(());
-                            error_state.set(false);
-                        });
+                        let _ = calendar_query_state.refresh().await;
+                        on_close.emit(());
+                        error_state.set(false);
                     }
                     Err(err) => {
                         log::warn!("Failed to save event data {}", err);
                         error_state.set(true);
                     }
                 };
+                loading_state.set(false);
             });
         })
     };
-    let update_time = use_callback(move |evt: InputEvent, state| {
-        state.set(DayEditState {
-            time: evt.target_unchecked_into::<HtmlInputElement>().value().into(),
-            available: state.available,
-        })
-    }, day_edit_state.clone());
-    let update_available = use_callback(move |evt: MouseEvent, state| {
-        state.set(DayEditState {
-            available: evt.target_unchecked_into::<HtmlInputElement>().checked(),
-            time: state.time.clone(),
-        })
-    }, day_edit_state.clone());
-    let on_close = props.on_close.clone();
+
+    let update_time = use_callback(move |evt: InputEvent, state| state.set(evt.target_unchecked_into::<HtmlInputElement>().value().into()), time_state.clone());
+    let update_available = use_callback(move |evt: MouseEvent, state| state.set(evt.target_unchecked_into::<HtmlInputElement>().checked()), available_state.clone());
 
     html!(
-        <PicoModal open={true} title={format!("Planung für {}. {} {}", props.date.day(), month_to_german(props.date.month()), props.date.year())} on_close={props.on_close.clone()}>
+        <PicoModal open={true} title={format!("Planung für {}. {} {}", props.date.day(), month_to_german(props.date.month()), props.date.year())} on_close={props.on_close.clone()} buttons={
+            html!(
+                <>
+                    <button type="button" onclick={move |_| on_close.clone().emit(())} class="secondary" role="button">{"Schließen"}</button>
+                    <button aria-busy={AttrValue::from((*loading_state).to_string())} form={format!("form-{}", props.date.format("%Y-%m-%d"))} type="submit" role="button">{"Meine Verfügbarkeit speichern"}</button>
+                </>
+            )
+        }>
             <form id={format!("form-{}", props.date.format("%Y-%m-%d"))} onsubmit={on_date_save}>
                 {if *error_state {
                     html!(<p data-msg="negative">{"Leider konnte deine Planung nicht gespeichert werden, bitte wende dich an Azami"}</p>)
@@ -162,19 +170,13 @@ fn update_day_modal(props: &UpdateDayModalProps) -> Html {
                 }}
                 <fieldset>
                     <label for="available">
-                        <input onclick={update_available} type="checkbox" id="available" name="available" role="switch" checked={day_edit_state.available} />
+                        <input readonly={*loading_state} onclick={update_available} type="checkbox" id="available" name="available" role="switch" checked={*available_state} />
                         {format!("Ich kann am {}. {} {}", props.date.day(), month_to_german(props.date.month()), props.date.year())}
                     </label>
                 </fieldset>
                 <label for="timeAvailable">{"Uhrzeit (optional)"}</label>
-                <input oninput={update_time} type="text" id="timeAvailable" name="timeAvailable" value={day_edit_state.time.clone()} />
+                <input readonly={*loading_state} oninput={update_time} type="text" id="timeAvailable" name="timeAvailable" value={(*time_state).clone()} />
             </form>
-            <footer>
-                <button data-inline="true" type="button" onclick={move |_| on_close.clone().emit(())} class="secondary" role="button">{"Schließen"}</button>
-                <button data-inline="true" form={format!("form-{}", props.date.format("%Y-%m-%d"))} type="submit" role="button">
-                    {"Meine Verfügbarkeit speichern"}
-                </button>
-            </footer>
         </PicoModal>
     )
 }
@@ -275,11 +277,13 @@ pub fn calendar_page() -> Html {
     } else {
         CalendarQuery::default()
     };
+    
     let date: NaiveDate = if let Some(date) = query.into() {
         date
     } else {
         return html!(<Redirect<SheefRoute> to={SheefRoute::Calendar} />);
     };
+    
     let prev_month = date - Months::new(1);
     let next_month = date + Months::new(1);
 
@@ -369,7 +373,7 @@ pub fn calendar_page() -> Html {
         None => {
             log::debug!("Still loading");
             if !*initially_loaded_state {
-                return html!(<p data-msg="info">{"Lädt den Kalender"}</p>);
+                return html!(<p data-msg="info">{"Der Kalender wird geladen"}</p>);
             }
         }
     };

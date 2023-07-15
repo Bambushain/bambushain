@@ -1,5 +1,4 @@
 use actix_web::{HttpRequest, HttpResponse, web};
-use actix_web::http::StatusCode;
 use serde::Deserialize;
 use sheef_entities::{UpdateProfile, User, user};
 use sheef_entities::authentication::{ChangeMyPassword, ChangePassword};
@@ -13,7 +12,7 @@ macro_rules! prevent_me {
     ($req:ident, $username:expr) => {
         {
             if username!($req) == $username {
-                return HttpResponse::new(StatusCode::CONFLICT);
+                return conflict!();
             };
         }
     };
@@ -36,6 +35,10 @@ pub async fn get_user(info: web::Path<UserPathInfo>) -> HttpResponse {
 }
 
 pub async fn create_user(user: web::Json<user::User>) -> HttpResponse {
+    if sheef_database::user::user_exists(&user.username) {
+        return conflict!();
+    }
+
     let data = web::block(move || sheef_database::user::create_user(&user.username, &user.password, user.is_mod, user.is_main_group, &user.gear_level, &user.job, user.is_hidden).map(|u| u.to_web_user())).await;
     if let Ok(Some(user)) = data {
         created_json!(user)
@@ -104,7 +107,7 @@ pub async fn change_password(info: web::Path<UserPathInfo>, body: web::Json<Chan
 
 pub async fn change_my_password(body: web::Json<ChangeMyPassword>, req: HttpRequest) -> HttpResponse {
     let username = username!(req);
-    if let Ok(_) = sheef_database::user::change_my_password(&username, &body.old_password, &body.new_password) {
+    if sheef_database::user::change_my_password(&username, &body.old_password, &body.new_password).is_ok() {
         no_content!()
     } else {
         internal_server_error!()

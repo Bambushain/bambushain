@@ -1,9 +1,11 @@
 use yew::prelude::*;
+use yew::virtual_dom::VNode;
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct ModalProps {
     #[prop_or_default]
     pub children: Children,
+    pub buttons: VNode,
     pub title: AttrValue,
     #[prop_or(false)]
     pub open: bool,
@@ -25,14 +27,72 @@ pub fn modal(props: &ModalProps) -> Html {
         html!(
             <dialog open={props.open}>
                 <article>
-                <header>
-                    <a onclick={close_click} aria-label="Close" class="close"></a>
-                    <strong>{props.title.clone()}</strong>
-                </header>
+                    <header>
+                        <a onclick={close_click} aria-label="Close" class="close"></a>
+                        <strong>{props.title.clone()}</strong>
+                    </header>
                     {for props.children.iter()}
+                    <footer class="gap-row-right">
+                        {props.buttons.clone()}
+                    </footer>
                 </article>
             </dialog>
         ),
         modal_host,
+    )
+}
+
+#[derive(Properties, PartialEq, Clone)]
+pub struct ConfirmProps {
+    pub title: AttrValue,
+    pub message: AttrValue,
+    #[prop_or(false)]
+    pub open: bool,
+    #[prop_or(AttrValue::from("Ok"))]
+    pub confirm_label: AttrValue,
+    #[prop_or(AttrValue::from("Abbrechen"))]
+    pub decline_label: AttrValue,
+    pub on_confirm: Callback<()>,
+    pub on_decline: Callback<()>,
+}
+
+#[function_component(PicoConfirm)]
+pub fn confirm(props: &ConfirmProps) -> Html {
+    let on_decline = props.on_decline.clone();
+    let on_confirm = props.on_confirm.clone();
+
+    html!(
+        <PicoModal open={props.open} on_close={on_decline.clone()} title={props.title.clone()} buttons={html!(
+            <>
+                <button type="button" class="secondary" onclick={move |_| on_decline.emit(())}>{props.decline_label.clone()}</button>
+                <button type="button" onclick={move |_| on_confirm.emit(())}>{props.confirm_label.clone()}</button>
+            </>
+        )}>
+            <p>{props.message.clone()}</p>
+        </PicoModal>
+    )
+}
+
+#[derive(Properties, PartialEq, Clone)]
+pub struct AlertProps {
+    pub title: AttrValue,
+    pub message: AttrValue,
+    #[prop_or(false)]
+    pub open: bool,
+    #[prop_or(AttrValue::from("Ok"))]
+    pub close_label: AttrValue,
+    pub on_close: Callback<()>,
+}
+
+#[function_component(PicoAlert)]
+pub fn alert(props: &AlertProps) -> Html {
+    let on_close = props.on_close.clone();
+
+    html!(
+        <PicoModal open={props.open} on_close={on_close.clone()} title={props.title.clone()} buttons={html!(
+            <button type="button" onclick={move |_| on_close.emit(())}>{props.close_label.clone()}</button>
+        )}>
+            <p>{props.message.clone()}</p>
+        </PicoModal>
     )
 }
