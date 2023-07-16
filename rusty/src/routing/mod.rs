@@ -27,6 +27,10 @@ pub enum SheefRoute {
     Calendar,
     #[at("/sheef/crew")]
     Crew,
+    #[at("/sheef/crafter")]
+    Crafter,
+    #[at("/sheef/fighter")]
+    Fighter,
 }
 
 impl Display for SheefRoute {

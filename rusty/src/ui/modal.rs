@@ -62,14 +62,16 @@ pub fn confirm(props: &ConfirmProps) -> Html {
     let on_confirm = props.on_confirm.clone();
 
     html!(
-        <PicoModal open={props.open} on_close={on_decline.clone()} title={props.title.clone()} buttons={html!(
-            <>
-                <button type="button" class="secondary" onclick={move |_| on_decline.emit(())}>{props.decline_label.clone()}</button>
-                <button type="button" onclick={move |_| on_confirm.emit(())}>{props.confirm_label.clone()}</button>
-            </>
-        )}>
-            <p>{props.message.clone()}</p>
-        </PicoModal>
+        <dialog open={props.open}>
+            <article>
+                <h3>{props.title.clone()}</h3>
+                <p>{props.message.clone()}</p>
+                <footer class="gap-row-right">
+                    <button type="button" class="secondary" onclick={move |_| on_decline.emit(())}>{props.decline_label.clone()}</button>
+                    <button type="button" onclick={move |_| on_confirm.emit(())}>{props.confirm_label.clone()}</button>
+                </footer>
+            </article>
+        </dialog>
     )
 }
 
@@ -79,7 +81,7 @@ pub struct AlertProps {
     pub message: AttrValue,
     #[prop_or(false)]
     pub open: bool,
-    #[prop_or(AttrValue::from("Ok"))]
+    #[prop_or(AttrValue::from("Alles klar"))]
     pub close_label: AttrValue,
     pub on_close: Callback<()>,
 }
@@ -89,10 +91,14 @@ pub fn alert(props: &AlertProps) -> Html {
     let on_close = props.on_close.clone();
 
     html!(
-        <PicoModal open={props.open} on_close={on_close.clone()} title={props.title.clone()} buttons={html!(
-            <button type="button" onclick={move |_| on_close.emit(())}>{props.close_label.clone()}</button>
-        )}>
-            <p>{props.message.clone()}</p>
-        </PicoModal>
+        <dialog open={props.open}>
+            <article>
+                <h3>{props.title.clone()}</h3>
+                <p>{props.message.clone()}</p>
+                <footer class="gap-row-right">
+                    <button type="button" onclick={move |_| on_close.emit(())}>{props.close_label.clone()}</button>
+                </footer>
+            </article>
+        </dialog>
     )
 }

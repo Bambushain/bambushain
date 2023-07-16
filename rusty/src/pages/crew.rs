@@ -200,6 +200,7 @@ enum UserConfirmActions {
 
 #[function_component(TableBody)]
 fn table_body(props: &TableBodyProps) -> Html {
+    log::debug!("Initialize crew table body state and callbacks");
     let confirm_state = use_state_eq(|| UserConfirmActions::Closed);
 
     let error_state = use_state_eq(|| false);

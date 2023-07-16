@@ -1,4 +1,4 @@
-use std::fs::remove_file;
+use std::fs::{remove_file, rename};
 use log::warn;
 use sheef_entities::Fighter;
 use crate::{EmptyResult, persist_entity, read_entity, read_entity_dir, validate_database_dir};
@@ -69,7 +69,7 @@ pub fn get_fighters(username: &String) -> Option<Vec<Fighter>> {
     read_entity_dir(fighter_dir)
 }
 
-pub fn update_fighter(username: &String, job: &String, level: &String, gear_score: &String) -> EmptyResult {
+pub fn update_fighter(username: &String, job: &String, level: &String, gear_score: &String, new_job: &String) -> EmptyResult {
     let mut fighter = match get_fighter(username, job) {
         Some(fighter) => fighter,
         None => {
@@ -85,9 +85,12 @@ pub fn update_fighter(username: &String, job: &String, level: &String, gear_scor
         }
     };
     fighter.level = level.to_string();
+    fighter.job = new_job.to_string();
     fighter.gear_score = gear_score.to_string();
 
-    match persist_entity(fighter_dir, job, fighter) {
+    let _ = rename(vec![fighter_dir.clone(), format!("{}.yaml", job)].join("/"), vec![fighter_dir.clone(), format!("{}.yaml", new_job)].join("/"));
+
+    match persist_entity(fighter_dir, new_job, fighter) {
         Ok(_) => Ok(()),
         Err(_) => Err(())
     }

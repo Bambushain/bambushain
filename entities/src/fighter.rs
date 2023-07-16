@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Eq, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Eq, PartialEq, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct Fighter {
     pub job: String,
@@ -19,11 +19,4 @@ impl Ord for Fighter {
     fn cmp(&self, other: &Self) -> Ordering {
         self.job.to_lowercase().cmp(&other.job.to_lowercase())
     }
-}
-
-#[derive(Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct UpdateFighter {
-    pub level: String,
-    pub gear_score: String
 }

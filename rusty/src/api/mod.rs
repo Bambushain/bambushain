@@ -1,7 +1,5 @@
 use std::convert::Into;
 use std::fmt::{Debug, Display, Formatter};
-use std::ops::Deref;
-use std::rc::Rc;
 use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
 use crate::storage::get_token;
@@ -10,6 +8,8 @@ pub mod authentication;
 pub mod my;
 pub mod calendar;
 pub mod user;
+pub mod crafter;
+pub mod fighter;
 
 macro_rules! error_code {
     ($name:tt,$code:literal) => {
@@ -144,14 +144,14 @@ pub async fn put_no_body(uri: impl Into<String>) -> ErrorCode {
     handle_response_code!(response)
 }
 
-pub async fn put_no_response<IN>(uri: impl Into<String>, body: Rc<IN>) -> ErrorCode where IN: Serialize {
+pub async fn put<IN>(uri: impl Into<String>, body: &IN) -> ErrorCode where IN: Serialize {
     let into_uri = uri.into();
     let token = get_token().unwrap_or_default();
     log::debug!("Use auth token {}", token);
     log::debug!("Execute get request against {}", &into_uri);
     match gloo::net::http::Request::put(into_uri.as_str())
         .header("Authorization", format!("Sheef {}", token).as_str())
-        .json(body.deref()) {
+        .json(body) {
         Ok(request) => handle_response_code!(request.send().await),
         Err(err) => {
             log::warn!("Serialize failed {}", err);
@@ -160,7 +160,7 @@ pub async fn put_no_response<IN>(uri: impl Into<String>, body: Rc<IN>) -> ErrorC
     }
 }
 
-pub async fn post<IN, OUT>(uri: impl Into<String>, body: Rc<IN>) -> Result<OUT, ErrorCode> where IN: Serialize, OUT: DeserializeOwned {
+pub async fn post<IN, OUT>(uri: impl Into<String>, body: &IN) -> Result<OUT, ErrorCode> where IN: Serialize, OUT: DeserializeOwned {
     let into_uri = uri.into();
     let token = get_token().unwrap_or_default();
     log::debug!("Use auth token {}", token);
@@ -169,25 +169,7 @@ pub async fn post<IN, OUT>(uri: impl Into<String>, body: Rc<IN>) -> Result<OUT, 
     log::debug!("Execute post request against {}", &into_uri);
     match gloo::net::http::Request::post(into_uri.as_str())
         .header("Authorization", format!("Sheef {}", token).as_str())
-        .json(body.deref()) {
-        Ok(request) => handle_response!(request.send().await),
-        Err(err) => {
-            log::warn!("Serialize failed {}", err);
-            Err(JSON_SERIALIZE_ERROR)
-        }
-    }
-}
-
-pub async fn put<IN, OUT>(uri: impl Into<String>, body: Rc<IN>) -> Result<OUT, ErrorCode> where IN: Serialize, OUT: DeserializeOwned {
-    let into_uri = uri.into();
-    let token = get_token().unwrap_or_default();
-    log::debug!("Use auth token {}", token);
-    let token = get_token().unwrap_or_default();
-
-    log::debug!("Execute put request against {}", &into_uri);
-    match gloo::net::http::Request::put(into_uri.as_str())
-        .header("Authorization", format!("Sheef {}", token).as_str())
-        .json(body.deref()) {
+        .json(body) {
         Ok(request) => handle_response!(request.send().await),
         Err(err) => {
             log::warn!("Serialize failed {}", err);

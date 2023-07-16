@@ -2,7 +2,6 @@ use actix_web::{HttpRequest, HttpResponse, web};
 use serde::Deserialize;
 use sheef_database::crafter::crafter_exists;
 use sheef_entities::Crafter;
-use sheef_entities::crafter::UpdateCrafter;
 
 #[derive(Deserialize)]
 pub struct CrafterPathInfo {
@@ -35,13 +34,17 @@ pub async fn create_crafter(body: web::Json<Crafter>, req: HttpRequest) -> HttpR
     }
 }
 
-pub async fn update_crafter(body: web::Json<UpdateCrafter>, path: web::Path<CrafterPathInfo>, req: HttpRequest) -> HttpResponse {
+pub async fn update_crafter(body: web::Json<Crafter>, path: web::Path<CrafterPathInfo>, req: HttpRequest) -> HttpResponse {
     let username = username!(req);
     if !crafter_exists(&username, &path.job) {
         return not_found!();
     }
 
-    let data = web::block(move || sheef_database::crafter::update_crafter(&username, &path.job, &body.level)).await;
+    if crafter_exists(&username, &body.job) && body.job != path.job {
+        return conflict!();
+    }
+
+    let data = web::block(move || sheef_database::crafter::update_crafter(&username, &path.job, &body.level, &body.job)).await;
     no_content_or_internal_server_error!(data)
 }
 

@@ -13,6 +13,7 @@ use crate::api::calendar::{Calendar, update_event_availability};
 use crate::routing::SheefRoute;
 use crate::storage::CurrentUser;
 use crate::ui::modal::PicoModal;
+use crate::api::NO_CONTENT;
 
 #[derive(Properties, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize, Clone, Copy)]
 struct CalendarQuery {
@@ -130,17 +131,16 @@ fn update_day_modal(props: &UpdateDayModalProps) -> Html {
                 available: *available_state,
             };
 
-            let on_close = on_close.clone();
             yew::platform::spawn_local(async move {
                 log::debug!("Save the data in the system");
                 match update_event_availability(data, date).await {
-                    Ok(_) => {
+                    NO_CONTENT => {
                         log::debug!("Saving was successful, refresh the calendar and close the modal");
                         let _ = calendar_query_state.refresh().await;
                         on_close.emit(());
                         error_state.set(false);
                     }
-                    Err(err) => {
+                    err => {
                         log::warn!("Failed to save event data {}", err);
                         error_state.set(true);
                     }

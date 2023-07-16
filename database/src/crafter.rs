@@ -1,4 +1,4 @@
-use std::fs::remove_file;
+use std::fs::{remove_file, rename};
 use log::warn;
 use sheef_entities::Crafter;
 use crate::{EmptyResult, persist_entity, read_entity, read_entity_dir, validate_database_dir};
@@ -68,7 +68,7 @@ pub fn get_crafters(username: &String) -> Option<Vec<Crafter>> {
     read_entity_dir(crafter_dir)
 }
 
-pub fn update_crafter(username: &String, job: &String, level: &String) -> EmptyResult {
+pub fn update_crafter(username: &String, job: &String, level: &String, new_job: &String) -> EmptyResult {
     let mut crafter = match get_crafter(username, job) {
         Some(crafter) => crafter,
         None => {
@@ -83,9 +83,12 @@ pub fn update_crafter(username: &String, job: &String, level: &String) -> EmptyR
             return Err(());
         }
     };
-    crafter.level = level.to_string();
 
-    match persist_entity(crafter_dir, job, crafter) {
+    crafter.level = level.to_string();
+    crafter.job = new_job.to_string();
+    let _ = rename(vec![crafter_dir.clone(), format!("{}.yaml", job)].join("/"), vec![crafter_dir.clone(), format!("{}.yaml", new_job)].join("/"));
+
+    match persist_entity(crafter_dir, new_job, crafter) {
         Ok(_) => Ok(()),
         Err(_) => Err(())
     }

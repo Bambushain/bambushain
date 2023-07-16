@@ -6,6 +6,8 @@ use crate::api::authentication::logout;
 use crate::api::my::Profile;
 use crate::pages::calendar::CalendarPage;
 use crate::pages::crew::CrewPage;
+use crate::pages::crafter::CrafterPage;
+use crate::pages::fighter::FighterPage;
 use crate::routing::{AppRoute, SheefRoute};
 use crate::storage::CurrentUser;
 
@@ -14,6 +16,8 @@ fn switch(route: SheefRoute) -> Html {
         SheefRoute::Home => html!(<Redirect<SheefRoute> to={SheefRoute::Calendar} />),
         SheefRoute::Calendar => html!(<CalendarPage />),
         SheefRoute::Crew => html!(<CrewPage />),
+        SheefRoute::Crafter => html!(<CrafterPage />),
+        SheefRoute::Fighter => html!(<FighterPage />),
     }
 }
 
@@ -42,8 +46,8 @@ pub fn sheef_layout() -> Html {
                                 <li><strong>{"Sheef"}</strong></li>
                                 <li><Link<SheefRoute> to={SheefRoute::Calendar}>{"Kalender"}</Link<SheefRoute>></li>
                                 <li><Link<SheefRoute> to={SheefRoute::Crew}>{"Crew"}</Link<SheefRoute>></li>
-                                <li><a href="/crafters">{"Crafters"}</a></li>
-                                <li><a href="/fighters">{"Kämpfer"}</a></li>
+                                <li><Link<SheefRoute> to={SheefRoute::Crafter}>{"Crafter"}</Link<SheefRoute>></li>
+                                <li><Link<SheefRoute> to={SheefRoute::Fighter}>{"Kämpfer"}</Link<SheefRoute>></li>
                                 <li><a href="/mounts">{"Mounts"}</a></li>
                                 <li><a href="/savage-mounts">{"Savage Mounts"}</a></li>
                                 <li><a href="/kills">{"Kills"}</a></li>

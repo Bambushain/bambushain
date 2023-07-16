@@ -62,7 +62,7 @@ impl From<&UpdateEvent> for SetEvent {
     }
 }
 
-pub async fn update_event_availability(update_event: SetEvent, date: NaiveDate) -> Result<sheef_entities::Event, ErrorCode> {
-    log::debug!("Update event availability on {} to {}", date, update_event.available);
-    put(format!("/api/calendar/{}/{}/{}", date.year(), date.month(), date.day()), Rc::new(update_event)).await
+pub async fn update_event_availability(set_event: SetEvent, date: NaiveDate) -> ErrorCode {
+    log::debug!("Update event availability on {} to {}", date, set_event.available);
+    put(format!("/api/calendar/{}/{}/{}", date.year(), date.month(), date.day()), &set_event).await
 }

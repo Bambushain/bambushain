@@ -2,7 +2,6 @@ use actix_web::{HttpRequest, HttpResponse, web};
 use serde::Deserialize;
 use sheef_database::fighter::fighter_exists;
 use sheef_entities::Fighter;
-use sheef_entities::fighter::UpdateFighter;
 
 #[derive(Deserialize)]
 pub struct FighterPathInfo {
@@ -35,13 +34,17 @@ pub async fn create_fighter(body: web::Json<Fighter>, req: HttpRequest) -> HttpR
     }
 }
 
-pub async fn update_fighter(body: web::Json<UpdateFighter>, path: web::Path<FighterPathInfo>, req: HttpRequest) -> HttpResponse {
+pub async fn update_fighter(body: web::Json<Fighter>, path: web::Path<FighterPathInfo>, req: HttpRequest) -> HttpResponse {
     let username = username!(req);
     if !fighter_exists(&username, &path.job) {
         return not_found!();
     }
 
-    let data = web::block(move || sheef_database::fighter::update_fighter(&username, &path.job, &body.level, &body.gear_score)).await;
+    if fighter_exists(&username, &body.job) && body.job != path.job {
+        return conflict!();
+    }
+
+    let data = web::block(move || sheef_database::fighter::update_fighter(&username, &path.job, &body.level, &body.gear_score, &body.job)).await;
     no_content_or_internal_server_error!(data)
 }
 

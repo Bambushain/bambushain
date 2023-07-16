@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use bounce::BounceStates;
 use bounce::query::{Query, QueryResult};
 use sheef_entities::authentication::ChangePassword;
-use crate::api::{delete, ErrorCode, get, post, put_no_body, put_no_response};
+use crate::api::{delete, ErrorCode, get, post, put_no_body, put};
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
 pub struct Crew {
@@ -35,7 +35,7 @@ impl Query for Crew {
 
 pub async fn create_user(user: sheef_entities::user::User) -> Result<sheef_entities::User, ErrorCode> {
     log::debug!("Create user {}", user.username);
-    post("/api/user", user.into()).await
+    post("/api/user", &user).await
 }
 
 pub async fn make_user_mod(user: sheef_entities::User) -> ErrorCode {
@@ -65,5 +65,5 @@ pub async fn delete_user(user: sheef_entities::User) -> ErrorCode {
 
 pub async fn change_user_password(user: sheef_entities::User, new_password: String) -> ErrorCode {
     log::debug!("Change user {} password", user.username);
-    put_no_response(format!("/api/user/{}/password", user.username), ChangePassword { new_password }.into()).await
+    put(format!("/api/user/{}/password", user.username), &ChangePassword { new_password }).await
 }
