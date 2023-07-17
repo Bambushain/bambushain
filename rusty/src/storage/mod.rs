@@ -10,7 +10,7 @@ pub fn set_token(token: String) {
 }
 
 pub fn delete_token() {
-    _ = LocalStorage::delete("/sheef/token");
+    LocalStorage::delete("/sheef/token");;
 }
 
 pub fn get_log_level() -> Option<String> {

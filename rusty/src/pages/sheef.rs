@@ -158,7 +158,7 @@ fn update_my_profile_dialog(props: &UpdateMyProfileDialogProps) -> Html {
 
     let on_close = props.on_close.clone();
     let on_save = {
-        let authentication_state_query = authentication_state_query.clone();
+        let authentication_state_query = authentication_state_query;
 
         let error_state = error_state.clone();
         let loading_state = loading_state.clone();
