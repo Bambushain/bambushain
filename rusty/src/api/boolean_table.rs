@@ -6,7 +6,7 @@ use yew::AttrValue;
 use crate::api::{ErrorCode, get};
 use crate::api::user::get_users;
 
-#[derive(Eq, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Eq, PartialEq, Clone, Serialize, Deserialize, Hash, Default)]
 pub struct CaseInsensitiveString(String);
 
 impl Display for CaseInsensitiveString {

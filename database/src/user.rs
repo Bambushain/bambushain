@@ -128,12 +128,20 @@ pub fn user_exists(username: &String) -> bool {
     path_exists!(vec![validate_user_dir(), format!("{}.yaml", username)].join("/"))
 }
 
-pub fn change_my_password(username: &String, old_password: &String, new_password: &String) -> EmptyResult {
+pub enum PasswordError {
+    WrongPassword,
+    UserNotFound,
+    UnknownError,
+}
+
+pub fn change_my_password(username: &String, old_password: &String, new_password: &String) -> Result<(), PasswordError> {
     if let Some(user) = get_user(username) {
         if user.validate_password(old_password) {
-            return change_password(username, new_password);
+            change_password(username, new_password).map_err(|_| PasswordError::UnknownError)
+        } else {
+            Err(PasswordError::WrongPassword)
         }
+    } else {
+        Err(PasswordError::UserNotFound)
     }
-
-    Err(())
 }

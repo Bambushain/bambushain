@@ -9,8 +9,10 @@ pub async fn login(login_data: Rc<Login>) -> Result<sheef_entities::authenticati
     post("/api/login", login_data.deref()).await
 }
 
-pub async fn logout() {
+pub fn logout() {
     log::debug!("Execute logout");
-    delete("/api/login").await;
     delete_token();
+    yew::platform::spawn_local(async {
+        delete("/api/login").await;
+    });
 }

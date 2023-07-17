@@ -3,7 +3,9 @@ use async_trait::async_trait;
 use bounce::prelude::*;
 use bounce::query::{Mutation, MutationResult, Query, QueryResult};
 use serde::{Deserialize, Serialize};
-use crate::api::{ErrorCode, get};
+use sheef_entities::authentication::ChangeMyPassword;
+use sheef_entities::UpdateProfile;
+use crate::api::{delete, ErrorCode, get, put, put_no_body};
 use crate::api::authentication::login;
 use crate::storage::{delete_token, set_token};
 
@@ -55,4 +57,44 @@ impl Mutation for Profile {
             Err(err) => Err(err)
         }
     }
+}
+
+pub async fn activate_kill_for_me(name: String) -> ErrorCode {
+    log::debug!("Activate kill {name} for me");
+    put_no_body(format!("/api/my/kill/{name}")).await
+}
+
+pub async fn deactivate_kill_for_me(name: String) -> ErrorCode {
+    log::debug!("Deactivate kill {name} for me");
+    delete(format!("/api/my/kill/{name}")).await
+}
+
+pub async fn activate_mount_for_me(name: String) -> ErrorCode {
+    log::debug!("Activate mount {name} for me");
+    put_no_body(format!("/api/my/mount/{name}")).await
+}
+
+pub async fn deactivate_mount_for_me(name: String) -> ErrorCode {
+    log::debug!("Deactivate mount {name} for me");
+    delete(format!("/api/my/mount/{name}")).await
+}
+
+pub async fn activate_savage_mount_for_me(name: String) -> ErrorCode {
+    log::debug!("Activate savage mount {name} for me");
+    put_no_body(format!("/api/my/savage-mount/{name}")).await
+}
+
+pub async fn deactivate_savage_mount_for_me(name: String) -> ErrorCode {
+    log::debug!("Deactivate savage mount {name} for me");
+    delete(format!("/api/my/savage-mount/{name}")).await
+}
+
+pub async fn change_my_password(old_password: String, new_password: String) -> ErrorCode {
+    log::debug!("Change my password");
+    put("/api/my/password", &ChangeMyPassword { old_password, new_password }).await
+}
+
+pub async fn update_my_profile(profile: UpdateProfile) -> ErrorCode {
+    log::debug!("Update profile to the following data {:?}", profile);
+    put("/api/my/profile", &profile).await
 }

@@ -17,6 +17,14 @@ macro_rules! no_content {
     };
 }
 
+macro_rules! forbidden {
+    () => {
+        {
+            actix_web::HttpResponse::new(actix_web::http::StatusCode::FORBIDDEN)
+        }
+    };
+}
+
 macro_rules! not_found {
     () => {
         {

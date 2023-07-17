@@ -1,5 +1,6 @@
 use actix_web::{HttpRequest, HttpResponse, web};
 use serde::Deserialize;
+use sheef_database::user::PasswordError;
 use sheef_entities::{UpdateProfile, User, user};
 use sheef_entities::authentication::{ChangeMyPassword, ChangePassword};
 
@@ -107,10 +108,11 @@ pub async fn change_password(info: web::Path<UserPathInfo>, body: web::Json<Chan
 
 pub async fn change_my_password(body: web::Json<ChangeMyPassword>, req: HttpRequest) -> HttpResponse {
     let username = username!(req);
-    if sheef_database::user::change_my_password(&username, &body.old_password, &body.new_password).is_ok() {
-        no_content!()
-    } else {
-        internal_server_error!()
+    match sheef_database::user::change_my_password(&username, &body.old_password, &body.new_password) {
+        Ok(_) => no_content!(),
+        Err(PasswordError::WrongPassword) => forbidden!(),
+        Err(PasswordError::UserNotFound) => not_found!(),
+        Err(PasswordError::UnknownError) => internal_server_error!(),
     }
 }
 

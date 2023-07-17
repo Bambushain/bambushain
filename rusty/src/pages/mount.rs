@@ -1,9 +1,12 @@
 use bounce::helmet::Helmet;
 use bounce::query::use_query_value;
+use bounce::use_atom_value;
 use yew::prelude::*;
 use crate::api::mount::{activate_mount, create_mount, deactivate_mount, delete_mount, Mounts, rename_mount};
 use crate::api::{NOT_FOUND, NO_CONTENT, FORBIDDEN};
+use crate::api::my::{activate_mount_for_me, deactivate_mount_for_me};
 use crate::pages::boolean_table::{ActivationParams, BooleanTable, EntryModalState, ModifyEntryModalSaveData};
+use crate::storage::CurrentUser;
 use crate::ui::modal::PicoAlert;
 
 #[function_component(MountPage)]
@@ -11,6 +14,9 @@ pub fn mount_page() -> Html {
     log::debug!("Render mounts page");
     log::debug!("Initialize state and callbacks");
     let mount_query_state = use_query_value::<Mounts>(().into());
+
+    let current_user = use_atom_value::<CurrentUser>();
+    let is_mod = current_user.profile.is_mod;
 
     let initially_loaded_state = use_state_eq(|| false);
     let error_state = use_state_eq(|| false);
@@ -29,6 +35,8 @@ pub fn mount_page() -> Html {
     let activate_mount = {
         let mount_query_state = mount_query_state.clone();
 
+        let current_user = current_user.clone();
+
         let error_state = error_state.clone();
 
         let error_message_state = error_message_state.clone();
@@ -38,6 +46,8 @@ pub fn mount_page() -> Html {
             log::debug!("Activate mount {} for {}", params.key, params.user);
             let mount_query_state = mount_query_state.clone();
 
+            let current_user = current_user.clone();
+
             let error_state = error_state.clone();
 
             let error_message_state = error_message_state.clone();
@@ -46,8 +56,14 @@ pub fn mount_page() -> Html {
             yew::platform::spawn_local(async move {
                 let params = params.clone();
 
+                let result = if !current_user.profile.is_mod && current_user.profile.username == params.user.clone() {
+                    activate_mount_for_me(params.key.clone()).await
+                } else {
+                    activate_mount(params.user.clone(), params.key.clone()).await
+                };
+
                 log::debug!("Execute request");
-                error_state.set(match activate_mount(params.user.clone(), params.key.clone()).await {
+                error_state.set(match result {
                     NO_CONTENT => {
                         error_message_state.set(AttrValue::from(""));
                         error_title_state.set(AttrValue::from(""));
@@ -55,13 +71,14 @@ pub fn mount_page() -> Html {
                     }
                     NOT_FOUND => {
                         log::warn!("User or mount not found");
-                        error_message_state.set(AttrValue::from("Entweder das Mount oder das Crewmitglied konnte nicht gefunden werden"));
+                        error_message_state.set(AttrValue::from(if current_user.profile.is_mod { "Entweder das Mount oder das Crewmitglied konnte nicht gefunden werden" } else { "Das Mount konnte nicht gefunden werden" }));
+                        error_message_state.set(AttrValue::from(""));
                         error_title_state.set(AttrValue::from("Fehler beim Aktivieren"));
                         true
                     }
                     FORBIDDEN => {
                         log::warn!("User is not mod");
-                        error_message_state.set(AttrValue::from("Du musst Mod sein um Mounts zu ändern, wenn du deine eigenen Mounts anpassen möchtest, mach das über Mein Sheef"));
+                        error_message_state.set(AttrValue::from("Du musst Mod sein um Mounts anderer Crewmitglieder zu aktivieren"));
                         error_title_state.set(AttrValue::from("Fehler beim Aktivieren"));
                         true
                     }
@@ -90,6 +107,8 @@ pub fn mount_page() -> Html {
             log::debug!("Deactivate mount {} for {}", params.key, params.user);
             let mount_query_state = mount_query_state.clone();
 
+            let current_user = current_user.clone();
+
             let error_state = error_state.clone();
 
             let error_message_state = error_message_state.clone();
@@ -98,21 +117,27 @@ pub fn mount_page() -> Html {
             yew::platform::spawn_local(async move {
                 let params = params.clone();
 
+                let result = if !current_user.profile.is_mod && current_user.profile.username == params.user.clone() {
+                    deactivate_mount_for_me(params.key.clone()).await
+                } else {
+                    deactivate_mount(params.user.clone(), params.key.clone()).await
+                };
+
                 log::debug!("Execute request");
-                error_state.set(match deactivate_mount(params.user.clone(), params.key.clone()).await {
+                error_state.set(match result {
                     NO_CONTENT => {
                         error_message_state.set(AttrValue::from(""));
                         false
                     }
                     NOT_FOUND => {
                         log::warn!("User or mount not found");
-                        error_message_state.set(AttrValue::from("Entweder das Mount oder das Crewmitglied konnte nicht gefunden werden"));
+                        error_message_state.set(AttrValue::from(if current_user.profile.is_mod { "Entweder das Mount oder das Crewmitglied konnte nicht gefunden werden" } else { "Das Mount konnte nicht gefunden werden" }));
                         error_title_state.set(AttrValue::from("Fehler beim Deaktivieren"));
                         true
                     }
                     FORBIDDEN => {
                         log::warn!("User is not mod");
-                        error_message_state.set(AttrValue::from("Du musst Mod sein um Mounts zu ändern, wenn du deine eigenen Mounts anpassen möchtest, mach das über Mein Sheef"));
+                        error_message_state.set(AttrValue::from("Du musst Mod sein um Mounts anderer Crewmitglieder zu deaktivieren"));
                         error_title_state.set(AttrValue::from("Fehler beim Deaktivieren"));
                         true
                     }
@@ -324,6 +349,13 @@ pub fn mount_page() -> Html {
                 <title>{"Mounts"}</title>
             </Helmet>
             <h1>{"Mounts"}</h1>
+            <p data-msg="info">
+                {if is_mod {
+                    "Du bist Mod, daher hast du hier die Möglichkeit die Mounts aller Crewmitglieder zu bearbeiten"
+                } else {
+                    "Da du kein Mod bist kannst du nur deine eigenen Mounts bearbeiten"
+                }}
+            </p>
             <BooleanTable on_delete_confirm={on_delete_confirm} on_delete_decline={on_delete_decline} on_delete_click={on_delete_click} delete_message={(*delete_entry_message_state).clone()} delete_entry_open={*delete_entry_open} delete_title="Mount löschen" delete_confirm="Mount löschen" on_modify_modal_state_change={on_modify_modal_state_change} modify_modal_state={(*modify_modal_state).clone()} add_title="Mount hinzufügen" edit_title="Mount bearbeiten" add_label="Mount hinzufügen" add_save_label="Mount hinzufügen" edit_save_label="Mount speichern" has_error={*error_state} error_message={(*error_message_state).clone()} is_loading={*loading_state} on_add_save={on_add_save} on_edit_save={on_edit_save} table_data={state.data.clone()} on_activate_entry={activate_mount} on_deactivate_entry={deactivate_mount} />
             {if *error_state {
                 html!(

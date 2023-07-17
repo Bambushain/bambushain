@@ -31,7 +31,8 @@ fn modify_crafter_modal(props: &ModifyCrafterModalProps) -> Html {
 
         let on_save = props.on_save.clone();
 
-        Callback::from(move |_| {
+        Callback::from(move |evt: SubmitEvent| {
+            evt.prevent_default();
             let crafter = sheef_entities::Crafter {
                 job: (*job_state).to_string(),
                 level: (*level_state).to_string(),
@@ -47,7 +48,7 @@ fn modify_crafter_modal(props: &ModifyCrafterModalProps) -> Html {
         <PicoModal title="Crafter hinzufügen" on_close={on_close.clone()} open={true} buttons={html!(
             <>
                 <button onclick={move |_| on_close.emit(())} type="button" class="secondary">{"Abbrechen"}</button>
-                <button aria-busy={props.is_loading.to_string()} onclick={on_save} type="submit">{props.save_label.clone()}</button>
+                <button form="create-crafter-modal" aria-busy={props.is_loading.to_string()} type="submit">{props.save_label.clone()}</button>
             </>
         )}>
             {if props.has_error {
@@ -55,7 +56,7 @@ fn modify_crafter_modal(props: &ModifyCrafterModalProps) -> Html {
             } else {
                 html!()
             }}
-            <form id="create-crafter-modal">
+            <form onsubmit={on_save} id="create-crafter-modal">
                 <label for="job">{"Job"}</label>
                 <input oninput={update_job} readonly={props.is_loading} type="text" value={(*job_state).clone()} required={true} id="job" name="job" />
                 <label for="level">{"Level"}</label>

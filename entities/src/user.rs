@@ -78,7 +78,7 @@ impl Display for WebUser {
     }
 }
 
-#[derive(Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateProfile {
     pub gear_level: String,

@@ -53,8 +53,10 @@ struct TableEntryProps {
     user: AttrValue,
     data: BTreeMap<CaseInsensitiveString, Vec<CaseInsensitiveString>>,
     current_user_is_mod: bool,
+    current_user_username: AttrValue,
     on_deactivate_entry: Callback<ActivationParams>,
     on_activate_entry: Callback<ActivationParams>,
+    is_checked: bool,
 }
 
 #[derive(Clone, PartialEq, Properties)]
@@ -114,11 +116,15 @@ fn modify_entry_modal(props: &ModifyEntryModalProps) -> Html {
 
 #[function_component(TableEntry)]
 fn table_entry(props: &TableEntryProps) -> Html {
-    let data = props.data.clone();
-    let table_key = props.table_key.clone();
     let user = props.user.clone();
-    let has_value_state = use_state_eq(move || data.get(&table_key.into()).expect("Key should exist").contains(&user.into()));
-    let onclick = use_callback(|evt: MouseEvent, (state, on_activate_entry, on_deactivate_entry, user, key)| {
+    let is_checked_state = use_state_eq(|| props.is_checked);
+    let can_edit = use_state_eq(|| props.current_user_is_mod || user.clone() == props.current_user_username.clone());
+
+    use_effect_with_deps(|(is_checked_state, props)| {
+        is_checked_state.set(props.is_checked);
+    }, (is_checked_state.clone(), props.clone()));
+
+    let onclick = use_callback(|evt: MouseEvent, (on_activate_entry, on_deactivate_entry, user, key)| {
         let value = evt.target_unchecked_into::<HtmlInputElement>().checked();
         let data = ActivationParams {
             user: user.to_string(),
@@ -129,13 +135,17 @@ fn table_entry(props: &TableEntryProps) -> Html {
         } else {
             on_deactivate_entry.emit(data);
         }
+    }, (props.on_activate_entry.clone(), props.on_deactivate_entry.clone(), props.user.clone(), props.table_key.clone()));
 
-        state.set(value);
-    }, (has_value_state.clone(), props.on_activate_entry.clone(), props.on_deactivate_entry.clone(), props.user.clone(), props.table_key.clone()));
+    if *can_edit {
+        log::debug!("You can edit the entry {} for user {}", props.table_key.clone(), props.user.clone());
+    } else {
+        log::debug!("You can't edit the entry {} for user {}", props.table_key.clone(), props.user.clone());
+    }
 
     html!(
         <td>
-            <input readonly={!props.current_user_is_mod} type="checkbox" checked={*has_value_state} role="switch" onclick={onclick} />
+            <input disabled={!*can_edit} type="checkbox" checked={*is_checked_state} role="switch" onclick={onclick} />
         </td>
     )
 }
@@ -214,7 +224,7 @@ pub fn boolean_table(props: &BooleanTableProps) -> Html {
                                 <td>{user}</td>
                                 {for props.table_data.keys.iter().map(|key| {
                                     html!(
-                                        <TableEntry on_activate_entry={props.on_activate_entry.clone()} on_deactivate_entry={props.on_deactivate_entry.clone()} current_user_is_mod={current_user.profile.is_mod} key={key.to_string()} data={props.table_data.data.clone()} table_key={AttrValue::from(key.to_string())} user={AttrValue::from(user.to_string())} />
+                                        <TableEntry is_checked={props.table_data.data.clone().get(key).expect("Key should exist").contains(user)} current_user_username={AttrValue::from(current_user.profile.username.clone())} on_activate_entry={props.on_activate_entry.clone()} on_deactivate_entry={props.on_deactivate_entry.clone()} current_user_is_mod={current_user.profile.is_mod} key={key.to_string()} data={props.table_data.data.clone()} table_key={AttrValue::from(key.to_string())} user={AttrValue::from(user.to_string())} />
                                     )
                                 })}
                             </tr>

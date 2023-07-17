@@ -5,6 +5,7 @@ use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew_router::prelude::*;
 use yew_router::hooks::use_navigator;
+use yew_feather::LogIn;
 use crate::api::my::Profile;
 use crate::routing::AppRoute;
 use crate::storage::{CurrentUser, get_token};
@@ -81,7 +82,7 @@ pub fn login_page() -> Html {
                                 <input readonly={*loading_state} oninput={update_username} value={(*username_state).clone()} type="text" name="username" placeholder="Name" aria-label="Name" required=true />
                                 <input readonly={*loading_state} oninput={update_password} value={(*password_state).clone()} type="password" name="password" placeholder="Passwort" aria-label="Passwort"
                                        autocomplete="current-password" required=true />
-                                <button disabled={*loading_state} type="submit" class="contrast">{"Anmelden"}</button>
+                                <button disabled={*loading_state} type="submit" class="contrast"><span class="small-gap-row"><LogIn color={"var(--color)"} />{"Anmelden"}</span></button>
                             </form>
                         </div>
                         <div></div>
