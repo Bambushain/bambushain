@@ -31,6 +31,12 @@ pub enum SheefRoute {
     Crafter,
     #[at("/sheef/fighter")]
     Fighter,
+    #[at("/sheef/mount")]
+    Mounts,
+    #[at("/sheef/savage-mount")]
+    SavageMounts,
+    #[at("/sheef/kills")]
+    Kills
 }
 
 impl Display for SheefRoute {

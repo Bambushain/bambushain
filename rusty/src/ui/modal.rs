@@ -4,7 +4,7 @@ use yew::virtual_dom::VNode;
 use yew_hooks::{use_is_first_mount, use_mount, use_timeout, use_unmount};
 
 #[derive(Properties, PartialEq, Clone)]
-pub struct ModalProps {
+pub struct PicoModalProps {
     #[prop_or_default]
     pub children: Children,
     pub buttons: VNode,
@@ -33,7 +33,7 @@ fn remove_classes() {
 }
 
 #[function_component(PicoModal)]
-pub fn modal(props: &ModalProps) -> Html {
+pub fn modal(props: &PicoModalProps) -> Html {
     let modal_host = get_modal_host();
     let close_click = use_callback(|evt: MouseEvent, props| {
         evt.prevent_default();

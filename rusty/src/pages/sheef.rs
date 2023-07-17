@@ -8,6 +8,9 @@ use crate::pages::calendar::CalendarPage;
 use crate::pages::crew::CrewPage;
 use crate::pages::crafter::CrafterPage;
 use crate::pages::fighter::FighterPage;
+use crate::pages::kill::KillPage;
+use crate::pages::mount::MountPage;
+use crate::pages::savage_mount::SavageMountPage;
 use crate::routing::{AppRoute, SheefRoute};
 use crate::storage::CurrentUser;
 
@@ -18,6 +21,9 @@ fn switch(route: SheefRoute) -> Html {
         SheefRoute::Crew => html!(<CrewPage />),
         SheefRoute::Crafter => html!(<CrafterPage />),
         SheefRoute::Fighter => html!(<FighterPage />),
+        SheefRoute::Mounts => html!(<MountPage />),
+        SheefRoute::SavageMounts => html!(<SavageMountPage />),
+        SheefRoute::Kills => html!(<KillPage />),
     }
 }
 
@@ -48,9 +54,9 @@ pub fn sheef_layout() -> Html {
                                 <li><Link<SheefRoute> to={SheefRoute::Crew}>{"Crew"}</Link<SheefRoute>></li>
                                 <li><Link<SheefRoute> to={SheefRoute::Crafter}>{"Crafter"}</Link<SheefRoute>></li>
                                 <li><Link<SheefRoute> to={SheefRoute::Fighter}>{"Kämpfer"}</Link<SheefRoute>></li>
-                                <li><a href="/mounts">{"Mounts"}</a></li>
-                                <li><a href="/savage-mounts">{"Savage Mounts"}</a></li>
-                                <li><a href="/kills">{"Kills"}</a></li>
+                                <li><Link<SheefRoute> to={SheefRoute::Mounts}>{"Mounts"}</Link<SheefRoute>></li>
+                                <li><Link<SheefRoute> to={SheefRoute::SavageMounts}>{"Savage Mounts"}</Link<SheefRoute>></li>
+                                <li><Link<SheefRoute> to={SheefRoute::Kills}>{"Kills"}</Link<SheefRoute>></li>
                             </ul>
                             <ul>
                                 <li role="list" dir="rtl">

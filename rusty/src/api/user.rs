@@ -18,7 +18,7 @@ impl From<Vec<sheef_entities::User>> for Crew {
     }
 }
 
-async fn get_users() -> Result<Vec<sheef_entities::User>, ErrorCode> {
+pub(crate) async fn get_users() -> Result<Vec<sheef_entities::User>, ErrorCode> {
     log::debug!("Get users");
     get("/api/user").await
 }

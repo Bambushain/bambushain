@@ -134,3 +134,9 @@ button {
     display: flex;
     justify-content: flex-end;
 }
+
+.small-gap-row {
+    display: flex;
+    justify-content: flex-start;
+    gap: 0.5rem;
+}
