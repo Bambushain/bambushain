@@ -86,15 +86,18 @@ table tbody tr:nth-child(2n+1) th {
     background: var(--msg-background);
 }
 
-[data-msg=positive] {
+[data-msg=positive],
+[data-theme=light] [data-msg=positive] {
     --msg-background: #d1e7dd;
 }
 
-[data-msg=negative] {
+[data-msg=negative],
+[data-theme=light] [data-msg=negative] {
     --msg-background: #f8d7da;
 }
 
-[data-msg=info] {
+[data-msg=info],
+[data-theme=light] [data-msg=info] {
     --msg-background: #cff4fc;
 }
 
