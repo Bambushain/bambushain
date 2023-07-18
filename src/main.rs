@@ -85,19 +85,16 @@ async fn main() -> std::io::Result<()> {
 
             .route("/api/kill", web::get().to(get_kills).wrap(AuthenticateUser))
             .route("/api/kill", web::post().to(create_kill).wrap(CheckMod).wrap(AuthenticateUser))
-            .route("/api/kill/{kill}", web::get().to(get_users_for_kill).wrap(AuthenticateUser))
             .route("/api/kill/{kill}", web::put().to(update_kill).wrap(CheckMod).wrap(AuthenticateUser))
             .route("/api/kill/{kill}", web::delete().to(delete_kill).wrap(CheckMod).wrap(AuthenticateUser))
 
             .route("/api/mount", web::get().to(get_mounts).wrap(AuthenticateUser))
             .route("/api/mount", web::post().to(create_mount).wrap(CheckMod).wrap(AuthenticateUser))
-            .route("/api/mount/{mount}", web::get().to(get_users_for_mount).wrap(AuthenticateUser))
             .route("/api/mount/{mount}", web::put().to(update_mount).wrap(CheckMod).wrap(AuthenticateUser))
             .route("/api/mount/{mount}", web::delete().to(delete_mount).wrap(CheckMod).wrap(AuthenticateUser))
 
             .route("/api/savage-mount", web::get().to(get_savage_mounts).wrap(AuthenticateUser))
             .route("/api/savage-mount", web::post().to(create_savage_mount).wrap(CheckMod).wrap(AuthenticateUser))
-            .route("/api/savage-mount/{savage_mount}", web::get().to(get_users_for_savage_mount).wrap(AuthenticateUser))
             .route("/api/savage-mount/{savage_mount}", web::put().to(update_savage_mount).wrap(CheckMod).wrap(AuthenticateUser))
             .route("/api/savage-mount/{savage_mount}", web::delete().to(delete_savage_mount).wrap(CheckMod).wrap(AuthenticateUser))
 

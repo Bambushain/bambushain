@@ -4,7 +4,6 @@ use serde::Deserialize;
 use sheef_database::kill::kill_exists;
 use sheef_database::user::user_exists;
 use sheef_entities::Kill;
-use crate::routes::user::UserPathInfo;
 
 #[derive(Deserialize)]
 pub struct KillUsernamePathInfo {
@@ -30,15 +29,6 @@ pub async fn get_kills() -> HttpResponse {
         no_content!()
     } else {
         ok_json!(response)
-    }
-}
-
-pub async fn get_users_for_kill(path: web::Path<KillPathInfo>) -> HttpResponse {
-    let data = sheef_database::kill::get_users_for_kill(&path.kill).await;
-    if let Some(kills) = data {
-        ok_json!(kills)
-    } else {
-        not_found!()
     }
 }
 
@@ -86,7 +76,7 @@ pub async fn create_kill(body: web::Json<Kill>) -> HttpResponse {
     }
 
     let data = sheef_database::kill::create_kill(&body.name).await;
-    if let Ok(_) = data {
+    if data.is_ok() {
         created_json!(Kill { name: kill })
     } else {
         internal_server_error!()

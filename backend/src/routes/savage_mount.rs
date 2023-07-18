@@ -4,7 +4,6 @@ use serde::Deserialize;
 use sheef_database::savage_mount::savage_mount_exists;
 use sheef_database::user::user_exists;
 use sheef_entities::SavageMount;
-use crate::routes::user::UserPathInfo;
 
 #[derive(Deserialize)]
 pub struct SavageMountUsernamePathInfo {
@@ -30,15 +29,6 @@ pub async fn get_savage_mounts() -> HttpResponse {
         no_content!()
     } else {
         ok_json!(response)
-    }
-}
-
-pub async fn get_users_for_savage_mount(path: web::Path<SavageMountPathInfo>) -> HttpResponse {
-    let data = sheef_database::savage_mount::get_users_for_savage_mount(&path.savage_mount).await;
-    if let Some(savage_mounts) = data {
-        ok_json!(savage_mounts)
-    } else {
-        not_found!()
     }
 }
 
@@ -86,7 +76,7 @@ pub async fn create_savage_mount(body: web::Json<SavageMount>) -> HttpResponse {
     }
 
     let data = sheef_database::savage_mount::create_savage_mount(&body.name).await;
-    if let Ok(_) = data {
+    if data.is_ok() {
         created_json!(SavageMount { name: savage_mount })
     } else {
         internal_server_error!()

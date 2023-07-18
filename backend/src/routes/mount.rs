@@ -4,7 +4,6 @@ use serde::Deserialize;
 use sheef_database::mount::mount_exists;
 use sheef_database::user::user_exists;
 use sheef_entities::Mount;
-use crate::routes::user::UserPathInfo;
 
 #[derive(Deserialize)]
 pub struct MountUsernamePathInfo {
@@ -30,15 +29,6 @@ pub async fn get_mounts() -> HttpResponse {
         no_content!()
     } else {
         ok_json!(response)
-    }
-}
-
-pub async fn get_users_for_mount(path: web::Path<MountPathInfo>) -> HttpResponse {
-    let data = sheef_database::mount::get_users_for_mount(&path.mount).await;
-    if let Some(mounts) = data {
-        ok_json!(mounts)
-    } else {
-        not_found!()
     }
 }
 
@@ -86,7 +76,7 @@ pub async fn create_mount(body: web::Json<Mount>) -> HttpResponse {
     }
 
     let data = sheef_database::mount::create_mount(&body.name).await;
-    if let Ok(_) = data {
+    if data.is_ok() {
         created_json!(Mount { name: mount })
     } else {
         internal_server_error!()

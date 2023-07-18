@@ -69,7 +69,7 @@ pub async fn update_day_details(path: Path<DayDetailsPathInfo>, body: Json<SetEv
     let date = date_from_values!(path.year, path.month, path.day);
     let username = username!(req);
     let data = sheef_database::event::set_event(&username, &body.time, body.available, &date).await;
-    if let Some(_) = data {
+    if data.is_some() {
         no_content!()
     } else {
         not_found!()

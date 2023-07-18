@@ -118,7 +118,7 @@ pub async fn change_my_password(body: web::Json<ChangeMyPassword>, req: HttpRequ
 
 pub async fn update_profile(body: web::Json<UpdateProfile>, req: HttpRequest) -> HttpResponse {
     let username = username!(req);
-    if let Ok(_) = sheef_database::user::update_me(&username, &body.job, &body.gear_level).await {
+    if sheef_database::user::update_me(&username, &body.job, &body.gear_level).await.is_ok() {
         no_content!()
     } else {
         internal_server_error!()
