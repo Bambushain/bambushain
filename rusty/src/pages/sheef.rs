@@ -10,6 +10,7 @@ use sheef_entities::UpdateProfile;
 use crate::api::{FORBIDDEN, NOT_FOUND};
 use crate::api::authentication::logout;
 use crate::api::my::{change_my_password, Profile, update_my_profile};
+use crate::api::user::get_users;
 use crate::pages::calendar::CalendarPage;
 use crate::pages::crafter::CrafterPage;
 use crate::pages::crew::CrewPage;
@@ -37,6 +38,7 @@ fn switch(route: SheefRoute) -> Html {
 #[derive(Properties, Clone, PartialEq)]
 struct ChangePasswordDialogProps {
     on_close: Callback<()>,
+    mods: Vec<AttrValue>,
 }
 
 #[function_component(ChangePasswordDialog)]
@@ -121,11 +123,27 @@ fn change_password_dialog(props: &ChangePasswordDialogProps) -> Html {
         )}>
             {if *error_state {
                 html!(
-                    <p data-msg="negative">{(*error_message_state).clone()}</p>
+                    <p data-msg="negative">
+                        {(*error_message_state).clone()}<br />
+                        <strong>{"Mods"}</strong>
+                        <ul>
+                            {for props.mods.iter().map(|user| html!(
+                                <li key={user.to_string()}>{user.clone()}</li>
+                            ))}
+                        </ul>
+                    </p>
                 )
             } else {
                 html!(
-                    <p data-msg="info">{"Hier kannst du dein Passwort ändern, falls du dich an dein altes Passwort nicht erinnern kannst, wende dich an einen Mod"}</p>
+                    <p data-msg="info">
+                        {"Hier kannst du dein Passwort ändern, falls du dich an dein altes Passwort nicht erinnern kannst, wende dich an einen Mod"}<br />
+                        <strong>{"Mods"}</strong>
+                        <ul>
+                            {for props.mods.iter().map(|user| html!(
+                                <li key={user.to_string()}>{user.clone()}</li>
+                            ))}
+                        </ul>
+                    </p>
                 )
             }}
             <form id="update-password-modal" onsubmit={on_save.clone()}>
@@ -235,10 +253,10 @@ fn update_my_profile_dialog(props: &UpdateMyProfileDialogProps) -> Html {
                 html!()
             }}
             <form id="update-profile-modal" onsubmit={on_save.clone()}>
-                <label for="old-password">{"Rolle/Klasse (optional)"}</label>
-                <input oninput={update_job} readonly={*loading_state} type="text" value={(*job_state).clone()} id="job" name="job" />
-                <label for="new-password">{"Gear Level (optional)"}</label>
-                <input oninput={update_gear_level} readonly={*loading_state} type="text" value={(*gear_level_state).clone()} id="gear-level" name="gear-level" />
+                <label for="old-password" >{"Rolle/Klasse (optional)"}</label>
+                <input oninput={update_job} readonly={*loading_state} type="text" value={(*job_state).clone()} id="job" name="job" / >
+                <label for="new-password" >{"Gear Level (optional)"}</label>
+                <input oninput={update_gear_level} readonly={* loading_state} type="text" value={(*gear_level_state).clone()} id="gear-level" name="gear-level" />
             </form>
         </PicoModal>
     )
@@ -253,22 +271,43 @@ pub fn sheef_layout() -> Html {
     let change_password_open_state = use_state_eq(|| false);
     let update_my_profile_open_state = use_state_eq(|| false);
 
+    let mods_state = use_state_eq(|| vec![] as Vec<AttrValue>);
+
     let logout_click = use_callback(move |evt: MouseEvent, _| {
         evt.prevent_default();
         let navigator = navigator.clone();
         logout();
         navigator.expect("Navigator should be available").push(&AppRoute::Login);
     }, ());
-    let change_password_click = use_callback(|evt: MouseEvent, change_password_open_state| {
-        evt.prevent_default();
-        change_password_open_state.set(true);
-    }, change_password_open_state.clone());
+    let change_password_click = {
+        let change_password_open_state = change_password_open_state.clone();
+
+        let mods_state = mods_state.clone();
+
+        Callback::from(move |evt: MouseEvent| {
+            evt.prevent_default();
+
+            let change_password_open_state = change_password_open_state.clone();
+
+            let mods_state = mods_state.clone();
+
+            yew::platform::spawn_local(async move {
+                if let Ok(users) = get_users().await {
+                    let mods = users.into_iter().filter_map(|user| if user.is_mod { Some(AttrValue::from(user.username)) } else { None }).collect::<Vec<AttrValue>>();
+                    mods_state.set(mods);
+                }
+
+                change_password_open_state.set(true);
+            });
+        })
+    };
     let update_my_profile_click = use_callback(|evt: MouseEvent, update_my_profile_open_state| {
         evt.prevent_default();
         update_my_profile_open_state.set(true);
     }, update_my_profile_open_state.clone());
 
     let change_password_close = use_callback(|_, change_password_open_state| change_password_open_state.set(false), change_password_open_state.clone());
+
     let update_my_profile_close = use_callback(|_, update_my_profile_open_state| update_my_profile_open_state.set(false), update_my_profile_open_state.clone());
 
     let profile_atom_setter = use_atom_setter::<CurrentUser>();
@@ -283,7 +322,7 @@ pub fn sheef_layout() -> Html {
                             <nav class="container-fluid">
                                 <ul>
                                     <li><strong>{"Sheef"}</strong></li>
-                                    <li><Link<SheefRoute> to={SheefRoute::Calendar}>{"Kalender"}</Link<SheefRoute>></li>
+                                    <li><Link<SheefRoute> to ={SheefRoute::Calendar}>{"Kalender"}</Link<SheefRoute>></li>
                                     <li><Link<SheefRoute> to={SheefRoute::Crew}>{"Crew"}</Link<SheefRoute>></li>
                                     <li><Link<SheefRoute> to={SheefRoute::Crafter}>{"Crafter"}</Link<SheefRoute>></li>
                                     <li><Link<SheefRoute> to={SheefRoute::Fighter}>{"Kämpfer"}</Link<SheefRoute>></li>
@@ -322,12 +361,12 @@ pub fn sheef_layout() -> Html {
                                 </ul>
                             </nav>
                             <div class="container-fluid">
-                                <Switch<SheefRoute> render={switch}/>
+                                <Switch<SheefRoute> render={switch} />
                             </div>
                         </BrowserRouter>
                         {if *change_password_open_state {
                             html!(
-                                <ChangePasswordDialog on_close={change_password_close} />
+                                <ChangePasswordDialog mods={(*mods_state).clone()} on_close={change_password_close} />
                             )
                         } else {
                             html!()
