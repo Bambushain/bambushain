@@ -1,11 +1,13 @@
 use std::collections::BTreeMap;
+
 use bounce::use_atom_value;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew_feather::{Edit3, Trash2};
+
 use crate::api::boolean_table::{BooleanTable as ApiBooleanTable, CaseInsensitiveString};
 use crate::storage::CurrentUser;
-use crate::ui::modal::{PicoModal, PicoConfirm};
+use crate::ui::modal::{PicoConfirm, PicoModal};
 
 #[derive(PartialEq, Clone)]
 pub struct ModifyEntryModalSaveData {

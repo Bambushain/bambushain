@@ -1,10 +1,11 @@
-use yew::prelude::*;
 use bounce::helmet::Helmet;
 use bounce::query::use_query_value;
 use web_sys::HtmlInputElement;
-use crate::ui::modal::{PicoConfirm, PicoModal, PicoAlert};
+use yew::prelude::*;
+
+use crate::api::{CONFLICT, NOT_FOUND};
 use crate::api::crafter::{create_crafter, delete_crafter, MyCrafter, update_crafter};
-use crate::api::{CONFLICT, NO_CONTENT, NOT_FOUND};
+use crate::ui::modal::{PicoAlert, PicoConfirm, PicoModal};
 
 #[derive(Properties, PartialEq, Clone)]
 struct ModifyCrafterModalProps {
@@ -142,14 +143,18 @@ fn table_body(props: &TableBodyProps) -> Html {
 
             yew::platform::spawn_local(async move {
                 error_state.set(match delete_crafter(crafter.clone()).await {
-                    NO_CONTENT => ErrorState::None,
-                    NOT_FOUND => {
-                        error_message_state.set(AttrValue::from("Der Crafter konnte nicht gefunden werden"));
-                        ErrorState::Delete
-                    }
-                    _ => {
-                        error_message_state.set(AttrValue::from("Der Crafter konnte nicht gelöscht werden, bitte wende dich an Azami"));
-                        ErrorState::Delete
+                    Ok(_) => ErrorState::None,
+                    Err(err) => {
+                        match err.code {
+                            NOT_FOUND => {
+                                error_message_state.set(AttrValue::from("Der Crafter konnte nicht gefunden werden"));
+                                ErrorState::Delete
+                            }
+                            _ => {
+                                error_message_state.set(AttrValue::from("Der Crafter konnte nicht gelöscht werden, bitte wende dich an Azami"));
+                                ErrorState::Delete
+                            }
+                        }
                     }
                 });
                 loading_state.set(false);
@@ -190,22 +195,26 @@ fn table_body(props: &TableBodyProps) -> Html {
                 };
 
                 error_state.set(match update_crafter(event_crafter.job, crafter).await {
-                    NO_CONTENT => {
+                    Ok(_) => {
                         let _ = crafter_query_state.refresh().await;
                         on_modal_close.emit(());
                         ErrorState::Edit
                     }
-                    CONFLICT => {
-                        error_message_state.set(AttrValue::from("Ein Crafter mit diesem Job existiert bereits"));
-                        ErrorState::Edit
-                    }
-                    NOT_FOUND => {
-                        error_message_state.set(AttrValue::from("Der Crafter konnte nicht gefunden werden"));
-                        ErrorState::Edit
-                    }
-                    _ => {
-                        error_message_state.set(AttrValue::from("Der Crafter konnte nicht gespeichert werden, bitte wende dich an Azami"));
-                        ErrorState::None
+                    Err(err) => {
+                        match err.code {
+                            CONFLICT => {
+                                error_message_state.set(AttrValue::from("Ein Crafter mit diesem Job existiert bereits"));
+                                ErrorState::Edit
+                            }
+                            NOT_FOUND => {
+                                error_message_state.set(AttrValue::from("Der Crafter konnte nicht gefunden werden"));
+                                ErrorState::Edit
+                            }
+                            _ => {
+                                error_message_state.set(AttrValue::from("Der Crafter konnte nicht gespeichert werden, bitte wende dich an Azami"));
+                                ErrorState::None
+                            }
+                        }
                     }
                 });
                 loading_state.set(false)
@@ -300,7 +309,7 @@ pub fn crafter_page() -> Html {
                         false
                     }
                     Err(err) => {
-                        error_message_state.set(AttrValue::from(if err == CONFLICT {
+                        error_message_state.set(AttrValue::from(if err.code == CONFLICT {
                             "Ein Crafter mit diesem Job existiert bereits"
                         } else {
                             "Der Crafter konnte nicht hinzugefügt werden, bitte wende dich an Azami"

@@ -1,19 +1,21 @@
 use std::rc::Rc;
-use chrono::{Datelike, Local, Month, Months, NaiveDate};
-use yew::prelude::*;
+
 use bounce::helmet::Helmet;
 use bounce::query::use_query_value;
 use bounce::use_atom_value;
+use chrono::{Datelike, Local, Month, Months, NaiveDate};
 use num_traits::FromPrimitive;
 use serde::{Deserialize, Serialize};
 use web_sys::HtmlInputElement;
+use yew::prelude::*;
 use yew_router::prelude::*;
+
 use sheef_entities::event::SetEvent;
+
 use crate::api::calendar::{Calendar, update_event_availability};
 use crate::routing::SheefRoute;
 use crate::storage::CurrentUser;
 use crate::ui::modal::PicoModal;
-use crate::api::NO_CONTENT;
 
 #[derive(Properties, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize, Clone, Copy)]
 struct CalendarQuery {
@@ -134,13 +136,13 @@ fn update_day_modal(props: &UpdateDayModalProps) -> Html {
             yew::platform::spawn_local(async move {
                 log::debug!("Save the data in the system");
                 match update_event_availability(data, date).await {
-                    NO_CONTENT => {
+                    Ok(_) => {
                         log::debug!("Saving was successful, refresh the calendar and close the modal");
                         let _ = calendar_query_state.refresh().await;
                         on_close.emit(());
                         error_state.set(false);
                     }
-                    err => {
+                    Err(err) => {
                         log::warn!("Failed to save event data {}", err);
                         error_state.set(true);
                     }
@@ -277,13 +279,13 @@ pub fn calendar_page() -> Html {
     } else {
         CalendarQuery::default()
     };
-    
+
     let date: NaiveDate = if let Some(date) = query.into() {
         date
     } else {
         return html!(<Redirect<SheefRoute> to={SheefRoute::Calendar} />);
     };
-    
+
     let prev_month = date - Months::new(1);
     let next_month = date + Months::new(1);
 

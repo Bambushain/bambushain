@@ -2,8 +2,9 @@ use bounce::helmet::Helmet;
 use bounce::query::use_query_value;
 use bounce::use_atom_value;
 use yew::prelude::*;
+
+use crate::api::{FORBIDDEN, NOT_FOUND};
 use crate::api::mount::{activate_mount, create_mount, deactivate_mount, delete_mount, Mounts, rename_mount};
-use crate::api::{NOT_FOUND, NO_CONTENT, FORBIDDEN};
 use crate::api::my::{activate_mount_for_me, deactivate_mount_for_me};
 use crate::pages::boolean_table::{ActivationParams, BooleanTable, EntryModalState, ModifyEntryModalSaveData};
 use crate::storage::CurrentUser;
@@ -64,31 +65,36 @@ pub fn mount_page() -> Html {
 
                 log::debug!("Execute request");
                 error_state.set(match result {
-                    NO_CONTENT => {
+                    Ok(_) => {
                         error_message_state.set(AttrValue::from(""));
                         error_title_state.set(AttrValue::from(""));
                         false
                     }
-                    NOT_FOUND => {
-                        log::warn!("User or mount not found");
-                        error_message_state.set(AttrValue::from(if current_user.profile.is_mod { "Entweder das Mount oder das Crewmitglied konnte nicht gefunden werden" } else { "Das Mount konnte nicht gefunden werden" }));
-                        error_message_state.set(AttrValue::from(""));
-                        error_title_state.set(AttrValue::from("Fehler beim Aktivieren"));
-                        true
-                    }
-                    FORBIDDEN => {
-                        log::warn!("User is not mod");
-                        error_message_state.set(AttrValue::from("Du musst Mod sein um Mounts anderer Crewmitglieder zu aktivieren"));
-                        error_title_state.set(AttrValue::from("Fehler beim Aktivieren"));
-                        true
-                    }
-                    err => {
-                        log::warn!("Another error occurred {}", err);
-                        let params = params.clone();
+                    Err(err) => match err.code {
+                        NOT_FOUND => {
+                            log::warn!("User or mount not found");
+                            error_message_state.set(AttrValue::from(if err.sheef_error.entity_type == "mount".to_string() {
+                                "Das Mount konnte nicht gefunden werden"
+                            } else {
+                                "Das Crewmitglied konnte nicht gefunden werden"
+                            }));
+                            error_title_state.set(AttrValue::from("Fehler beim Aktivieren"));
+                            true
+                        }
+                        FORBIDDEN => {
+                            log::warn!("User is not mod");
+                            error_message_state.set(AttrValue::from("Du musst Mod sein um Mounts anderer Crewmitglieder zu aktivieren"));
+                            error_title_state.set(AttrValue::from("Fehler beim Aktivieren"));
+                            true
+                        }
+                        _ => {
+                            log::warn!("Another error occurred {}", err);
+                            let params = params.clone();
 
-                        error_message_state.set(AttrValue::from(format!("Das Mount {} konnte für {} nicht aktiviert werden, bitte wende dich an Azami", params.key, params.user)));
-                        error_title_state.set(AttrValue::from("Fehler beim Aktivieren"));
-                        true
+                            error_message_state.set(AttrValue::from(format!("Das Mount {} konnte für {} nicht aktiviert werden, bitte wende dich an Azami", params.key, params.user)));
+                            error_title_state.set(AttrValue::from("Fehler beim Aktivieren"));
+                            true
+                        }
                     }
                 });
                 let _ = mount_query_state.refresh().await;
@@ -125,29 +131,35 @@ pub fn mount_page() -> Html {
 
                 log::debug!("Execute request");
                 error_state.set(match result {
-                    NO_CONTENT => {
+                    Ok(_) => {
                         error_message_state.set(AttrValue::from(""));
                         false
                     }
-                    NOT_FOUND => {
-                        log::warn!("User or mount not found");
-                        error_message_state.set(AttrValue::from(if current_user.profile.is_mod { "Entweder das Mount oder das Crewmitglied konnte nicht gefunden werden" } else { "Das Mount konnte nicht gefunden werden" }));
-                        error_title_state.set(AttrValue::from("Fehler beim Deaktivieren"));
-                        true
-                    }
-                    FORBIDDEN => {
-                        log::warn!("User is not mod");
-                        error_message_state.set(AttrValue::from("Du musst Mod sein um Mounts anderer Crewmitglieder zu deaktivieren"));
-                        error_title_state.set(AttrValue::from("Fehler beim Deaktivieren"));
-                        true
-                    }
-                    err => {
-                        log::warn!("Another error occurred {}", err);
-                        let params = params.clone();
+                    Err(err) => match err.code {
+                        NOT_FOUND => {
+                            log::warn!("User or mount not found");
+                            error_message_state.set(AttrValue::from(if err.sheef_error.entity_type == "mount".to_string() {
+                                "Das Mount konnte nicht gefunden werden"
+                            } else {
+                                "Das Crewmitglied konnte nicht gefunden werden"
+                            }));
+                            error_title_state.set(AttrValue::from("Fehler beim Deaktivieren"));
+                            true
+                        }
+                        FORBIDDEN => {
+                            log::warn!("User is not mod");
+                            error_message_state.set(AttrValue::from("Du musst Mod sein um Mounts anderer Crewmitglieder zu deaktivieren"));
+                            error_title_state.set(AttrValue::from("Fehler beim Deaktivieren"));
+                            true
+                        }
+                        _ => {
+                            log::warn!("Another error occurred {}", err);
+                            let params = params.clone();
 
-                        error_message_state.set(AttrValue::from(format!("Das Mount {} konnte für {} nicht deaktiviert werden, bitte wende dich an Azami", params.key, params.user)));
-                        error_title_state.set(AttrValue::from("Fehler beim Deaktivieren"));
-                        true
+                            error_message_state.set(AttrValue::from(format!("Das Mount {} konnte für {} nicht deaktiviert werden, bitte wende dich an Azami", params.key, params.user)));
+                            error_title_state.set(AttrValue::from("Fehler beim Deaktivieren"));
+                            true
+                        }
                     }
                 });
                 let _ = mount_query_state.refresh().await;
@@ -188,17 +200,19 @@ pub fn mount_page() -> Html {
                         modify_modal_state.set(EntryModalState::Closed);
                         false
                     }
-                    Err(FORBIDDEN) => {
-                        log::warn!("User is not mod");
-                        error_message_state.set(AttrValue::from("Du musst Mod sein um Mounts hinzuzufügen"));
-                        error_title_state.set(AttrValue::from("Fehler beim Hinzufügen"));
-                        true
-                    }
-                    Err(err) => {
-                        log::warn!("Another error occurred {}", err);
-                        error_message_state.set(AttrValue::from(format!("Das Mount {} nicht erstellt werden, bitte wende dich an Azami", data.new_name)));
-                        error_title_state.set(AttrValue::from("Fehler beim Hinzufügen"));
-                        true
+                    Err(err) => match err.code {
+                        FORBIDDEN => {
+                            log::warn!("User is not mod");
+                            error_message_state.set(AttrValue::from("Du musst Mod sein um Mounts hinzuzufügen"));
+                            error_title_state.set(AttrValue::from("Fehler beim Hinzufügen"));
+                            true
+                        }
+                        _ => {
+                            log::warn!("Another error occurred {}", err);
+                            error_message_state.set(AttrValue::from(format!("Das Mount {} nicht erstellt werden, bitte wende dich an Azami", data.new_name)));
+                            error_title_state.set(AttrValue::from("Fehler beim Hinzufügen"));
+                            true
+                        }
                     }
                 });
                 loading_state.set(false);
@@ -233,22 +247,24 @@ pub fn mount_page() -> Html {
             yew::platform::spawn_local(async move {
                 log::debug!("Execute request");
                 error_state.set(match rename_mount(data.old_name.to_string(), data.new_name.to_string()).await {
-                    NO_CONTENT => {
+                    Ok(_) => {
                         error_message_state.set(AttrValue::from(""));
                         modify_modal_state.set(EntryModalState::Closed);
                         false
                     }
-                    FORBIDDEN => {
-                        log::warn!("User is not mod");
-                        error_message_state.set(AttrValue::from("Du musst Mod sein um Mounts umzubenennen"));
-                        error_title_state.set(AttrValue::from("Fehler beim Umbenennen"));
-                        true
-                    }
-                    err => {
-                        log::warn!("Another error occurred {}", err);
-                        error_message_state.set(AttrValue::from(format!("Das Mount {} nicht umbenannt werden, bitte wende dich an Azami", data.old_name)));
-                        error_title_state.set(AttrValue::from("Fehler beim Umbenennen"));
-                        true
+                    Err(err) => match err.code {
+                        FORBIDDEN => {
+                            log::warn!("User is not mod");
+                            error_message_state.set(AttrValue::from("Du musst Mod sein um Mounts umzubenennen"));
+                            error_title_state.set(AttrValue::from("Fehler beim Umbenennen"));
+                            true
+                        }
+                        _ => {
+                            log::warn!("Another error occurred {}", err);
+                            error_message_state.set(AttrValue::from(format!("Das Mount {} nicht umbenannt werden, bitte wende dich an Azami", data.old_name)));
+                            error_title_state.set(AttrValue::from("Fehler beim Umbenennen"));
+                            true
+                        }
                     }
                 });
                 loading_state.set(false);
@@ -286,29 +302,31 @@ pub fn mount_page() -> Html {
             yew::platform::spawn_local(async move {
                 log::debug!("Execute request");
                 error_state.set(match delete_mount((*delete_entry_name_state).to_string()).await {
-                    NO_CONTENT => {
+                    Ok(_) => {
                         error_message_state.set(AttrValue::from(""));
                         delete_entry_open.set(false);
                         false
                     }
-                    NOT_FOUND => {
-                        log::warn!("Mount not found");
-                        error_message_state.set(AttrValue::from("Das Mount konnte nicht gefunden werden"));
-                        error_title_state.set(AttrValue::from("Fehler beim Löschen"));
-                        true
-                    }
-                    FORBIDDEN => {
-                        log::warn!("User is not mod");
-                        error_message_state.set(AttrValue::from("Du musst Mod sein um Mounts zu löschen"));
-                        error_title_state.set(AttrValue::from("Fehler beim Löschen"));
-                        true
-                    }
-                    err => {
-                        log::warn!("Another error occurred {}", err);
-                        let delete_entry_name_state = delete_entry_name_state.clone();
-                        error_message_state.set(AttrValue::from(format!("Das Mount {} nicht gelöscht werden, bitte wende dich an Azami", (*delete_entry_name_state).clone())));
-                        error_title_state.set(AttrValue::from("Fehler beim Deaktivieren"));
-                        true
+                    Err(err) => match err.code {
+                        NOT_FOUND => {
+                            log::warn!("Mount not found");
+                            error_message_state.set(AttrValue::from("Das Mount konnte nicht gefunden werden"));
+                            error_title_state.set(AttrValue::from("Fehler beim Löschen"));
+                            true
+                        }
+                        FORBIDDEN => {
+                            log::warn!("User is not mod");
+                            error_message_state.set(AttrValue::from("Du musst Mod sein um Mounts zu löschen"));
+                            error_title_state.set(AttrValue::from("Fehler beim Löschen"));
+                            true
+                        }
+                        _ => {
+                            log::warn!("Another error occurred {}", err);
+                            let delete_entry_name_state = delete_entry_name_state.clone();
+                            error_message_state.set(AttrValue::from(format!("Das Mount {} nicht gelöscht werden, bitte wende dich an Azami", (*delete_entry_name_state).clone())));
+                            error_title_state.set(AttrValue::from("Fehler beim Deaktivieren"));
+                            true
+                        }
                     }
                 });
                 let _ = mount_query_state.refresh().await;

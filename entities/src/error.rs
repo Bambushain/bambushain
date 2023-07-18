@@ -14,13 +14,19 @@ pub enum SheefErrorCode {
     UnknownError,
 }
 
+impl Default for SheefErrorCode {
+    fn default() -> Self {
+        Self::UnknownError
+    }
+}
+
 impl Display for SheefErrorCode {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_str(format!("{:?}", self).as_str())
     }
 }
 
-#[derive(Ord, PartialOrd, Eq, PartialEq, Clone, Debug, Serialize, Deserialize)]
+#[derive(Ord, PartialOrd, Eq, PartialEq, Clone, Debug, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct SheefError {
     pub entity_type: String,

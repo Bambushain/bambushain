@@ -1,10 +1,11 @@
-use yew::prelude::*;
 use bounce::helmet::Helmet;
 use bounce::query::use_query_value;
 use web_sys::HtmlInputElement;
-use crate::ui::modal::{PicoConfirm, PicoModal, PicoAlert};
+use yew::prelude::*;
+
+use crate::api::{CONFLICT, NOT_FOUND};
 use crate::api::fighter::{create_fighter, delete_fighter, MyFighter, update_fighter};
-use crate::api::{CONFLICT, NO_CONTENT, NOT_FOUND};
+use crate::ui::modal::{PicoAlert, PicoConfirm, PicoModal};
 
 #[derive(Properties, PartialEq, Clone)]
 struct ModifyFighterModalProps {
@@ -148,14 +149,16 @@ fn table_body(props: &TableBodyProps) -> Html {
 
             yew::platform::spawn_local(async move {
                 error_state.set(match delete_fighter(fighter.clone()).await {
-                    NO_CONTENT => ErrorState::None,
-                    NOT_FOUND => {
-                        error_message_state.set(AttrValue::from("Der Kämpfer konnte nicht gefunden werden"));
-                        ErrorState::Delete
-                    }
-                    _ => {
-                        error_message_state.set(AttrValue::from("Der Kämpfer konnte nicht gelöscht werden, bitte wende dich an Azami"));
-                        ErrorState::Delete
+                    Ok(_) => ErrorState::None,
+                    Err(err) => match err.code {
+                        NOT_FOUND => {
+                            error_message_state.set(AttrValue::from("Der Kämpfer konnte nicht gefunden werden"));
+                            ErrorState::Delete
+                        }
+                        _ => {
+                            error_message_state.set(AttrValue::from("Der Kämpfer konnte nicht gelöscht werden, bitte wende dich an Azami"));
+                            ErrorState::Delete
+                        }
                     }
                 });
                 loading_state.set(false);
@@ -196,22 +199,24 @@ fn table_body(props: &TableBodyProps) -> Html {
                 };
 
                 error_state.set(match update_fighter(event_fighter.job, fighter).await {
-                    NO_CONTENT => {
+                    Ok(_) => {
                         let _ = fighter_query_state.refresh().await;
                         on_modal_close.emit(());
                         ErrorState::Edit
                     }
-                    CONFLICT => {
-                        error_message_state.set(AttrValue::from("Ein Kämpfer mit diesem Job existiert bereits"));
-                        ErrorState::Edit
-                    }
-                    NOT_FOUND => {
-                        error_message_state.set(AttrValue::from("Der Kämpfer konnte nicht gefunden werden"));
-                        ErrorState::Edit
-                    }
-                    _ => {
-                        error_message_state.set(AttrValue::from("Der Kämpfer konnte nicht gespeichert werden, bitte wende dich an Azami"));
-                        ErrorState::None
+                    Err(err) => match err.code {
+                        CONFLICT => {
+                            error_message_state.set(AttrValue::from("Ein Kämpfer mit diesem Job existiert bereits"));
+                            ErrorState::Edit
+                        }
+                        NOT_FOUND => {
+                            error_message_state.set(AttrValue::from("Der Kämpfer konnte nicht gefunden werden"));
+                            ErrorState::Edit
+                        }
+                        _ => {
+                            error_message_state.set(AttrValue::from("Der Kämpfer konnte nicht gespeichert werden, bitte wende dich an Azami"));
+                            ErrorState::None
+                        }
                     }
                 });
                 loading_state.set(false)
@@ -307,7 +312,7 @@ pub fn fighter_page() -> Html {
                         false
                     }
                     Err(err) => {
-                        error_message_state.set(AttrValue::from(if err == CONFLICT {
+                        error_message_state.set(AttrValue::from(if err.code == CONFLICT {
                             "Ein Kämpfer mit diesem Job existiert bereits"
                         } else {
                             "Der Kämpfer konnte nicht hinzugefügt werden, bitte wende dich an Azami"

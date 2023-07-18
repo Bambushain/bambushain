@@ -1,4 +1,5 @@
 use std::fmt::{Display, Formatter};
+
 use yew_router::Routable;
 
 #[derive(Clone, Routable, PartialEq)]
@@ -36,7 +37,7 @@ pub enum SheefRoute {
     #[at("/sheef/savage-mount")]
     SavageMounts,
     #[at("/sheef/kills")]
-    Kills
+    Kills,
 }
 
 impl Display for SheefRoute {

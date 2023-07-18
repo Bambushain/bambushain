@@ -1,9 +1,11 @@
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::{Display, Formatter};
+
 use serde::{Deserialize, Serialize};
 use yew::AttrValue;
-use crate::api::{ErrorCode, get};
+
+use crate::api::{get, SheefApiResult};
 use crate::api::user::get_users;
 
 #[derive(Eq, PartialEq, Clone, Serialize, Deserialize, Hash, Default)]
@@ -40,7 +42,7 @@ pub struct BooleanTable {
     pub users: BTreeSet<CaseInsensitiveString>,
 }
 
-pub async fn get_boolean_table(path: String) -> Result<BooleanTable, ErrorCode> {
+pub async fn get_boolean_table(path: String) -> SheefApiResult<BooleanTable> {
     log::debug!("Get data from {}", path);
     let table_data = match get::<BTreeMap<CaseInsensitiveString, Vec<CaseInsensitiveString>>>(path).await {
         Ok(data) => data,

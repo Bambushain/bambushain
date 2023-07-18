@@ -1,8 +1,10 @@
 use std::rc::Rc;
+
 use async_trait::async_trait;
 use bounce::BounceStates;
 use bounce::query::{Query, QueryResult};
-use crate::api::{delete, ErrorCode, get, post, put};
+
+use crate::api::{ApiError, delete, get, post, put, SheefApiResult};
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
 pub struct MyFighter {
@@ -17,7 +19,7 @@ impl From<Vec<sheef_entities::Fighter>> for MyFighter {
     }
 }
 
-async fn get_fighter() -> Result<Vec<sheef_entities::Fighter>, ErrorCode> {
+async fn get_fighter() -> SheefApiResult<Vec<sheef_entities::Fighter>> {
     log::debug!("Get fighter");
     get("/api/fighter").await
 }
@@ -25,24 +27,24 @@ async fn get_fighter() -> Result<Vec<sheef_entities::Fighter>, ErrorCode> {
 #[async_trait(? Send)]
 impl Query for MyFighter {
     type Input = ();
-    type Error = ErrorCode;
+    type Error = ApiError;
 
     async fn query(_states: &BounceStates, _input: Rc<Self::Input>) -> QueryResult<Self> {
         get_fighter().await.map(|fighter| Rc::new(fighter.into()))
     }
 }
 
-pub async fn create_fighter(fighter: sheef_entities::Fighter) -> Result<sheef_entities::Fighter, ErrorCode> {
+pub async fn create_fighter(fighter: sheef_entities::Fighter) -> SheefApiResult<sheef_entities::Fighter> {
     log::debug!("Create fighter {}", fighter.job);
     post("/api/fighter", &fighter).await
 }
 
-pub async fn update_fighter(job: String, fighter: sheef_entities::Fighter) -> ErrorCode {
+pub async fn update_fighter(job: String, fighter: sheef_entities::Fighter) -> SheefApiResult<()> {
     log::debug!("Create fighter {}", fighter.job);
     put(format!("/api/fighter/{}", job), &fighter).await
 }
 
-pub async fn delete_fighter(fighter: sheef_entities::Fighter) -> ErrorCode {
+pub async fn delete_fighter(fighter: sheef_entities::Fighter) -> SheefApiResult<()> {
     log::debug!("Delete fighter {}", fighter.job);
     delete(format!("/api/fighter/{}", fighter.job)).await
 }

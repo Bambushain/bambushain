@@ -1,17 +1,20 @@
 use std::ops::Deref;
-use rand::Rng;
-use rand::distributions::Alphanumeric;
-use bounce::query::use_query_value;
+
 use bounce::helmet::Helmet;
+use bounce::query::use_query_value;
 use bounce::use_atom_value;
-use yew::prelude::*;
+use rand::distributions::Alphanumeric;
+use rand::Rng;
 use web_sys::HtmlInputElement;
+use yew::prelude::*;
+
 use sheef_entities::UpdateProfile;
 use sheef_entities::user::WebUser;
-use crate::api::{CONFLICT, NO_CONTENT, NOT_FOUND, INTERNAL_SERVER_ERROR, FORBIDDEN};
+
+use crate::api::{CONFLICT, FORBIDDEN, INTERNAL_SERVER_ERROR, NO_CONTENT, NOT_FOUND};
 use crate::api::user::{change_user_password, create_user, Crew, delete_user, make_user_main, make_user_mod, remove_user_main, remove_user_mod, update_profile};
 use crate::storage::CurrentUser;
-use crate::ui::modal::{PicoModal, PicoConfirm, PicoAlert};
+use crate::ui::modal::{PicoAlert, PicoConfirm, PicoModal};
 
 #[derive(Properties, PartialEq, Clone, Eq)]
 struct TableBodyProps {
@@ -111,7 +114,7 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
                     Err(err) => {
                         log::warn!("Failed to create user {}", err);
                         error_state.set(true);
-                        if err == CONFLICT {
+                        if err.code == CONFLICT {
                             error_message_state.set(AttrValue::from("Ein Mitglied mit diesem Namen existiert bereits"));
                         } else {
                             error_message_state.set(AttrValue::from("Das Mitglied konnte nicht hinzugefügt werden, bitte wende dich an Azami"));
@@ -244,27 +247,29 @@ fn update_profile_dialog(props: &UpdateProfileDialogProps) -> Html {
 
             yew::platform::spawn_local(async move {
                 error_state.set(match update_profile(UpdateProfile { gear_level: (*gear_level_state).to_string(), job: (*job_state).to_string() }, username).await {
-                    NO_CONTENT => {
+                    Ok(_) => {
                         log::debug!("Profile update successful");
                         on_close.emit(());
 
                         false
                     }
-                    FORBIDDEN => {
-                        error_message_state.set(AttrValue::from("Du musst Mod sein um fremde Profile zu bearbeiten"));
-                        true
-                    }
-                    NOT_FOUND => {
-                        log::warn!("The user was not found");
-                        error_message_state.set(AttrValue::from("Das Crewmitglied wurde nicht gefunden"));
+                    Err(err) => match err.code {
+                        FORBIDDEN => {
+                            error_message_state.set(AttrValue::from("Du musst Mod sein um fremde Profile zu bearbeiten"));
+                            true
+                        }
+                        NOT_FOUND => {
+                            log::warn!("The user was not found");
+                            error_message_state.set(AttrValue::from("Das Crewmitglied wurde nicht gefunden"));
 
-                        true
-                    }
-                    err => {
-                        log::warn!("Failed to change the profile {err}");
-                        error_message_state.set(AttrValue::from("Das Profil konnte leider nicht geändert werden, bitte wende dich an Azami"));
+                            true
+                        }
+                        _ => {
+                            log::warn!("Failed to change the profile {err}");
+                            error_message_state.set(AttrValue::from("Das Profil konnte leider nicht geändert werden, bitte wende dich an Azami"));
 
-                        true
+                            true
+                        }
                     }
                 });
                 loading_state.set(false);
@@ -342,128 +347,134 @@ fn table_body(props: &TableBodyProps) -> Html {
                 let code = match confirm_state.deref() {
                     UserConfirmActions::MakeMod(user) => {
                         match make_user_mod(user.clone()).await {
-                            NO_CONTENT => {
+                            Ok(_) => {
                                 confirm_state.set(UserConfirmActions::Closed);
                                 NO_CONTENT
                             }
-                            FORBIDDEN => {
-                                error_message_state.set(AttrValue::from("Du musst Mod sein um Mods zu ernennen"));
-                                FORBIDDEN
+                            Err(err) => match err.code {
+                                FORBIDDEN => {
+                                    error_message_state.set(AttrValue::from("Du musst Mod sein um Mods zu ernennen"));
+                                    FORBIDDEN
+                                }
+                                CONFLICT => {
+                                    error_message_state.set(AttrValue::from("Du kannst dich nicht selbst zum Mod machen"));
+                                    CONFLICT
+                                }
+                                _ => {
+                                    error_message_state.set(AttrValue::from("Das Mitglied konnte nicht zum Mod gemacht werden, bitte wende dich an Azami"));
+                                    INTERNAL_SERVER_ERROR
+                                }
                             }
-                            CONFLICT => {
-                                error_message_state.set(AttrValue::from("Du kannst dich nicht selbst zum Mod machen"));
-                                CONFLICT
-                            }
-                            INTERNAL_SERVER_ERROR => {
-                                error_message_state.set(AttrValue::from("Das Mitglied konnte nicht zum Mod gemacht werden, bitte wende dich an Azami"));
-                                INTERNAL_SERVER_ERROR
-                            }
-                            _ => unreachable!()
                         }
                     }
                     UserConfirmActions::RemoveMod(user) => {
                         match remove_user_mod(user.clone()).await {
-                            NO_CONTENT => {
+                            Ok(_) => {
                                 confirm_state.set(UserConfirmActions::Closed);
                                 NO_CONTENT
                             }
-                            FORBIDDEN => {
-                                error_message_state.set(AttrValue::from("Du musst Mod sein um Mitgliedern die Modrechte zu entziehen"));
-                                FORBIDDEN
+                            Err(err) => match err.code {
+                                FORBIDDEN => {
+                                    error_message_state.set(AttrValue::from("Du musst Mod sein um Mitgliedern die Modrechte zu entziehen"));
+                                    FORBIDDEN
+                                }
+                                CONFLICT => {
+                                    error_message_state.set(AttrValue::from("Du kannst dir die Modrechte nicht entziehen"));
+                                    CONFLICT
+                                }
+                                _ => {
+                                    error_message_state.set(AttrValue::from("Dem Mitglied konnten die Modrechte nicht entzogen werden, bitte wende dich an Azami"));
+                                    INTERNAL_SERVER_ERROR
+                                }
                             }
-                            CONFLICT => {
-                                error_message_state.set(AttrValue::from("Du kannst dir die Modrechte nicht entziehen"));
-                                CONFLICT
-                            }
-                            INTERNAL_SERVER_ERROR => {
-                                error_message_state.set(AttrValue::from("Dem Mitglied konnten die Modrechte nicht entzogen werden, bitte wende dich an Azami"));
-                                INTERNAL_SERVER_ERROR
-                            }
-                            _ => unreachable!()
                         }
                     }
                     UserConfirmActions::Delete(user) => {
                         match delete_user(user.clone()).await {
-                            NO_CONTENT => {
+                            Ok(_) => {
                                 confirm_state.set(UserConfirmActions::Closed);
                                 NO_CONTENT
                             }
-                            FORBIDDEN => {
-                                error_message_state.set(AttrValue::from("Du musst Mod sein um Mitgliedern zu entfernen"));
-                                FORBIDDEN
+                            Err(err) => match err.code {
+                                FORBIDDEN => {
+                                    error_message_state.set(AttrValue::from("Du musst Mod sein um Mitgliedern zu entfernen"));
+                                    FORBIDDEN
+                                }
+                                CONFLICT => {
+                                    error_message_state.set(AttrValue::from("Du kannst dich nicht selbst löschen, wenn du gehen möchtest, wende dich an einen Mod"));
+                                    CONFLICT
+                                }
+                                _ => {
+                                    error_message_state.set(AttrValue::from("Das Mitglied konnte nicht gelöscht werden, bitte wende dich an Azami"));
+                                    INTERNAL_SERVER_ERROR
+                                }
                             }
-                            CONFLICT => {
-                                error_message_state.set(AttrValue::from("Du kannst dich nicht selbst löschen, wenn du gehen möchtest, wende dich an einen Mod"));
-                                CONFLICT
-                            }
-                            INTERNAL_SERVER_ERROR => {
-                                error_message_state.set(AttrValue::from("Das Mitglied konnte nicht gelöscht werden, bitte wende dich an Azami"));
-                                INTERNAL_SERVER_ERROR
-                            }
-                            _ => unreachable!()
                         }
                     }
                     UserConfirmActions::MakeMain(user) => {
                         match make_user_main(user.clone()).await {
-                            NO_CONTENT => {
+                            Ok(_) => {
                                 confirm_state.set(UserConfirmActions::Closed);
                                 NO_CONTENT
                             }
-                            FORBIDDEN => {
-                                error_message_state.set(AttrValue::from("Du musst Mod sein um Mitgliedern in den Mainkader hinzuzufügen"));
-                                FORBIDDEN
+                            Err(err) => match err.code {
+                                FORBIDDEN => {
+                                    error_message_state.set(AttrValue::from("Du musst Mod sein um Mitgliedern in den Mainkader hinzuzufügen"));
+                                    FORBIDDEN
+                                }
+                                CONFLICT => {
+                                    error_message_state.set(AttrValue::from("Du kannst dich nicht selbst in den Mainkader hinzufügen"));
+                                    CONFLICT
+                                }
+                                _ => {
+                                    error_message_state.set(AttrValue::from("Das Mitglied konnte nicht in den Mainkader hinzugefügt werden, bitte wende dich an Azami"));
+                                    INTERNAL_SERVER_ERROR
+                                }
                             }
-                            CONFLICT => {
-                                error_message_state.set(AttrValue::from("Du kannst dich nicht selbst in den Mainkader hinzufügen"));
-                                CONFLICT
-                            }
-                            INTERNAL_SERVER_ERROR => {
-                                error_message_state.set(AttrValue::from("Das Mitglied konnte nicht in den Mainkader hinzugefügt werden, bitte wende dich an Azami"));
-                                INTERNAL_SERVER_ERROR
-                            }
-                            _ => unreachable!()
                         }
                     }
                     UserConfirmActions::RemoveMain(user) => {
                         match remove_user_main(user.clone()).await {
-                            NO_CONTENT => {
+                            Ok(_) => {
                                 confirm_state.set(UserConfirmActions::Closed);
                                 NO_CONTENT
                             }
-                            FORBIDDEN => {
-                                error_message_state.set(AttrValue::from("Du musst Mod sein um Mitgliedern aus dem Mainkader zu entfernen"));
-                                FORBIDDEN
+                            Err(err) => match err.code {
+                                FORBIDDEN => {
+                                    error_message_state.set(AttrValue::from("Du musst Mod sein um Mitgliedern aus dem Mainkader zu entfernen"));
+                                    FORBIDDEN
+                                }
+                                CONFLICT => {
+                                    error_message_state.set(AttrValue::from("Du kannst dich nicht selbst aus dem Mainkader entfernen"));
+                                    CONFLICT
+                                }
+                                _ => {
+                                    error_message_state.set(AttrValue::from("Das Mitglied konnte nicht aus dem Mainkader entfernt werden, bitte wende dich an Azami"));
+                                    INTERNAL_SERVER_ERROR
+                                }
                             }
-                            CONFLICT => {
-                                error_message_state.set(AttrValue::from("Du kannst dich nicht selbst aus dem Mainkader entfernen"));
-                                CONFLICT
-                            }
-                            INTERNAL_SERVER_ERROR => {
-                                error_message_state.set(AttrValue::from("Das Mitglied konnte nicht aus dem Mainkader entfernt werden, bitte wende dich an Azami"));
-                                INTERNAL_SERVER_ERROR
-                            }
-                            _ => unreachable!()
                         }
                     }
                     UserConfirmActions::ChangePassword(user, new_password) => {
                         match change_user_password(user.clone(), new_password.clone()).await {
-                            NO_CONTENT => {
+                            Ok(_) => {
                                 confirm_state.set(UserConfirmActions::Closed);
                                 NO_CONTENT
                             }
-                            FORBIDDEN => {
-                                error_message_state.set(AttrValue::from("Du musst Mod sein um Passwörter zurückzusetzen"));
-                                FORBIDDEN
+                            Err(err) => match err.code {
+                                FORBIDDEN => {
+                                    error_message_state.set(AttrValue::from("Du musst Mod sein um Passwörter zurückzusetzen"));
+                                    FORBIDDEN
+                                }
+                                CONFLICT => {
+                                    error_message_state.set(AttrValue::from("Wenn du dein passwort ändern willst, mach das bitte über Mein Sheef"));
+                                    CONFLICT
+                                }
+                                _ => {
+                                    error_message_state.set(AttrValue::from("Das Passwort konnte nicht zurückgesetzt werden, bitte wende dich an Azami"));
+                                    INTERNAL_SERVER_ERROR
+                                }
                             }
-                            CONFLICT => {
-                                error_message_state.set(AttrValue::from("Wenn du dein passwort ändern willst, mach das bitte über Mein Sheef"));
-                                CONFLICT
-                            }
-                            INTERNAL_SERVER_ERROR => {
-                                error_message_state.set(AttrValue::from("Das Passwort konnte nicht zurückgesetzt werden, bitte wende dich an Azami"));
-                                INTERNAL_SERVER_ERROR
-                            }
-                            _ => unreachable!()
                         }
                     }
                     UserConfirmActions::Closed => unreachable!()

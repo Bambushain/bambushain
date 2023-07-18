@@ -1,16 +1,18 @@
-use bounce::query::use_query_value;
 use bounce::{use_atom_setter, use_atom_value};
+use bounce::query::use_query_value;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
-use yew_feather::{LogOut, Key, User};
+use yew_feather::{Key, LogOut, User};
 use yew_router::prelude::*;
+
 use sheef_entities::UpdateProfile;
-use crate::api::{NO_CONTENT, FORBIDDEN, NOT_FOUND};
+
+use crate::api::{FORBIDDEN, NOT_FOUND};
 use crate::api::authentication::logout;
 use crate::api::my::{change_my_password, Profile, update_my_profile};
 use crate::pages::calendar::CalendarPage;
-use crate::pages::crew::CrewPage;
 use crate::pages::crafter::CrafterPage;
+use crate::pages::crew::CrewPage;
 use crate::pages::fighter::FighterPage;
 use crate::pages::kill::KillPage;
 use crate::pages::mount::MountPage;
@@ -77,30 +79,32 @@ fn change_password_dialog(props: &ChangePasswordDialogProps) -> Html {
 
             yew::platform::spawn_local(async move {
                 error_state.set(match change_my_password((*old_password_state).to_string(), (*new_password_state).to_string()).await {
-                    NO_CONTENT => {
+                    Ok(_) => {
                         log::debug!("Password change was successful, now logout");
                         logout();
                         navigator.expect("Navigator should be available").push(&AppRoute::Login);
 
                         false
                     }
-                    FORBIDDEN => {
-                        log::warn!("The old password is wrong");
-                        error_message_state.set(AttrValue::from("Das alte Passwort ist falsch. Wenn du möchtest dass es von einem Mod zurückgesetzt wird, einfach anschreiben"));
+                    Err(err) => match err.code {
+                        FORBIDDEN => {
+                            log::warn!("The old password is wrong");
+                            error_message_state.set(AttrValue::from("Das alte Passwort ist falsch. Wenn du möchtest dass es von einem Mod zurückgesetzt wird, einfach anschreiben"));
 
-                        true
-                    }
-                    NOT_FOUND => {
-                        log::warn!("The user was not found");
-                        error_message_state.set(AttrValue::from("Du wurdest scheinbar gelöscht, bitte versuch es erneut um einen Fehler auszuschließen"));
+                            true
+                        }
+                        NOT_FOUND => {
+                            log::warn!("The user was not found");
+                            error_message_state.set(AttrValue::from("Du wurdest scheinbar gelöscht, bitte versuch es erneut um einen Fehler auszuschließen"));
 
-                        true
-                    }
-                    err => {
-                        log::warn!("Failed to change the password {err}");
-                        error_message_state.set(AttrValue::from("Leider konnte dein Passwort nicht geändert werden, bitte wende dich an Azami"));
+                            true
+                        }
+                        _ => {
+                            log::warn!("Failed to change the password {err}");
+                            error_message_state.set(AttrValue::from("Leider konnte dein Passwort nicht geändert werden, bitte wende dich an Azami"));
 
-                        true
+                            true
+                        }
                     }
                 });
                 loading_state.set(false);
@@ -188,7 +192,7 @@ fn update_my_profile_dialog(props: &UpdateMyProfileDialogProps) -> Html {
 
             yew::platform::spawn_local(async move {
                 error_state.set(match update_my_profile(UpdateProfile { gear_level: (*gear_level_state).to_string(), job: (*job_state).to_string() }).await {
-                    NO_CONTENT => {
+                    Ok(_) => {
                         log::debug!("Profile update successful");
                         let _ = authentication_state_query.refresh().await;
 
@@ -196,17 +200,19 @@ fn update_my_profile_dialog(props: &UpdateMyProfileDialogProps) -> Html {
 
                         false
                     }
-                    NOT_FOUND => {
-                        log::warn!("The user was not found");
-                        error_message_state.set(AttrValue::from("Du wurdest scheinbar gelöscht, bitte versuch es erneut um einen Fehler auszuschließen"));
+                    Err(err) => match err.code {
+                        NOT_FOUND => {
+                            log::warn!("The user was not found");
+                            error_message_state.set(AttrValue::from("Du wurdest scheinbar gelöscht, bitte versuch es erneut um einen Fehler auszuschließen"));
 
-                        true
-                    }
-                    err => {
-                        log::warn!("Failed to update the profile {err}");
-                        error_message_state.set(AttrValue::from("Dein Profil konnte leider nicht geändert werden, bitte wende dich an Azami"));
+                            true
+                        }
+                        _ => {
+                            log::warn!("Failed to update the profile {err}");
+                            error_message_state.set(AttrValue::from("Dein Profil konnte leider nicht geändert werden, bitte wende dich an Azami"));
 
-                        true
+                            true
+                        }
                     }
                 });
                 loading_state.set(false);

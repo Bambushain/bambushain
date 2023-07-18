@@ -1,5 +1,7 @@
 use std::str::FromStr;
+
 use log::Level;
+
 use crate::pages::app::App;
 use crate::storage::{get_log_level, is_logging_on};
 
