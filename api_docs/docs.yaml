@@ -1,0 +1,9 @@
+openapi: 3.0.3
+info:
+  title: Sheef Planing
+  description: Sheef Planing
+  version: 1.0.0
+servers:
+  - url: 'https://sheef.creastina.art'
+paths:
+  
