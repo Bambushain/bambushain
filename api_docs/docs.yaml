@@ -1242,6 +1242,103 @@ paths:
           type: string
         in: path
         required: true
+  /api/calendar:
+    summary: Path for actions of the calendar
+    description: Perform a GET request to get the calendar for the given month
+    get:
+      tags:
+        - Calendar
+      responses:
+        '200':
+          $ref: '#/components/responses/CalendarResponse'
+        '204':
+          description: Nothing was found for this month
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '422':
+          description: Either the year or the month are out of range
+      security:
+        - Sheef: [ ]
+      operationId: get_calendar
+      summary: Get the calendar
+      description: Gets the calendar for the provided query
+    parameters:
+      - name: year
+        description: 'The year of the calendar, defaults to the current year'
+        schema:
+          format: int32
+          type: integer
+        in: query
+      - name: month
+        description: 'The month of the calendar, defaults to the current month'
+        schema:
+          format: int32
+          type: integer
+        in: query
+  '/api/calendar/{year}/{month}/{day}':
+    summary: Path for actions around events
+    description: >-
+      Perform a GET request to get the event for the given day and current user or perform a PUT request
+      to change the status
+    get:
+      tags:
+        - Calendar
+      responses:
+        '200':
+          $ref: '#/components/responses/SingleEventResponse'
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '404':
+          description: The day was not found
+        '422':
+          description: 'The provided year, month and day are not a valid date'
+      operationId: get_event_for_day
+      summary: Get the day
+      description: Gets the event for the given day
+    put:
+      requestBody:
+        description: The availability information
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEvent'
+        required: true
+      tags:
+        - Calendar
+      responses:
+        '204':
+          description: The availability was updated successfully
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '404':
+          description: The event was not found
+        '422':
+          description: 'The provided year, month and day are not a valid date'
+      operationId: update_event
+      summary: Update availability
+      description: Updates the availability and time constraint for the given date and the current user
+    parameters:
+      - name: day
+        description: The day of the event
+        schema:
+          format: int32
+          type: integer
+        in: path
+        required: true
+      - name: month
+        description: The month of the event
+        schema:
+          format: int32
+          type: integer
+        in: path
+        required: true
+      - name: year
+        description: The year of the event
+        schema:
+          format: int32
+          type: integer
+        in: path
+        required: true
 components:
   schemas:
     Login:
@@ -1450,6 +1547,119 @@ components:
         job: Smith
         level: '158'
         gearScore: '267'
+    Event:
+      title: Root Type for Event
+      description: Contains the information about a calendar event
+      type: object
+      properties:
+        username:
+          description: The username of the user this event is for
+          type: string
+        time:
+          description: The time constraint the user is available in
+          type: string
+        available:
+          description: Whether the user is available
+          type: boolean
+        user:
+          $ref: '#/components/schemas/User'
+          description: The user
+          properties:
+            username:
+              type: string
+            isMod:
+              type: boolean
+            isMainGroup:
+              type: boolean
+            gearLevel:
+              type: string
+            job:
+              type: string
+      example:
+        username: John
+        time: '12:00'
+        available: true
+        user:
+          username: John
+          isMod: true
+          isMainGroup: false
+          gearLevel: '641'
+          job: RDM
+    Calendar:
+      title: Root Type for Calendar
+      description: A month of the planing
+      type: object
+      properties:
+        year:
+          format: int32
+          description: The year
+          type: integer
+        month:
+          format: int32
+          description: The month
+          type: integer
+        days:
+          description: A list of days in the selected month
+          type: array
+          items:
+            $ref: '#/components/schemas/Day'
+      example:
+        year: 2023
+        month: 7
+        days:
+          - date: '2023-07-01'
+            events:
+              - username: John
+                time: '12:00'
+                available: true
+                user:
+                  username: John
+                  isMod: true
+                  isMainGroup: false
+                  gearLevel: '641'
+                  job: RDM
+    Day:
+      title: Root Type for Day
+      description: A day in the calendar
+      type: object
+      properties:
+        date:
+          format: date
+          description: The date of the day
+          type: string
+        events:
+          description: A list of the events on the current day
+          type: array
+          items:
+            $ref: '#/components/schemas/Event'
+      example:
+        date: '2023-07-01'
+        events:
+          - username: Azami
+            time: ''
+            available: true
+            user:
+              username: Azami
+              isMod: true
+              isMainGroup: false
+              gearLevel: '641'
+              job: RDM
+    UpdateEvent:
+      title: Root Type for UpdateEvent
+      description: Contains the info for update of event availability
+      required:
+        - available
+      type: object
+      properties:
+        available:
+          description: Whether the current user is available for the given date
+          type: boolean
+        time:
+          description: The time constraint the user is available in
+          type: string
+      example:
+        available: true
+        time: '12:00'
   responses:
     LoginResponse:
       content:
@@ -1528,6 +1738,14 @@ components:
             items:
               $ref: '#/components/schemas/Fighter'
       description: A list of fighters
+    CalendarResponse:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Calendar'
+      description: A response containing a calendar
+    SingleEventResponse:
+      description: Contains a single event
   securitySchemes:
     Sheef:
       type: apiKey
@@ -1537,19 +1755,21 @@ components:
 security:
   - Sheef: [ ]
 tags:
-  - name: Kill
-    description: All endpoints around the kills
-  - name: Profile
-    description: All endpoints around the current users profile
   - name: Authentication
     description: All endpoints around the authentication of users
+  - name: Profile
+    description: All endpoints around the current users profile
+  - name: Calendar
+    description: All endpoints around the calendar
   - name: User
     description: All endpoints around the users of sheef
-  - name: Mount
-    description: All endpoints around the mounts
-  - name: Savage Mount
-    description: All endpoints around the savage mounts
   - name: Crafter
     description: All endpoints around the crafter of the current user
   - name: Fighter
     description: All endpoints around the fighter of the current user
+  - name: Mount
+    description: All endpoints around the mounts
+  - name: Savage Mount
+    description: All endpoints around the savage mounts
+  - name: Kill
+    description: All endpoints around the kills
