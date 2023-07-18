@@ -8,11 +8,9 @@ info:
     url: 'https://sheef.creastina.art'
     email: kirk@creastina.art
 servers:
-  -
-    url: 'https://sheef.creastina.art'
+  - url: 'https://sheef.creastina.art'
     description: Official Sheef server
-  -
-    url: 'https://hjw.imanuel.dev'
+  - url: 'https://hjw.imanuel.dev'
     description: Jürgen Testserver
 paths:
   /api/login:
@@ -47,8 +45,7 @@ paths:
         '401':
           description: The api token is invalid
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: logout
       summary: Performs a logout
       description: Performs a logout and deletes the api token from the server
@@ -61,8 +58,7 @@ paths:
         '401':
           description: The api token is invalid
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: validate_token
       summary: Validates the api token
       description: Checks whether the api token passed in the `Authorization`-header is valid
@@ -76,8 +72,7 @@ paths:
         '200':
           $ref: '#/components/responses/UserListResponse'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: get_users
       summary: Get a list of all users
       description: Gets a list with all users
@@ -105,8 +100,7 @@ paths:
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: create_user
       summary: Creates a new user
       description: Creates a new user with the given values
@@ -126,8 +120,7 @@ paths:
         '404':
           description: The user was not found
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: get_user
       summary: Gets the given user
       description: Gets the user by the given username
@@ -148,14 +141,12 @@ paths:
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: delete_user
       summary: Deletes the given user
       description: Deletes the user with the given username
     parameters:
-      -
-        name: username
+      - name: username
         description: The username of the user to perform the action on
         schema:
           type: string
@@ -181,8 +172,7 @@ paths:
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: make_user_mod
       summary: Gives the given user mod status
       description: Gives the given user the mod status
@@ -203,14 +193,12 @@ paths:
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: revoke_user_mod_rights
       summary: Revokes the mod rights for the given user
       description: Revokes the mod rights for the given user
     parameters:
-      -
-        name: username
+      - name: username
         description: The username
         schema:
           type: string
@@ -236,8 +224,7 @@ paths:
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: add_user_to_main_group
       summary: Adds the given user to the main group
       description: Adds the given user to the main group
@@ -256,14 +243,12 @@ paths:
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: remove_user_from_main_group
       summary: Removes the given user from the main group
       description: Removes the given user from the main group
     parameters:
-      -
-        name: username
+      - name: username
         description: The username
         schema:
           type: string
@@ -296,14 +281,12 @@ paths:
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: change_password
       summary: Changes the password for the given user
       description: Changes the password for the given user. Cannot be used to changes the current users password
     parameters:
-      -
-        name: username
+      - name: username
         description: The user to change the password for
         schema:
           type: string
@@ -323,8 +306,7 @@ paths:
         '401':
           $ref: '#/components/responses/InvalidApiTokenResponse'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: get_my_profile
       summary: Gets the current user
       description: Gets the current users profile
@@ -348,8 +330,7 @@ paths:
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: update_my_profile
       summary: Updates the current users profile
       description: Updates the current users profile
@@ -380,8 +361,7 @@ paths:
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: change_my_password
       summary: Changes the current users password
       description: 'Changes the current users password, while checking if the old password is valid'
@@ -405,8 +385,7 @@ paths:
         '401':
           $ref: '#/components/responses/InvalidApiTokenResponse'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: get_kills
       summary: Gets a map of all kills
       description: Gets a map of all kills with the users having them
@@ -438,8 +417,7 @@ paths:
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: create_kill
       summary: Creates a new kill
       description: Creates a new kill with the given name
@@ -470,8 +448,7 @@ paths:
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: rename_kill
       summary: Rename the given kill
       description: Renames the given kill to the new name
@@ -490,14 +467,12 @@ paths:
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: delete_kill
       summary: Delete the given kill
       description: Deletes the given kill
     parameters:
-      -
-        name: kill
+      - name: kill
         description: The kill
         schema:
           type: string
@@ -524,8 +499,7 @@ paths:
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: activate_kill
       summary: Activate the kill for the given user
       description: Activates the given kill for the given user
@@ -545,21 +519,18 @@ paths:
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: remove_kill
       summary: Remove the kill from the given user
       description: Removes the given kill from the given user
     parameters:
-      -
-        name: username
+      - name: username
         description: The user
         schema:
           type: string
         in: path
         required: true
-      -
-        name: kill
+      - name: kill
         description: The kill
         schema:
           type: string
@@ -584,8 +555,7 @@ paths:
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: activate_kill_for_me
       summary: Activate the kill for the current user
       description: Activates the given kill for the current user
@@ -603,14 +573,12 @@ paths:
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: remove_kill_from_me
       summary: Remove the kill from the current user
       description: Removes the given kill from the current user
     parameters:
-      -
-        name: kill
+      - name: kill
         description: The kill
         schema:
           type: string
@@ -619,8 +587,8 @@ paths:
   /api/mount:
     summary: Path for actions around mounts
     description: >-
-      Perform a GET request to list all mounts and the users that have them. To create a new mount issue a
-      POST request
+      Perform a GET request to list all mounts and the users that have them. To create a new mount issue
+      a POST request
     get:
       tags:
         - Mount
@@ -636,8 +604,7 @@ paths:
         '401':
           $ref: '#/components/responses/InvalidApiTokenResponse'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: get_mounts
       summary: Gets a map of all mounts
       description: Gets a map of all mounts with the users having them
@@ -669,8 +636,7 @@ paths:
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: create_mount
       summary: Creates a new mount
       description: Creates a new mount with the given name
@@ -701,8 +667,7 @@ paths:
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: rename_mount
       summary: Rename the given mount
       description: Renames the given mount to the new name
@@ -721,14 +686,12 @@ paths:
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: delete_mount
       summary: Delete the given mount
       description: Deletes the given mount
     parameters:
-      -
-        name: mount
+      - name: mount
         description: The mount
         schema:
           type: string
@@ -755,8 +718,7 @@ paths:
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: activate_mount
       summary: Activate the mount for the given user
       description: Activates the given mount for the given user
@@ -776,21 +738,18 @@ paths:
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: remove_mount
       summary: Remove the mount from the given user
       description: Removes the given mount from the given user
     parameters:
-      -
-        name: username
+      - name: username
         description: The user
         schema:
           type: string
         in: path
         required: true
-      -
-        name: mount
+      - name: mount
         description: The mount
         schema:
           type: string
@@ -815,8 +774,7 @@ paths:
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: activate_mount_for_me
       summary: Activate the mount for the current user
       description: Activates the given mount for the current user
@@ -834,14 +792,12 @@ paths:
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: remove_mount_from_me
       summary: Remove the mount from the current user
       description: Removes the given mount from the current user
     parameters:
-      -
-        name: mount
+      - name: mount
         description: The mount
         schema:
           type: string
@@ -850,8 +806,8 @@ paths:
   /api/savage-mount:
     summary: Path for actions around savage mounts
     description: >-
-      Perform a GET request to list all savage mounts and the users that have them. To create a new mount issue a
-      POST request
+      Perform a GET request to list all savage mounts and the users that have them. To create a new
+      mount issue a POST request
     get:
       tags:
         - Savage Mount
@@ -867,8 +823,7 @@ paths:
         '401':
           $ref: '#/components/responses/InvalidApiTokenResponse'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: get_savage_mounts
       summary: Gets a map of all savage mounts
       description: Gets a map of all savage mounts with the users having them
@@ -900,8 +855,7 @@ paths:
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: create_savage_mount
       summary: Creates a new savage mount
       description: Creates a new savage mount with the given name
@@ -932,8 +886,7 @@ paths:
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: rename_savage_mount
       summary: Rename the given savage mount
       description: Renames the given savage mount to the new name
@@ -952,14 +905,12 @@ paths:
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: delete_savage_mount
       summary: Delete the given savage mount
       description: Deletes the given savage mount
     parameters:
-      -
-        name: savage_mount
+      - name: savage_mount
         description: The savage mount
         schema:
           type: string
@@ -968,8 +919,8 @@ paths:
   '/api/user/{username}/savage-mount/{savage_mount}':
     summary: Path for user savage mount related actions
     description: >-
-      Perform a PUT request to activate the savage mount for the given user or perform a DELETE request to
-      remove the savage mount from the given user
+      Perform a PUT request to activate the savage mount for the given user or perform a DELETE request
+      to remove the savage mount from the given user
     put:
       tags:
         - User
@@ -986,8 +937,7 @@ paths:
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: activate_savage_mount
       summary: Activate the savage mount for the given user
       description: Activates the given savage mount for the given user
@@ -1007,21 +957,18 @@ paths:
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: remove_savage_mount
       summary: Remove the savage mount from the given user
       description: Removes the given savage mount from the given user
     parameters:
-      -
-        name: username
+      - name: username
         description: The user
         schema:
           type: string
         in: path
         required: true
-      -
-        name: savage_mount
+      - name: savage_mount
         description: The savage mount
         schema:
           type: string
@@ -1030,8 +977,8 @@ paths:
   '/api/my/savage-mount/{savage_mount}':
     summary: Path for actions around current user savage mounts
     description: >-
-      Perform a PUT request to set the given savage mount active for the current user or a DELETE request to
-      remove the savage mount from the current user
+      Perform a PUT request to set the given savage mount active for the current user or a DELETE
+      request to remove the savage mount from the current user
     put:
       tags:
         - Profile
@@ -1046,8 +993,7 @@ paths:
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: activate_savage_mount_for_me
       summary: Activate the savage mount for the current user
       description: Activates the given savage mount for the current user
@@ -1065,15 +1011,233 @@ paths:
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
-        -
-          Sheef: []
+        - Sheef: [ ]
       operationId: remove_savage_mount_from_me
       summary: Remove the savage mount from the current user
       description: Removes the given savage mount from the current user
     parameters:
-      -
-        name: savage_mount
+      - name: savage_mount
         description: The savage mount
+        schema:
+          type: string
+        in: path
+        required: true
+  /api/crafter:
+    summary: Paths for crafter actions
+    description: >-
+      Perform a GET request to get a list of all crafters for the current user or perform a POST request
+      to create a new crafter
+    get:
+      tags:
+        - Crafter
+      responses:
+        '200':
+          $ref: '#/components/responses/CrafterListResponse'
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '404':
+          description: Crafters not found
+      security:
+        - Sheef: [ ]
+      operationId: get_crafters
+      summary: Get list of crafter
+      description: Gets a list of all crafters the current user has configured
+    post:
+      requestBody:
+        description: The crafter to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Crafter'
+        required: true
+      tags:
+        - Crafter
+      responses:
+        '201':
+          $ref: '#/components/responses/SingleCrafterResponse'
+        '400':
+          $ref: '#/components/responses/RequiredFieldMissing'
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '409':
+          description: A crafter with the given job already exists
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        - Sheef: [ ]
+      operationId: create_crafter
+      summary: Creates a new crafter for the current user
+      description: Creates a new crafter for the current user
+  '/api/crafter/{job}':
+    summary: Path for actions around a specific crafter
+    description: >-
+      Perform a GET request to get a crafter by job, perform a PUT request to update a crafter or
+      perform a DELETE request to delete a crafter
+    get:
+      tags:
+        - Crafter
+      responses:
+        '200':
+          $ref: '#/components/responses/SingleCrafterResponse'
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '404':
+          description: A crafter with the given job does not exist
+      security:
+        - Sheef: [ ]
+      operationId: get_crafter
+      summary: Get a crafter by job
+      description: Gets the crafter with the given job
+    put:
+      requestBody:
+        description: The crafter data to update to
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Crafter'
+        required: true
+      tags:
+        - Crafter
+      responses:
+        '204':
+          description: The crafter was updated successfully
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '409':
+          description: A crafter with the new job already exists
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      operationId: update_crafter
+      summary: Updates the given crafter
+      description: Updates the given crafter with the new values
+    delete:
+      tags:
+        - Crafter
+      responses:
+        '204':
+          description: Successfully deleted the crafter
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '404':
+          description: The crafter was not found
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      operationId: delete_crafter
+      summary: Delete the given crafter
+      description: Deletes the given crafter
+    parameters:
+      - name: job
+        description: The job of the crafter
+        schema:
+          type: string
+        in: path
+        required: true
+  /api/fighter:
+    summary: Paths for fighter actions
+    description: >-
+      Perform a GET request to get a list of all fighters for the current user or perform a POST request
+      to create a new fighter
+    get:
+      tags:
+        - Fighter
+      responses:
+        '200':
+          $ref: '#/components/responses/FighterListResponse'
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '404':
+          description: Fighters not found
+      security:
+        - Sheef: [ ]
+      operationId: get_fighters
+      summary: Get list of fighter
+      description: Gets a list of all fighters the current user has configured
+    post:
+      requestBody:
+        description: The fighter to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Fighter'
+        required: true
+      tags:
+        - Fighter
+      responses:
+        '201':
+          $ref: '#/components/responses/SingleFighterResponse'
+        '400':
+          $ref: '#/components/responses/RequiredFieldMissing'
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '409':
+          description: A fighter with the given job already exists
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        - Sheef: [ ]
+      operationId: create_fighter
+      summary: Creates a new fighter for the current user
+      description: Creates a new fighter for the current user
+  '/api/fighter/{job}':
+    summary: Path for actions around a specific fighter
+    description: >-
+      Perform a GET request to get a fighter by job, perform a PUT request to update a fighter or
+      perform a DELETE request to delete a fighter
+    get:
+      tags:
+        - Fighter
+      responses:
+        '200':
+          $ref: '#/components/responses/SingleFighterResponse'
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '404':
+          description: A fighter with the given job does not exist
+      security:
+        - Sheef: [ ]
+      operationId: get_fighter
+      summary: Get a fighter by job
+      description: Gets the fighter with the given job
+    put:
+      requestBody:
+        description: The fighter data to update to
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Fighter'
+        required: true
+      tags:
+        - Fighter
+      responses:
+        '204':
+          description: The fighter was updated successfully
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '409':
+          description: A fighter with the new job already exists
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      operationId: update_fighter
+      summary: Updates the given fighter
+      description: Updates the given fighter with the new values
+    delete:
+      tags:
+        - Fighter
+      responses:
+        '204':
+          description: Successfully deleted the fighter
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '404':
+          description: The fighter was not found
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      operationId: delete_fighter
+      summary: Delete the given fighter
+      description: Deletes the given fighter
+    parameters:
+      - name: job
+        description: The job of the fighter
         schema:
           type: string
         in: path
@@ -1254,6 +1418,38 @@ components:
           type: string
       example:
         name: P01s
+    Crafter:
+      title: Root Type for Crafter
+      description: Represents a crafter saved in Sheef
+      type: object
+      properties:
+        job:
+          description: The job name of the crafter
+          type: string
+        level:
+          description: The level of the crafter
+          type: string
+      example:
+        job: Smith
+        level: '158'
+    Fighter:
+      title: Root Type for Fighter
+      description: Represents a figher saved in Sheef
+      type: object
+      properties:
+        job:
+          description: The job name of the fighter
+          type: string
+        level:
+          description: The level of the fighter
+          type: string
+        gearScore:
+          description: The level of the fighter
+          type: string
+      example:
+        job: Smith
+        level: '158'
+        gearScore: '267'
   responses:
     LoginResponse:
       content:
@@ -1271,14 +1467,12 @@ components:
           examples:
             Userlist:
               value:
-                -
-                  username: some text
+                - username: some text
                   isMod: true
                   isMainGroup: true
                   gearLevel: some text
                   job: some text
-                -
-                  username: some text
+                - username: some text
                   isMod: true
                   isMainGroup: true
                   gearLevel: some text
@@ -1306,6 +1500,34 @@ components:
       description: A required field is missing
     UnknownError:
       description: An unknown error occured
+    SingleCrafterResponse:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Crafter'
+      description: Contains a single crafter returned from Sheef
+    CrafterListResponse:
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Crafter'
+      description: A list of crafters
+    SingleFighterResponse:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Fighter'
+      description: Contains a single fighter returned from Sheef
+    FighterListResponse:
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Fighter'
+      description: A list of fighters
   securitySchemes:
     Sheef:
       type: apiKey
@@ -1313,5 +1535,21 @@ components:
       name: Authorization
       in: header
 security:
-  -
-    Sheef: []
+  - Sheef: [ ]
+tags:
+  - name: Kill
+    description: All endpoints around the kills
+  - name: Profile
+    description: All endpoints around the current users profile
+  - name: Authentication
+    description: All endpoints around the authentication of users
+  - name: User
+    description: All endpoints around the users of sheef
+  - name: Mount
+    description: All endpoints around the mounts
+  - name: Savage Mount
+    description: All endpoints around the savage mounts
+  - name: Crafter
+    description: All endpoints around the crafter of the current user
+  - name: Fighter
+    description: All endpoints around the fighter of the current user
