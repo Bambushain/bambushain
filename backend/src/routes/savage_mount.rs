@@ -33,19 +33,6 @@ pub async fn get_savage_mounts() -> HttpResponse {
     }
 }
 
-pub async fn get_savage_mounts_for_user(path: web::Path<UserPathInfo>) -> HttpResponse {
-    if !user_exists(&path.username).await {
-        return not_found!();
-    }
-
-    let data = sheef_database::savage_mount::get_savage_mounts_for_user(&path.username).await;
-    if let Some(savage_mounts) = data {
-        ok_json!(savage_mounts)
-    } else {
-        no_content!()
-    }
-}
-
 pub async fn get_users_for_savage_mount(path: web::Path<SavageMountPathInfo>) -> HttpResponse {
     let data = sheef_database::savage_mount::get_users_for_savage_mount(&path.savage_mount).await;
     if let Some(savage_mounts) = data {
@@ -53,11 +40,6 @@ pub async fn get_users_for_savage_mount(path: web::Path<SavageMountPathInfo>) ->
     } else {
         not_found!()
     }
-}
-
-pub async fn get_my_savage_mounts(req: HttpRequest) -> HttpResponse {
-    let username = username!(req);
-    get_savage_mounts_for_user(web::Path::<UserPathInfo>::from(UserPathInfo { username })).await
 }
 
 pub async fn activate_savage_mount_for_user(path: web::Path<SavageMountUsernamePathInfo>) -> HttpResponse {

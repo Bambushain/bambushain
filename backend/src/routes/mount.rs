@@ -33,19 +33,6 @@ pub async fn get_mounts() -> HttpResponse {
     }
 }
 
-pub async fn get_mounts_for_user(path: web::Path<UserPathInfo>) -> HttpResponse {
-    if !user_exists(&path.username).await {
-        return not_found!();
-    }
-
-    let data = sheef_database::mount::get_mounts_for_user(&path.username).await;
-    if let Some(mounts) = data {
-        ok_json!(mounts)
-    } else {
-        no_content!()
-    }
-}
-
 pub async fn get_users_for_mount(path: web::Path<MountPathInfo>) -> HttpResponse {
     let data = sheef_database::mount::get_users_for_mount(&path.mount).await;
     if let Some(mounts) = data {
@@ -53,11 +40,6 @@ pub async fn get_users_for_mount(path: web::Path<MountPathInfo>) -> HttpResponse
     } else {
         not_found!()
     }
-}
-
-pub async fn get_my_mounts(req: HttpRequest) -> HttpResponse {
-    let username = username!(req);
-    get_mounts_for_user(web::Path::<UserPathInfo>::from(UserPathInfo { username })).await
 }
 
 pub async fn activate_mount_for_user(path: web::Path<MountUsernamePathInfo>) -> HttpResponse {

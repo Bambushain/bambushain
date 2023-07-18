@@ -33,19 +33,6 @@ pub async fn get_kills() -> HttpResponse {
     }
 }
 
-pub async fn get_kills_for_user(path: web::Path<UserPathInfo>) -> HttpResponse {
-    if !user_exists(&path.username).await {
-        return not_found!();
-    }
-
-    let data = sheef_database::kill::get_kills_for_user(&path.username).await;
-    if let Some(kills) = data {
-        ok_json!(kills)
-    } else {
-        no_content!()
-    }
-}
-
 pub async fn get_users_for_kill(path: web::Path<KillPathInfo>) -> HttpResponse {
     let data = sheef_database::kill::get_users_for_kill(&path.kill).await;
     if let Some(kills) = data {
@@ -53,11 +40,6 @@ pub async fn get_users_for_kill(path: web::Path<KillPathInfo>) -> HttpResponse {
     } else {
         not_found!()
     }
-}
-
-pub async fn get_my_kills(req: HttpRequest) -> HttpResponse {
-    let username = username!(req);
-    get_kills_for_user(web::Path::<UserPathInfo>::from(UserPathInfo { username })).await
 }
 
 pub async fn activate_kill_for_user(path: web::Path<KillUsernamePathInfo>) -> HttpResponse {
