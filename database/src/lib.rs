@@ -1,10 +1,20 @@
 use serde::{Deserialize, Serialize};
 use tokio::io::AsyncWriteExt;
 use tokio_stream::StreamExt;
+use sheef_entities::{sheef_io_error, sheef_serialization_error, SheefError};
 
 macro_rules! path_exists {
     ($path:expr) => {
         tokio::fs::metadata($path).await.is_ok()
+    };
+}
+
+macro_rules! map_err {
+    ($entity_type:expr, $result:expr) => {
+        $entity_type.map_err(|mut err| {
+            err.entity_type = $result.to_string();
+            err
+        })
     };
 }
 
@@ -32,13 +42,13 @@ pub(crate) fn validate_database_dir_sync() -> String {
     path
 }
 
-pub(crate) async fn persist_entity<T: Serialize>(base_path: impl Into<String>, filename: impl Into<String>, entity: T) -> Result<T, ()> where T: Clone {
+pub(crate) async fn persist_entity<T: Serialize>(base_path: impl Into<String>, filename: impl Into<String>, entity: T) -> SheefResult<T> where T: Clone {
     let path = vec![base_path.into(), format!("{}.yaml", filename.into())].join("/");
     let mut file = match tokio::fs::File::create(path.as_str()).await {
         Ok(file) => file,
         Err(err) => {
             log::warn!("Failed to create file {}: {}", path, err);
-            return Err(());
+            return Err(sheef_io_error!("", "Failed to create file"));
         }
     };
 
@@ -46,7 +56,7 @@ pub(crate) async fn persist_entity<T: Serialize>(base_path: impl Into<String>, f
         Ok(yaml) => file.write_all(yaml.as_bytes()).await,
         Err(err) => {
             log::warn!("Failed to serialize entity: {}", err);
-            return Err(());
+            return Err(sheef_serialization_error!("", "Failed to serialize entity"));
         }
     };
 
@@ -54,57 +64,57 @@ pub(crate) async fn persist_entity<T: Serialize>(base_path: impl Into<String>, f
         Ok(_) => Ok(entity),
         Err(err) => {
             log::warn!("Failed to write entity ({}): {}", path, err);
-            Err(())
+            Err(sheef_io_error!("", "Failed to write entity to file"))
         }
     }
 }
 
-pub(crate) async fn read_entity<T: for<'a> Deserialize<'a>>(base_path: impl Into<String>, filename: impl Into<String>) -> Option<T> {
+pub(crate) async fn read_entity<T: for<'a> Deserialize<'a>>(base_path: impl Into<String>, filename: impl Into<String>) -> SheefResult<T> {
     let path = vec![base_path.into(), format!("{}.yaml", filename.into())].join("/");
     let file_data = match tokio::fs::read_to_string(path.as_str()).await {
         Err(err) => {
             log::warn!("Failed to read file from {path}: {err}");
-            return None;
+            return Err(sheef_io_error!("", "Failed to read file"));
         }
         Ok(data) => data
     };
 
     let res = serde_yaml::from_slice(file_data.as_bytes());
     match res {
-        Ok(data) => Some(data),
+        Ok(data) => Ok(data),
         Err(err) => {
             log::warn!("Failed to deserialize entity ({}): {}", path, err);
-            None
+            Err(sheef_serialization_error!("", "Failed to deserialize entity"))
         }
     }
 }
 
-pub(crate) fn read_entity_sync<T: for<'a> Deserialize<'a>>(base_path: impl Into<String>, filename: impl Into<String>) -> Option<T> {
+pub(crate) fn read_entity_sync<T: for<'a> Deserialize<'a>>(base_path: impl Into<String>, filename: impl Into<String>) -> SheefResult<T> {
     let path = vec![base_path.into(), format!("{}.yaml", filename.into())].join("/");
     let file_data = match std::fs::read_to_string(path.as_str()) {
         Err(err) => {
             log::warn!("Failed to read file from {path}: {err}");
-            return None;
+            return Err(sheef_io_error!("", "Failed to read file"));
         }
         Ok(data) => data
     };
 
     let res = serde_yaml::from_slice(file_data.as_bytes());
     match res {
-        Ok(data) => Some(data),
+        Ok(data) => Ok(data),
         Err(err) => {
             log::warn!("Failed to deserialize entity ({}): {}", path, err);
-            None
+            Err(sheef_serialization_error!("", "Failed to deserialize entity"))
         }
     }
 }
 
-pub(crate) async fn read_entity_dir<T: for<'a> Deserialize<'a>>(path: String) -> Option<Vec<T>> where T: Ord, T: PartialOrd, T: Eq, T: PartialEq {
+pub(crate) async fn read_entity_dir<T: for<'a> Deserialize<'a>>(path: String) -> SheefResult<Vec<T>> where T: Ord, T: PartialOrd, T: Eq, T: PartialEq {
     let read_dir = match tokio::fs::read_dir(path).await {
         Ok(dir) => dir,
         Err(err) => {
             log::error!("Failed to load entity files {}", err);
-            return None;
+            return Err(sheef_io_error!("", "Failed to load entity files"));
         }
     };
 
@@ -137,10 +147,12 @@ pub(crate) async fn read_entity_dir<T: for<'a> Deserialize<'a>>(path: String) ->
 
     result_data.sort();
 
-    Some(result_data)
+    Ok(result_data)
 }
 
-pub type EmptyResult = Result<(), ()>;
+pub type SheefErrorResult = Result<(), SheefError>;
+
+pub type SheefResult<T> = Result<T, SheefError>;
 
 pub mod user;
 pub mod token;

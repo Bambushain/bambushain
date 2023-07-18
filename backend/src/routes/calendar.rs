@@ -46,32 +46,19 @@ macro_rules! date_from_values {
 pub async fn get_calendar(query: Query<CalendarQueryInfo>) -> HttpResponse {
     date_from_values!(query.year, query.month);
 
-    let data = sheef_database::event::get_events_for_month(query.year, query.month).await;
-    if let Some(calendar) = data {
-        ok_json!(calendar)
-    } else {
-        no_content!()
-    }
+    ok_or_error!(sheef_database::event::get_events_for_month(query.year, query.month).await)
 }
 
 pub async fn get_day_details(path: Path<DayDetailsPathInfo>, req: HttpRequest) -> HttpResponse {
     let date = date_from_values!(path.year, path.month, path.day);
     let username = username!(req);
-    let data = sheef_database::event::get_event(&username, &date).await;
-    if let Some(event) = data {
-        ok_json!(event)
-    } else {
-        not_found!()
-    }
+
+    ok_or_error!(sheef_database::event::get_event(&username, &date).await)
 }
 
 pub async fn update_day_details(path: Path<DayDetailsPathInfo>, body: Json<SetEvent>, req: HttpRequest) -> HttpResponse {
     let date = date_from_values!(path.year, path.month, path.day);
     let username = username!(req);
-    let data = sheef_database::event::set_event(&username, &body.time, body.available, &date).await;
-    if data.is_some() {
-        no_content!()
-    } else {
-        not_found!()
-    }
+
+    no_content_or_error!(sheef_database::event::set_event(&username, &body.time, body.available, &date).await)
 }

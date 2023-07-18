@@ -3,7 +3,7 @@ use actix_web::{HttpRequest, HttpResponse, web};
 use serde::Deserialize;
 use sheef_database::kill::kill_exists;
 use sheef_database::user::user_exists;
-use sheef_entities::Kill;
+use sheef_entities::{Kill, sheef_exists_already_error, sheef_not_found_error, SheefError};
 
 #[derive(Deserialize)]
 pub struct KillUsernamePathInfo {
@@ -17,7 +17,10 @@ pub struct KillPathInfo {
 }
 
 pub async fn get_kills() -> HttpResponse {
-    let kills = sheef_database::kill::get_kills().await;
+    let kills = match sheef_database::kill::get_kills().await {
+        Ok(kills) => kills,
+        Err(err) => return ok_or_error!(Err::<(), SheefError>(err))
+    };
     let mut response = BTreeMap::new();
     for kill in kills {
         response.insert(kill.to_string(), vec![]);
@@ -25,20 +28,19 @@ pub async fn get_kills() -> HttpResponse {
         response.get_mut(&kill).expect("Vector should exist").append(&mut users_for_kill);
     }
 
-    if response.is_empty() {
-        no_content!()
-    } else {
-        ok_json!(response)
-    }
+    ok_or_error!(Ok::<BTreeMap<String, Vec<String>>, SheefError>(response))
 }
 
 pub async fn activate_kill_for_user(path: web::Path<KillUsernamePathInfo>) -> HttpResponse {
-    if !kill_exists(&path.kill).await || !user_exists(&path.username).await {
-        return not_found!();
+    if !user_exists(&path.username).await {
+        return not_found!(sheef_not_found_error!("user", "User not found"));
     }
 
-    let data = sheef_database::kill::activate_kill_for_user(&path.kill, &path.username).await;
-    no_content_or_internal_server_error!(data)
+    if !kill_exists(&path.kill).await {
+        return not_found!(sheef_not_found_error!("kill", "Kill not found"));
+    }
+
+    no_content_or_error!(sheef_database::kill::activate_kill_for_user(&path.kill, &path.username).await)
 }
 
 pub async fn activate_kill_for_me(path: web::Path<KillPathInfo>, req: HttpRequest) -> HttpResponse {
@@ -47,12 +49,15 @@ pub async fn activate_kill_for_me(path: web::Path<KillPathInfo>, req: HttpReques
 }
 
 pub async fn deactivate_kill_for_user(path: web::Path<KillUsernamePathInfo>) -> HttpResponse {
-    if !kill_exists(&path.kill).await || !user_exists(&path.username).await {
-        return not_found!();
+    if !user_exists(&path.username).await {
+        return not_found!(sheef_not_found_error!("user", "User not found"));
     }
 
-    let data = sheef_database::kill::deactivate_kill_for_user(&path.kill, &path.username).await;
-    no_content_or_internal_server_error!(data)
+    if !kill_exists(&path.kill).await {
+        return not_found!(sheef_not_found_error!("kill", "Kill not found"));
+    }
+
+    no_content_or_error!(sheef_database::kill::deactivate_kill_for_user(&path.kill, &path.username).await)
 }
 
 pub async fn deactivate_kill_for_me(path: web::Path<KillPathInfo>, req: HttpRequest) -> HttpResponse {
@@ -62,36 +67,29 @@ pub async fn deactivate_kill_for_me(path: web::Path<KillPathInfo>, req: HttpRequ
 
 pub async fn delete_kill(path: web::Path<KillPathInfo>) -> HttpResponse {
     if !kill_exists(&path.kill).await {
-        return not_found!();
+        return not_found!(sheef_not_found_error!("kill", "Kill not found"));
     }
 
-    let data = sheef_database::kill::delete_kill(&path.kill).await;
-    no_content_or_internal_server_error!(data)
+    no_content_or_error!(sheef_database::kill::delete_kill(&path.kill).await)
 }
 
 pub async fn create_kill(body: web::Json<Kill>) -> HttpResponse {
     let kill = body.name.to_string();
     if kill_exists(&body.name).await {
-        return conflict!();
+        return conflict!(sheef_exists_already_error!("kill", "Kill already exists"));
     }
 
-    let data = sheef_database::kill::create_kill(&body.name).await;
-    if data.is_ok() {
-        created_json!(Kill { name: kill })
-    } else {
-        internal_server_error!()
-    }
+    created_or_error!(sheef_database::kill::create_kill(&body.name).await.map(|_| Kill { name: kill }))
 }
 
 pub async fn update_kill(path: web::Path<KillPathInfo>, body: web::Json<Kill>) -> HttpResponse {
     if !kill_exists(&path.kill).await {
-        return not_found!();
+        return not_found!(sheef_not_found_error!("kill", "Kill not found"));
     }
 
     if kill_exists(&body.name).await && body.name != path.kill {
-        return conflict!();
+        return conflict!(sheef_exists_already_error!("kill", "Kill already exists"));
     }
 
-    let data = sheef_database::kill::update_kill(&path.kill, &body.name).await;
-    no_content_or_internal_server_error!(data)
+    no_content_or_error!(sheef_database::kill::update_kill(&path.kill, &body.name).await)
 }

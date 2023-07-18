@@ -1,7 +1,7 @@
 use chrono::{Datelike, Days, Months, NaiveDate};
-use sheef_entities::{Calendar, Event};
+use sheef_entities::{Calendar, Event, sheef_invalid_data_error, sheef_io_error, sheef_not_found_error};
 use sheef_entities::event::CalendarDay;
-use crate::{persist_entity, read_entity, read_entity_dir, validate_database_dir};
+use crate::{persist_entity, read_entity, read_entity_dir, SheefResult, validate_database_dir};
 use crate::user::{get_user, get_users, user_exists};
 
 async fn validate_event_dir() -> String {
@@ -13,25 +13,26 @@ async fn validate_event_dir() -> String {
     path
 }
 
-async fn get_date_event_dir(date: &NaiveDate) -> Option<String> {
+async fn get_date_event_dir(date: &NaiveDate) -> SheefResult<String> {
     let formatted_date = &date.format("%Y-%m-%d").to_string();
     let path = vec![validate_event_dir().await, formatted_date.to_string()].join("/");
     match tokio::fs::create_dir_all(path.as_str()).await {
-        Ok(_) => Some(path),
+        Ok(_) => Ok(path),
         Err(err) => {
             log::warn!("Failed to create event dir for date {}: {}", formatted_date, err);
-            None
+            Err(sheef_io_error!("event", "Failed to create event dir for date"))
         }
     }
 }
 
-pub async fn set_event(username: &String, time: &String, available: bool, date: &NaiveDate) -> Option<Event> {
-    let user = if let Some(user) = get_user(username).await {
+pub async fn set_event(username: &String, time: &String, available: bool, date: &NaiveDate) -> SheefResult<Event> {
+    let user = if let Ok(user) = get_user(username).await {
         user.to_web_user()
     } else {
         log::warn!("User {} not found", username);
-        return None;
+        return Err(sheef_not_found_error!("event", format!("User {username} not found")));
     };
+
     let event = Event {
         username: username.clone(),
         time: time.to_string(),
@@ -41,59 +42,55 @@ pub async fn set_event(username: &String, time: &String, available: bool, date: 
     };
 
     let event_dir = match get_date_event_dir(date).await {
-        Some(dir) => dir,
-        None => {
+        Ok(dir) => dir,
+        Err(err) => {
             log::warn!("Failed to get user event dir ({})", username);
-            return None;
+            return Err(err);
         }
     };
 
-    match persist_entity(event_dir, username, event).await {
-        Ok(event) => Some(event),
-        Err(_) => None
-    }
+    map_err!(persist_entity(event_dir, username, event).await, "crafter")
 }
 
-pub async fn get_event(username: &String, date: &NaiveDate) -> Option<Event> {
-    let event_dir = match get_date_event_dir(date).await {
-        Some(dir) => dir,
-        None => {
-            log::warn!("Failed to get user event dir");
-            return None;
-        }
+pub async fn get_event(username: &String, date: &NaiveDate) -> SheefResult<Event> {
+    let user = if let Ok(user) = get_user(username).await {
+        user.to_web_user()
+    } else {
+        log::warn!("User {} not found", username);
+        return Err(sheef_not_found_error!("event", format!("User {username} not found")));
     };
 
-    let user = match get_user(username).await {
-        Some(user) => user,
-        None => {
-            log::warn!("Failed to load user");
-            return None;
+    let event_dir = match get_date_event_dir(date).await {
+        Ok(dir) => dir,
+        Err(err) => {
+            log::warn!("Failed to get user event dir ({})", username);
+            return Err(err);
         }
     };
 
     match read_entity::<Event>(event_dir, username).await {
-        Some(mut event) => {
-            event.user = user.to_web_user();
-            Some(event)
+        Ok(mut event) => {
+            event.user = user;
+            Ok(event)
         }
-        None => {
+        Err(err) => {
             log::warn!("Event not found");
-            None
+            Err(sheef_io_error!("event", err.message))
         }
     }
 }
 
-pub async fn get_events_for_date(date: &NaiveDate) -> Option<Vec<Event>> {
+pub async fn get_events_for_date(date: &NaiveDate) -> SheefResult<Vec<Event>> {
     let event_dir = match get_date_event_dir(date).await {
-        Some(dir) => dir,
-        None => {
+        Ok(dir) => dir,
+        Err(err) => {
             log::warn!("Failed to get date event dir ({})", date.format("%Y-%m-%d"));
-            return None;
+            return Err(err);
         }
     };
 
     match read_entity_dir::<Event>(event_dir).await {
-        Some(events) => {
+        Ok(events) => {
             let mut result = vec![];
 
             for mut event in events {
@@ -103,19 +100,20 @@ pub async fn get_events_for_date(date: &NaiveDate) -> Option<Vec<Event>> {
                 }
             }
 
-            Some(result)
+            Ok(result)
         }
-        None => {
+        Err(mut err) => {
             log::warn!("Failed to read events");
-            None
+            err.entity_type = "event".to_string();
+            Err(err)
         }
     }
 }
 
-pub async fn get_events_for_month(year: i32, month: u32) -> Option<Calendar> {
+pub async fn get_events_for_month(year: i32, month: u32) -> SheefResult<Calendar> {
     let first_day_of_month = match NaiveDate::from_ymd_opt(year, month, 1) {
         Some(day) => day,
-        None => return None
+        None => return Err(sheef_invalid_data_error!("event", "The date is invalid"))
     };
     let last_day_of_month = first_day_of_month.checked_add_months(Months::new(1)).expect("One month should be able to add").checked_sub_days(Days::new(1)).expect("One day should be able to subtract");
 
@@ -127,15 +125,15 @@ pub async fn get_events_for_month(year: i32, month: u32) -> Option<Calendar> {
     for day in first_day_of_month.day()..last_day_of_month.day() + 1 {
         let date = NaiveDate::from_ymd_opt(year, month, day).expect("Date should be valid");
         let event_dir = match get_date_event_dir(&date).await {
-            Some(dir) => dir,
-            None => {
-                log::warn!("Failed to get date event dir ({})", date.format("%Y-%m-%d"));
+            Ok(dir) => dir,
+            Err(err) => {
+                log::warn!("Failed to get date event dir ({}): {err}", date.format("%Y-%m-%d"));
                 continue;
             }
         };
 
         let users = get_users().await.unwrap().into_iter();
-        if let Some(events) = read_entity_dir::<Event>(event_dir).await {
+        if let Ok(events) = read_entity_dir::<Event>(event_dir).await {
             calendar.days.push(CalendarDay {
                 events: users.map(|user| if let Some(event) = events.iter().find(|evt| evt.username == user.username.clone()) {
                     Event {
@@ -170,5 +168,5 @@ pub async fn get_events_for_month(year: i32, month: u32) -> Option<Calendar> {
         }
     }
 
-    Some(calendar)
+    Ok(calendar)
 }

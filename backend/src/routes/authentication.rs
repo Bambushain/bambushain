@@ -6,7 +6,7 @@ use crate::middleware::authenticate_user::AuthenticationState;
 
 pub async fn login(body: web::Json<Login>) -> HttpResponse {
     let data = validate_auth_and_create_token(&body.username, &body.password).await;
-    if let Some(result) = data {
+    if let Ok(result) = data {
         ok_json!(result)
     } else {
         HttpResponse::new(StatusCode::UNAUTHORIZED)

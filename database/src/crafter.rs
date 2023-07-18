@@ -1,5 +1,5 @@
-use sheef_entities::Crafter;
-use crate::{EmptyResult, persist_entity, read_entity, read_entity_dir, validate_database_dir};
+use sheef_entities::{Crafter, sheef_io_error, sheef_not_found_error};
+use crate::{persist_entity, read_entity, read_entity_dir, SheefErrorResult, SheefResult, validate_database_dir};
 
 async fn validate_crafter_dir() -> String {
     let path = vec![validate_database_dir().await, "crafter".to_string()].join("/");
@@ -11,74 +11,71 @@ async fn validate_crafter_dir() -> String {
     path
 }
 
-async fn get_user_crafter_dir(username: &String) -> Option<String> {
+async fn get_user_crafter_dir(username: &String) -> SheefResult<String> {
     let path = vec![validate_crafter_dir().await, username.to_string()].join("/");
     match tokio::fs::create_dir_all(path.as_str()).await {
-        Ok(_) => Some(path),
+        Ok(_) => Ok(path),
         Err(err) => {
             log::warn!("Failed to create crafter dir for user {}: {}", username, err);
-            None
+            Err(sheef_io_error!("crafter".to_string(), "Failed to create crafter dir for user".to_string()))
         }
     }
 }
 
-pub async fn create_crafter(username: &String, job: &String, level: &String) -> Option<Crafter> {
+pub async fn create_crafter(username: &String, job: &String, level: &String) -> SheefResult<Crafter> {
     let crafter = Crafter {
         job: job.to_string(),
         level: level.to_string(),
     };
 
     let crafter_dir = match get_user_crafter_dir(username).await {
-        Some(dir) => dir,
-        None => {
+        Ok(dir) => dir,
+        Err(err) => {
             log::warn!("Failed to get user crafter dir ({})", username);
-            return None;
+            return Err(err);
         }
     };
 
-    match persist_entity(crafter_dir, job, crafter).await {
-        Ok(crafter) => Some(crafter),
-        Err(_) => None
-    }
+    map_err!(persist_entity(crafter_dir, job, crafter).await, "crafter")
 }
 
-pub async fn get_crafter(username: &String, job: &String) -> Option<Crafter> {
+pub async fn get_crafter(username: &String, job: &String) -> SheefResult<Crafter> {
     let crafter_dir = match get_user_crafter_dir(username).await {
-        Some(dir) => dir,
-        None => {
+        Ok(dir) => dir,
+        Err(err) => {
             log::warn!("Failed to get user crafter dir");
-            return None;
+            return Err(err);
         }
     };
 
-    read_entity(crafter_dir, job).await
+    map_err!(read_entity(crafter_dir, job).await, "crafter")
 }
 
-pub async fn get_crafters(username: &String) -> Option<Vec<Crafter>> {
+pub async fn get_crafters(username: &String) -> SheefResult<Vec<Crafter>> {
     let crafter_dir = match get_user_crafter_dir(username).await {
-        Some(dir) => dir,
-        None => {
+        Ok(dir) => dir,
+        Err(err) => {
             log::warn!("Failed to get user crafter dir ({})", username);
-            return None;
+            return Err(err);
         }
     };
 
-    read_entity_dir(crafter_dir).await
+    map_err!(read_entity_dir(crafter_dir).await, "crafter")
 }
 
-pub async fn update_crafter(username: &String, job: &String, level: &String, new_job: &String) -> EmptyResult {
+pub async fn update_crafter(username: &String, job: &String, level: &String, new_job: &String) -> SheefErrorResult {
     let mut crafter = match get_crafter(username, job).await {
-        Some(crafter) => crafter,
-        None => {
-            log::warn!("Crafter not found");
-            return Err(());
+        Ok(crafter) => crafter,
+        Err(err) => {
+            log::warn!("Crafter not found: {err}");
+            return Err(sheef_not_found_error!("crafter", "Crafter not found"));
         }
     };
     let crafter_dir = match get_user_crafter_dir(username).await {
-        Some(dir) => dir,
-        None => {
+        Ok(dir) => dir,
+        Err(err) => {
             log::warn!("Failed to get user crafter dir");
-            return Err(());
+            return Err(err);
         }
     };
 
@@ -88,38 +85,35 @@ pub async fn update_crafter(username: &String, job: &String, level: &String, new
         Ok(_) => {}
         Err(err) => {
             log::warn!("Failed to rename crafter: {err}");
-            return Err(());
+            return Err(sheef_io_error!("crafter", "Failed to rename crafter"));
         }
     }
 
-    match persist_entity(crafter_dir, new_job, crafter).await {
-        Ok(_) => Ok(()),
-        Err(_) => Err(())
-    }
+    map_err!(persist_entity(crafter_dir, new_job, crafter).await, "crafter").map(|_| ())
 }
 
-pub async fn delete_crafter(username: &String, job: &String) -> EmptyResult {
+pub async fn delete_crafter(username: &String, job: &String) -> SheefErrorResult {
     let crafter_dir = match get_user_crafter_dir(username).await {
-        Some(dir) => dir,
-        None => {
+        Ok(dir) => dir,
+        Err(err) => {
             log::warn!("Failed to get user crafter dir");
-            return Err(());
+            return Err(err);
         }
     };
     match tokio::fs::remove_file(vec![crafter_dir, format!("{}.yaml", job)].join("/")).await {
         Ok(_) => Ok(()),
         Err(err) => {
             log::warn!("Failed to delete crafter {}", err);
-            Err(())
+            Err(sheef_io_error!("crafter", "Failed to delete crafter"))
         }
     }
 }
 
 pub async fn crafter_exists(username: &String, job: &String) -> bool {
     let crafter_dir = match get_user_crafter_dir(username).await {
-        Some(dir) => dir,
-        None => {
-            log::warn!("Failed to get user fighter dir");
+        Ok(dir) => dir,
+        Err(err) => {
+            log::warn!("Failed to get user fighter dir: {}", err);
             return false;
         }
     };

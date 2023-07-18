@@ -52,8 +52,8 @@ impl<S, B> Service<ServiceRequest> for AuthenticateUserMiddleware<S> where S: Se
         let token = split_token.last().expect("Token should be present");
 
         let user = match get_user_by_token_sync(&username.to_string(), &token.to_string()) {
-            Some(user) => user,
-            None => return box_pin!(Err(ErrorUnauthorized("no auth present")))
+            Ok(user) => user,
+            Err(_) => return box_pin!(Err(ErrorUnauthorized("No auth present")))
         };
         req.extensions_mut().insert(AuthenticationState {
             token: token.to_string(),

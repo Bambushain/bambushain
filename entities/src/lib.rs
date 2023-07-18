@@ -6,6 +6,7 @@ pub mod authentication;
 pub mod kill;
 pub mod mount;
 pub mod savage_mount;
+pub mod error;
 
 pub use crafter::Crafter;
 pub use event::Event;
@@ -17,3 +18,4 @@ pub use kill::Kill;
 pub use mount::Mount;
 pub use savage_mount::SavageMount;
 pub use user::UpdateProfile;
+pub use error::*;

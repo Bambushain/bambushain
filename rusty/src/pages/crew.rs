@@ -40,7 +40,6 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
 
     let is_mod_state = use_state_eq(|| false);
     let is_main_group_state = use_state_eq(|| false);
-    let is_hidden_state = use_state_eq(|| false);
     let error_state = use_state_eq(|| false);
     let loading_state = use_state_eq(|| false);
     let created_state = use_state_eq(|| false);
@@ -51,7 +50,6 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
 
     let update_is_mod = use_callback(|evt: MouseEvent, state| state.set(evt.target_unchecked_into::<HtmlInputElement>().checked()), is_mod_state.clone());
     let update_is_main_group = use_callback(|evt: MouseEvent, state| state.set(evt.target_unchecked_into::<HtmlInputElement>().checked()), is_main_group_state.clone());
-    let update_is_hidden = use_callback(|evt: MouseEvent, state| state.set(evt.target_unchecked_into::<HtmlInputElement>().checked()), is_hidden_state.clone());
 
     let on_close = props.on_close.clone();
 
@@ -66,7 +64,6 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
 
         let is_mod_state = is_mod_state.clone();
         let is_main_group_state = is_main_group_state.clone();
-        let is_hidden_state = is_hidden_state.clone();
         let error_state = error_state.clone();
         let loading_state = loading_state.clone();
         let created_state = created_state.clone();
@@ -83,7 +80,6 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
 
             let is_mod_state = is_mod_state.clone();
             let is_main_group_state = is_main_group_state.clone();
-            let is_hidden_state = is_hidden_state.clone();
             let error_state = error_state.clone();
             let loading_state = loading_state.clone();
             let created_state = created_state.clone();
@@ -97,7 +93,7 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
                 gear_level: (*gear_level_state).to_string(),
                 is_mod: *is_mod_state,
                 is_main_group: *is_main_group_state,
-                is_hidden: *is_hidden_state,
+                is_hidden: false,
             };
 
             yew::platform::spawn_local(async move {
@@ -173,10 +169,6 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
                                 <label for="isMainGroup">
                                     <input readonly={*loading_state} type="checkbox" id="isMainGroup" name="isMainGroup" role="switch" checked={*is_main_group_state} onclick={update_is_main_group} />
                                     {"Mainkader"}
-                                </label>
-                                <label for="isHidden">
-                                    <input readonly={*loading_state} type="checkbox" id="isHidden" name="isHidden" role="switch" checked={*is_hidden_state} onclick={update_is_hidden} />
-                                    {"Versteckt"}
                                 </label>
                             </fieldset>
                         </form>
