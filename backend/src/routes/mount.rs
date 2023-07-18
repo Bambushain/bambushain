@@ -88,6 +88,10 @@ pub async fn update_mount(path: web::Path<MountPathInfo>, body: web::Json<Mount>
         return not_found!();
     }
 
+    if mount_exists(&body.name).await && body.name != path.mount {
+        return conflict!();
+    }
+
     let data = sheef_database::mount::update_mount(&path.mount, &body.name).await;
     no_content_or_internal_server_error!(data)
 }

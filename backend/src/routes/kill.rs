@@ -88,6 +88,10 @@ pub async fn update_kill(path: web::Path<KillPathInfo>, body: web::Json<Kill>) -
         return not_found!();
     }
 
+    if kill_exists(&body.name).await && body.name != path.kill {
+        return conflict!();
+    }
+
     let data = sheef_database::kill::update_kill(&path.kill, &body.name).await;
     no_content_or_internal_server_error!(data)
 }

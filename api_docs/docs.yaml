@@ -385,6 +385,699 @@ paths:
       operationId: change_my_password
       summary: Changes the current users password
       description: 'Changes the current users password, while checking if the old password is valid'
+  /api/kill:
+    summary: Path for actions around kills
+    description: >-
+      Perform a GET request to list all kills and the users that have them. To create a new kill issue a
+      POST request
+    get:
+      tags:
+        - Kill
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KillMap'
+          description: A map of the kills returned
+        '204':
+          description: No kills are found
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+      security:
+        -
+          Sheef: []
+      operationId: get_kills
+      summary: Gets a map of all kills
+      description: Gets a map of all kills with the users having them
+    post:
+      requestBody:
+        description: The kills name
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KillData'
+        required: true
+      tags:
+        - Kill
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KillData'
+          description: The created kill
+        '400':
+          $ref: '#/components/responses/RequiredFieldMissing'
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '403':
+          $ref: '#/components/responses/UserNeedsModRights'
+        '409':
+          description: A kill with the given name already exists
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        -
+          Sheef: []
+      operationId: create_kill
+      summary: Creates a new kill
+      description: Creates a new kill with the given name
+  '/api/kill/{kill}':
+    summary: Path for kill specific actions
+    description: Perform a PUT request to rename a kill or a DELETE request to delete a kill
+    put:
+      requestBody:
+        description: The kill data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KillData'
+        required: true
+      tags:
+        - Kill
+      responses:
+        '204':
+          description: Kill renamed successfully
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '403':
+          $ref: '#/components/responses/UserNeedsModRights'
+        '404':
+          description: The kill was not found
+        '409':
+          description: A kill with the new name already exists
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        -
+          Sheef: []
+      operationId: rename_kill
+      summary: Rename the given kill
+      description: Renames the given kill to the new name
+    delete:
+      tags:
+        - Kill
+      responses:
+        '204':
+          description: Kill deleted successfully
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '403':
+          $ref: '#/components/responses/UserNeedsModRights'
+        '404':
+          description: The kill was not found
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        -
+          Sheef: []
+      operationId: delete_kill
+      summary: Delete the given kill
+      description: Deletes the given kill
+    parameters:
+      -
+        name: kill
+        description: The kill
+        schema:
+          type: string
+        in: path
+        required: true
+  '/api/user/{username}/kill/{kill}':
+    summary: Path for user kill related actions
+    description: >-
+      Perform a PUT request to activate the kill for the given user or perform a DELETE request to
+      remove the kill from the given user
+    put:
+      tags:
+        - User
+        - Kill
+      responses:
+        '204':
+          description: The kill was activated successfully
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '403':
+          $ref: '#/components/responses/UserNeedsModRights'
+        '404':
+          description: The kill was not found
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        -
+          Sheef: []
+      operationId: activate_kill
+      summary: Activate the kill for the given user
+      description: Activates the given kill for the given user
+    delete:
+      tags:
+        - User
+        - Kill
+      responses:
+        '204':
+          description: The kill was removed successfully
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '403':
+          $ref: '#/components/responses/UserNeedsModRights'
+        '404':
+          description: The kill was not found
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        -
+          Sheef: []
+      operationId: remove_kill
+      summary: Remove the kill from the given user
+      description: Removes the given kill from the given user
+    parameters:
+      -
+        name: username
+        description: The user
+        schema:
+          type: string
+        in: path
+        required: true
+      -
+        name: kill
+        description: The kill
+        schema:
+          type: string
+        in: path
+        required: true
+  '/api/my/kill/{kill}':
+    summary: Path for actions around current user kills
+    description: >-
+      Perform a PUT request to set the given kill active for the current user or a DELETE request to
+      remove the kill from the current user
+    put:
+      tags:
+        - Profile
+        - Kill
+      responses:
+        '204':
+          description: The kill was activated successfully
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '404':
+          description: The kill was not found
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        -
+          Sheef: []
+      operationId: activate_kill_for_me
+      summary: Activate the kill for the current user
+      description: Activates the given kill for the current user
+    delete:
+      tags:
+        - Profile
+        - Kill
+      responses:
+        '204':
+          description: The kill was removed successfully
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '404':
+          description: The kill was not found
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        -
+          Sheef: []
+      operationId: remove_kill_from_me
+      summary: Remove the kill from the current user
+      description: Removes the given kill from the current user
+    parameters:
+      -
+        name: kill
+        description: The kill
+        schema:
+          type: string
+        in: path
+        required: true
+  /api/mount:
+    summary: Path for actions around mounts
+    description: >-
+      Perform a GET request to list all mounts and the users that have them. To create a new mount issue a
+      POST request
+    get:
+      tags:
+        - Mount
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MountMap'
+          description: A map of the mounts returned
+        '204':
+          description: No mounts are found
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+      security:
+        -
+          Sheef: []
+      operationId: get_mounts
+      summary: Gets a map of all mounts
+      description: Gets a map of all mounts with the users having them
+    post:
+      requestBody:
+        description: The mounts name
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MountData'
+        required: true
+      tags:
+        - Mount
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MountData'
+          description: The created mount
+        '400':
+          $ref: '#/components/responses/RequiredFieldMissing'
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '403':
+          $ref: '#/components/responses/UserNeedsModRights'
+        '409':
+          description: A mount with the given name already exists
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        -
+          Sheef: []
+      operationId: create_mount
+      summary: Creates a new mount
+      description: Creates a new mount with the given name
+  '/api/mount/{mount}':
+    summary: Path for mount specific actions
+    description: Perform a PUT request to rename a mount or a DELETE request to delete a mount
+    put:
+      requestBody:
+        description: The mount data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MountData'
+        required: true
+      tags:
+        - Mount
+      responses:
+        '204':
+          description: Mount renamed successfully
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '403':
+          $ref: '#/components/responses/UserNeedsModRights'
+        '404':
+          description: The mount was not found
+        '409':
+          description: A mount with the new name already exists
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        -
+          Sheef: []
+      operationId: rename_mount
+      summary: Rename the given mount
+      description: Renames the given mount to the new name
+    delete:
+      tags:
+        - Mount
+      responses:
+        '204':
+          description: Mount deleted successfully
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '403':
+          $ref: '#/components/responses/UserNeedsModRights'
+        '404':
+          description: The mount was not found
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        -
+          Sheef: []
+      operationId: delete_mount
+      summary: Delete the given mount
+      description: Deletes the given mount
+    parameters:
+      -
+        name: mount
+        description: The mount
+        schema:
+          type: string
+        in: path
+        required: true
+  '/api/user/{username}/mount/{mount}':
+    summary: Path for user mount related actions
+    description: >-
+      Perform a PUT request to activate the mount for the given user or perform a DELETE request to
+      remove the mount from the given user
+    put:
+      tags:
+        - User
+        - Mount
+      responses:
+        '204':
+          description: The mount was activated successfully
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '403':
+          $ref: '#/components/responses/UserNeedsModRights'
+        '404':
+          description: The mount was not found
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        -
+          Sheef: []
+      operationId: activate_mount
+      summary: Activate the mount for the given user
+      description: Activates the given mount for the given user
+    delete:
+      tags:
+        - User
+        - Mount
+      responses:
+        '204':
+          description: The mount was removed successfully
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '403':
+          $ref: '#/components/responses/UserNeedsModRights'
+        '404':
+          description: The mount was not found
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        -
+          Sheef: []
+      operationId: remove_mount
+      summary: Remove the mount from the given user
+      description: Removes the given mount from the given user
+    parameters:
+      -
+        name: username
+        description: The user
+        schema:
+          type: string
+        in: path
+        required: true
+      -
+        name: mount
+        description: The mount
+        schema:
+          type: string
+        in: path
+        required: true
+  '/api/my/mount/{mount}':
+    summary: Path for actions around current user mounts
+    description: >-
+      Perform a PUT request to set the given mount active for the current user or a DELETE request to
+      remove the mount from the current user
+    put:
+      tags:
+        - Profile
+        - Mount
+      responses:
+        '204':
+          description: The mount was activated successfully
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '404':
+          description: The mount was not found
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        -
+          Sheef: []
+      operationId: activate_mount_for_me
+      summary: Activate the mount for the current user
+      description: Activates the given mount for the current user
+    delete:
+      tags:
+        - Profile
+        - Mount
+      responses:
+        '204':
+          description: The mount was removed successfully
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '404':
+          description: The mount was not found
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        -
+          Sheef: []
+      operationId: remove_mount_from_me
+      summary: Remove the mount from the current user
+      description: Removes the given mount from the current user
+    parameters:
+      -
+        name: mount
+        description: The mount
+        schema:
+          type: string
+        in: path
+        required: true
+  /api/savage-mount:
+    summary: Path for actions around savage mounts
+    description: >-
+      Perform a GET request to list all savage mounts and the users that have them. To create a new mount issue a
+      POST request
+    get:
+      tags:
+        - Savage Mount
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavageMountMap'
+          description: A map of the savage mounts returned
+        '204':
+          description: No savage mounts are found
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+      security:
+        -
+          Sheef: []
+      operationId: get_savage_mounts
+      summary: Gets a map of all savage mounts
+      description: Gets a map of all savage mounts with the users having them
+    post:
+      requestBody:
+        description: The savage mounts name
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SavageMountData'
+        required: true
+      tags:
+        - Savage Mount
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavageMountData'
+          description: The created savage mount
+        '400':
+          $ref: '#/components/responses/RequiredFieldMissing'
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '403':
+          $ref: '#/components/responses/UserNeedsModRights'
+        '409':
+          description: A savage mount with the given name already exists
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        -
+          Sheef: []
+      operationId: create_savage_mount
+      summary: Creates a new savage mount
+      description: Creates a new savage mount with the given name
+  '/api/savage-mount/{savage_mount}':
+    summary: Path for savage mount specific actions
+    description: Perform a PUT request to rename a savage mount or a DELETE request to delete a savage mount
+    put:
+      requestBody:
+        description: The savage mount data
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SavageMountData'
+        required: true
+      tags:
+        - Savage Mount
+      responses:
+        '204':
+          description: Savage mount renamed successfully
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '403':
+          $ref: '#/components/responses/UserNeedsModRights'
+        '404':
+          description: The savage mount was not found
+        '409':
+          description: A savage mount with the new name already exists
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        -
+          Sheef: []
+      operationId: rename_savage_mount
+      summary: Rename the given savage mount
+      description: Renames the given savage mount to the new name
+    delete:
+      tags:
+        - Savage Mount
+      responses:
+        '204':
+          description: Savage mount deleted successfully
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '403':
+          $ref: '#/components/responses/UserNeedsModRights'
+        '404':
+          description: The savage mount was not found
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        -
+          Sheef: []
+      operationId: delete_savage_mount
+      summary: Delete the given savage mount
+      description: Deletes the given savage mount
+    parameters:
+      -
+        name: savage_mount
+        description: The savage mount
+        schema:
+          type: string
+        in: path
+        required: true
+  '/api/user/{username}/savage-mount/{savage_mount}':
+    summary: Path for user savage mount related actions
+    description: >-
+      Perform a PUT request to activate the savage mount for the given user or perform a DELETE request to
+      remove the savage mount from the given user
+    put:
+      tags:
+        - User
+        - Savage Mount
+      responses:
+        '204':
+          description: The savage mount was activated successfully
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '403':
+          $ref: '#/components/responses/UserNeedsModRights'
+        '404':
+          description: The mount was not found
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        -
+          Sheef: []
+      operationId: activate_savage_mount
+      summary: Activate the savage mount for the given user
+      description: Activates the given savage mount for the given user
+    delete:
+      tags:
+        - User
+        - Savage Mount
+      responses:
+        '204':
+          description: The savage mount was removed successfully
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '403':
+          $ref: '#/components/responses/UserNeedsModRights'
+        '404':
+          description: The savage mount was not found
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        -
+          Sheef: []
+      operationId: remove_savage_mount
+      summary: Remove the savage mount from the given user
+      description: Removes the given savage mount from the given user
+    parameters:
+      -
+        name: username
+        description: The user
+        schema:
+          type: string
+        in: path
+        required: true
+      -
+        name: savage_mount
+        description: The savage mount
+        schema:
+          type: string
+        in: path
+        required: true
+  '/api/my/savage-mount/{savage_mount}':
+    summary: Path for actions around current user savage mounts
+    description: >-
+      Perform a PUT request to set the given savage mount active for the current user or a DELETE request to
+      remove the savage mount from the current user
+    put:
+      tags:
+        - Profile
+        - Savage Mount
+      responses:
+        '204':
+          description: The savage mount was activated successfully
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '404':
+          description: The savage mount was not found
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        -
+          Sheef: []
+      operationId: activate_savage_mount_for_me
+      summary: Activate the savage mount for the current user
+      description: Activates the given savage mount for the current user
+    delete:
+      tags:
+        - Profile
+        - Savage Mount
+      responses:
+        '204':
+          description: The savage mount was removed successfully
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '404':
+          description: The savage mount was not found
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        -
+          Sheef: []
+      operationId: remove_savage_mount_from_me
+      summary: Remove the savage mount from the current user
+      description: Removes the given savage mount from the current user
+    parameters:
+      -
+        name: savage_mount
+        description: The savage mount
+        schema:
+          type: string
+        in: path
+        required: true
 components:
   schemas:
     Login:
@@ -415,18 +1108,6 @@ components:
       properties:
         user:
           $ref: '#/components/schemas/User'
-          description: The currently logged in user
-          properties:
-            username:
-              type: string
-            isMod:
-              type: boolean
-            isMainGroup:
-              type: boolean
-            gearLevel:
-              type: string
-            job:
-              type: string
         token:
           description: >-
             The API token to authenticate with against Sheef. Include it in the
@@ -516,6 +1197,63 @@ components:
       example:
         old_password: not_so_secret
         new_password: Sup3rS3cr3t
+    KillMap:
+      description: A map of kills
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          type: string
+    KillData:
+      title: Root Type for KillData
+      description: The data of a kill
+      required:
+        - name
+      type: object
+      properties:
+        name:
+          description: The name of the kill
+          type: string
+      example:
+        name: P01s
+    MountMap:
+      description: A map of mounts
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          type: string
+    MountData:
+      title: Root Type for MountData
+      description: The data of a mount
+      required:
+        - name
+      type: object
+      properties:
+        name:
+          description: The name of the mount
+          type: string
+      example:
+        name: P01s
+    SavageMountMap:
+      description: A map of savage mounts
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          type: string
+    SavageMountData:
+      title: Root Type for SavageMountData
+      description: The data of a savage mount
+      required:
+        - name
+      type: object
+      properties:
+        name:
+          description: The name of the savage mount
+          type: string
+      example:
+        name: P01s
   responses:
     LoginResponse:
       content:

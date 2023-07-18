@@ -88,6 +88,10 @@ pub async fn update_savage_mount(path: web::Path<SavageMountPathInfo>, body: web
         return not_found!();
     }
 
+    if savage_mount_exists(&body.name).await && body.name != path.savage_mount {
+        return conflict!();
+    }
+
     let data = sheef_database::savage_mount::update_savage_mount(&path.savage_mount, &body.name).await;
     no_content_or_internal_server_error!(data)
 }
