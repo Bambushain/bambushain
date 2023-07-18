@@ -1,4 +1,3 @@
-use std::env::current_dir;
 use serde::{Deserialize, Serialize};
 use tokio::io::AsyncWriteExt;
 use tokio_stream::StreamExt;
@@ -10,7 +9,7 @@ macro_rules! path_exists {
 }
 
 fn get_db_dir() -> String {
-    vec![current_dir().expect("Current dir is not available").into_os_string().to_str().unwrap(), "data"].join("/")
+    vec![sheef_utils::get_database_base_dir(), "data".to_string()].join("/")
 }
 
 pub(crate) async fn validate_database_dir() -> String {
