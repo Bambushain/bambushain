@@ -109,6 +109,10 @@ pub async fn update_profile(body: web::Json<UpdateProfile>, req: HttpRequest) ->
     no_content_or_error!(sheef_database::user::update_me(&username, &body.job, &body.gear_level).await)
 }
 
+pub async fn update_user_profile(info: web::Path<UserPathInfo>, body: web::Json<UpdateProfile>) -> HttpResponse {
+    no_content_or_error!(sheef_database::user::update_me(&info.username, &body.job, &body.gear_level).await)
+}
+
 pub async fn get_profile(req: HttpRequest) -> HttpResponse {
     let username = username!(req);
     get_user(web::Path::from(UserPathInfo { username })).await

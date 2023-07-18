@@ -1,5 +1,4 @@
 use actix_web::{HttpRequest, HttpResponse};
-use actix_web::http::StatusCode;
 use actix_web::web::{Json, Path, Query};
 use chrono::{Datelike, NaiveDate, Utc};
 use serde::Deserialize;
@@ -34,7 +33,7 @@ macro_rules! date_from_values {
             if let Some(date) = NaiveDate::from_ymd_opt($year, $month, $day) {
                 date
             } else {
-                return HttpResponse::new(StatusCode::UNPROCESSABLE_ENTITY);
+                return no_content_or_error!(Err::<(), sheef_entities::SheefError>(sheef_entities::sheef_invalid_data_error!("calendar", "The date is invalid")));
             }
         }
     };

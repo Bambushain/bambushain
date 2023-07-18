@@ -6,9 +6,10 @@ use bounce::helmet::Helmet;
 use bounce::use_atom_value;
 use yew::prelude::*;
 use web_sys::HtmlInputElement;
+use sheef_entities::UpdateProfile;
 use sheef_entities::user::WebUser;
-use crate::api::{CONFLICT, NO_CONTENT, INTERNAL_SERVER_ERROR, FORBIDDEN};
-use crate::api::user::{change_user_password, create_user, Crew, delete_user, make_user_main, make_user_mod, remove_user_main, remove_user_mod};
+use crate::api::{CONFLICT, NO_CONTENT, NOT_FOUND, INTERNAL_SERVER_ERROR, FORBIDDEN};
+use crate::api::user::{change_user_password, create_user, Crew, delete_user, make_user_main, make_user_mod, remove_user_main, remove_user_mod, update_profile};
 use crate::storage::CurrentUser;
 use crate::ui::modal::{PicoModal, PicoConfirm, PicoAlert};
 
@@ -190,12 +191,120 @@ enum UserConfirmActions {
     Closed,
 }
 
+#[derive(Properties, Clone, PartialEq)]
+struct UpdateProfileDialogProps {
+    on_close: Callback<()>,
+    gear_level: AttrValue,
+    job: AttrValue,
+    username: AttrValue,
+}
+
+#[function_component(UpdateProfileDialog)]
+fn update_profile_dialog(props: &UpdateProfileDialogProps) -> Html {
+    log::debug!("Open dialog to update profile");
+    let error_state = use_state_eq(|| false);
+    let loading_state = use_state_eq(|| false);
+
+    let error_message_state = use_state_eq(|| AttrValue::from(""));
+    let job_state = use_state_eq(|| props.job.clone());
+    let gear_level_state = use_state_eq(|| props.gear_level.clone());
+
+    let update_job = use_callback(|evt: InputEvent, state| state.set(evt.target_unchecked_into::<HtmlInputElement>().value().into()), job_state.clone());
+    let update_gear_level = use_callback(|evt: InputEvent, state| state.set(evt.target_unchecked_into::<HtmlInputElement>().value().into()), gear_level_state.clone());
+
+    let on_close = props.on_close.clone();
+    let on_save = {
+        let error_state = error_state.clone();
+        let loading_state = loading_state.clone();
+
+        let error_message_state = error_message_state.clone();
+        let job_state = job_state.clone();
+        let gear_level_state = gear_level_state.clone();
+
+        let on_close = on_close.clone();
+
+        let username = props.username.to_string();
+
+        Callback::from(move |evt: SubmitEvent| {
+            log::debug!("Perform password change");
+            evt.prevent_default();
+
+            loading_state.set(true);
+
+            let error_state = error_state.clone();
+            let loading_state = loading_state.clone();
+
+            let error_message_state = error_message_state.clone();
+            let job_state = job_state.clone();
+            let gear_level_state = gear_level_state.clone();
+
+            let on_close = on_close.clone();
+
+            let username = username.clone();
+
+            yew::platform::spawn_local(async move {
+                error_state.set(match update_profile(UpdateProfile { gear_level: (*gear_level_state).to_string(), job: (*job_state).to_string() }, username).await {
+                    NO_CONTENT => {
+                        log::debug!("Profile update successful");
+                        on_close.emit(());
+
+                        false
+                    }
+                    FORBIDDEN => {
+                        error_message_state.set(AttrValue::from("Du musst Mod sein um fremde Profile zu bearbeiten"));
+                        true
+                    }
+                    NOT_FOUND => {
+                        log::warn!("The user was not found");
+                        error_message_state.set(AttrValue::from("Das Crewmitglied wurde nicht gefunden"));
+
+                        true
+                    }
+                    err => {
+                        log::warn!("Failed to change the profile {err}");
+                        error_message_state.set(AttrValue::from("Das Profil konnte leider nicht geändert werden, bitte wende dich an Azami"));
+
+                        true
+                    }
+                });
+                loading_state.set(false);
+            });
+        })
+    };
+
+    html!(
+        <PicoModal title="Profil bearbeiten" on_close={on_close.clone()} open={true} buttons={html!(
+            <>
+                <button onclick={move |_| on_close.emit(())} type="button" class="secondary">{"Abbrechen"}</button>
+                <button form="update-profile-modal" aria-busy={(*loading_state).to_string()} type="submit">{"Profil speichern"}</button>
+            </>
+        )}>
+            {if *error_state {
+                html!(
+                    <p data-msg="negative">{(*error_message_state).clone()}</p>
+                )
+            } else {
+                html!()
+            }}
+            <form id="update-profile-modal" onsubmit={on_save.clone()}>
+                <label for="old-password">{"Rolle/Klasse (optional)"}</label>
+                <input oninput={update_job} readonly={*loading_state} type="text" value={(*job_state).clone()} id="job" name="job" />
+                <label for="new-password">{"Gear Level (optional)"}</label>
+                <input oninput={update_gear_level} readonly={*loading_state} type="text" value={(*gear_level_state).clone()} id="gear-level" name="gear-level" />
+            </form>
+        </PicoModal>
+    )
+}
+
 #[function_component(TableBody)]
 fn table_body(props: &TableBodyProps) -> Html {
     log::debug!("Initialize crew table body state and callbacks");
     let confirm_state = use_state_eq(|| UserConfirmActions::Closed);
 
     let error_state = use_state_eq(|| false);
+    let profile_edit_state = use_state_eq(|| false);
+
+    let profile_edit_data_state = use_state_eq(sheef_entities::User::default);
 
     let error_message_state = use_state_eq(|| AttrValue::from(""));
 
@@ -206,6 +315,10 @@ fn table_body(props: &TableBodyProps) -> Html {
     let delete_click = use_callback(|user: WebUser, state| state.set(UserConfirmActions::Delete(user)), confirm_state.clone());
     let make_main_click = use_callback(|user: WebUser, state| state.set(UserConfirmActions::MakeMain(user)), confirm_state.clone());
     let remove_main_click = use_callback(|user: WebUser, state| state.set(UserConfirmActions::RemoveMain(user)), confirm_state.clone());
+    let update_profile_click = use_callback(|user: WebUser, (profile_edit_state, profile_edit_data_state)| {
+        profile_edit_state.set(true);
+        profile_edit_data_state.set(user.clone());
+    }, (profile_edit_state.clone(), profile_edit_data_state.clone()));
     let change_password_click = use_callback(|user: WebUser, state| state.set(UserConfirmActions::ChangePassword(user, rand::thread_rng()
         .sample_iter(&Alphanumeric)
         .take(8)
@@ -216,6 +329,8 @@ fn table_body(props: &TableBodyProps) -> Html {
         let confirm_state = confirm_state.clone();
         let error_state = error_state.clone();
         let error_message_state = error_message_state.clone();
+
+        let users_query_state = users_query_state.clone();
 
         Callback::from(move |_| {
             log::debug!("Modal was confirmed lets execute the request");
@@ -370,6 +485,22 @@ fn table_body(props: &TableBodyProps) -> Html {
         error_state.set(false);
         error_message_state.set(AttrValue::from(""));
     }, (error_state.clone(), error_message_state.clone()));
+    let on_update_profile_close = {
+        let users_query_state = users_query_state.clone();
+
+        let profile_edit_state = profile_edit_state.clone();
+
+        Callback::from(move |_: ()| {
+            let users_query_state = users_query_state.clone();
+
+            let profile_edit_state = profile_edit_state.clone();
+
+            yew::platform::spawn_local(async move {
+                let _ = users_query_state.refresh().await;
+                profile_edit_state.set(false);
+            });
+        })
+    };
 
     html!(
         <>
@@ -387,9 +518,12 @@ fn table_body(props: &TableBodyProps) -> Html {
                                     {if props.username != user.username {
                                         let delete_click = delete_click.clone();
                                         let change_password_click = change_password_click.clone();
+                                        let update_profile_click = update_profile_click.clone();
 
                                         let delete_user = user.clone();
                                         let password_user = user.clone();
+                                        let profile_user = user.clone();
+
                                         html!(
                                             <div class="gap-row">
                                                 {if user.is_mod {
@@ -418,6 +552,7 @@ fn table_body(props: &TableBodyProps) -> Html {
                                                         <button onclick={move |_| make_main_click.emit(user.clone())} type="button" class="outline">{"Zum Mainkader hinzufügen"}</button>
                                                     )
                                                 }}
+                                                <button onclick={move |_| update_profile_click.emit(profile_user.clone())} type="button" class="outline">{"Profil bearbeiten"}</button>
                                                 <button onclick={move |_| change_password_click.emit(password_user.clone())} type="button" class="outline">{"Passwort ändern"}</button>
                                                 <button onclick={move |_| delete_click.emit(delete_user.clone())} type="button" class="outline">{"Entfernen"}</button>
                                             </div>
@@ -449,20 +584,30 @@ fn table_body(props: &TableBodyProps) -> Html {
                 UserConfirmActions::RemoveMain(user) => html!(
                     <PicoConfirm message={format!("Soll das Mitglied {} aus dem Mainkader entfernt werden?", user.username)} title="Aus Mainkader entfernen" open={true} on_decline={on_decline} on_confirm={on_confirm} confirm_label="Aus Mainkader entfernen" />
                 ),
-                UserConfirmActions::ChangePassword(user, password) => html!(
-                    <PicoModal open={true} on_close={on_decline.clone()} title="Passwort zurücksetzen" buttons={html!(
-                        <>
-                            <button type="button" class="secondary" onclick={move |_| on_decline.emit(())}>{"Abbrechen"}</button>
-                            <button type="button" onclick={move |_| on_confirm.emit(())}>{"Passwort zurücksetzen"}</button>
-                        </>
-                    )}>
-                        <p>{format!("Das neue Passwort für {} wird auf ", user.username)}<kbd>{password}</kbd>{" gesetzt."}</p>
-                    </PicoModal>
-                ),
+                UserConfirmActions::ChangePassword(user, password) => {
+                    let on_decline = on_decline.clone();
+                    html!(
+                        <PicoModal open={true} on_close={on_decline.clone()} title="Passwort zurücksetzen" buttons={html!(
+                            <>
+                                <button type="button" class="secondary" onclick={move |_| on_decline.emit(())}>{"Abbrechen"}</button>
+                                <button type="button" onclick={move |_| on_confirm.emit(())}>{"Passwort zurücksetzen"}</button>
+                            </>
+                        )}>
+                            <p>{format!("Das neue Passwort für {} wird auf ", user.username)}<kbd>{password}</kbd>{" gesetzt."}</p>
+                        </PicoModal>
+                    )
+                },
                 UserConfirmActions::Closed => html!(),
             }}
             {if *error_state {
                 html!(<PicoAlert open={true} title="Ein Fehler ist aufgetreten" message={(*error_message_state).clone()} on_close={on_alert_close} />)
+            } else {
+                html!()
+            }}
+            {if *profile_edit_state {
+                let user = (*profile_edit_data_state).clone();
+
+                html!(<UpdateProfileDialog on_close={on_update_profile_close} username={AttrValue::from(user.username)} gear_level={AttrValue::from(user.gear_level)} job={AttrValue::from(user.job)} />)
             } else {
                 html!()
             }}
@@ -533,7 +678,7 @@ pub fn crew_page() -> Html {
                 <tr>
                     <th>{"Name"}</th>
                     <th>{"Job"}</th>
-                    <th>{"Gearlevel"}</th>
+                    <th>{"Gear Level"}</th>
                     <th>{"Mainkader"}</th>
                     <th>{"Moderator"}</th>
                     {if current_user.profile.is_mod {

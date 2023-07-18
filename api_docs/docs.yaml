@@ -32,6 +32,10 @@ paths:
         '200':
           $ref: '#/components/responses/LoginResponse'
         '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: The username or password are invalid
       operationId: login
       summary: Performs a login
@@ -71,6 +75,8 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/UserListResponse'
+        '500':
+          $ref: '#/components/responses/UnknownError'
       security:
         - Sheef: [ ]
       operationId: get_users
@@ -96,6 +102,10 @@ paths:
         '403':
           $ref: '#/components/responses/UserNeedsModRights'
         '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: A user with the given username exists
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -118,6 +128,10 @@ paths:
         '401':
           $ref: '#/components/responses/InvalidApiTokenResponse'
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: The user was not found
       security:
         - Sheef: [ ]
@@ -135,8 +149,16 @@ paths:
         '403':
           $ref: '#/components/responses/UserNeedsModRights'
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: The user was not found
         '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: It is not possible to delete yourself
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -166,8 +188,16 @@ paths:
         '403':
           $ref: '#/components/responses/UserNeedsModRights'
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: The user was not found
         '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: You can't make yourself mod
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -275,8 +305,16 @@ paths:
         '403':
           $ref: '#/components/responses/UserNeedsModRights'
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: The user was not found
         '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: You can't make change your own password with this method
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -355,8 +393,16 @@ paths:
         '401':
           $ref: '#/components/responses/InvalidApiTokenResponse'
         '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: The current password is wrong
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: The current user seems to have been deleted
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -380,10 +426,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/KillMap'
           description: A map of the kills returned
-        '204':
-          description: No kills are found
         '401':
           $ref: '#/components/responses/InvalidApiTokenResponse'
+        '500':
+          $ref: '#/components/responses/UnknownError'
       security:
         - Sheef: [ ]
       operationId: get_kills
@@ -413,6 +459,10 @@ paths:
         '403':
           $ref: '#/components/responses/UserNeedsModRights'
         '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: A kill with the given name already exists
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -442,8 +492,16 @@ paths:
         '403':
           $ref: '#/components/responses/UserNeedsModRights'
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: The kill was not found
         '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: A kill with the new name already exists
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -463,6 +521,10 @@ paths:
         '403':
           $ref: '#/components/responses/UserNeedsModRights'
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: The kill was not found
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -495,6 +557,10 @@ paths:
         '403':
           $ref: '#/components/responses/UserNeedsModRights'
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: The kill was not found
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -515,6 +581,10 @@ paths:
         '403':
           $ref: '#/components/responses/UserNeedsModRights'
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: The kill was not found
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -551,6 +621,10 @@ paths:
         '401':
           $ref: '#/components/responses/InvalidApiTokenResponse'
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: The kill was not found
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -569,6 +643,10 @@ paths:
         '401':
           $ref: '#/components/responses/InvalidApiTokenResponse'
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: The kill was not found
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -599,10 +677,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/MountMap'
           description: A map of the mounts returned
-        '204':
-          description: No mounts are found
         '401':
           $ref: '#/components/responses/InvalidApiTokenResponse'
+        '500':
+          $ref: '#/components/responses/UnknownError'
       security:
         - Sheef: [ ]
       operationId: get_mounts
@@ -632,6 +710,10 @@ paths:
         '403':
           $ref: '#/components/responses/UserNeedsModRights'
         '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: A mount with the given name already exists
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -661,8 +743,16 @@ paths:
         '403':
           $ref: '#/components/responses/UserNeedsModRights'
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: The mount was not found
         '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: A mount with the new name already exists
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -682,6 +772,10 @@ paths:
         '403':
           $ref: '#/components/responses/UserNeedsModRights'
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: The mount was not found
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -714,6 +808,10 @@ paths:
         '403':
           $ref: '#/components/responses/UserNeedsModRights'
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: The mount was not found
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -734,6 +832,10 @@ paths:
         '403':
           $ref: '#/components/responses/UserNeedsModRights'
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: The mount was not found
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -770,6 +872,10 @@ paths:
         '401':
           $ref: '#/components/responses/InvalidApiTokenResponse'
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: The mount was not found
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -788,6 +894,10 @@ paths:
         '401':
           $ref: '#/components/responses/InvalidApiTokenResponse'
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: The mount was not found
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -807,7 +917,7 @@ paths:
     summary: Path for actions around savage mounts
     description: >-
       Perform a GET request to list all savage mounts and the users that have them. To create a new
-      mount issue a POST request
+      savage mount issue a POST request
     get:
       tags:
         - Savage Mount
@@ -818,10 +928,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/SavageMountMap'
           description: A map of the savage mounts returned
-        '204':
-          description: No savage mounts are found
         '401':
           $ref: '#/components/responses/InvalidApiTokenResponse'
+        '500':
+          $ref: '#/components/responses/UnknownError'
       security:
         - Sheef: [ ]
       operationId: get_savage_mounts
@@ -851,6 +961,10 @@ paths:
         '403':
           $ref: '#/components/responses/UserNeedsModRights'
         '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: A savage mount with the given name already exists
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -874,14 +988,22 @@ paths:
         - Savage Mount
       responses:
         '204':
-          description: Savage mount renamed successfully
+          description: Savage Mount renamed successfully
         '401':
           $ref: '#/components/responses/InvalidApiTokenResponse'
         '403':
           $ref: '#/components/responses/UserNeedsModRights'
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: The savage mount was not found
         '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: A savage mount with the new name already exists
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -895,12 +1017,16 @@ paths:
         - Savage Mount
       responses:
         '204':
-          description: Savage mount deleted successfully
+          description: Savage Mount deleted successfully
         '401':
           $ref: '#/components/responses/InvalidApiTokenResponse'
         '403':
           $ref: '#/components/responses/UserNeedsModRights'
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: The savage mount was not found
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -933,7 +1059,11 @@ paths:
         '403':
           $ref: '#/components/responses/UserNeedsModRights'
         '404':
-          description: The mount was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
+          description: The savage mount was not found
         '500':
           $ref: '#/components/responses/UnknownError'
       security:
@@ -953,6 +1083,10 @@ paths:
         '403':
           $ref: '#/components/responses/UserNeedsModRights'
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: The savage mount was not found
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -989,6 +1123,10 @@ paths:
         '401':
           $ref: '#/components/responses/InvalidApiTokenResponse'
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: The savage mount was not found
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -1007,6 +1145,10 @@ paths:
         '401':
           $ref: '#/components/responses/InvalidApiTokenResponse'
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: The savage mount was not found
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -1035,8 +1177,8 @@ paths:
           $ref: '#/components/responses/CrafterListResponse'
         '401':
           $ref: '#/components/responses/InvalidApiTokenResponse'
-        '404':
-          description: Crafters not found
+        '500':
+          $ref: '#/components/responses/UnknownError'
       security:
         - Sheef: [ ]
       operationId: get_crafters
@@ -1060,6 +1202,10 @@ paths:
         '401':
           $ref: '#/components/responses/InvalidApiTokenResponse'
         '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: A crafter with the given job already exists
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -1082,6 +1228,10 @@ paths:
         '401':
           $ref: '#/components/responses/InvalidApiTokenResponse'
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: A crafter with the given job does not exist
       security:
         - Sheef: [ ]
@@ -1104,6 +1254,10 @@ paths:
         '401':
           $ref: '#/components/responses/InvalidApiTokenResponse'
         '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: A crafter with the new job already exists
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -1119,6 +1273,10 @@ paths:
         '401':
           $ref: '#/components/responses/InvalidApiTokenResponse'
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: The crafter was not found
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -1145,8 +1303,8 @@ paths:
           $ref: '#/components/responses/FighterListResponse'
         '401':
           $ref: '#/components/responses/InvalidApiTokenResponse'
-        '404':
-          description: Fighters not found
+        '500':
+          $ref: '#/components/responses/UnknownError'
       security:
         - Sheef: [ ]
       operationId: get_fighters
@@ -1170,6 +1328,10 @@ paths:
         '401':
           $ref: '#/components/responses/InvalidApiTokenResponse'
         '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: A fighter with the given job already exists
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -1192,7 +1354,9 @@ paths:
         '401':
           $ref: '#/components/responses/InvalidApiTokenResponse'
         '404':
-          description: A fighter with the given job does not exist
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/UnknownError'
       security:
         - Sheef: [ ]
       operationId: get_fighter
@@ -1214,6 +1378,10 @@ paths:
         '401':
           $ref: '#/components/responses/InvalidApiTokenResponse'
         '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: A fighter with the new job already exists
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -1229,6 +1397,10 @@ paths:
         '401':
           $ref: '#/components/responses/InvalidApiTokenResponse'
         '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorDetails'
           description: The fighter was not found
         '500':
           $ref: '#/components/responses/UnknownError'
@@ -1251,12 +1423,10 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/CalendarResponse'
-        '204':
-          description: Nothing was found for this month
+        '400':
+          $ref: '#/components/responses/InvalidFieldResponse'
         '401':
           $ref: '#/components/responses/InvalidApiTokenResponse'
-        '422':
-          description: Either the year or the month are out of range
       security:
         - Sheef: [ ]
       operationId: get_calendar
@@ -1286,12 +1456,12 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/SingleEventResponse'
+        '400':
+          $ref: '#/components/responses/InvalidFieldResponse'
         '401':
           $ref: '#/components/responses/InvalidApiTokenResponse'
         '404':
           description: The day was not found
-        '422':
-          description: 'The provided year, month and day are not a valid date'
       operationId: get_event_for_day
       summary: Get the day
       description: Gets the event for the given day
@@ -1308,12 +1478,12 @@ paths:
       responses:
         '204':
           description: The availability was updated successfully
+        '400':
+          $ref: '#/components/responses/InvalidFieldResponse'
         '401':
           $ref: '#/components/responses/InvalidApiTokenResponse'
         '404':
-          description: The event was not found
-        '422':
-          description: 'The provided year, month and day are not a valid date'
+          $ref: '#/components/responses/NotFoundResponse'
       operationId: update_event
       summary: Update availability
       description: Updates the availability and time constraint for the given date and the current user
@@ -1337,6 +1507,44 @@ paths:
         schema:
           format: int32
           type: integer
+        in: path
+        required: true
+  '/api/user/{username}/profile':
+    summary: Path for actions for updating the profile of a user
+    description: Perform a PUT request to update the profile for the given user
+    put:
+      requestBody:
+        description: The data to update the user with
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfile'
+        required: true
+      tags:
+        - User
+      responses:
+        '204':
+          description: The user profile was updated successfully
+        '400':
+          $ref: '#/components/responses/RequiredFieldMissing'
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '403':
+          $ref: '#/components/responses/UserNeedsModRights'
+        '404':
+          $ref: '#/components/responses/NotFoundResponse'
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        - Sheef: [ ]
+      operationId: update_user_profile
+      summary: Update the profile
+      description: Updates the profile of the given user
+    parameters:
+      - name: username
+        description: The user to update
+        schema:
+          type: string
         in: path
         required: true
 components:
@@ -1660,6 +1868,43 @@ components:
       example:
         available: true
         time: '12:00'
+    ErrorDetails:
+      title: Root Type for ErrorDetails
+      description: Contains information about the given errors
+      type: object
+      properties:
+        entityType:
+          description: The type of entity the error occurred for
+          enum:
+            - event
+            - crafter
+            - fighter
+            - kill
+            - user
+            - mount
+            - savage-mount
+            - token
+            - calendar
+          type: string
+        errorType:
+          description: The type of error
+          enum:
+            - notFoundError
+            - existsAlreadyError
+            - invalidDataError
+            - ioError
+            - serializationError
+            - validationError
+            - insufficientRightsError
+            - unknownError
+          type: string
+        message:
+          description: The error message
+          type: string
+      example:
+        entityType: crafter
+        errorType: notFoundError
+        message: The crafter was not found
   responses:
     LoginResponse:
       content:
@@ -1703,12 +1948,28 @@ components:
                 job: some text
       description: Contains only one user
     InvalidApiTokenResponse:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorDetails'
       description: The provided api token is invalid
     UserNeedsModRights:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorDetails'
       description: The user needs mod rights to perform this action
     RequiredFieldMissing:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorDetails'
       description: A required field is missing
     UnknownError:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorDetails'
       description: An unknown error occured
     SingleCrafterResponse:
       content:
@@ -1746,6 +2007,18 @@ components:
       description: A response containing a calendar
     SingleEventResponse:
       description: Contains a single event
+    InvalidFieldResponse:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorDetails'
+      description: Invalid values passed to the server
+    NotFoundResponse:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorDetails'
+      description: Entity not found
   securitySchemes:
     Sheef:
       type: apiKey

@@ -203,7 +203,7 @@ fn update_my_profile_dialog(props: &UpdateMyProfileDialogProps) -> Html {
                         true
                     }
                     err => {
-                        log::warn!("Failed to change the password {err}");
+                        log::warn!("Failed to update the profile {err}");
                         error_message_state.set(AttrValue::from("Dein Profil konnte leider nicht geändert werden, bitte wende dich an Azami"));
 
                         true

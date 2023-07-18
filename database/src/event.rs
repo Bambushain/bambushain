@@ -49,7 +49,7 @@ pub async fn set_event(username: &String, time: &String, available: bool, date: 
         }
     };
 
-    map_err!(persist_entity(event_dir, username, event).await, "crafter")
+    map_err!(persist_entity(event_dir, username, event).await, "event")
 }
 
 pub async fn get_event(username: &String, date: &NaiveDate) -> SheefResult<Event> {

@@ -1,7 +1,6 @@
 use actix_web::{HttpMessage, HttpRequest, HttpResponse, web};
-use actix_web::http::StatusCode;
 use sheef_database::token::{remove_token, validate_auth_and_create_token};
-use sheef_entities::Login;
+use sheef_entities::{Login, SheefErrorCode};
 use crate::middleware::authenticate_user::AuthenticationState;
 
 pub async fn login(body: web::Json<Login>) -> HttpResponse {
@@ -9,7 +8,11 @@ pub async fn login(body: web::Json<Login>) -> HttpResponse {
     if let Ok(result) = data {
         ok_json!(result)
     } else {
-        HttpResponse::new(StatusCode::UNAUTHORIZED)
+        HttpResponse::Unauthorized().json(sheef_entities::SheefError {
+            entity_type: "user".to_string(),
+            message: "Username or Password is invalid".to_string(),
+            error_type: SheefErrorCode::InvalidDataError,
+        })
     }
 }
 

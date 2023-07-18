@@ -68,7 +68,7 @@ pub fn get_user_sync(username: &String) -> SheefResult<User> {
 pub async fn get_users() -> SheefResult<Vec<User>> {
     match read_entity_dir::<User>(validate_user_dir().await).await {
         Ok(users) => Ok(users.into_iter().filter(|user| !user.is_hidden).collect::<Vec<User>>()),
-        Err(err) => return Err(sheef_unknown_error!("user", err.message))
+        Err(err) => Err(sheef_unknown_error!("user", err.message))
     }
 }
 

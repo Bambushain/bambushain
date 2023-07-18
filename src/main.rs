@@ -10,7 +10,7 @@ use sheef_backend::routes::fighter::{create_fighter, delete_fighter, get_fighter
 use sheef_backend::routes::kill::{activate_kill_for_me, activate_kill_for_user, create_kill, deactivate_kill_for_me, deactivate_kill_for_user, delete_kill, get_kills, update_kill};
 use sheef_backend::routes::savage_mount::{activate_savage_mount_for_me, activate_savage_mount_for_user, create_savage_mount, deactivate_savage_mount_for_me, deactivate_savage_mount_for_user, delete_savage_mount, get_savage_mounts, update_savage_mount};
 use sheef_backend::routes::mount::{activate_mount_for_me, activate_mount_for_user, create_mount, deactivate_mount_for_me, deactivate_mount_for_user, delete_mount, get_mounts, update_mount};
-use sheef_backend::routes::user::{add_main_group_user, add_mod_user, change_my_password, change_password, create_user, delete_user, get_profile, get_user, get_users, remove_main_group_user, remove_mod_user, update_profile};
+use sheef_backend::routes::user::{add_main_group_user, add_mod_user, change_my_password, change_password, create_user, delete_user, get_profile, get_user, get_users, remove_main_group_user, remove_mod_user, update_profile, update_user_profile};
 
 macro_rules! static_file_str {
     ($file:expr, $content_type:expr, $fn_name:tt) => {
@@ -55,6 +55,7 @@ async fn main() -> std::io::Result<()> {
             .route("/api/user", web::post().to(create_user).wrap(CheckMod).wrap(AuthenticateUser))
             .route("/api/user/{username}", web::get().to(get_user).wrap(AuthenticateUser))
             .route("/api/user/{username}", web::delete().to(delete_user).wrap(CheckMod).wrap(AuthenticateUser))
+            .route("/api/user/{username}/profile", web::put().to(update_user_profile).wrap(CheckMod).wrap(AuthenticateUser))
             .route("/api/user/{username}/mod", web::put().to(add_mod_user).wrap(CheckMod).wrap(AuthenticateUser))
             .route("/api/user/{username}/mod", web::delete().to(remove_mod_user).wrap(CheckMod).wrap(AuthenticateUser))
             .route("/api/user/{username}/main", web::put().to(add_main_group_user).wrap(CheckMod).wrap(AuthenticateUser))
@@ -114,6 +115,7 @@ async fn main() -> std::io::Result<()> {
             .route("/static/rusty_sheef_bg.wasm", web::get().to(rusty_sheef_bg_wasm))
             .route("/static/favicon.png", web::get().to(favicon_png))
             .route("/static/login.png", web::get().to(login_png))
+
             .default_service(web::route().guard(guard::Get()).to(index_html))
     })
         .bind(("0.0.0.0", 8070))?

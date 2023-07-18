@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use bounce::BounceStates;
 use bounce::query::{Query, QueryResult};
 use sheef_entities::authentication::ChangePassword;
+use sheef_entities::UpdateProfile;
 use crate::api::{delete, ErrorCode, get, post, put_no_body, put};
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
@@ -66,4 +67,9 @@ pub async fn delete_user(user: sheef_entities::User) -> ErrorCode {
 pub async fn change_user_password(user: sheef_entities::User, new_password: String) -> ErrorCode {
     log::debug!("Change user {} password", user.username);
     put(format!("/api/user/{}/password", user.username), &ChangePassword { new_password }).await
+}
+
+pub async fn update_profile(profile: UpdateProfile, username: String) -> ErrorCode {
+    log::debug!("Update profile of user {username} to the following data {:?}", profile);
+    put(format!("/api/user/{username}/profile"), &profile).await
 }
