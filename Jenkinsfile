@@ -47,12 +47,14 @@ spec:
                 stage('Docs') {
                     steps {
                         container('docker') {
-                            sh "docker build -t quay.imanuel.dev/creastina/sheef-api-docs:$BUILD_NUMBER -f ./api_docs/Dockerfile ."
-                            sh "docker tag quay.imanuel.dev/creastina/sheef-api-docs:$BUILD_NUMBER quay.imanuel.dev/creastina/sheef-api-docs:latest"
+                            dir('api_docs') {
+                                sh "docker build -t quay.imanuel.dev/creastina/sheef-api-docs:$BUILD_NUMBER -f ./Dockerfile ."
+                                sh "docker tag quay.imanuel.dev/creastina/sheef-api-docs:$BUILD_NUMBER quay.imanuel.dev/creastina/sheef-api-docs:latest"
 
-                            withDockerRegistry(credentialsId: 'quay.imanuel.dev', url: 'https://quay.imanuel.dev') {
-                                sh "docker push quay.imanuel.dev/creastina/sheef-api-docs:$BUILD_NUMBER"
-                                sh "docker push quay.imanuel.dev/creastina/sheef-api-docs:latest"
+                                withDockerRegistry(credentialsId: 'quay.imanuel.dev', url: 'https://quay.imanuel.dev') {
+                                    sh "docker push quay.imanuel.dev/creastina/sheef-api-docs:$BUILD_NUMBER"
+                                    sh "docker push quay.imanuel.dev/creastina/sheef-api-docs:latest"
+                                }
                             }
                         }
                     }
