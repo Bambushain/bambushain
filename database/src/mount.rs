@@ -1,12 +1,11 @@
-use std::fs::{create_dir_all, File, remove_dir_all, remove_file, rename};
-use log::{error, warn};
+use tokio_stream::StreamExt;
 use sheef_utils::sort_strings_insensitive;
 use crate::{EmptyResult, validate_database_dir};
 use crate::user::user_exists;
 
-fn validate_mount_dir() -> String {
-    let path = vec![validate_database_dir(), "mount".to_string()].join("/");
-    let result = create_dir_all(path.as_str());
+async fn validate_mount_dir() -> String {
+    let path = vec![validate_database_dir().await, "savageMount".to_string()].join("/");
+    let result = tokio::fs::create_dir_all(path.as_str()).await;
     if result.is_err() {
         panic!("Failed to create mount database dir {}", result.err().unwrap());
     }
@@ -14,112 +13,128 @@ fn validate_mount_dir() -> String {
     path
 }
 
-pub fn create_mount(mount: &String) -> EmptyResult {
-    let path = vec![validate_mount_dir(), mount.to_string()].join("/");
-    match create_dir_all(path.as_str()) {
+pub async fn create_mount(mount: &String) -> EmptyResult {
+    let path = vec![validate_mount_dir().await, mount.to_string()].join("/");
+    match tokio::fs::create_dir_all(path.as_str()).await {
         Ok(_) => Ok(()),
         Err(err) => {
-            warn!("Failed to create mount dir ({}): {}", path, err);
+            log::warn!("Failed to create mount dir ({}): {}", path, err);
             Err(())
         }
     }
 }
 
-pub fn delete_mount(mount: &String) -> EmptyResult {
-    let path = vec![validate_mount_dir(), mount.to_string()].join("/");
-    match remove_dir_all(path.as_str()) {
+pub async fn delete_mount(mount: &String) -> EmptyResult {
+    let path = vec![validate_mount_dir().await, mount.to_string()].join("/");
+    match tokio::fs::remove_dir_all(path.as_str()).await {
         Ok(_) => Ok(()),
         Err(err) => {
-            warn!("Failed to delete mount dir ({}): {}", path, err);
+            log::warn!("Failed to delete mount dir ({}): {}", path, err);
             Err(())
         }
     }
 }
 
-pub fn update_mount(mount: &String, new_name: &String) -> EmptyResult {
-    let old_path = vec![validate_mount_dir(), mount.to_string()].join("/");
-    let new_path = vec![validate_mount_dir(), new_name.to_string()].join("/");
-    match rename(old_path.as_str(), new_path.as_str()) {
+pub async fn update_mount(mount: &String, new_name: &String) -> EmptyResult {
+    let old_path = vec![validate_mount_dir().await, mount.to_string()].join("/");
+    let new_path = vec![validate_mount_dir().await, new_name.to_string()].join("/");
+    match tokio::fs::rename(old_path.as_str(), new_path.as_str()).await {
         Ok(_) => Ok(()),
         Err(err) => {
-            warn!("Failed to move mount dir ({} -> {}): {}", old_path, new_path, err);
+            log::warn!("Failed to move mount dir ({} -> {}): {}", old_path, new_path, err);
             Err(())
         }
     }
 }
 
-pub fn activate_mount_for_user(mount: &String, username: &String) -> EmptyResult {
-    let path = vec![validate_mount_dir(), mount.to_string(), username.to_string()].join("/");
-    match File::create(path.as_str()) {
+pub async fn activate_mount_for_user(mount: &String, username: &String) -> EmptyResult {
+    let path = vec![validate_mount_dir().await, mount.to_string(), username.to_string()].join("/");
+    match tokio::fs::File::create(path.as_str()).await {
         Ok(_) => Ok(()),
         Err(err) => {
-            warn!("Failed to activate mount {} for user {} ({}): {}", mount, username, path, err);
+            log::warn!("Failed to activate mount {} for user {} ({}): {}", mount, username, path, err);
             Err(())
         }
     }
 }
 
-pub fn deactivate_mount_for_user(mount: &String, username: &String) -> EmptyResult {
-    let path = vec![validate_mount_dir(), mount.to_string(), username.to_string()].join("/");
-    match remove_file(path.as_str()) {
+pub async fn deactivate_mount_for_user(mount: &String, username: &String) -> EmptyResult {
+    let path = vec![validate_mount_dir().await, mount.to_string(), username.to_string()].join("/");
+    match tokio::fs::remove_file(path.as_str()).await {
         Ok(_) => Ok(()),
         Err(err) => {
-            warn!("Failed to deactivate mount {} for user {} ({}): {}", mount, username, path, err);
+            log::warn!("Failed to deactivate mount {} for user {} ({}): {}", mount, username, path, err);
             Err(())
         }
     }
 }
 
-pub fn get_mounts() -> Vec<String> {
-    match std::fs::read_dir(validate_mount_dir()) {
+pub async fn get_mounts() -> Vec<String> {
+    let read_dir = match tokio::fs::read_dir(validate_mount_dir().await).await {
         Ok(dir) => dir,
         Err(err) => {
-            error!("Failed to load mount dirs {}", err);
+            log::error!("Failed to load mount dirs {}", err);
             return vec![];
         }
-    }.filter_map(|item| match item {
+    };
+
+    tokio_stream::wrappers::ReadDirStream::new(read_dir).filter_map(|item| match item {
         Ok(entry) => match entry.path().is_dir() {
             true => Some(entry.file_name().into_string().expect("String should be available as core string")),
             false => None
         },
         Err(_) => None
-    }).collect::<Vec<String>>()
+    }).collect::<Vec<String>>().await
 }
 
-pub fn get_mounts_for_user(username: &String) -> Option<Vec<String>> {
-    let mounts = get_mounts();
-    if !user_exists(username) {
+pub async fn get_mounts_for_user(username: &String) -> Option<Vec<String>> {
+    let mounts = get_mounts().await;
+    if !user_exists(username).await {
         return None;
     }
-    let mut for_user = mounts.into_iter().filter_map(|mount| {
-        match path_exists!(vec![validate_mount_dir(), mount.to_string(), username.to_string()].join("/")) {
-            true => Some(mount),
-            false => None
+
+    let mut for_user = vec![];
+    for mount in mounts {
+        match path_exists!(vec![validate_mount_dir().await, mount.to_string(), username.to_string()].join("/")) {
+            true => for_user.push(mount),
+            false => continue
         }
-    }).collect::<Vec<String>>();
+    }
+
     sort_strings_insensitive!(for_user);
     Some(for_user)
 }
 
-pub fn get_users_for_mount(mount: &String) -> Option<Vec<String>> {
-    let path = vec![validate_mount_dir(), mount.to_string()].join("/");
-    let mut users_for_mount = match std::fs::read_dir(path) {
+pub async fn get_users_for_mount(mount: &String) -> Option<Vec<String>> {
+    let path = vec![validate_mount_dir().await, mount.to_string()].join("/");
+    let read_dir = match tokio::fs::read_dir(path).await {
         Ok(dir) => dir,
         Err(err) => {
-            error!("Failed to load mount dirs {}", err);
+            log::error!("Failed to load mount dirs {}", err);
             return None;
         }
-    }.filter_map(|item| match item {
-        Ok(entry) => match entry.path().is_file() {
-            true => Some(entry.file_name().into_string().expect("String should be available as core string")),
-            false => None
-        },
-        Err(_) => None
-    }.filter(user_exists)).collect::<Vec<String>>();
+    };
+
+    let tokio_data = tokio_stream::wrappers::ReadDirStream::new(read_dir).filter_map(|entry| match entry {
+        Ok(entry) => Some(entry.file_name().into_string().expect("String should be available as core string")),
+        Err(err) => {
+            log::warn!("Failed to load {err}");
+            None
+        }
+    }).collect::<Vec<String>>().await;
+
+    let mut users_for_mount = vec![];
+
+    for username in tokio_data {
+        if user_exists(&username).await {
+            users_for_mount.push(username)
+        }
+    }
+
     sort_strings_insensitive!(users_for_mount);
     Some(users_for_mount)
 }
 
-pub fn mount_exists(mount: &String) -> bool {
-    path_exists!(vec![validate_mount_dir(), mount.to_string()].join("/"))
+pub async fn mount_exists(mount: &String) -> bool {
+    path_exists!(vec![validate_mount_dir().await, mount.to_string()].join("/"))
 }

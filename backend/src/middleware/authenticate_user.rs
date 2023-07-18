@@ -3,7 +3,7 @@ use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Tr
 use actix_web::{Error, HttpMessage};
 use actix_web::error::ErrorUnauthorized;
 use futures_util::future::LocalBoxFuture;
-use sheef_database::token::get_user_by_token;
+use sheef_database::token::get_user_by_token_sync;
 use sheef_entities::user::User;
 
 pub struct AuthenticationState {
@@ -51,7 +51,7 @@ impl<S, B> Service<ServiceRequest> for AuthenticateUserMiddleware<S> where S: Se
         let username = split_token.next().expect("Username should be present");
         let token = split_token.last().expect("Token should be present");
 
-        let user = match get_user_by_token(&username.to_string(), &token.to_string()) {
+        let user = match get_user_by_token_sync(&username.to_string(), &token.to_string()) {
             Some(user) => user,
             None => return box_pin!(Err(ErrorUnauthorized("no auth present")))
         };

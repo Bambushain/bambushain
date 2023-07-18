@@ -5,8 +5,8 @@ use sheef_entities::Login;
 use crate::middleware::authenticate_user::AuthenticationState;
 
 pub async fn login(body: web::Json<Login>) -> HttpResponse {
-    let data = web::block(move || validate_auth_and_create_token(&body.username, &body.password)).await;
-    if let Ok(Some(result)) = data {
+    let data = validate_auth_and_create_token(&body.username, &body.password).await;
+    if let Some(result) = data {
         ok_json!(result)
     } else {
         HttpResponse::new(StatusCode::UNAUTHORIZED)
@@ -25,7 +25,7 @@ pub async fn logout(req: HttpRequest) -> HttpResponse {
         (result.user.username.to_string(), result.token.to_string())
     };
 
-    remove_token(&username, &token);
+    remove_token(&username, &token).await;
 
     no_content!()
 }

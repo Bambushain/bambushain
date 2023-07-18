@@ -52,7 +52,7 @@ macro_rules! internal_server_error {
 macro_rules! no_content_or_internal_server_error {
     ($data:expr) => {
         {
-            if let Ok(Ok(_)) = $data {
+            if let Ok(_) = $data {
                 no_content!()
             } else {
                 internal_server_error!()
@@ -64,7 +64,7 @@ macro_rules! no_content_or_internal_server_error {
 macro_rules! ok_or_not_found {
     ($data:expr) => {
         {
-            if let Ok(Some(data)) = $data {
+            if let Some(data) = $data {
                 ok_json!(data)
             } else {
                 not_found!()
