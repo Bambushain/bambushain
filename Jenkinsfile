@@ -30,31 +30,29 @@ spec:
             when {
               branch 'main'
             }
-            steps {
-                parallel {
-                    stage('App') {
-                        steps {
-                            container('docker') {
-                                sh "docker build -t quay.imanuel.dev/creastina/sheef-rs:$BUILD_NUMBER -f ./Dockerfile ."
-                                sh "docker tag quay.imanuel.dev/creastina/sheef-rs:$BUILD_NUMBER quay.imanuel.dev/creastina/sheef-rs:latest"
+            parallel {
+                stage('App') {
+                    steps {
+                        container('docker') {
+                            sh "docker build -t quay.imanuel.dev/creastina/sheef-rs:$BUILD_NUMBER -f ./Dockerfile ."
+                            sh "docker tag quay.imanuel.dev/creastina/sheef-rs:$BUILD_NUMBER quay.imanuel.dev/creastina/sheef-rs:latest"
 
-                                withDockerRegistry(credentialsId: 'quay.imanuel.dev', url: 'https://quay.imanuel.dev') {
-                                    sh "docker push quay.imanuel.dev/creastina/sheef-rs:$BUILD_NUMBER"
-                                    sh "docker push quay.imanuel.dev/creastina/sheef-rs:latest"
-                                }
+                            withDockerRegistry(credentialsId: 'quay.imanuel.dev', url: 'https://quay.imanuel.dev') {
+                                sh "docker push quay.imanuel.dev/creastina/sheef-rs:$BUILD_NUMBER"
+                                sh "docker push quay.imanuel.dev/creastina/sheef-rs:latest"
                             }
                         }
                     }
-                    stage('Docs') {
-                        steps {
-                            container('docker') {
-                                sh "docker build -t quay.imanuel.dev/creastina/sheef-api-docs:$BUILD_NUMBER -f ./api_docs/Dockerfile ."
-                                sh "docker tag quay.imanuel.dev/creastina/sheef-api-docs:$BUILD_NUMBER quay.imanuel.dev/creastina/sheef-api-docs:latest"
+                }
+                stage('Docs') {
+                    steps {
+                        container('docker') {
+                            sh "docker build -t quay.imanuel.dev/creastina/sheef-api-docs:$BUILD_NUMBER -f ./api_docs/Dockerfile ."
+                            sh "docker tag quay.imanuel.dev/creastina/sheef-api-docs:$BUILD_NUMBER quay.imanuel.dev/creastina/sheef-api-docs:latest"
 
-                                withDockerRegistry(credentialsId: 'quay.imanuel.dev', url: 'https://quay.imanuel.dev') {
-                                    sh "docker push quay.imanuel.dev/creastina/sheef-api-docs:$BUILD_NUMBER"
-                                    sh "docker push quay.imanuel.dev/creastina/sheef-api-docs:latest"
-                                }
+                            withDockerRegistry(credentialsId: 'quay.imanuel.dev', url: 'https://quay.imanuel.dev') {
+                                sh "docker push quay.imanuel.dev/creastina/sheef-api-docs:$BUILD_NUMBER"
+                                sh "docker push quay.imanuel.dev/creastina/sheef-api-docs:latest"
                             }
                         }
                     }
