@@ -18,7 +18,7 @@ pub async fn logout(req: HttpRequest) -> HttpResponse {
         let extensions = req.extensions();
         let state = extensions.get::<AuthenticationState>();
         if state.is_none() {
-            return HttpResponse::new(StatusCode::NO_CONTENT);
+            return no_content!();
         }
 
         let result = state.unwrap();

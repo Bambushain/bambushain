@@ -1,9 +1,579 @@
 openapi: 3.0.3
 info:
   title: Sheef Planing
-  description: Sheef Planing
   version: 1.0.0
+  description: Sheef Planing
+  contact:
+    name: Imanuel Ulbricht
+    url: 'https://sheef.creastina.art'
+    email: kirk@creastina.art
 servers:
-  - url: 'https://sheef.creastina.art'
+  -
+    url: 'https://sheef.creastina.art'
+    description: Official Sheef server
+  -
+    url: 'https://hjw.imanuel.dev'
+    description: Jürgen Testserver
 paths:
-  
+  /api/login:
+    summary: Path for login related actions
+    description: >-
+      Perform a POST request to login, a DELETE request to logout and a HEAD request to validate the API
+      key
+    post:
+      requestBody:
+        description: A new `Login` to be created.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+        required: true
+      tags:
+        - Authentication
+      responses:
+        '200':
+          $ref: '#/components/responses/LoginResponse'
+        '401':
+          description: The username or password are invalid
+      operationId: login
+      summary: Performs a login
+      description: Performs the login
+    delete:
+      tags:
+        - Authentication
+      responses:
+        '204':
+          description: The logout was successful
+        '401':
+          description: The api token is invalid
+      security:
+        -
+          Sheef: []
+      operationId: logout
+      summary: Performs a logout
+      description: Performs a logout and deletes the api token from the server
+    head:
+      tags:
+        - Authentication
+      responses:
+        '204':
+          description: The api token is valid
+        '401':
+          description: The api token is invalid
+      security:
+        -
+          Sheef: []
+      operationId: validate_token
+      summary: Validates the api token
+      description: Checks whether the api token passed in the `Authorization`-header is valid
+  /api/user:
+    summary: Path for user related operations
+    description: Perform a GET request to get the list of all users or perform a POST request to create a new user
+    get:
+      tags:
+        - User
+      responses:
+        '200':
+          $ref: '#/components/responses/UserListResponse'
+      security:
+        -
+          Sheef: []
+      operationId: get_users
+      summary: Get a list of all users
+      description: Gets a list with all users
+    post:
+      requestBody:
+        description: The data for the new user
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      tags:
+        - User
+      responses:
+        '201':
+          $ref: '#/components/responses/SingleUserResponse'
+        '400':
+          $ref: '#/components/responses/RequiredFieldMissing'
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '403':
+          $ref: '#/components/responses/UserNeedsModRights'
+        '409':
+          description: A user with the given username exists
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        -
+          Sheef: []
+      operationId: create_user
+      summary: Creates a new user
+      description: Creates a new user with the given values
+  '/api/user/{username}':
+    summary: Path for actions relating to a specific user
+    description: >-
+      Execute a GET request to get the user with the given username or a DELETE request to delete the
+      given user
+    get:
+      tags:
+        - User
+      responses:
+        '200':
+          $ref: '#/components/responses/SingleUserResponse'
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '404':
+          description: The user was not found
+      security:
+        -
+          Sheef: []
+      operationId: get_user
+      summary: Gets the given user
+      description: Gets the user by the given username
+    delete:
+      tags:
+        - User
+      responses:
+        '204':
+          description: The user was deleted successfully
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '403':
+          $ref: '#/components/responses/UserNeedsModRights'
+        '404':
+          description: The user was not found
+        '409':
+          description: It is not possible to delete yourself
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        -
+          Sheef: []
+      operationId: delete_user
+      summary: Deletes the given user
+      description: Deletes the user with the given username
+    parameters:
+      -
+        name: username
+        description: The username of the user to perform the action on
+        schema:
+          type: string
+        in: path
+        required: true
+  '/api/user/{username}/mod':
+    summary: Path for actions related to users mod status
+    description: Perform a PUT request to make the given user mod or DELETE to revoke the mod rights
+    put:
+      tags:
+        - User
+      responses:
+        '204':
+          description: The user is now mod
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '403':
+          $ref: '#/components/responses/UserNeedsModRights'
+        '404':
+          description: The user was not found
+        '409':
+          description: You can't make yourself mod
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        -
+          Sheef: []
+      operationId: make_user_mod
+      summary: Gives the given user mod status
+      description: Gives the given user the mod status
+    delete:
+      tags:
+        - User
+      responses:
+        '204':
+          description: The user is no longer a mod
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '403':
+          $ref: '#/components/responses/UserNeedsModRights'
+        '404':
+          description: The user was not found
+        '409':
+          description: You can't revoke your own mod rights
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        -
+          Sheef: []
+      operationId: revoke_user_mod_rights
+      summary: Revokes the mod rights for the given user
+      description: Revokes the mod rights for the given user
+    parameters:
+      -
+        name: username
+        description: The username
+        schema:
+          type: string
+        in: path
+        required: true
+  '/api/user/{username}/main':
+    summary: Path for actions related to users main group status
+    description: >-
+      Perform a PUT request to make the given user part of the main group or DELETE to remove the user
+      from the main group
+    put:
+      tags:
+        - User
+      responses:
+        '204':
+          description: The user is now in the main group
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '403':
+          $ref: '#/components/responses/UserNeedsModRights'
+        '404':
+          description: The user was not found
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        -
+          Sheef: []
+      operationId: add_user_to_main_group
+      summary: Adds the given user to the main group
+      description: Adds the given user to the main group
+    delete:
+      tags:
+        - User
+      responses:
+        '204':
+          description: The user is no longer in the main group
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '403':
+          $ref: '#/components/responses/UserNeedsModRights'
+        '404':
+          description: The user was not found
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        -
+          Sheef: []
+      operationId: remove_user_from_main_group
+      summary: Removes the given user from the main group
+      description: Removes the given user from the main group
+    parameters:
+      -
+        name: username
+        description: The username
+        schema:
+          type: string
+        in: path
+        required: true
+  '/api/user/{username}/password':
+    summary: Path for actions to change the password
+    description: Perform a PUT request to change the password
+    put:
+      requestBody:
+        description: The new password
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePassword'
+        required: true
+      tags:
+        - User
+      responses:
+        '204':
+          description: The users password was changed and all tokens deleted
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '403':
+          $ref: '#/components/responses/UserNeedsModRights'
+        '404':
+          description: The user was not found
+        '409':
+          description: You can't make change your own password with this method
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        -
+          Sheef: []
+      operationId: change_password
+      summary: Changes the password for the given user
+      description: Changes the password for the given user. Cannot be used to changes the current users password
+    parameters:
+      -
+        name: username
+        description: The user to change the password for
+        schema:
+          type: string
+        in: path
+        required: true
+  /api/my/profile:
+    summary: Path for actions around the profile
+    description: >-
+      Perform a GET request to get the currently logged in user or a PUT request to change the current
+      users profile data
+    get:
+      tags:
+        - Profile
+      responses:
+        '200':
+          $ref: '#/components/responses/SingleUserResponse'
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+      security:
+        -
+          Sheef: []
+      operationId: get_my_profile
+      summary: Gets the current user
+      description: Gets the current users profile
+    put:
+      requestBody:
+        description: The current users profile
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfile'
+        required: true
+      tags:
+        - Profile
+      responses:
+        '204':
+          description: The profile was updated successfully
+        '400':
+          $ref: '#/components/responses/RequiredFieldMissing'
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        -
+          Sheef: []
+      operationId: update_my_profile
+      summary: Updates the current users profile
+      description: Updates the current users profile
+  /api/my/profile/password:
+    summary: Path to change the current users password
+    description: Perform a PUT request to change the current users password
+    put:
+      requestBody:
+        description: The current and new password
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeMyPassword'
+        required: true
+      tags:
+        - Profile
+      responses:
+        '204':
+          description: The password was changed successfully
+        '400':
+          $ref: '#/components/responses/RequiredFieldMissing'
+        '401':
+          $ref: '#/components/responses/InvalidApiTokenResponse'
+        '403':
+          description: The current password is wrong
+        '404':
+          description: The current user seems to have been deleted
+        '500':
+          $ref: '#/components/responses/UnknownError'
+      security:
+        -
+          Sheef: []
+      operationId: change_my_password
+      summary: Changes the current users password
+      description: 'Changes the current users password, while checking if the old password is valid'
+components:
+  schemas:
+    Login:
+      title: Root Type for Login
+      description: Contains the username and the password to use for the login
+      required:
+        - password
+        - username
+      type: object
+      properties:
+        username:
+          format: password
+          description: The username of the user
+          type: string
+        password:
+          description: The password of the user
+          type: string
+      example:
+        username: John
+        password: SuperS3cret
+    LoginResponse:
+      title: Root Type for LoginResponse
+      description: Contains the user and given api token
+      required:
+        - user
+        - token
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+          description: The currently logged in user
+          properties:
+            username:
+              type: string
+            isMod:
+              type: boolean
+            isMainGroup:
+              type: boolean
+            gearLevel:
+              type: string
+            job:
+              type: string
+        token:
+          description: >-
+            The API token to authenticate with against Sheef. Include it in the
+            `Authorization`-header with the scheme `Sheef`
+          type: string
+          readOnly: true
+      example:
+        user:
+          username: John
+          isMod: true
+          isMainGroup: false
+          gearLevel: '625'
+          job: Paladin
+        token: >-
+          John/ARR4WZQ4fkOWvv-kw_NfoiumiPNHO_qXknUS-_HzLvEj1v-wRY7Wj1CNVzsqAel1a68OPu9Cqd2_fe1k92tHrQ==
+    User:
+      title: Root Type for User
+      description: Contains all information about a user
+      required:
+        - username
+      type: object
+      properties:
+        username:
+          description: The username of the user
+          type: string
+        isMod:
+          description: Whether the user is mod
+          type: boolean
+        isMainGroup:
+          description: Whether the user is part of the main group
+          type: boolean
+        gearLevel:
+          description: The gear level of the user
+          type: string
+        job:
+          description: The job of the user
+          type: string
+      example:
+        username: John
+        isMod: true
+        isMainGroup: false
+        gearLevel: '625'
+        job: Paladin
+    ChangePassword:
+      title: Root Type for ChangePassword
+      description: Contains information to change the passsword
+      required:
+        - new_password
+      type: object
+      properties:
+        new_password:
+          format: password
+          description: The new password
+          type: string
+      example:
+        new_password: Sup3erS3cr3t
+    UpdateProfile:
+      title: Root Type for UpdateProfile
+      description: The data to set the profile of the current user with
+      type: object
+      properties:
+        job:
+          description: The job of the current user
+          type: string
+        gearLevel:
+          description: The gear level of the current user
+          type: string
+      example:
+        job: Paladin
+        gearLevel: '625'
+    ChangeMyPassword:
+      title: Root Type for ChangeMyPassword
+      description: Contains information to change the current users password
+      required:
+        - old_password
+        - new_password
+      type: object
+      properties:
+        old_password:
+          format: password
+          description: The users current password
+          type: string
+        new_password:
+          format: password
+          description: The new password for the user
+          type: string
+      example:
+        old_password: not_so_secret
+        new_password: Sup3rS3cr3t
+  responses:
+    LoginResponse:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/LoginResponse'
+      description: The login was successful
+    UserListResponse:
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/User'
+          examples:
+            Userlist:
+              value:
+                -
+                  username: some text
+                  isMod: true
+                  isMainGroup: true
+                  gearLevel: some text
+                  job: some text
+                -
+                  username: some text
+                  isMod: true
+                  isMainGroup: true
+                  gearLevel: some text
+                  job: some text
+      description: Contains a list of users
+    SingleUserResponse:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/User'
+          examples:
+            User:
+              value:
+                username: some text
+                isMod: true
+                isMainGroup: true
+                gearLevel: some text
+                job: some text
+      description: Contains only one user
+    InvalidApiTokenResponse:
+      description: The provided api token is invalid
+    UserNeedsModRights:
+      description: The user needs mod rights to perform this action
+    RequiredFieldMissing:
+      description: A required field is missing
+    UnknownError:
+      description: An unknown error occured
+  securitySchemes:
+    Sheef:
+      type: apiKey
+      description: The Sheef API key
+      name: Authorization
+      in: header
+security:
+  -
+    Sheef: []
