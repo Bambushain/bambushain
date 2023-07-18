@@ -7,9 +7,9 @@ use sheef_backend::routes::authentication::{login, logout};
 use sheef_backend::routes::calendar::{get_calendar, get_day_details, update_day_details};
 use sheef_backend::routes::crafter::{create_crafter, delete_crafter, get_crafter, get_crafters, update_crafter};
 use sheef_backend::routes::fighter::{create_fighter, delete_fighter, get_fighter, get_fighters, update_fighter};
-use sheef_backend::routes::kill::{activate_kill_for_me, activate_kill_for_user, create_kill, deactivate_kill_for_me, deactivate_kill_for_user, delete_kill, get_kills, get_kills_for_user, get_my_kills, get_users_for_kill, update_kill};
-use sheef_backend::routes::savage_mount::{activate_savage_mount_for_me, activate_savage_mount_for_user, create_savage_mount, deactivate_savage_mount_for_me, deactivate_savage_mount_for_user, delete_savage_mount, get_savage_mounts, get_savage_mounts_for_user, get_my_savage_mounts, get_users_for_savage_mount, update_savage_mount};
-use sheef_backend::routes::mount::{activate_mount_for_me, activate_mount_for_user, create_mount, deactivate_mount_for_me, deactivate_mount_for_user, delete_mount, get_mounts, get_mounts_for_user, get_my_mounts, get_users_for_mount, update_mount};
+use sheef_backend::routes::kill::{activate_kill_for_me, activate_kill_for_user, create_kill, deactivate_kill_for_me, deactivate_kill_for_user, delete_kill, get_kills, update_kill};
+use sheef_backend::routes::savage_mount::{activate_savage_mount_for_me, activate_savage_mount_for_user, create_savage_mount, deactivate_savage_mount_for_me, deactivate_savage_mount_for_user, delete_savage_mount, get_savage_mounts, update_savage_mount};
+use sheef_backend::routes::mount::{activate_mount_for_me, activate_mount_for_user, create_mount, deactivate_mount_for_me, deactivate_mount_for_user, delete_mount, get_mounts, update_mount};
 use sheef_backend::routes::user::{add_main_group_user, add_mod_user, change_my_password, change_password, create_user, delete_user, get_profile, get_user, get_users, remove_main_group_user, remove_mod_user, update_profile};
 
 macro_rules! static_file_str {
