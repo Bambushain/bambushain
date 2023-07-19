@@ -11,6 +11,7 @@ yew = { version = "0.20.0", features = ["csr", "hydration"] }
 yew-router = "0.17.0"
 wasm-logger = "0.2.0"
 web-sys = "0.3.64"
+js-sys = "0.3.64"
 wasm-bindgen = "0.2.87"
 async-trait = "0.1.71"
 gloo = { version = "0.8.1", default-features = false, features = ["storage", "net"] }
@@ -24,3 +25,4 @@ chrono = { version = "0.4.26", features = ["serde"] }
 rand = "0.8.5"
 yew-hooks = "0.2.0"
 yew-feather = { version = "1.0.0" }
+futures = "0.3.28"

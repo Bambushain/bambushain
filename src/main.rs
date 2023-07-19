@@ -1,6 +1,9 @@
+use std::sync::Arc;
+
 use actix_web::{App, guard, HttpResponse, HttpServer};
 use actix_web::web;
-use log::info;
+
+use sheef_backend::broadcaster::calendar::CalendarBroadcaster;
 use sheef_backend::middleware::authenticate_user::AuthenticateUser;
 use sheef_backend::middleware::check_mod::CheckMod;
 use sheef_backend::routes::authentication::{login, logout};
@@ -8,9 +11,11 @@ use sheef_backend::routes::calendar::{get_calendar, get_day_details, update_day_
 use sheef_backend::routes::crafter::{create_crafter, delete_crafter, get_crafter, get_crafters, update_crafter};
 use sheef_backend::routes::fighter::{create_fighter, delete_fighter, get_fighter, get_fighters, update_fighter};
 use sheef_backend::routes::kill::{activate_kill_for_me, activate_kill_for_user, create_kill, deactivate_kill_for_me, deactivate_kill_for_user, delete_kill, get_kills, update_kill};
-use sheef_backend::routes::savage_mount::{activate_savage_mount_for_me, activate_savage_mount_for_user, create_savage_mount, deactivate_savage_mount_for_me, deactivate_savage_mount_for_user, delete_savage_mount, get_savage_mounts, update_savage_mount};
 use sheef_backend::routes::mount::{activate_mount_for_me, activate_mount_for_user, create_mount, deactivate_mount_for_me, deactivate_mount_for_user, delete_mount, get_mounts, update_mount};
+use sheef_backend::routes::savage_mount::{activate_savage_mount_for_me, activate_savage_mount_for_user, create_savage_mount, deactivate_savage_mount_for_me, deactivate_savage_mount_for_user, delete_savage_mount, get_savage_mounts, update_savage_mount};
 use sheef_backend::routes::user::{add_main_group_user, add_mod_user, change_my_password, change_password, create_user, delete_user, get_profile, get_user, get_users, remove_main_group_user, remove_mod_user, update_profile, update_user_profile};
+use sheef_backend::sse::calendar::calendar_sse_client;
+use sheef_backend::sse::NotificationState;
 
 macro_rules! static_file_str {
     ($file:expr, $content_type:expr, $fn_name:tt) => {
@@ -43,10 +48,16 @@ async fn main() -> std::io::Result<()> {
         .init()
         .unwrap();
 
-    info!("Running sheef planing on :8070");
+    log::info!("Running sheef planing on :8070");
 
-    HttpServer::new(|| {
+    let calendar_broadcaster = CalendarBroadcaster::create();
+
+    HttpServer::new(move || {
         App::new()
+            .app_data(web::Data::new(NotificationState {
+                calendar_broadcaster: Arc::clone(&calendar_broadcaster),
+            }))
+
             .route("/api/login", web::post().to(login))
             .route("/api/login", web::delete().to(logout).wrap(AuthenticateUser))
             .route("/api/login", web::head().to(HttpResponse::NoContent).wrap(AuthenticateUser))
@@ -108,6 +119,8 @@ async fn main() -> std::io::Result<()> {
             .route("/api/my/mount/{mount}", web::delete().to(deactivate_mount_for_me).wrap(AuthenticateUser))
             .route("/api/my/savage-mount/{savage_mount}", web::put().to(activate_savage_mount_for_me).wrap(AuthenticateUser))
             .route("/api/my/savage-mount/{savage_mount}", web::delete().to(deactivate_savage_mount_for_me).wrap(AuthenticateUser))
+
+            .route("/sse/calendar", web::get().to(calendar_sse_client))
 
             .route("/static/custom.css", web::get().to(custom_css))
             .route("/static/pico.css", web::get().to(pico_css))

@@ -13,6 +13,7 @@ use yew_router::prelude::*;
 use sheef_entities::event::SetEvent;
 
 use crate::api::calendar::{Calendar, update_event_availability};
+use crate::hooks::event_source::use_event_source;
 use crate::routing::SheefRoute;
 use crate::storage::CurrentUser;
 use crate::ui::modal::PicoModal;
@@ -94,9 +95,9 @@ fn update_day_modal(props: &UpdateDayModalProps) -> Html {
     log::debug!("Render the update modal");
     let error_state = use_state(|| false);
     let loading_state = use_state(|| false);
-    let available_state = use_state(|| false);
+    let available_state = use_state(|| props.available);
 
-    let time_state = use_state(|| AttrValue::from(""));
+    let time_state = use_state(|| props.time.clone());
 
     let calendar_query_state = use_query_value::<Calendar>(Rc::new((props.date.year(), props.date.month())));
 
@@ -293,6 +294,20 @@ pub fn calendar_page() -> Html {
     let state = use_state_eq(|| vec![] as Vec<DayProps>);
     let initially_loaded_state = use_state_eq(|| false);
     let current_user = use_atom_value::<CurrentUser>();
+
+    let event_source_trigger = {
+        let calendar_query_state = calendar_query_state.clone();
+
+        move |_| {
+            let calendar_query_state = calendar_query_state.clone();
+
+            yew::platform::spawn_local(async move {
+                let _ = calendar_query_state.refresh().await;
+            });
+        }
+    };
+
+    use_event_source("/sse/calendar".to_string(), event_source_trigger);
 
     match calendar_query_state.result() {
         Some(Ok(result)) => {

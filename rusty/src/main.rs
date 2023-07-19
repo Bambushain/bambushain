@@ -10,6 +10,7 @@ mod pages;
 mod api;
 mod storage;
 mod ui;
+mod hooks;
 
 fn main() {
     if is_logging_on() {

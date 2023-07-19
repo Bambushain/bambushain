@@ -2,7 +2,10 @@ use actix_web::{HttpRequest, HttpResponse};
 use actix_web::web::{Json, Path, Query};
 use chrono::{Datelike, NaiveDate, Utc};
 use serde::Deserialize;
+
 use sheef_entities::event::SetEvent;
+
+use crate::sse::NotificationState;
 
 pub fn get_current_month() -> u32 {
     Utc::now().date_naive().month()
@@ -55,9 +58,14 @@ pub async fn get_day_details(path: Path<DayDetailsPathInfo>, req: HttpRequest) -
     ok_or_error!(sheef_database::event::get_event(&username, &date).await)
 }
 
-pub async fn update_day_details(path: Path<DayDetailsPathInfo>, body: Json<SetEvent>, req: HttpRequest) -> HttpResponse {
+pub async fn update_day_details(path: Path<DayDetailsPathInfo>, body: Json<SetEvent>, notification_state: actix_web::web::Data<NotificationState>, req: HttpRequest) -> HttpResponse {
     let date = date_from_values!(path.year, path.month, path.day);
     let username = username!(req);
 
-    no_content_or_error!(sheef_database::event::set_event(&username, &body.time, body.available, &date).await)
+    let data = sheef_database::event::set_event(&username, &body.time, body.available, &date).await;
+    actix_web::rt::spawn(async move {
+        notification_state.calendar_broadcaster.notify_change().await;
+    });
+
+    no_content_or_error!(data)
 }
