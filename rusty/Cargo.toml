@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 sheef_entities = { path = "../entities" }
+
 yew = { version = "0.20.0", features = ["csr", "hydration"] }
 yew-router = "0.17.0"
 wasm-logger = "0.2.0"
@@ -18,11 +19,12 @@ gloo = { version = "0.8.1", default-features = false, features = ["storage", "ne
 bounce = { version = "0.7.0", features = ["query", "helmet"] }
 getrandom = { version = "0.2.10", features = ["js"] }
 num-traits = "0.2.15"
-log = "0.4.19"
-serde = { version = "1.0.171", features = ["derive"] }
-serde_json = "1.0.100"
-chrono = { version = "0.4.26", features = ["serde"] }
 rand = "0.8.5"
 yew-hooks = "0.2.0"
 yew-feather = { version = "1.0.0" }
 futures = "0.3.28"
+
+log = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true}
