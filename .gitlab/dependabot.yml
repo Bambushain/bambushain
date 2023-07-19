@@ -17,6 +17,10 @@ updates:
     schedule:
       interval: daily
   - package-ecosystem: cargo
+    directory: /rusty
+    schedule:
+      interval: daily
+  - package-ecosystem: cargo
     directory: /utils
     schedule:
       interval: daily
