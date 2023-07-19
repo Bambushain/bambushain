@@ -1,5 +1,5 @@
 use actix_web::{HttpRequest, HttpResponse};
-use actix_web::web::{Json, Path, Query};
+use actix_web::web;
 use chrono::{Datelike, NaiveDate, Utc};
 use serde::Deserialize;
 
@@ -45,20 +45,20 @@ macro_rules! date_from_values {
     };
 }
 
-pub async fn get_calendar(query: Query<CalendarQueryInfo>) -> HttpResponse {
+pub async fn get_calendar(query: web::Query<CalendarQueryInfo>) -> HttpResponse {
     date_from_values!(query.year, query.month);
 
     ok_or_error!(sheef_database::event::get_events_for_month(query.year, query.month).await)
 }
 
-pub async fn get_day_details(path: Path<DayDetailsPathInfo>, req: HttpRequest) -> HttpResponse {
+pub async fn get_day_details(path: web::Path<DayDetailsPathInfo>, req: HttpRequest) -> HttpResponse {
     let date = date_from_values!(path.year, path.month, path.day);
     let username = username!(req);
 
     ok_or_error!(sheef_database::event::get_event(&username, &date).await)
 }
 
-pub async fn update_day_details(path: Path<DayDetailsPathInfo>, body: Json<SetEvent>, notification_state: actix_web::web::Data<NotificationState>, req: HttpRequest) -> HttpResponse {
+pub async fn update_day_details(path: web::Path<DayDetailsPathInfo>, body: web::Json<SetEvent>, notification_state: web::Data<NotificationState>, req: HttpRequest) -> HttpResponse {
     let date = date_from_values!(path.year, path.month, path.day);
     let username = username!(req);
 

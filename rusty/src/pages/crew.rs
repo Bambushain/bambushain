@@ -13,6 +13,7 @@ use sheef_entities::user::WebUser;
 
 use crate::api::{CONFLICT, FORBIDDEN, INTERNAL_SERVER_ERROR, NO_CONTENT, NOT_FOUND};
 use crate::api::user::{change_user_password, create_user, Crew, delete_user, make_user_main, make_user_mod, remove_user_main, remove_user_mod, update_profile};
+use crate::hooks::event_source::use_event_source;
 use crate::storage::CurrentUser;
 use crate::ui::modal::{PicoAlert, PicoConfirm, PicoModal};
 
@@ -639,6 +640,21 @@ pub fn crew_page() -> Html {
     let state = use_state_eq(|| vec![] as Vec<sheef_entities::User>);
 
     let open_create_user_modal_click = use_callback(|_, open_create_user_modal_state| open_create_user_modal_state.set(true), open_create_user_modal_state.clone());
+
+    let event_source_trigger = {
+        let users_query_state = users_query_state.clone();
+
+        move |_| {
+            log::debug!("Someone changed data on the server, trigger a refresh");
+            let users_query_state = users_query_state.clone();
+
+            yew::platform::spawn_local(async move {
+                let _ = users_query_state.refresh().await;
+            });
+        }
+    };
+
+    use_event_source("/sse/crew".to_string(), event_source_trigger);
 
     match users_query_state.result() {
         None => {

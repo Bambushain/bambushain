@@ -1,5 +1,6 @@
 use actix_web::{HttpRequest, HttpResponse, web};
 use serde::Deserialize;
+
 use sheef_database::fighter::fighter_exists;
 use sheef_entities::{Fighter, sheef_exists_already_error, sheef_not_found_error};
 

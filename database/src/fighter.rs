@@ -1,5 +1,6 @@
 use sheef_entities::{Fighter, sheef_io_error, sheef_not_found_error};
-use crate::{SheefErrorResult, persist_entity, read_entity, read_entity_dir, validate_database_dir, SheefResult};
+
+use crate::{persist_entity, read_entity, read_entity_dir, SheefErrorResult, SheefResult, validate_database_dir};
 
 async fn validate_fighter_dir() -> String {
     let path = vec![validate_database_dir().await, "fighter".to_string()].join("/");

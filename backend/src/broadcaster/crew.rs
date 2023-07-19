@@ -5,21 +5,21 @@ use actix_web::rt::time::interval;
 use actix_web_lab::sse::{ChannelStream, Sse};
 use parking_lot::Mutex;
 
-pub struct CalendarBroadcaster {
-    inner: Mutex<CalendarBroadcasterInner>,
+pub struct CrewBroadcaster {
+    inner: Mutex<CrewBroadcasterInner>,
 }
 
 #[derive(Debug, Clone, Default)]
-struct CalendarBroadcasterInner {
+struct CrewBroadcasterInner {
     clients: Vec<actix_web_lab::sse::Sender>,
 }
 
-impl CalendarBroadcaster {
+impl CrewBroadcaster {
     pub fn create() -> Arc<Self> {
-        let this = Arc::new(CalendarBroadcaster {
-            inner: Mutex::new(CalendarBroadcasterInner::default()),
+        let this = Arc::new(CrewBroadcaster {
+            inner: Mutex::new(CrewBroadcasterInner::default()),
         });
-        CalendarBroadcaster::spawn_ping(Arc::clone(&this));
+        CrewBroadcaster::spawn_ping(Arc::clone(&this));
 
         this
     }
@@ -37,7 +37,7 @@ impl CalendarBroadcaster {
 
     async fn remove_stale_clients(&self) {
         let clients = self.inner.lock().clients.clone();
-        log::info!("Active calendar client {:?}", clients);
+        log::info!("Active crew client {:?}", clients);
 
         let mut ok_clients = Vec::new();
 
@@ -51,13 +51,13 @@ impl CalendarBroadcaster {
             }
         }
 
-        log::info!("Okay calendar active client {:?}", ok_clients);
+        log::info!("Okay crew active client {:?}", ok_clients);
 
         self.inner.lock().clients = ok_clients;
     }
 
     pub async fn new_client(&self) -> Sse<ChannelStream> {
-        log::info!("Starting creation of calendar broadcaster");
+        log::info!("Starting creation of crew broadcaster");
         let (tx, rx) = actix_web_lab::sse::channel(10);
 
         tx.send(actix_web_lab::sse::Data::new("connected")).await.unwrap();

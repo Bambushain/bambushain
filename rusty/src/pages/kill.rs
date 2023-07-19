@@ -6,6 +6,7 @@ use yew::prelude::*;
 use crate::api::{FORBIDDEN, NOT_FOUND};
 use crate::api::kill::{activate_kill, create_kill, deactivate_kill, delete_kill, Kills, rename_kill};
 use crate::api::my::{activate_kill_for_me, deactivate_kill_for_me};
+use crate::hooks::event_source::use_event_source;
 use crate::pages::boolean_table::{ActivationParams, BooleanTable, EntryModalState, ModifyEntryModalSaveData};
 use crate::storage::CurrentUser;
 use crate::ui::modal::PicoAlert;
@@ -339,6 +340,21 @@ pub fn kill_page() -> Html {
         message_state.set(AttrValue::from(format!("Soll der Kill {} wirklich gelöscht werden?", name)));
         open_state.set(true);
     }, (delete_entry_name_state, delete_entry_message_state.clone(), delete_entry_open.clone()));
+
+    let event_source_trigger = {
+        let kill_query_state = kill_query_state.clone();
+
+        move |_| {
+            log::debug!("Someone changed data on the server, trigger a refresh");
+            let kill_query_state = kill_query_state.clone();
+
+            yew::platform::spawn_local(async move {
+                let _ = kill_query_state.refresh().await;
+            });
+        }
+    };
+
+    use_event_source("/sse/kill".to_string(), event_source_trigger);
 
     match kill_query_state.result() {
         None => {

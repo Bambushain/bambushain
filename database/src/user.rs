@@ -1,6 +1,7 @@
 use sheef_entities::{sheef_io_error, sheef_not_found_error, sheef_serialization_error, sheef_unknown_error};
 use sheef_entities::user::User;
-use crate::{SheefErrorResult, persist_entity, read_entity, read_entity_dir, read_entity_sync, validate_database_dir, validate_database_dir_sync, SheefResult};
+
+use crate::{persist_entity, read_entity, read_entity_dir, read_entity_sync, SheefErrorResult, SheefResult, validate_database_dir, validate_database_dir_sync};
 use crate::token::get_user_token_dir;
 
 pub(crate) async fn validate_user_dir() -> String {

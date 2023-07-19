@@ -1,13 +1,16 @@
 use std::time::{SystemTime, UNIX_EPOCH};
+
+use base64::{Engine, engine::general_purpose};
 use bcrypt::verify;
 use serde::{Deserialize, Serialize};
-use sha2::{Sha512, Digest};
-use crate::user::{get_user, get_user_sync, validate_user_dir, validate_user_dir_sync};
-use base64::{Engine, engine::general_purpose};
-use sheef_entities::authentication::LoginResult;
+use sha2::{Digest, Sha512};
+
 use sheef_entities::{sheef_io_error, sheef_not_found_error, sheef_validation_error};
+use sheef_entities::authentication::LoginResult;
 use sheef_entities::user::User;
+
 use crate::SheefResult;
+use crate::user::{get_user, get_user_sync, validate_user_dir, validate_user_dir_sync};
 
 #[derive(Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq)]
 pub struct Token {}

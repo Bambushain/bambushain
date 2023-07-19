@@ -299,6 +299,7 @@ pub fn calendar_page() -> Html {
         let calendar_query_state = calendar_query_state.clone();
 
         move |_| {
+            log::debug!("Someone changed data on the server, trigger a refresh");
             let calendar_query_state = calendar_query_state.clone();
 
             yew::platform::spawn_local(async move {

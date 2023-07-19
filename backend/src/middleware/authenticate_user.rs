@@ -1,8 +1,10 @@
 use std::future::{Ready, ready};
-use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform};
+
 use actix_web::{Error, HttpMessage};
+use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform};
 use actix_web::error::ErrorUnauthorized;
 use futures_util::future::LocalBoxFuture;
+
 use sheef_database::token::get_user_by_token_sync;
 use sheef_entities::user::User;
 

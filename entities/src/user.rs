@@ -1,7 +1,8 @@
 use std::cmp::Ordering;
 use std::fmt::{Display, Formatter};
+
 use bcrypt::{BcryptError, hash, verify};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]

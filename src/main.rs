@@ -4,6 +4,10 @@ use actix_web::{App, guard, HttpResponse, HttpServer};
 use actix_web::web;
 
 use sheef_backend::broadcaster::calendar::CalendarBroadcaster;
+use sheef_backend::broadcaster::crew::CrewBroadcaster;
+use sheef_backend::broadcaster::kill::KillBroadcaster;
+use sheef_backend::broadcaster::mount::MountBroadcaster;
+use sheef_backend::broadcaster::savage_mount::SavageMountBroadcaster;
 use sheef_backend::middleware::authenticate_user::AuthenticateUser;
 use sheef_backend::middleware::check_mod::CheckMod;
 use sheef_backend::routes::authentication::{login, logout};
@@ -15,7 +19,11 @@ use sheef_backend::routes::mount::{activate_mount_for_me, activate_mount_for_use
 use sheef_backend::routes::savage_mount::{activate_savage_mount_for_me, activate_savage_mount_for_user, create_savage_mount, deactivate_savage_mount_for_me, deactivate_savage_mount_for_user, delete_savage_mount, get_savage_mounts, update_savage_mount};
 use sheef_backend::routes::user::{add_main_group_user, add_mod_user, change_my_password, change_password, create_user, delete_user, get_profile, get_user, get_users, remove_main_group_user, remove_mod_user, update_profile, update_user_profile};
 use sheef_backend::sse::calendar::calendar_sse_client;
+use sheef_backend::sse::crew::crew_sse_client;
+use sheef_backend::sse::kill::kill_sse_client;
+use sheef_backend::sse::mount::mount_sse_client;
 use sheef_backend::sse::NotificationState;
+use sheef_backend::sse::savage_mount::savage_mount_sse_client;
 
 macro_rules! static_file_str {
     ($file:expr, $content_type:expr, $fn_name:tt) => {
@@ -51,11 +59,19 @@ async fn main() -> std::io::Result<()> {
     log::info!("Running sheef planing on :8070");
 
     let calendar_broadcaster = CalendarBroadcaster::create();
+    let kill_broadcaster = KillBroadcaster::create();
+    let mount_broadcaster = MountBroadcaster::create();
+    let savage_mount_broadcaster = SavageMountBroadcaster::create();
+    let crew_broadcaster = CrewBroadcaster::create();
 
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(NotificationState {
                 calendar_broadcaster: Arc::clone(&calendar_broadcaster),
+                kill_broadcaster: Arc::clone(&kill_broadcaster),
+                mount_broadcaster: Arc::clone(&mount_broadcaster),
+                savage_mount_broadcaster: Arc::clone(&savage_mount_broadcaster),
+                crew_broadcaster: Arc::clone(&crew_broadcaster),
             }))
 
             .route("/api/login", web::post().to(login))
@@ -121,6 +137,10 @@ async fn main() -> std::io::Result<()> {
             .route("/api/my/savage-mount/{savage_mount}", web::delete().to(deactivate_savage_mount_for_me).wrap(AuthenticateUser))
 
             .route("/sse/calendar", web::get().to(calendar_sse_client))
+            .route("/sse/crew", web::get().to(crew_sse_client))
+            .route("/sse/kill", web::get().to(kill_sse_client))
+            .route("/sse/mount", web::get().to(mount_sse_client))
+            .route("/sse/savage-mount", web::get().to(savage_mount_sse_client))
 
             .route("/static/custom.css", web::get().to(custom_css))
             .route("/static/pico.css", web::get().to(pico_css))

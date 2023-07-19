@@ -1,8 +1,11 @@
 use actix_web::{HttpRequest, HttpResponse, web};
 use serde::Deserialize;
+
 use sheef_database::user::{PasswordError, user_exists};
 use sheef_entities::{sheef_exists_already_error, sheef_insufficient_rights_error, sheef_not_found_error, sheef_unknown_error, sheef_validation_error, UpdateProfile, User, user};
 use sheef_entities::authentication::{ChangeMyPassword, ChangePassword};
+
+use crate::sse::NotificationState;
 
 #[derive(Deserialize)]
 pub struct UserPathInfo {
@@ -33,55 +36,85 @@ pub async fn get_user(info: web::Path<UserPathInfo>) -> HttpResponse {
     ok_or_error!(sheef_database::user::get_user(&info.username).await.map(|u| u.to_web_user()))
 }
 
-pub async fn create_user(user: web::Json<user::User>) -> HttpResponse {
+pub async fn create_user(user: web::Json<user::User>, notification_state: web::Data<NotificationState>) -> HttpResponse {
     if user_exists(&user.username).await {
         return conflict!(sheef_exists_already_error!("user", "A user with the name already exists"));
     }
 
-    created_or_error!(sheef_database::user::create_user(&user.username, &user.password, user.is_mod, user.is_main_group, &user.gear_level, &user.job, user.is_hidden).await.map(|u| u.to_web_user()))
+    let data = sheef_database::user::create_user(&user.username, &user.password, user.is_mod, user.is_main_group, &user.gear_level, &user.job, user.is_hidden).await.map(|u| u.to_web_user());
+    actix_web::rt::spawn(async move {
+        notification_state.crew_broadcaster.notify_change().await;
+    });
+
+    created_or_error!(data)
 }
 
-pub async fn delete_user(info: web::Path<UserPathInfo>, req: HttpRequest) -> HttpResponse {
+pub async fn delete_user(info: web::Path<UserPathInfo>, notification_state: web::Data<NotificationState>, req: HttpRequest) -> HttpResponse {
     prevent_me!(req, info.username, "You cannot delete yourself");
     if !user_exists(&info.username).await {
         return not_found!(sheef_not_found_error!("user", "The user was not found"));
     }
 
-    no_content_or_error!(sheef_database::user::delete_user(&info.username).await)
+    let data = sheef_database::user::delete_user(&info.username).await;
+    actix_web::rt::spawn(async move {
+        notification_state.crew_broadcaster.notify_change().await;
+    });
+
+    no_content_or_error!(data)
 }
 
-pub async fn add_mod_user(info: web::Path<UserPathInfo>, req: HttpRequest) -> HttpResponse {
+pub async fn add_mod_user(info: web::Path<UserPathInfo>, notification_state: web::Data<NotificationState>, req: HttpRequest) -> HttpResponse {
     prevent_me!(req, info.username, "You cannot make yourself mod");
     if !user_exists(&info.username).await {
         return not_found!(sheef_not_found_error!("user", "The user was not found"));
     }
 
-    no_content_or_error!(sheef_database::user::change_mod_status(&info.username, true).await)
+    let data = sheef_database::user::change_mod_status(&info.username, true).await;
+    actix_web::rt::spawn(async move {
+        notification_state.crew_broadcaster.notify_change().await;
+    });
+
+    no_content_or_error!(data)
 }
 
-pub async fn remove_mod_user(info: web::Path<UserPathInfo>, req: HttpRequest) -> HttpResponse {
+pub async fn remove_mod_user(info: web::Path<UserPathInfo>, notification_state: web::Data<NotificationState>, req: HttpRequest) -> HttpResponse {
     prevent_me!(req, info.username, "You cannot revoke your own mod rights");
     if !user_exists(&info.username).await {
         return not_found!(sheef_not_found_error!("user", "The user was not found"));
     }
 
-    no_content_or_error!(sheef_database::user::change_mod_status(&info.username, false).await)
+    let data = sheef_database::user::change_mod_status(&info.username, false).await;
+    actix_web::rt::spawn(async move {
+        notification_state.crew_broadcaster.notify_change().await;
+    });
+
+    no_content_or_error!(data)
 }
 
-pub async fn add_main_group_user(info: web::Path<UserPathInfo>) -> HttpResponse {
+pub async fn add_main_group_user(info: web::Path<UserPathInfo>, notification_state: web::Data<NotificationState>) -> HttpResponse {
     if !user_exists(&info.username).await {
         return not_found!(sheef_not_found_error!("user", "The user was not found"));
     }
 
-    no_content_or_error!(sheef_database::user::change_main_group(&info.username, true).await)
+    let data = sheef_database::user::change_main_group(&info.username, true).await;
+    actix_web::rt::spawn(async move {
+        notification_state.crew_broadcaster.notify_change().await;
+    });
+
+    no_content_or_error!(data)
 }
 
-pub async fn remove_main_group_user(info: web::Path<UserPathInfo>) -> HttpResponse {
+pub async fn remove_main_group_user(info: web::Path<UserPathInfo>, notification_state: web::Data<NotificationState>) -> HttpResponse {
     if !user_exists(&info.username).await {
         return not_found!(sheef_not_found_error!("user", "The user was not found"));
     }
 
-    no_content_or_error!(sheef_database::user::change_main_group(&info.username, false).await)
+    let data = sheef_database::user::change_main_group(&info.username, false).await;
+    actix_web::rt::spawn(async move {
+        notification_state.crew_broadcaster.notify_change().await;
+    });
+
+    no_content_or_error!(data)
 }
 
 pub async fn change_password(info: web::Path<UserPathInfo>, body: web::Json<ChangePassword>, req: HttpRequest) -> HttpResponse {
@@ -103,14 +136,24 @@ pub async fn change_my_password(body: web::Json<ChangeMyPassword>, req: HttpRequ
     }
 }
 
-pub async fn update_profile(body: web::Json<UpdateProfile>, req: HttpRequest) -> HttpResponse {
+pub async fn update_profile(body: web::Json<UpdateProfile>, notification_state: web::Data<NotificationState>, req: HttpRequest) -> HttpResponse {
     let username = username!(req);
 
-    no_content_or_error!(sheef_database::user::update_me(&username, &body.job, &body.gear_level).await)
+    let data = sheef_database::user::update_me(&username, &body.job, &body.gear_level).await;
+    actix_web::rt::spawn(async move {
+        notification_state.crew_broadcaster.notify_change().await;
+    });
+
+    no_content_or_error!(data)
 }
 
-pub async fn update_user_profile(info: web::Path<UserPathInfo>, body: web::Json<UpdateProfile>) -> HttpResponse {
-    no_content_or_error!(sheef_database::user::update_me(&info.username, &body.job, &body.gear_level).await)
+pub async fn update_user_profile(info: web::Path<UserPathInfo>, body: web::Json<UpdateProfile>, notification_state: web::Data<NotificationState>) -> HttpResponse {
+    let data = sheef_database::user::update_me(&info.username, &body.job, &body.gear_level).await;
+    actix_web::rt::spawn(async move {
+        notification_state.crew_broadcaster.notify_change().await;
+    });
+
+    no_content_or_error!(data)
 }
 
 pub async fn get_profile(req: HttpRequest) -> HttpResponse {

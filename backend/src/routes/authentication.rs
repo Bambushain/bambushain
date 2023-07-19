@@ -1,6 +1,8 @@
 use actix_web::{HttpMessage, HttpRequest, HttpResponse, web};
+
 use sheef_database::token::{remove_token, validate_auth_and_create_token};
 use sheef_entities::{Login, SheefErrorCode};
+
 use crate::middleware::authenticate_user::AuthenticationState;
 
 pub async fn login(body: web::Json<Login>) -> HttpResponse {

@@ -1,8 +1,10 @@
 use std::future::{Ready, ready};
-use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform};
+
 use actix_web::{Error, HttpMessage};
+use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform};
 use actix_web::error::ErrorForbidden;
 use futures_util::future::LocalBoxFuture;
+
 use crate::middleware::authenticate_user::AuthenticationState;
 
 pub struct CheckMod;

@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+
 use crate::User;
 
 #[derive(Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq, Clone)]

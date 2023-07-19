@@ -6,6 +6,7 @@ use yew::prelude::*;
 use crate::api::{FORBIDDEN, NOT_FOUND};
 use crate::api::mount::{activate_mount, create_mount, deactivate_mount, delete_mount, Mounts, rename_mount};
 use crate::api::my::{activate_mount_for_me, deactivate_mount_for_me};
+use crate::hooks::event_source::use_event_source;
 use crate::pages::boolean_table::{ActivationParams, BooleanTable, EntryModalState, ModifyEntryModalSaveData};
 use crate::storage::CurrentUser;
 use crate::ui::modal::PicoAlert;
@@ -341,6 +342,21 @@ pub fn mount_page() -> Html {
         message_state.set(AttrValue::from(format!("Soll das Mount {} wirklich gelöscht werden?", name)));
         open_state.set(true);
     }, (delete_entry_name_state, delete_entry_message_state.clone(), delete_entry_open.clone()));
+
+    let event_source_trigger = {
+        let mount_query_state = mount_query_state.clone();
+
+        move |_| {
+            log::debug!("Someone changed data on the server, trigger a refresh");
+            let mount_query_state = mount_query_state.clone();
+
+            yew::platform::spawn_local(async move {
+                let _ = mount_query_state.refresh().await;
+            });
+        }
+    };
+
+    use_event_source("/sse/mount".to_string(), event_source_trigger);
 
     match mount_query_state.result() {
         None => {

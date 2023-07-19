@@ -1,6 +1,8 @@
 use std::cmp::Ordering;
+
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
+
 use crate::user::WebUser;
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Clone, Debug)]

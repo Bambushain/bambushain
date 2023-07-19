@@ -6,6 +6,7 @@ use yew::prelude::*;
 use crate::api::{FORBIDDEN, NOT_FOUND};
 use crate::api::my::{activate_savage_mount_for_me, deactivate_savage_mount_for_me};
 use crate::api::savage_mount::{activate_savage_mount, create_savage_mount, deactivate_savage_mount, delete_savage_mount, rename_savage_mount, SavageMounts};
+use crate::hooks::event_source::use_event_source;
 use crate::pages::boolean_table::{ActivationParams, BooleanTable, EntryModalState, ModifyEntryModalSaveData};
 use crate::storage::CurrentUser;
 use crate::ui::modal::PicoAlert;
@@ -341,6 +342,21 @@ pub fn savage_mount_page() -> Html {
         message_state.set(AttrValue::from(format!("Soll das Savage Mount {} wirklich gelöscht werden?", name)));
         open_state.set(true);
     }, (delete_entry_name_state, delete_entry_message_state.clone(), delete_entry_open.clone()));
+
+    let event_source_trigger = {
+        let savage_mount_query_state = savage_mount_query_state.clone();
+
+        move |_| {
+            log::debug!("Someone changed data on the server, trigger a refresh");
+            let savage_mount_query_state = savage_mount_query_state.clone();
+
+            yew::platform::spawn_local(async move {
+                let _ = savage_mount_query_state.refresh().await;
+            });
+        }
+    };
+
+    use_event_source("/sse/savage-mount".to_string(), event_source_trigger);
 
     match savage_mount_query_state.result() {
         None => {

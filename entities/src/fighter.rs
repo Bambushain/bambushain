@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Clone, Default)]
@@ -6,7 +7,7 @@ use serde::{Deserialize, Serialize};
 pub struct Fighter {
     pub job: String,
     pub level: String,
-    pub gear_score: String
+    pub gear_score: String,
 }
 
 impl PartialOrd<Self> for Fighter {
