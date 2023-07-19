@@ -41,17 +41,22 @@ impl<S, B> Service<ServiceRequest> for AuthenticateUserMiddleware<S> where S: Se
     fn call(&self, req: ServiceRequest) -> Self::Future {
         let auth_header = match req.headers().get("Authorization") {
             Some(header) => header.to_str().expect("Header value should be convertible to string"),
-            None => return Box::pin(async { Err(ErrorUnauthorized("no auth present")) })
+            None => return box_pin!(Err(ErrorUnauthorized("No auth present")))
         };
 
-        if !auth_header.starts_with("Sheef") {
-            return box_pin!(Err(ErrorUnauthorized("no auth present")));
-        }
-
-        let token = auth_header.strip_prefix("Sheef ").expect("Sheef should be appended");
+        let token = match auth_header.strip_prefix("Sheef ") {
+            Some(token) => token,
+            None => return box_pin!(Err(ErrorUnauthorized("No auth present")))
+        };
         let mut split_token = token.split('/');
-        let username = split_token.next().expect("Username should be present");
-        let token = split_token.last().expect("Token should be present");
+        let username = match split_token.next() {
+            Some(username) => username,
+            None => return box_pin!(Err(ErrorUnauthorized("No auth present")))
+        };
+        let token = match split_token.next() {
+            Some(token) => token,
+            None => return box_pin!(Err(ErrorUnauthorized("No auth present")))
+        };
 
         let user = match get_user_by_token_sync(&username.to_string(), &token.to_string()) {
             Ok(user) => user,
