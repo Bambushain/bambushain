@@ -1,22 +1,12 @@
 use sheef_entities::{sheef_io_error, sheef_not_found_error, sheef_serialization_error, sheef_unknown_error};
 use sheef_entities::user::User;
 
-use crate::{persist_entity, read_entity, read_entity_dir, read_entity_sync, SheefErrorResult, SheefResult, validate_database_dir, validate_database_dir_sync};
+use crate::{persist_entity, read_entity, read_entity_dir, SheefErrorResult, SheefResult, validate_database_dir};
 use crate::token::get_user_token_dir;
 
 pub(crate) async fn validate_user_dir() -> String {
     let path = vec![validate_database_dir().await, "user".to_string()].join("/");
     let result = tokio::fs::create_dir_all(path.as_str()).await;
-    if result.is_err() {
-        panic!("Failed to create user database dir {}", result.err().unwrap());
-    }
-
-    path
-}
-
-pub(crate) fn validate_user_dir_sync() -> String {
-    let path = vec![validate_database_dir_sync(), "user".to_string()].join("/");
-    let result = std::fs::create_dir_all(path.as_str());
     if result.is_err() {
         panic!("Failed to create user database dir {}", result.err().unwrap());
     }
@@ -60,10 +50,6 @@ pub async fn delete_user(username: &String) -> SheefErrorResult {
 
 pub async fn get_user(username: &String) -> SheefResult<User> {
     map_err!(read_entity(validate_user_dir().await, username).await, "user")
-}
-
-pub fn get_user_sync(username: &String) -> SheefResult<User> {
-    map_err!(read_entity_sync(validate_user_dir_sync(), username), "user")
 }
 
 pub async fn get_users() -> SheefResult<Vec<User>> {

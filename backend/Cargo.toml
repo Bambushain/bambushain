@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 sheef_database = { path = "../database" }
 sheef_entities = { path = "../entities" }
+
 actix-web = "4.3.1"
 futures-util = "0.3.28"
 actix-web-lab = "0.19.1"

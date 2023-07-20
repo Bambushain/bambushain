@@ -10,7 +10,7 @@ use sheef_entities::authentication::LoginResult;
 use sheef_entities::user::User;
 
 use crate::SheefResult;
-use crate::user::{get_user, get_user_sync, validate_user_dir, validate_user_dir_sync};
+use crate::user::{get_user, validate_user_dir};
 
 #[derive(Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq)]
 pub struct Token {}
@@ -25,30 +25,9 @@ async fn validate_token_dir() -> String {
     path
 }
 
-fn validate_token_dir_sync() -> String {
-    let path = vec![validate_user_dir_sync(), "token".to_string()].join("/");
-    let result = std::fs::create_dir_all(path.as_str());
-    if result.is_err() {
-        panic!("Failed to create token database dir {}", result.err().unwrap());
-    }
-
-    path
-}
-
 pub(crate) async fn get_user_token_dir(username: String) -> SheefResult<String> {
     let path = vec![validate_token_dir().await, username.to_string()].join("/");
     match tokio::fs::create_dir_all(path.as_str()).await {
-        Ok(_) => Ok(path),
-        Err(err) => {
-            log::warn!("Failed to create token dir for user {}: {}", username, err);
-            Err(sheef_io_error!("token", "Failed to create token dir for user"))
-        }
-    }
-}
-
-pub(crate) fn get_user_token_dir_sync(username: String) -> SheefResult<String> {
-    let path = vec![validate_token_dir_sync(), username.to_string()].join("/");
-    match std::fs::create_dir_all(path.as_str()) {
         Ok(_) => Ok(path),
         Err(err) => {
             log::warn!("Failed to create token dir for user {}: {}", username, err);
@@ -121,19 +100,6 @@ pub async fn get_user_by_token(username: &String, token: &String) -> SheefResult
 
     if path_exists!(vec![token_dir, token.to_string()].join("/")) {
         get_user(username).await
-    } else {
-        Err(sheef_not_found_error!("token", "Token not found"))
-    }
-}
-
-pub fn get_user_by_token_sync(username: &String, token: &String) -> SheefResult<User> {
-    let token_dir = match get_user_token_dir_sync(username.to_string()) {
-        Ok(path) => path,
-        Err(err) => return Err(err),
-    };
-
-    if std::fs::metadata(vec![token_dir, token.to_string()].join("/")).is_ok() {
-        get_user_sync(username)
     } else {
         Err(sheef_not_found_error!("token", "Token not found"))
     }

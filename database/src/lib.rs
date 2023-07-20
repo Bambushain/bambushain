@@ -33,16 +33,6 @@ pub(crate) async fn validate_database_dir() -> String {
     path
 }
 
-pub(crate) fn validate_database_dir_sync() -> String {
-    let path = get_db_dir();
-    let result = std::fs::create_dir_all(path.as_str());
-    if result.is_err() {
-        panic!("Failed to create database dir {}", result.err().unwrap());
-    }
-
-    path
-}
-
 pub(crate) async fn persist_entity<T: Serialize>(base_path: impl Into<String>, filename: impl Into<String>, entity: T) -> SheefResult<T> where T: Clone {
     let path = vec![base_path.into(), format!("{}.yaml", filename.into())].join("/");
     let mut file = match tokio::fs::File::create(path.as_str()).await {
@@ -73,26 +63,6 @@ pub(crate) async fn persist_entity<T: Serialize>(base_path: impl Into<String>, f
 pub(crate) async fn read_entity<T: for<'a> Deserialize<'a>>(base_path: impl Into<String>, filename: impl Into<String>) -> SheefResult<T> {
     let path = vec![base_path.into(), format!("{}.yaml", filename.into())].join("/");
     let file_data = match tokio::fs::read_to_string(path.as_str()).await {
-        Err(err) => {
-            log::warn!("Failed to read file from {path}: {err}");
-            return Err(sheef_io_error!("", "Failed to read file"));
-        }
-        Ok(data) => data
-    };
-
-    let res = serde_yaml::from_slice(file_data.as_bytes());
-    match res {
-        Ok(data) => Ok(data),
-        Err(err) => {
-            log::warn!("Failed to deserialize entity ({}): {}", path, err);
-            Err(sheef_serialization_error!("", "Failed to deserialize entity"))
-        }
-    }
-}
-
-pub(crate) fn read_entity_sync<T: for<'a> Deserialize<'a>>(base_path: impl Into<String>, filename: impl Into<String>) -> SheefResult<T> {
-    let path = vec![base_path.into(), format!("{}.yaml", filename.into())].join("/");
-    let file_data = match std::fs::read_to_string(path.as_str()) {
         Err(err) => {
             log::warn!("Failed to read file from {path}: {err}");
             return Err(sheef_io_error!("", "Failed to read file"));

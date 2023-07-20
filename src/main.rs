@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use actix_web::{App, guard, HttpResponse, HttpServer};
+use actix_web::{App, HttpResponse, HttpServer};
 use actix_web::web;
 
 use sheef_backend::broadcaster::calendar::CalendarBroadcaster;
@@ -149,7 +149,7 @@ async fn main() -> std::io::Result<()> {
             .route("/static/favicon.png", web::get().to(favicon_png))
             .route("/static/login.png", web::get().to(login_png))
 
-            .default_service(web::route().guard(guard::Get()).to(index_html))
+            .default_service(web::route().to(index_html))
     })
         .bind(("0.0.0.0", 8070))?
         .run()

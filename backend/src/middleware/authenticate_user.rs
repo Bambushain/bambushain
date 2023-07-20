@@ -1,11 +1,11 @@
 use std::future::{Ready, ready};
+use std::rc::Rc;
 
-use actix_web::{Error, HttpMessage};
-use actix_web::dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform};
-use actix_web::error::ErrorUnauthorized;
+use actix_web::{body, dev, Error, HttpMessage};
 use futures_util::future::LocalBoxFuture;
 
-use sheef_database::token::get_user_by_token_sync;
+use sheef_database::token::get_user_by_token;
+use sheef_entities::sheef_unauthorized_error;
 use sheef_entities::user::User;
 
 pub struct AuthenticationState {
@@ -15,59 +15,76 @@ pub struct AuthenticationState {
 
 pub struct AuthenticateUser;
 
-impl<S, B> Transform<S, ServiceRequest> for AuthenticateUser where S: Service<ServiceRequest, Response=ServiceResponse<B>, Error=Error>, S::Future: 'static, B: 'static, {
-    type Response = ServiceResponse<B>;
+impl<S: 'static, B> dev::Transform<S, dev::ServiceRequest> for AuthenticateUser
+    where
+        S: dev::Service<dev::ServiceRequest, Response=dev::ServiceResponse<B>, Error=Error>,
+        S::Future: 'static,
+        B: 'static, {
+    type Response = dev::ServiceResponse<body::EitherBody<B>>;
     type Error = Error;
     type Transform = AuthenticateUserMiddleware<S>;
     type InitError = ();
     type Future = Ready<Result<Self::Transform, Self::InitError>>;
 
     fn new_transform(&self, service: S) -> Self::Future {
-        ready(Ok(AuthenticateUserMiddleware { service }))
+        ready(Ok(AuthenticateUserMiddleware {
+            service: Rc::new(service)
+        }))
     }
 }
 
 pub struct AuthenticateUserMiddleware<S> {
-    service: S,
+    service: Rc<S>,
 }
 
-impl<S, B> Service<ServiceRequest> for AuthenticateUserMiddleware<S> where S: Service<ServiceRequest, Response=ServiceResponse<B>, Error=Error>, S::Future: 'static, B: 'static, {
-    type Response = ServiceResponse<B>;
+impl<S, B> dev::Service<dev::ServiceRequest> for AuthenticateUserMiddleware<S>
+    where
+        S: dev::Service<dev::ServiceRequest, Response=dev::ServiceResponse<B>, Error=Error> + 'static,
+        S::Future: 'static,
+        B: 'static, {
+    type Response = dev::ServiceResponse<body::EitherBody<B>>;
     type Error = Error;
     type Future = LocalBoxFuture<'static, Result<Self::Response, Self::Error>>;
 
-    forward_ready!(service);
+    dev::forward_ready!(service);
 
-    fn call(&self, req: ServiceRequest) -> Self::Future {
-        let auth_header = match req.headers().get("Authorization") {
-            Some(header) => header.to_str().expect("Header value should be convertible to string"),
-            None => return box_pin!(Err(ErrorUnauthorized("No auth present")))
-        };
+    fn call(&self, req: dev::ServiceRequest) -> Self::Future {
+        let svc = self.service.clone();
 
-        let token = match auth_header.strip_prefix("Sheef ") {
-            Some(token) => token,
-            None => return box_pin!(Err(ErrorUnauthorized("No auth present")))
-        };
-        let mut split_token = token.split('/');
-        let username = match split_token.next() {
-            Some(username) => username,
-            None => return box_pin!(Err(ErrorUnauthorized("No auth present")))
-        };
-        let token = match split_token.next() {
-            Some(token) => token,
-            None => return box_pin!(Err(ErrorUnauthorized("No auth present")))
-        };
+        Box::pin(async move {
+            let unauthorized = unauthorized!(sheef_unauthorized_error!("", "No auth present")).map_into_right_body();
+            let request = req.request();
 
-        let user = match get_user_by_token_sync(&username.to_string(), &token.to_string()) {
-            Ok(user) => user,
-            Err(_) => return box_pin!(Err(ErrorUnauthorized("No auth present")))
-        };
-        req.extensions_mut().insert(AuthenticationState {
-            token: token.to_string(),
-            user,
-        });
+            let auth_header = match request.headers().get("Authorization") {
+                Some(header) => header.to_str().expect("Header value should be convertible to string"),
+                _ => return Ok(dev::ServiceResponse::new(request.clone(), unauthorized))
+            };
 
-        let fut = self.service.call(req);
-        box_pin!(fut.await)
+            let token = match auth_header.strip_prefix("Sheef ") {
+                Some(token) => token,
+                _ => return Ok(dev::ServiceResponse::new(request.clone(), unauthorized))
+            };
+            let mut split_token = token.split('/');
+            let username = match split_token.next() {
+                Some(username) => username,
+                _ => return Ok(dev::ServiceResponse::new(request.clone(), unauthorized))
+            };
+            let token = match split_token.next() {
+                Some(token) => token,
+                _ => return Ok(dev::ServiceResponse::new(request.clone(), unauthorized))
+            };
+
+            let user = match get_user_by_token(&username.to_string(), &token.to_string()).await {
+                Ok(user) => user,
+                _ => return Ok(dev::ServiceResponse::new(request.clone(), unauthorized))
+            };
+            req.extensions_mut().insert(AuthenticationState {
+                token: token.to_string(),
+                user,
+            });
+
+            let res = svc.call(req).await;
+            res.map(dev::ServiceResponse::map_into_left_body)
+        })
     }
 }

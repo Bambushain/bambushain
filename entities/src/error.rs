@@ -12,6 +12,7 @@ pub enum SheefErrorCode {
     SerializationError,
     ValidationError,
     InsufficientRightsError,
+    UnauthorizedError,
     UnknownError,
 }
 
@@ -125,6 +126,17 @@ macro_rules! sheef_insufficient_rights_error {
             entity_type: $entity_type.to_string(),
             message: $message.to_string(),
             error_type: sheef_entities::SheefErrorCode::InsufficientRightsError,
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! sheef_unauthorized_error {
+    ($entity_type:expr, $message:expr) => {
+        sheef_entities::SheefError {
+            entity_type: $entity_type.to_string(),
+            message: $message.to_string(),
+            error_type: sheef_entities::SheefErrorCode::UnauthorizedError,
         }
     }
 }
