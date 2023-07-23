@@ -103,11 +103,9 @@ fn modify_entry_modal(props: &ModifyEntryModalProps) -> Html {
                 <button form="create-entry-modal" aria-busy={props.is_loading.to_string()} type="submit">{props.save_label.clone()}</button>
             </>
         )}>
-            {if props.has_error {
-                html!(<p data-msg="negative">{props.error_message.clone()}</p>)
-            } else {
-                html!()
-            }}
+            if props.has_error {
+                <p data-msg="negative">{props.error_message.clone()}</p>
+            }
             <form onsubmit={on_save} id="create-entry-modal">
                 <label for="name">{"Name"}</label>
                 <input oninput={update_name} readonly={props.is_loading} type="text" value={(*name_state).clone()} required={true} id="name" name="name" />
@@ -177,63 +175,61 @@ pub fn boolean_table(props: &BooleanTableProps) -> Html {
 
     html!(
         <>
-            {if current_user.profile.is_mod {
-                html!(
-                    <nav>
-                        <ul>
-                            <li>
-                                <button onclick={open_add_modal} type="button">{props.add_label.clone()}</button>
-                            </li>
-                        </ul>
-                    </nav>
-                )
-            } else {
-                html!()
-            }}
-            <table role="grid">
-                <thead>
-                    <tr>
-                        <th>{"Crewmitglied"}</th>
-                        {for props.table_data.keys.clone().into_iter().map(|key| html!(
-                            <th key={key.to_string()}>
-                                <div class="small-gap-row">
-                                    <span>{key.clone()}</span>
-                                    {if current_user.profile.is_mod {
-                                        let open_edit_modal = open_edit_modal.clone();
-                                        let key = key.clone();
+            if current_user.profile.is_mod {
+                <nav>
+                    <ul>
+                        <li>
+                            <button onclick={open_add_modal} type="button">{props.add_label.clone()}</button>
+                        </li>
+                    </ul>
+                </nav>
+            }
+            <figure>
+                <table role="grid">
+                    <thead>
+                        <tr>
+                            <th>{"Crewmitglied"}</th>
+                            {for props.table_data.keys.clone().into_iter().map(|key| html!(
+                                <th key={key.to_string()}>
+                                    <div class="small-gap-row">
+                                        <span>{key.clone()}</span>
+                                        {if current_user.profile.is_mod {
+                                            let open_edit_modal = open_edit_modal.clone();
+                                            let key = key.clone();
 
-                                        let open_delete_modal = open_delete_modal.clone();
-                                        let delete_key = key.clone();
+                                            let open_delete_modal = open_delete_modal.clone();
+                                            let delete_key = key.clone();
 
+                                            html!(
+                                                <>
+                                                    <a aria-label={props.edit_title.clone()} onclick={move |_| open_edit_modal.emit(key.to_string())}><Edit3 color="var(--color)" /></a>
+                                                    <a aria-label={props.delete_title.clone()} onclick={move |_| open_delete_modal.emit(AttrValue::from(delete_key.to_string()))}><Trash2 color="var(--color)" /></a>
+                                                </>
+                                            )
+                                        } else {
+                                            html!()
+                                        }}
+                                    </div>
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {for props.table_data.users.iter().map(|user| {
+                            html!(
+                                <tr key={user.to_string()}>
+                                    <th>{user}</th>
+                                    {for props.table_data.keys.iter().map(|key| {
                                         html!(
-                                            <>
-                                                <a aria-label={props.edit_title.clone()} onclick={move |_| open_edit_modal.emit(key.to_string())}><Edit3 color="var(--color)" /></a>
-                                                <a aria-label={props.delete_title.clone()} onclick={move |_| open_delete_modal.emit(AttrValue::from(delete_key.to_string()))}><Trash2 color="var(--color)" /></a>
-                                            </>
+                                            <TableEntry is_checked={props.table_data.data.clone().get(key).expect("Key should exist").contains(user)} current_user_username={AttrValue::from(current_user.profile.username.clone())} on_activate_entry={props.on_activate_entry.clone()} on_deactivate_entry={props.on_deactivate_entry.clone()} current_user_is_mod={current_user.profile.is_mod} key={key.to_string()} data={props.table_data.data.clone()} table_key={AttrValue::from(key.to_string())} user={AttrValue::from(user.to_string())} />
                                         )
-                                    } else {
-                                        html!()
-                                    }}
-                                </div>
-                            </th>
-                        ))}
-                    </tr>
-                </thead>
-                <tbody>
-                    {for props.table_data.users.iter().map(|user| {
-                        html!(
-                            <tr key={user.to_string()}>
-                                <td>{user}</td>
-                                {for props.table_data.keys.iter().map(|key| {
-                                    html!(
-                                        <TableEntry is_checked={props.table_data.data.clone().get(key).expect("Key should exist").contains(user)} current_user_username={AttrValue::from(current_user.profile.username.clone())} on_activate_entry={props.on_activate_entry.clone()} on_deactivate_entry={props.on_deactivate_entry.clone()} current_user_is_mod={current_user.profile.is_mod} key={key.to_string()} data={props.table_data.data.clone()} table_key={AttrValue::from(key.to_string())} user={AttrValue::from(user.to_string())} />
-                                    )
-                                })}
-                            </tr>
-                        )
-                    })}
-                </tbody>
-            </table>
+                                    })}
+                                </tr>
+                            )
+                        })}
+                    </tbody>
+                </table>
+            </figure>
             {match props.modify_modal_state.clone() {
                 EntryModalState::Add => html!(
                     <ModifyEntryModal on_close={close_entry_modal} title={props.add_title.clone()} save_label={props.add_save_label.clone()} on_save={props.on_add_save.clone()} has_error={props.has_error} error_message={props.error_message.clone()} is_loading={props.is_loading} />

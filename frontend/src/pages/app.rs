@@ -32,7 +32,7 @@ fn format_title(s: AttrValue) -> AttrValue {
 pub fn app() -> Html {
     html!(
         <BounceRoot>
-            <HelmetBridge default_title="" format_title={format_title} />
+            <HelmetBridge default_title="Sheef Planung" format_title={format_title} />
             <BrowserRouter>
                 <Switch<AppRoute> render={switch}/>
             </BrowserRouter>

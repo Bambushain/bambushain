@@ -1,6 +1,5 @@
 use std::rc::Rc;
 
-use bounce::helmet::Helmet;
 use bounce::query::use_query_value;
 use bounce::use_atom_value;
 use chrono::{Datelike, Local, Month, Months, NaiveDate};
@@ -166,11 +165,9 @@ fn update_day_modal(props: &UpdateDayModalProps) -> Html {
             )
         }>
             <form id={format!("form-{}", props.date.format("%Y-%m-%d"))} onsubmit={on_date_save}>
-                {if *error_state {
-                    html!(<p data-msg="negative">{"Leider konnte deine Planung nicht gespeichert werden, bitte wende dich an Azami"}</p>)
-                } else {
-                    html!()
-                }}
+                if *error_state {
+                    <p data-msg="negative">{"Leider konnte deine Planung nicht gespeichert werden, bitte wende dich an Azami"}</p>
+                }
                 <fieldset>
                     <label for="available">
                         <input readonly={*loading_state} onclick={update_available} type="checkbox" id="available" name="available" role="switch" checked={*available_state} />
@@ -212,34 +209,18 @@ fn day(props: &DayProps) -> Html {
             <details class={classes!(class)} open={today <= props.date || props.date.month() != today.month()}>
                 <summary><a onclick={on_click}>{props.date.day()}</a></summary>
                 <br />
-                {if props.available.is_empty() {
-                    html!()
-                } else {
-                    html!(
-                        <>
-                            <strong>{"Kann"}</strong>
-                            <p>{props.available.clone()}</p>
-                        </>
-                    )
-                }}
-                {if props.unavailable.is_empty() {
-                    html!()
-                } else {
-                    html!(
-                        <>
-                            <strong>{"Kann nicht"}</strong>
-                            <p>{props.unavailable.clone()}</p>
-                        </>
-                    )
-                }}
+                if !props.available.is_empty() {
+                    <strong>{"Kann"}</strong>
+                    <p>{props.available.clone()}</p>
+                }
+                if !props.unavailable.is_empty() {
+                    <strong>{"Kann nicht"}</strong>
+                    <p>{props.unavailable.clone()}</p>
+                }
             </details>
-            {if *modal_open_state {
-                html!(
-                    <UpdateDayModal date={props.date} time={props.time.clone()} available={props.me_available} on_close={on_close} />
-                )
-            } else {
-                html!()
-            }}
+            if *modal_open_state {
+                <UpdateDayModal date={props.date} time={props.time.clone()} available={props.me_available} on_close={on_close} />
+            }
         </>
     )
 }
@@ -398,9 +379,6 @@ pub fn calendar_page() -> Html {
 
     html!(
         <>
-            <Helmet>
-                <title>{"Static Kalender"}</title>
-            </Helmet>
             <h1>{"Static Kalender"}</h1>
             <div class="calendar-header">
                 <Link<SheefRoute, CalendarQuery> to={SheefRoute::Calendar} query={Some(prev_month.into())}>{month_to_german(prev_month.month())}</Link<SheefRoute, CalendarQuery>>

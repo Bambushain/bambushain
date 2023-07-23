@@ -1,4 +1,5 @@
 use bounce::{use_atom_setter, use_atom_value};
+use bounce::helmet::Helmet;
 use bounce::query::use_query_value;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -25,13 +26,62 @@ use crate::ui::modal::PicoModal;
 fn switch(route: SheefRoute) -> Html {
     match route {
         SheefRoute::Home => html!(<Redirect<SheefRoute> to={SheefRoute::Calendar} />),
-        SheefRoute::Calendar => html!(<CalendarPage />),
-        SheefRoute::Crew => html!(<CrewPage />),
-        SheefRoute::Crafter => html!(<CrafterPage />),
-        SheefRoute::Fighter => html!(<FighterPage />),
-        SheefRoute::Mounts => html!(<MountPage />),
-        SheefRoute::SavageMounts => html!(<SavageMountPage />),
-        SheefRoute::Kills => html!(<KillPage />),
+        SheefRoute::Calendar => html!(
+            <>
+                <Helmet>
+                    <title>{"Static Kalender"}</title>
+                </Helmet>
+                <CalendarPage />
+            </>
+        ),
+        SheefRoute::Crew => html!(
+            <>
+                <Helmet>
+                    <title>{"Static „Sheef”"}</title>
+                </Helmet>
+                <CrewPage />
+            </>
+        ),
+        SheefRoute::Crafter => html!(
+            <>
+                <Helmet>
+                    <title>{"Meine Crafter"}</title>
+                </Helmet>
+                <CrafterPage />
+            </>
+        ),
+        SheefRoute::Fighter => html!(
+            <>
+                <Helmet>
+                    <title>{"Meine Kämpfer"}</title>
+                </Helmet>
+                <FighterPage />
+            </>
+        ),
+        SheefRoute::Mounts => html!(
+            <>
+                <Helmet>
+                    <title>{"Mounts"}</title>
+                </Helmet>
+                <MountPage />
+            </>
+        ),
+        SheefRoute::SavageMounts => html!(
+            <>
+                <Helmet>
+                    <title>{"Savage Mounts"}</title>
+                </Helmet>
+                <SavageMountPage />
+            </>
+        ),
+        SheefRoute::Kills => html!(
+            <>
+                <Helmet>
+                    <title>{"Kills"}</title>
+                </Helmet>
+                <KillPage />
+            </>
+        ),
     }
 }
 
@@ -322,7 +372,7 @@ pub fn sheef_layout() -> Html {
                             <nav class="container-fluid">
                                 <ul>
                                     <li><strong>{"Sheef"}</strong></li>
-                                    <li><Link<SheefRoute> to ={SheefRoute::Calendar}>{"Kalender"}</Link<SheefRoute>></li>
+                                    <li><Link<SheefRoute> to={SheefRoute::Calendar}>{"Kalender"}</Link<SheefRoute>></li>
                                     <li><Link<SheefRoute> to={SheefRoute::Crew}>{"Crew"}</Link<SheefRoute>></li>
                                     <li><Link<SheefRoute> to={SheefRoute::Crafter}>{"Crafter"}</Link<SheefRoute>></li>
                                     <li><Link<SheefRoute> to={SheefRoute::Fighter}>{"Kämpfer"}</Link<SheefRoute>></li>

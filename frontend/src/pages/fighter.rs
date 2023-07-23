@@ -1,4 +1,3 @@
-use bounce::helmet::Helmet;
 use bounce::query::use_query_value;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -56,11 +55,9 @@ fn modify_fighter_modal(props: &ModifyFighterModalProps) -> Html {
                 <button form="create-fighter-modal" aria-busy={props.is_loading.to_string()} type="submit">{props.save_label.clone()}</button>
             </>
         )}>
-            {if props.has_error {
-                html!(<p data-msg="negative">{props.error_message.clone()}</p>)
-            } else {
-                html!()
-            }}
+            if props.has_error {
+                <p data-msg="negative">{props.error_message.clone()}</p>
+            }
             <form onsubmit={on_save} id="create-fighter-modal">
                 <label for="job">{"Job"}</label>
                 <input oninput={update_job} readonly={props.is_loading} type="text" value={(*job_state).clone()} required={true} id="job" name="job" />
@@ -236,7 +233,7 @@ fn table_body(props: &TableBodyProps) -> Html {
 
                     html!(
                         <tr>
-                            <td>{fighter.job.clone()}</td>
+                            <th>{fighter.job.clone()}</th>
                             <td>{fighter.level.clone()}</td>
                             <td>{fighter.gear_score.clone()}</td>
                             <td>
@@ -257,10 +254,9 @@ fn table_body(props: &TableBodyProps) -> Html {
                 }
                 FighterActions::Closed => html!(),
             }}
-            {match (*error_state).clone() {
-                ErrorState::Delete => html!(<PicoAlert open={true} title="Ein Fehler ist aufgetreten" message={(*error_message_state).clone()} on_close={move |_| error_state.set(ErrorState::None)} />),
-                _ => html!()
-            }}
+            if *error_state == ErrorState::Delete {
+                <PicoAlert open={true} title="Ein Fehler ist aufgetreten" message={(*error_message_state).clone()} on_close={move |_| error_state.set(ErrorState::None)} />
+            }
         </>
     )
 }
@@ -345,9 +341,6 @@ pub fn fighter_page() -> Html {
 
     html!(
         <>
-            <Helmet>
-                <title>{"Meine Kämpfer"}</title>
-            </Helmet>
             <h1>{"Meine Kämpfer"}</h1>
             <nav>
                 <ul>
@@ -363,17 +356,19 @@ pub fn fighter_page() -> Html {
                     </li>
                 </ul>
             </nav>
-            <table role="grid">
-                <thead>
-                <tr>
-                    <th>{"Job"}</th>
-                    <th>{"Level"}</th>
-                    <th>{"Gear Score"}</th>
-                    <th>{"Aktionen"}</th>
-                </tr>
-                </thead>
-                <TableBody fighter={(*state).clone()} />
-            </table>
+            <figure>
+                <table role="grid">
+                    <thead>
+                    <tr>
+                        <th>{"Job"}</th>
+                        <th>{"Level"}</th>
+                        <th>{"Gear Score"}</th>
+                        <th>{"Aktionen"}</th>
+                    </tr>
+                    </thead>
+                    <TableBody fighter={(*state).clone()} />
+                </table>
+            </figure>
         </>
     )
 }

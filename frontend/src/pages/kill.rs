@@ -1,4 +1,3 @@
-use bounce::helmet::Helmet;
 use bounce::query::use_query_value;
 use bounce::use_atom_value;
 use yew::prelude::*;
@@ -377,25 +376,18 @@ pub fn kill_page() -> Html {
 
     html!(
         <>
-            <Helmet>
-                <title>{"Kills"}</title>
-            </Helmet>
             <h1>{"Kills"}</h1>
             <p data-msg="info">
-                {if is_mod {
-                    "Du bist Mod, daher hast du hier die Möglichkeit die Kills aller Crewmitglieder zu bearbeiten"
+                if is_mod {
+                    {"Du bist Mod, daher hast du hier die Möglichkeit die Kills aller Crewmitglieder zu bearbeiten"}
                 } else {
-                    "Da du kein Mod bist kannst du nur deine eigenen Kills bearbeiten"
-                }}
+                    {"Da du kein Mod bist kannst du nur deine eigenen Kills bearbeiten"}
+                }
             </p>
             <BooleanTable on_delete_confirm={on_delete_confirm} on_delete_decline={on_delete_decline} on_delete_click={on_delete_click} delete_message={(*delete_entry_message_state).clone()} delete_entry_open={*delete_entry_open} delete_title="Kill löschen" delete_confirm="Kill löschen" on_modify_modal_state_change={on_modify_modal_state_change} modify_modal_state={(*modify_modal_state).clone()} add_title="Kill hinzufügen" edit_title="Kill bearbeiten" add_label="Kill hinzufügen" add_save_label="Kill hinzufügen" edit_save_label="Kill speichern" has_error={*error_state} error_message={(*error_message_state).clone()} is_loading={*loading_state} on_add_save={on_add_save} on_edit_save={on_edit_save} table_data={state.data.clone()} on_activate_entry={activate_kill} on_deactivate_entry={deactivate_kill} />
-            {if *error_state {
-                html!(
-                    <PicoAlert title={(*error_title_state).clone()} message={(*error_message_state).clone()} open={true} on_close={move |_| error_state.clone().set(false)} />
-                )
-            } else {
-                html!()
-            }}
+            if *error_state {
+                <PicoAlert title={(*error_title_state).clone()} message={(*error_message_state).clone()} open={true} on_close={move |_| error_state.clone().set(false)} />
+            }
         </>
     )
 }

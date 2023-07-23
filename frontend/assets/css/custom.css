@@ -16,7 +16,6 @@
 }
 
 .day {
-    /*min-height: 10rem;*/
     align-self: flex-start;
     justify-self: flex-start;
     width: 100%;
@@ -50,6 +49,12 @@ table {
 
 table th {
     font-weight: bold;
+}
+
+table thead tr th:first-child {
+    background: var(--background-color);
+    position: sticky;
+    left: 0;
 }
 
 table tbody tr th {

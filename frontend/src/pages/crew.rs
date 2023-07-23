@@ -1,6 +1,5 @@
 use std::ops::Deref;
 
-use bounce::helmet::Helmet;
 use bounce::query::use_query_value;
 use bounce::use_atom_value;
 use rand::distributions::Alphanumeric;
@@ -134,52 +133,43 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
 
     html!(
         <PicoModal on_close={props.on_close.clone()} title="Mitglied hinzufügen" open={true} buttons={
+            html!(if *created_state {
+                <button onclick={move |_| on_close.clone().emit(())} type="button">{"Alles klar"}</button>
+            } else {
+                <>
+                    <button onclick={move |_| on_close.clone().emit(())} type="button" class="secondary">{"Abbrechen"}</button>
+                    <button aria-busy={AttrValue::from((*loading_state).to_string())} form="create-user-modal-form" type="submit">{"Benutzer erstellen"}</button>
+                </>
+            })}>
             if *created_state {
-                html!(<button onclick={move |_| on_close.clone().emit(())} type="button">{"Alles klar"}</button>)
+                <p>{format!("Das Passwort für {} ist ", (*username_state).clone())}<kbd>{(*password_state).clone()}</kbd></p>
             } else {
-                html!(
-                    <>
-                        <button onclick={move |_| on_close.clone().emit(())} type="button" class="secondary">{"Abbrechen"}</button>
-                        <button aria-busy={AttrValue::from((*loading_state).to_string())} form="create-user-modal-form" type="submit">{"Benutzer erstellen"}</button>
-                    </>
-                )
+                <>
+                    if *error_state {
+                        <p data-msg="negative">{(*error_message_state).clone()}</p>
+                    } else {
+                        <p data-msg="info">{"Füge ein neues Mitglied hinzu"}<br />{"Das Passwort wird angezeigt wenn das Mitglied erfolgreich hinzugefügt wurde"}</p>
+                    }
+                    <form id="create-user-modal-form" onsubmit={form_submit}>
+                        <label for="username">{"Name"}</label>
+                        <input readonly={*loading_state} value={(*username_state).clone()} oninput={update_username} type="text" required={true} id="username" name="username" />
+                        <label for="job">{"Job (optional)"}</label>
+                        <input readonly={*loading_state} value={(*job_state).clone()} oninput={update_job} type="text" id="job" name="job" />
+                        <label for="gearlevel">{"Gearlevel (optional)"}</label>
+                        <input readonly={*loading_state} value={(*gear_level_state).clone()} oninput={update_gear_level} type="text" id="gearlevel" name="gearlevel" />
+                        <fieldset>
+                            <label for="isMod">
+                                <input readonly={*loading_state} type="checkbox" id="isMod" name="isMod" role="switch" checked={*is_mod_state} onclick={update_is_mod} />
+                                {"Moderator"}
+                            </label>
+                            <label for="isMainGroup">
+                                <input readonly={*loading_state} type="checkbox" id="isMainGroup" name="isMainGroup" role="switch" checked={*is_main_group_state} onclick={update_is_main_group} />
+                                {"Mainkader"}
+                            </label>
+                        </fieldset>
+                    </form>
+                </>
             }
-        }>
-            {if *created_state {
-                html!(
-                    <p>{format!("Das Passwort für {} ist ", (*username_state).clone())}<kbd>{(*password_state).clone()}</kbd></p>
-                )
-            } else {
-                html!(
-                    <>
-                        {if *error_state {
-                            html!(<p data-msg="negative">{(*error_message_state).clone()}</p>)
-                        } else {
-                            html!(
-                                <p data-msg="info">{"Füge ein neues Mitglied hinzu"}<br />{"Das Passwort wird angezeigt wenn das Mitglied erfolgreich hinzugefügt wurde"}</p>
-                            )
-                        }}
-                        <form id="create-user-modal-form" onsubmit={form_submit}>
-                            <label for="username">{"Name"}</label>
-                            <input readonly={*loading_state} value={(*username_state).clone()} oninput={update_username} type="text" required={true} id="username" name="username" />
-                            <label for="job">{"Job (optional)"}</label>
-                            <input readonly={*loading_state} value={(*job_state).clone()} oninput={update_job} type="text" id="job" name="job" />
-                            <label for="gearlevel">{"Gearlevel (optional)"}</label>
-                            <input readonly={*loading_state} value={(*gear_level_state).clone()} oninput={update_gear_level} type="text" id="gearlevel" name="gearlevel" />
-                            <fieldset>
-                                <label for="isMod">
-                                    <input readonly={*loading_state} type="checkbox" id="isMod" name="isMod" role="switch" checked={*is_mod_state} onclick={update_is_mod} />
-                                    {"Moderator"}
-                                </label>
-                                <label for="isMainGroup">
-                                    <input readonly={*loading_state} type="checkbox" id="isMainGroup" name="isMainGroup" role="switch" checked={*is_main_group_state} onclick={update_is_main_group} />
-                                    {"Mainkader"}
-                                </label>
-                            </fieldset>
-                        </form>
-                    </>
-                )
-            }}
         </PicoModal>
     )
 }
@@ -285,13 +275,9 @@ fn update_profile_dialog(props: &UpdateProfileDialogProps) -> Html {
                 <button form="update-profile-modal" aria-busy={(*loading_state).to_string()} type="submit">{"Profil speichern"}</button>
             </>
         )}>
-            {if *error_state {
-                html!(
-                    <p data-msg="negative">{(*error_message_state).clone()}</p>
-                )
-            } else {
-                html!()
-            }}
+            if *error_state {
+                <p data-msg="negative">{(*error_message_state).clone()}</p>
+            }
             <form id="update-profile-modal" onsubmit={on_save.clone()}>
                 <label for="old-password">{"Rolle/Klasse (optional)"}</label>
                 <input oninput={update_job} readonly={*loading_state} type="text" value={(*job_state).clone()} id="job" name="job" />
@@ -519,64 +505,60 @@ fn table_body(props: &TableBodyProps) -> Html {
             <tbody>
                 {for props.users.iter().map(|user| html!(
                     <tr>
-                        <td>{user.username.clone()}</td>
+                        <th>{user.username.clone()}</th>
                         <td>{user.job.clone()}</td>
                         <td>{user.gear_level.clone()}</td>
                         <td>{if user.is_main_group { "Ja" } else { "Nein" }}</td>
                         <td>{if user.is_mod { "Ja" } else { "Nein" }}</td>
-                        {if props.is_mod {
-                            html!(
-                                <td>
-                                    {if props.username != user.username {
-                                        let delete_click = delete_click.clone();
-                                        let change_password_click = change_password_click.clone();
-                                        let update_profile_click = update_profile_click.clone();
+                        if props.is_mod {
+                            <td>
+                                {if props.username != user.username {
+                                    let delete_click = delete_click.clone();
+                                    let change_password_click = change_password_click.clone();
+                                    let update_profile_click = update_profile_click.clone();
 
-                                        let delete_user = user.clone();
-                                        let password_user = user.clone();
-                                        let profile_user = user.clone();
+                                    let delete_user = user.clone();
+                                    let password_user = user.clone();
+                                    let profile_user = user.clone();
 
-                                        html!(
-                                            <div class="gap-row">
-                                                {if user.is_mod {
-                                                    let remove_mod_click = remove_mod_click.clone();
-                                                    let user = user.clone();
-                                                    html!(
-                                                        <button onclick={move |_| remove_mod_click.emit(user.clone())} type="button" class="outline">{"Modrechte entziehen"}</button>
-                                                    )
-                                                } else {
-                                                    let make_mod_click = make_mod_click.clone();
-                                                    let user = user.clone();
-                                                    html!(
-                                                        <button onclick={move |_| make_mod_click.emit(user.clone())} type="button" class="outline">{"Zum Mod machen"}</button>
-                                                    )
-                                                }}
-                                                {if user.is_main_group {
-                                                    let remove_main_click = remove_main_click.clone();
-                                                    let user = user.clone();
-                                                    html!(
-                                                        <button onclick={move |_| remove_main_click.emit(user.clone())} type="button" class="outline">{"Aus Mainkader entfernen"}</button>
-                                                    )
-                                                } else {
-                                                    let make_main_click = make_main_click.clone();
-                                                    let user = user.clone();
-                                                    html!(
-                                                        <button onclick={move |_| make_main_click.emit(user.clone())} type="button" class="outline">{"Zum Mainkader hinzufügen"}</button>
-                                                    )
-                                                }}
-                                                <button onclick={move |_| update_profile_click.emit(profile_user.clone())} type="button" class="outline">{"Profil bearbeiten"}</button>
-                                                <button onclick={move |_| change_password_click.emit(password_user.clone())} type="button" class="outline">{"Passwort ändern"}</button>
-                                                <button onclick={move |_| delete_click.emit(delete_user.clone())} type="button" class="outline">{"Entfernen"}</button>
-                                            </div>
-                                        )
-                                    } else {
-                                        html!()
-                                    }}
-                                </td>
-                            )
-                        } else {
-                            html!()
-                        }}
+                                    html!(
+                                        <div class="gap-row">
+                                            {if user.is_mod {
+                                                let remove_mod_click = remove_mod_click.clone();
+                                                let user = user.clone();
+                                                html!(
+                                                    <button onclick={move |_| remove_mod_click.emit(user.clone())} type="button" class="outline">{"Modrechte entziehen"}</button>
+                                                )
+                                            } else {
+                                                let make_mod_click = make_mod_click.clone();
+                                                let user = user.clone();
+                                                html!(
+                                                    <button onclick={move |_| make_mod_click.emit(user.clone())} type="button" class="outline">{"Zum Mod machen"}</button>
+                                                )
+                                            }}
+                                            {if user.is_main_group {
+                                                let remove_main_click = remove_main_click.clone();
+                                                let user = user.clone();
+                                                html!(
+                                                    <button onclick={move |_| remove_main_click.emit(user.clone())} type="button" class="outline">{"Aus Mainkader entfernen"}</button>
+                                                )
+                                            } else {
+                                                let make_main_click = make_main_click.clone();
+                                                let user = user.clone();
+                                                html!(
+                                                    <button onclick={move |_| make_main_click.emit(user.clone())} type="button" class="outline">{"Zum Mainkader hinzufügen"}</button>
+                                                )
+                                            }}
+                                            <button onclick={move |_| update_profile_click.emit(profile_user.clone())} type="button" class="outline">{"Profil bearbeiten"}</button>
+                                            <button onclick={move |_| change_password_click.emit(password_user.clone())} type="button" class="outline">{"Passwort ändern"}</button>
+                                            <button onclick={move |_| delete_click.emit(delete_user.clone())} type="button" class="outline">{"Entfernen"}</button>
+                                        </div>
+                                    )
+                                } else {
+                                    html!()
+                                }}
+                            </td>
+                        }
                     </tr>
                 ))}
             </tbody>
@@ -611,11 +593,9 @@ fn table_body(props: &TableBodyProps) -> Html {
                 },
                 UserConfirmActions::Closed => html!(),
             }}
-            {if *error_state {
-                html!(<PicoAlert open={true} title="Ein Fehler ist aufgetreten" message={(*error_message_state).clone()} on_close={on_alert_close} />)
-            } else {
-                html!()
-            }}
+            if *error_state {
+                <PicoAlert open={true} title="Ein Fehler ist aufgetreten" message={(*error_message_state).clone()} on_close={on_alert_close} />
+            }
             {if *profile_edit_state {
                 let user = (*profile_edit_data_state).clone();
 
@@ -676,49 +656,44 @@ pub fn crew_page() -> Html {
 
     html!(
         <>
-            <Helmet>
-                <title>{"Static „Sheef”"}</title>
-            </Helmet>
             <h1>{"Static „Sheef”"}</h1>
-            {if current_user.profile.is_mod {
-                html!(
-                    <nav>
-                        <ul>
-                            <li>
-                                <button onclick={open_create_user_modal_click} type="button">{"Mitglied hinzufügen"}</button>
-                                {if *open_create_user_modal_state {
-                                    html!(
-                                        <CreateUserModal on_close={move |_| open_create_user_modal_state.clone().set(false)} />
-                                    )
-                                } else {
-                                    html!()
-                                }}
-                            </li>
-                        </ul>
-                    </nav>
-                )
-            } else {
-                html!()
-            }}
-            <table role="grid">
-                <thead>
-                <tr>
-                    <th>{"Name"}</th>
-                    <th>{"Job"}</th>
-                    <th>{"Gear Level"}</th>
-                    <th>{"Mainkader"}</th>
-                    <th>{"Moderator"}</th>
-                    {if current_user.profile.is_mod {
-                        html!(
-                            <th>{"Aktionen"}</th>
-                        )
-                    } else {
-                        html!()
-                    }}
-                </tr>
-                </thead>
-                <TableBody username={current_user.profile.username.clone()} users={(*state).clone()} is_mod={current_user.profile.is_mod} />
-            </table>
+            if current_user.profile.is_mod {
+                <nav>
+                    <ul>
+                        <li>
+                            <button onclick={open_create_user_modal_click} type="button">{"Mitglied hinzufügen"}</button>
+                            {if *open_create_user_modal_state {
+                                html!(
+                                    <CreateUserModal on_close={move |_| open_create_user_modal_state.clone().set(false)} />
+                                )
+                            } else {
+                                html!()
+                            }}
+                        </li>
+                    </ul>
+                </nav>
+            }
+            <figure>
+                <table role="grid">
+                    <thead>
+                    <tr>
+                        <th>{"Name"}</th>
+                        <th>{"Job"}</th>
+                        <th>{"Gear Level"}</th>
+                        <th>{"Mainkader"}</th>
+                        <th>{"Moderator"}</th>
+                        {if current_user.profile.is_mod {
+                            html!(
+                                <th>{"Aktionen"}</th>
+                            )
+                        } else {
+                            html!()
+                        }}
+                    </tr>
+                    </thead>
+                    <TableBody username={current_user.profile.username.clone()} users={(*state).clone()} is_mod={current_user.profile.is_mod} />
+                </table>
+            </figure>
         </>
     )
 }

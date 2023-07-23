@@ -1,4 +1,3 @@
-use bounce::helmet::Helmet;
 use bounce::query::use_query_value;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -52,11 +51,9 @@ fn modify_crafter_modal(props: &ModifyCrafterModalProps) -> Html {
                 <button form="create-crafter-modal" aria-busy={props.is_loading.to_string()} type="submit">{props.save_label.clone()}</button>
             </>
         )}>
-            {if props.has_error {
-                html!(<p data-msg="negative">{props.error_message.clone()}</p>)
-            } else {
-                html!()
-            }}
+            if props.has_error {
+                <p data-msg="negative">{props.error_message.clone()}</p>
+            }
             <form onsubmit={on_save} id="create-crafter-modal">
                 <label for="job">{"Job"}</label>
                 <input oninput={update_job} readonly={props.is_loading} type="text" value={(*job_state).clone()} required={true} id="job" name="job" />
@@ -254,10 +251,9 @@ fn table_body(props: &TableBodyProps) -> Html {
                 }
                 CrafterActions::Closed => html!(),
             }}
-            {match (*error_state).clone() {
-                ErrorState::Delete => html!(<PicoAlert open={true} title="Ein Fehler ist aufgetreten" message={(*error_message_state).clone()} on_close={move |_| error_state.set(ErrorState::None)} />),
-                _ => html!()
-            }}
+            if *error_state == ErrorState::Delete {
+                <PicoAlert open={true} title="Ein Fehler ist aufgetreten" message={(*error_message_state).clone()} on_close={move |_| error_state.set(ErrorState::None)} />
+            }
         </>
     )
 }
@@ -342,34 +338,29 @@ pub fn crafter_page() -> Html {
 
     html!(
         <>
-            <Helmet>
-                <title>{"Meine Crafter"}</title>
-            </Helmet>
             <h1>{"Meine Crafter"}</h1>
             <nav>
                 <ul>
                     <li>
                         <button onclick={open_create_crafter_modal_click} type="button">{"Crafter hinzufügen"}</button>
-                        {if *open_create_crafter_modal_state {
-                            html!(
-                                <ModifyCrafterModal error_message={(*error_message_state).clone()} has_error={*error_state} is_loading={*loading_state} on_close={on_modal_close} title="Crafter hinzufügen" save_label="Crafter hinzufügen" on_save={on_modal_save} />
-                            )
-                        } else {
-                            html!()
-                        }}
+                        if *open_create_crafter_modal_state {
+                            <ModifyCrafterModal error_message={(*error_message_state).clone()} has_error={*error_state} is_loading={*loading_state} on_close={on_modal_close} title="Crafter hinzufügen" save_label="Crafter hinzufügen" on_save={on_modal_save} />
+                        }
                     </li>
                 </ul>
             </nav>
-            <table role="grid">
-                <thead>
-                <tr>
-                    <th>{"Job"}</th>
-                    <th>{"Level"}</th>
-                    <th>{"Aktionen"}</th>
-                </tr>
-                </thead>
-                <TableBody crafter={(*state).clone()} />
-            </table>
+            <figure>
+                <table role="grid">
+                    <thead>
+                    <tr>
+                        <th>{"Job"}</th>
+                        <th>{"Level"}</th>
+                        <th>{"Aktionen"}</th>
+                    </tr>
+                    </thead>
+                    <TableBody crafter={(*state).clone()} />
+                </table>
+            </figure>
         </>
     )
 }
