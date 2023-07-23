@@ -1,20 +1,20 @@
 [package]
-name = "sheef_backend"
-version = "0.1.0"
+name = "sheef-backend"
+version = "2.0.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-sheef_database = { path = "../database" }
-sheef_entities = { path = "../entities" }
+sheef-database = { path = "../database" }
+sheef-entities = { path = "../entities" }
 
-actix-web = "4.3.1"
 futures-util = "0.3.28"
-actix-web-lab = "0.19.1"
 parking_lot = "0.12.1"
 
 log = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 chrono = { workspace = true }
+actix-web-lab = { workspace = true }
+actix-web = { workspace = true }

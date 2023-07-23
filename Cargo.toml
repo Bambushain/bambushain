@@ -1,27 +1,28 @@
 [package]
-name = "sheef_planing"
-version = "0.1.0"
+name = "sheef-planing"
+version = "2.0.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-sheef_backend = { path = "backend" }
+sheef-backend = { path = "backend" }
 
 stderrlog = "0.5.4"
-actix-web = "4.3.1"
 
 log = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 chrono = { workspace = true }
+actix-web-lab = { workspace = true, features = ["spa"] }
+actix-web = { workspace = true }
 
 [workspace]
 members = [
     "backend",
     "database",
     "entities",
-    "rusty",
+    "frontend",
     "utils"
 ]
 
@@ -30,6 +31,8 @@ log = "0.4.19"
 serde = { version = "1.0.171", features = ["derive"] }
 serde_json = "1.0.100"
 chrono = { version = "0.4.26", features = ["serde"] }
+actix-web-lab = "0.19.1"
+actix-web = "4.3.1"
 
 [profile.release]
 # less code to include into binary

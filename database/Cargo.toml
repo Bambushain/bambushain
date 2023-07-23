@@ -1,13 +1,13 @@
 [package]
-name = "sheef_database"
-version = "0.1.0"
+name = "sheef-database"
+version = "2.0.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-sheef_entities = { path = "../entities" }
-sheef_utils = { path = "../utils" }
+sheef-entities = { path = "../entities" }
+sheef-utils = { path = "../utils" }
 serde_yaml = "0.9.22"
 bcrypt = "0.15.0"
 sha2 = "0.10.7"

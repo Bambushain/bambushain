@@ -25,30 +25,6 @@ use sheef_backend::sse::mount::mount_sse_client;
 use sheef_backend::sse::NotificationState;
 use sheef_backend::sse::savage_mount::savage_mount_sse_client;
 
-macro_rules! static_file_str {
-    ($file:expr, $content_type:expr, $fn_name:tt) => {
-        async fn $fn_name() -> actix_web::HttpResponse {
-            actix_web::HttpResponse::Ok().content_type($content_type).body(include_str!($file))
-        }
-    };
-}
-
-macro_rules! static_file_bytes {
-    ($file:expr, $content_type:expr, $fn_name:tt) => {
-        async fn $fn_name() -> actix_web::HttpResponse {
-            actix_web::HttpResponse::Ok().content_type($content_type).body(actix_web::web::Bytes::from_static(include_bytes!($file).as_slice()))
-        }
-    };
-}
-
-static_file_str!("../rusty/dist/custom.css", "text/css", custom_css);
-static_file_str!("../rusty/dist/pico.css", "text/css", pico_css);
-static_file_str!("../rusty/dist/rusty_sheef.js", "application/javascript", rusty_sheef_js);
-static_file_str!("../rusty/dist/index.html", "text/html", index_html);
-static_file_bytes!("../rusty/dist/rusty_sheef_bg.wasm", "application/wasm", rusty_sheef_bg_wasm);
-static_file_bytes!("../rusty/dist/favicon.png", "image/png", favicon_png);
-static_file_bytes!("../rusty/dist/login.png", "image/png", login_png);
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     stderrlog::new()
@@ -63,6 +39,9 @@ async fn main() -> std::io::Result<()> {
     let mount_broadcaster = MountBroadcaster::create();
     let savage_mount_broadcaster = SavageMountBroadcaster::create();
     let crew_broadcaster = CrewBroadcaster::create();
+
+    let base_path = std::env::var("FRONTEND_DIR").unwrap_or(".".to_string());
+    log::info!("Frontend base path: {base_path}");
 
     HttpServer::new(move || {
         App::new()
@@ -142,14 +121,13 @@ async fn main() -> std::io::Result<()> {
             .route("/sse/mount", web::get().to(mount_sse_client))
             .route("/sse/savage-mount", web::get().to(savage_mount_sse_client))
 
-            .route("/static/custom.css", web::get().to(custom_css))
-            .route("/static/pico.css", web::get().to(pico_css))
-            .route("/static/rusty_sheef.js", web::get().to(rusty_sheef_js))
-            .route("/static/rusty_sheef_bg.wasm", web::get().to(rusty_sheef_bg_wasm))
-            .route("/static/favicon.png", web::get().to(favicon_png))
-            .route("/static/login.png", web::get().to(login_png))
-
-            .default_service(web::route().to(index_html))
+            .service(
+                actix_web_lab::web::spa()
+                .index_file(format!("{base_path}/dist/index.html"))
+                .static_resources_location(format!("{base_path}/dist"))
+                .static_resources_mount("/static")
+                .finish()
+            )
     })
         .bind(("0.0.0.0", 8070))?
         .run()

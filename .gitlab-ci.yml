@@ -1,0 +1,33 @@
+docker-build:
+  image: quay.imanuel.dev/dockerhub/library---docker:stable
+  stage: build
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$QUAY_USER" -p "$QUAY_PASSWORD" quay.imanuel.dev
+  script:
+    - docker build --pull -t "quay.imanuel.dev/creastina/sheef:2.${CI_PIPELINE_IID}" -f ./Dockerfile .
+    - docker tag "quay.imanuel.dev/creastina/sheef:2.${CI_PIPELINE_IID}" "quay.imanuel.dev/creastina/sheef:latest"
+    - docker push "quay.imanuel.dev/creastina/sheef:2.${CI_PIPELINE_IID}"
+    - docker push "quay.imanuel.dev/creastina/sheef:latest"
+  rules:
+    - if: $CI_COMMIT_BRANCH
+      exists:
+        - Dockerfile
+
+docker-docs-build:
+  image: quay.imanuel.dev/dockerhub/library---docker:stable
+  stage: build
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$QUAY_USER" -p "$QUAY_PASSWORD" quay.imanuel.dev
+  script:
+    - docker build --pull -t "quay.imanuel.dev/creastina/sheef-api-docs:2.${CI_PIPELINE_IID}" -f ./api-docs/Dockerfile .
+    - docker tag "quay.imanuel.dev/creastina/sheef-api-docs:2.${CI_PIPELINE_IID}" "quay.imanuel.dev/creastina/sheef-api-docs:latest"
+    - docker push "quay.imanuel.dev/creastina/sheef-api-docs:2.${CI_PIPELINE_IID}"
+    - docker push "quay.imanuel.dev/creastina/sheef-api-docs:latest"
+  rules:
+    - if: $CI_COMMIT_BRANCH
+      exists:
+        - Dockerfile
