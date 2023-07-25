@@ -13,6 +13,7 @@ pub struct Model {
     pub level: Option<String>,
     pub gear_score: Option<String>,
     #[cfg(feature = "backend")]
+    #[serde(skip)]
     pub user_id: i32,
 }
 

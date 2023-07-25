@@ -24,7 +24,7 @@ use sheef_backend::sse::kill::kill_sse_client;
 use sheef_backend::sse::mount::mount_sse_client;
 use sheef_backend::sse::NotificationState;
 use sheef_backend::sse::savage_mount::savage_mount_sse_client;
-use sheef_dbal::get_database_connection;
+use sheef_dbal::open_db_connection_with_error;
 use sheef_migration::{IntoSchemaManagerConnection, Migrator, MigratorTrait};
 
 #[actix_web::main]
@@ -36,7 +36,7 @@ async fn main() -> std::io::Result<()> {
 
     log::info!("Running sheef planing on :8070");
 
-    let db = match get_database_connection().await {
+    let db = match open_db_connection_with_error!() {
         Ok(db) => db,
         Err(err) => panic!("{err}")
     };

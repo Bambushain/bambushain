@@ -1,4 +1,6 @@
-use sea_orm::{IntoActiveModel, NotSet, QueryOrder};
+use std::collections::BTreeMap;
+
+use sea_orm::{IntoActiveModel, NotSet};
 use sea_orm::ActiveValue::Set;
 use sea_orm::prelude::*;
 
@@ -8,7 +10,7 @@ use sheef_entities::prelude::*;
 pub async fn get_mount(mount: String) -> SheefResult<Mount> {
     let db = open_db_connection!();
 
-    match mount::Entity::find()
+    let result = match mount::Entity::find()
         .filter(mount::Column::Name.eq(mount))
         .one(&db)
         .await {
@@ -18,7 +20,11 @@ pub async fn get_mount(mount: String) -> SheefResult<Mount> {
             log::error!("{err}");
             Err(sheef_db_error!("mount", "Failed to load mount"))
         }
-    }
+    };
+
+    let _ = db.close().await;
+
+    result
 }
 
 pub async fn mount_exists(mount: String) -> bool {
@@ -27,13 +33,19 @@ pub async fn mount_exists(mount: String) -> bool {
 
 pub async fn activate_mount_for_user(mount: String, username: String) -> SheefErrorResult {
     let db = open_db_connection!();
-    let user = get_user_by_username!(username);
+    let user = match crate::user::get_user(username.clone()).await {
+        Ok(user) => user,
+        Err(err) => {
+            log::error!("Failed to load user {}: {err}", username);
+            return Err(err);
+        }
+    };
     let mount = match get_mount(mount).await {
         Ok(mount) => mount,
         Err(_) => return Err(sheef_not_found_error!("mount", "Mount was not found"))
     };
 
-    match mount_to_user::Entity::find()
+    let result = match mount_to_user::Entity::find()
         .filter(mount_to_user::Column::MountId.eq(mount.id))
         .filter(mount_to_user::Column::UserId.eq(user.id))
         .one(&db)
@@ -56,18 +68,28 @@ pub async fn activate_mount_for_user(mount: String, username: String) -> SheefEr
             log::error!("{err}");
             sheef_db_error!("mount", "Failed to create mount for user")
         })
-        .map(|_| ())
+        .map(|_| ());
+
+    let _ = db.close().await;
+
+    result
 }
 
 pub async fn deactivate_mount_for_user(mount: String, username: String) -> SheefErrorResult {
     let db = open_db_connection!();
-    let user = get_user_by_username!(username);
+    let user = match crate::user::get_user(username.clone()).await {
+        Ok(user) => user,
+        Err(err) => {
+            log::error!("Failed to load user {}: {err}", username);
+            return Err(err);
+        }
+    };
     let mount = match get_mount(mount).await {
         Ok(mount) => mount,
         Err(_) => return Err(sheef_not_found_error!("mount", "Mount was not found"))
     };
 
-    mount_to_user::Entity::delete_many()
+    let result = mount_to_user::Entity::delete_many()
         .filter(mount_to_user::Column::MountId.eq(mount.id))
         .filter(mount_to_user::Column::UserId.eq(user.id))
         .exec(&db)
@@ -76,13 +98,17 @@ pub async fn deactivate_mount_for_user(mount: String, username: String) -> Sheef
             log::error!("{err}");
             sheef_db_error!("mount", "Failed to remove mount from user")
         })
-        .map(|_| ())
+        .map(|_| ());
+
+    let _ = db.close().await;
+
+    result
 }
 
 pub async fn delete_mount(mount: String) -> SheefErrorResult {
     let db = open_db_connection!();
 
-    mount::Entity::delete_many()
+    let result = mount::Entity::delete_many()
         .filter(mount::Column::Name.eq(mount))
         .exec(&db)
         .await
@@ -90,7 +116,11 @@ pub async fn delete_mount(mount: String) -> SheefErrorResult {
             log::error!("{err}");
             sheef_db_error!("mount", "Failed to delete mount")
         })
-        .map(|_| ())
+        .map(|_| ());
+
+    let _ = db.close().await;
+
+    result
 }
 
 pub async fn create_mount(mount: Mount) -> SheefResult<Mount> {
@@ -98,13 +128,17 @@ pub async fn create_mount(mount: Mount) -> SheefResult<Mount> {
 
     let mut model = mount.into_active_model();
     model.id = NotSet;
-    model
+    let result = model
         .insert(&db)
         .await
         .map_err(|err| {
             log::error!("{err}");
             sheef_db_error!("mount", "Failed to create mount")
-        })
+        });
+
+    let _ = db.close().await;
+
+    result
 }
 
 pub async fn update_mount(mount: String, name: String) -> SheefErrorResult {
@@ -116,44 +150,37 @@ pub async fn update_mount(mount: String, name: String) -> SheefErrorResult {
     };
 
     model.name = Set(name);
-    model
+    let result = model
         .update(&db)
         .await
         .map_err(|err| {
             log::error!("{err}");
             sheef_db_error!("mount", "Failed to update mount")
         })
-        .map(|_| ())
+        .map(|_| ());
+
+    let _ = db.close().await;
+
+    result
 }
 
-pub async fn get_mounts() -> SheefResult<Vec<Mount>> {
+pub async fn get_mounts() -> SheefResult<BTreeMap<String, Vec<String>>> {
     let db = open_db_connection!();
 
-    match mount::Entity::find()
-        .order_by_asc(mount::Column::Name)
-        .all(&db)
-        .await {
-        Ok(mounts) => Ok(mounts),
+    let data = match mount::Entity::find().find_with_related(user::Entity).all(&db).await {
+        Ok(result) => result,
         Err(err) => {
             log::error!("{err}");
-            Err(sheef_db_error!("mount", "Failed to load mounts"))
+            return Err(sheef_db_error!("mount", "Failed to load mounts"));
         }
-    }
-}
+    };
 
-pub async fn get_users_for_mount(mount: String) -> SheefResult<Vec<String>> {
-    let db = open_db_connection!();
+    let _ = db.close().await;
 
-    match user::Entity::find()
-        .order_by_asc(user::Column::Username)
-        .inner_join(mount::Entity)
-        .filter(mount::Column::Name.eq(mount))
-        .all(&db)
-        .await {
-        Ok(users) => Ok(users.iter().map(|user| user.username.clone()).collect()),
-        Err(err) => {
-            log::error!("{err}");
-            Err(sheef_db_error!("mount", "Failed to load mounts"))
-        }
+    let mut result = BTreeMap::new();
+    for (mount, users) in data {
+        result.insert(mount.name, users.iter().map(|user| user.username.clone()).collect());
     }
+
+    Ok(result)
 }

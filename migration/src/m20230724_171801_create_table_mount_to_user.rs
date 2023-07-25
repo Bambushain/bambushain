@@ -18,10 +18,14 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(MountToUser::MountId).integer().not_null())
                     .foreign_key(ForeignKey::create()
                         .from(MountToUser::Table, MountToUser::UserId)
-                        .to(User::Table, User::Id))
+                        .to(User::Table, User::Id)
+                        .on_delete(ForeignKeyAction::Cascade)
+                    )
                     .foreign_key(ForeignKey::create()
                         .from(MountToUser::Table, MountToUser::MountId)
-                        .to(Mount::Table, Mount::Id))
+                        .to(Mount::Table, Mount::Id)
+                        .on_delete(ForeignKeyAction::Cascade)
+                    )
                     .primary_key(Index::create().col(MountToUser::UserId).col(MountToUser::MountId))
 
                     .to_owned(),

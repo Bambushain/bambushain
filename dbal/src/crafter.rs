@@ -1,33 +1,37 @@
-use sea_orm::{IntoActiveModel, NotSet, QueryOrder};
+use sea_orm::{IntoActiveModel, JoinType, NotSet, QueryOrder, QuerySelect};
 use sea_orm::ActiveValue::Set;
 use sea_orm::prelude::*;
 use sea_orm::sea_query::Expr;
 
-use sheef_entities::{crafter, sheef_db_error};
+use sheef_entities::{crafter, sheef_db_error, user};
 use sheef_entities::prelude::*;
 
 pub async fn get_crafters(username: String) -> SheefResult<Vec<Crafter>> {
     let db = open_db_connection!();
-    let user = get_user_by_username!(username);
 
-    crafter::Entity::find()
-        .filter(crafter::Column::UserId.eq(user.id))
+    let result = crafter::Entity::find()
+        .filter(user::Column::Username.eq(username))
+        .join(JoinType::InnerJoin, crafter::Relation::User.def())
         .order_by_asc(crafter::Column::Job)
         .all(&db)
         .await
         .map_err(|err| {
             log::error!("{err}");
             sheef_db_error!("crafter", "Failed to load crafters")
-        })
+        });
+
+    let _ = db.close().await;
+
+    result
 }
 
 pub async fn get_crafter(username: String, job: String) -> SheefResult<Crafter> {
     let db = open_db_connection!();
-    let user = get_user_by_username!(username);
 
-    match crafter::Entity::find()
+    let result = match crafter::Entity::find()
         .filter(crafter::Column::Job.eq(job))
-        .filter(crafter::Column::UserId.eq(user.id))
+        .filter(user::Column::Username.eq(username))
+        .join(JoinType::InnerJoin, crafter::Relation::User.def())
         .one(&db)
         .await {
         Ok(Some(res)) => Ok(res),
@@ -36,7 +40,11 @@ pub async fn get_crafter(username: String, job: String) -> SheefResult<Crafter> 
             log::error!("{err}");
             Err(sheef_db_error!("crafter", "Failed to execute database query"))
         }
-    }
+    };
+
+    let _ = db.close().await;
+
+    result
 }
 
 pub async fn crafter_exists(username: String, job: String) -> bool {
@@ -45,26 +53,42 @@ pub async fn crafter_exists(username: String, job: String) -> bool {
 
 pub async fn create_crafter(username: String, crafter: Crafter) -> SheefResult<Crafter> {
     let db = open_db_connection!();
-    let user = get_user_by_username!(username);
+    let user = match crate::user::get_user(username.clone()).await {
+        Ok(user) => user,
+        Err(err) => {
+            log::error!("Failed to load user {}: {err}", username);
+            return Err(err);
+        }
+    };
 
     let mut model = crafter.into_active_model();
     model.user_id = Set(user.id);
     model.id = NotSet;
 
-    model
+    let result = model
         .insert(&db)
         .await
         .map_err(|err| {
             log::error!("{err}");
             sheef_db_error!("crafter", "Failed to create crafter")
-        })
+        });
+
+    let _ = db.close().await;
+
+    result
 }
 
 pub async fn update_crafter(username: String, job: String, crafter: Crafter) -> SheefErrorResult {
     let db = open_db_connection!();
-    let user = get_user_by_username!(username);
+    let user = match crate::user::get_user(username.clone()).await {
+        Ok(user) => user,
+        Err(err) => {
+            log::error!("Failed to load user {}: {err}", username);
+            return Err(err);
+        }
+    };
 
-    crafter::Entity::update_many()
+    let result = crafter::Entity::update_many()
         .filter(crafter::Column::Job.eq(job))
         .filter(crafter::Column::UserId.eq(user.id))
         .col_expr(crafter::Column::Job, Expr::value(crafter.job))
@@ -75,14 +99,24 @@ pub async fn update_crafter(username: String, job: String, crafter: Crafter) -> 
             log::error!("{err}");
             sheef_db_error!("crafter", "Failed to update crafter")
         })
-        .map(|_| ())
+        .map(|_| ());
+
+    let _ = db.close().await;
+
+    result
 }
 
 pub async fn delete_crafter(username: String, job: String) -> SheefErrorResult {
     let db = open_db_connection!();
-    let user = get_user_by_username!(username);
+    let user = match crate::user::get_user(username.clone()).await {
+        Ok(user) => user,
+        Err(err) => {
+            log::error!("Failed to load user {}: {err}", username);
+            return Err(err);
+        }
+    };
 
-    crafter::Entity::delete_many()
+    let result = crafter::Entity::delete_many()
         .filter(crafter::Column::Job.eq(job))
         .filter(crafter::Column::UserId.eq(user.id))
         .exec(&db)
@@ -91,5 +125,9 @@ pub async fn delete_crafter(username: String, job: String) -> SheefErrorResult {
             log::error!("{err}");
             sheef_db_error!("crafter", "Failed to delete crafter")
         })
-        .map(|_| ())
+        .map(|_| ());
+
+    let _ = db.close().await;
+
+    result
 }

@@ -24,7 +24,9 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(Token::Token).string().not_null().unique_key())
                     .foreign_key(ForeignKey::create()
                         .from(Token::Table, Token::UserId)
-                        .to(User::Table, User::Id))
+                        .to(User::Table, User::Id)
+                        .on_delete(ForeignKeyAction::Cascade)
+                    )
                     .to_owned(),
             )
             .await

@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use actix_web::{HttpRequest, HttpResponse, web};
 use serde::Deserialize;
 
@@ -20,18 +18,7 @@ pub struct SavageMountPathInfo {
 }
 
 pub async fn get_savage_mounts() -> HttpResponse {
-    let savage_mounts = match sheef_dbal::savage_mount::get_savage_mounts().await {
-        Ok(savage_mounts) => savage_mounts,
-        Err(err) => return ok_or_error!(Err::<(), SheefError>(err))
-    };
-    let mut response = BTreeMap::new();
-    for savage_mount in savage_mounts {
-        response.insert(savage_mount.name.clone(), vec![]);
-        let mut users_for_savage_mount = get_users_for_savage_mount(savage_mount.name.clone()).await.expect("Savage mount does exist");
-        response.get_mut(savage_mount.name.as_str()).expect("Vector should exist").append(&mut users_for_savage_mount);
-    }
-
-    ok_or_error!(Ok::<BTreeMap<String, Vec<String>>, SheefError>(response))
+    ok_or_error!(sheef_dbal::savage_mount::get_savage_mounts().await)
 }
 
 pub async fn activate_savage_mount_for_user(path: web::Path<SavageMountUsernamePathInfo>, notification_state: web::Data<NotificationState>) -> HttpResponse {

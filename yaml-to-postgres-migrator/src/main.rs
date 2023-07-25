@@ -2,11 +2,11 @@ use anyhow::anyhow;
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseTransaction, EntityTrait, NotSet, QueryFilter, TransactionTrait};
 use sea_orm::ActiveValue::Set;
 
-use sheef_dbal::get_database_connection;
+use sheef_dbal::open_db_connection;
 use sheef_migration::{IntoSchemaManagerConnection, Migrator, MigratorTrait};
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), sheef_entities::error::SheefError>{
     stderrlog::new()
         .verbosity(log::Level::Info)
         .init()
@@ -15,10 +15,7 @@ async fn main() {
     println!("Create database");
     println!("DATABASE_URL: {}", std::env::var("DATABASE_URL").expect("Needs DATABASE_URL"));
 
-    let db = match get_database_connection().await {
-        Ok(db) => db,
-        Err(err) => panic!("{err}")
-    };
+    let db = open_db_connection!();
 
     match Migrator::up(db.into_schema_manager_connection(), None).await {
         Ok(_) => println!("Successfully migrated database"),
@@ -30,7 +27,7 @@ async fn main() {
         .one(&db)
         .await {
         println!("Already migrated");
-        return;
+        return Ok(());
     }
 
     let txn = match db.begin().await {
@@ -92,6 +89,7 @@ async fn main() {
     }
 
     println!("Migration from yaml to postgres done");
+    return Ok(());
 }
 
 async fn migrate_users(db: &DatabaseTransaction) -> anyhow::Result<Vec<sheef_entities::user::Model>> {

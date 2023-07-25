@@ -17,6 +17,7 @@ serde_json = { workspace = true }
 chrono = { workspace = true }
 actix-web-lab = { workspace = true, features = ["spa"] }
 actix-web = { workspace = true }
+sea-orm = { workspace = true }
 
 [workspace]
 members = [

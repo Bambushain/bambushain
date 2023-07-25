@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use actix_web::{HttpRequest, HttpResponse, web};
 use serde::Deserialize;
 
@@ -20,18 +18,7 @@ pub struct KillPathInfo {
 }
 
 pub async fn get_kills() -> HttpResponse {
-    let kills = match sheef_dbal::kill::get_kills().await {
-        Ok(kills) => kills,
-        Err(err) => return ok_or_error!(Err::<(), SheefError>(err))
-    };
-    let mut response = BTreeMap::new();
-    for kill in kills {
-        response.insert(kill.name.clone(), vec![]);
-        let mut users_for_kill = get_users_for_kill(kill.name.clone()).await.expect("Kill does exist");
-        response.get_mut(kill.name.as_str()).expect("Vector should exist").append(&mut users_for_kill);
-    }
-
-    ok_or_error!(Ok::<BTreeMap<String, Vec<String>>, SheefError>(response))
+    ok_or_error!(sheef_dbal::kill::get_kills().await)
 }
 
 pub async fn activate_kill_for_user(path: web::Path<KillUsernamePathInfo>, notification_state: web::Data<NotificationState>) -> HttpResponse {

@@ -21,7 +21,7 @@ pub async fn login(body: web::Json<Login>) -> HttpResponse {
 }
 
 pub async fn logout(req: HttpRequest) -> HttpResponse {
-    let (username, token) = {
+    let token = {
         let extensions = req.extensions();
         let state = extensions.get::<AuthenticationState>();
         if state.is_none() {
@@ -29,10 +29,10 @@ pub async fn logout(req: HttpRequest) -> HttpResponse {
         }
 
         let result = state.unwrap();
-        (result.user.username.to_string(), result.token.to_string())
+        result.token.to_string()
     };
 
-    let _ = delete_token(username, token).await;
+    let _ = delete_token(token).await;
 
     no_content!()
 }

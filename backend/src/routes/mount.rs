@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use actix_web::{HttpRequest, HttpResponse, web};
 use serde::Deserialize;
 
@@ -20,18 +18,7 @@ pub struct MountPathInfo {
 }
 
 pub async fn get_mounts() -> HttpResponse {
-    let mounts = match sheef_dbal::mount::get_mounts().await {
-        Ok(mounts) => mounts,
-        Err(err) => return ok_or_error!(Err::<(), SheefError>(err))
-    };
-    let mut response = BTreeMap::new();
-    for mount in mounts {
-        response.insert(mount.name.clone(), vec![]);
-        let mut users_for_mount = get_users_for_mount(mount.name.clone()).await.expect("Mount does exist");
-        response.get_mut(mount.name.as_str()).expect("Vector should exist").append(&mut users_for_mount);
-    }
-
-    ok_or_error!(Ok::<BTreeMap<String, Vec<String>>, SheefError>(response))
+    ok_or_error!(sheef_dbal::mount::get_mounts().await)
 }
 
 pub async fn activate_mount_for_user(path: web::Path<MountUsernamePathInfo>, notification_state: web::Data<NotificationState>) -> HttpResponse {

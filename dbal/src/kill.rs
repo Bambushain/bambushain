@@ -1,4 +1,6 @@
-use sea_orm::{IntoActiveModel, NotSet, QueryOrder};
+use std::collections::BTreeMap;
+
+use sea_orm::{IntoActiveModel, NotSet};
 use sea_orm::ActiveValue::Set;
 use sea_orm::prelude::*;
 
@@ -8,7 +10,7 @@ use sheef_entities::prelude::*;
 pub async fn get_kill(kill: String) -> SheefResult<Kill> {
     let db = open_db_connection!();
 
-    match kill::Entity::find()
+    let result = match kill::Entity::find()
         .filter(kill::Column::Name.eq(kill))
         .one(&db)
         .await {
@@ -18,7 +20,11 @@ pub async fn get_kill(kill: String) -> SheefResult<Kill> {
             log::error!("{err}");
             Err(sheef_db_error!("kill", "Failed to load kill"))
         }
-    }
+    };
+
+    let _ = db.close().await;
+
+    result
 }
 
 pub async fn kill_exists(kill: String) -> bool {
@@ -27,13 +33,19 @@ pub async fn kill_exists(kill: String) -> bool {
 
 pub async fn activate_kill_for_user(kill: String, username: String) -> SheefErrorResult {
     let db = open_db_connection!();
-    let user = get_user_by_username!(username);
+    let user = match crate::user::get_user(username.clone()).await {
+        Ok(user) => user,
+        Err(err) => {
+            log::error!("Failed to load user {}: {err}", username);
+            return Err(err);
+        }
+    };
     let kill = match get_kill(kill).await {
         Ok(kill) => kill,
         Err(_) => return Err(sheef_not_found_error!("kill", "Kill was not found"))
     };
 
-    match kill_to_user::Entity::find()
+    let result = match kill_to_user::Entity::find()
         .filter(kill_to_user::Column::KillId.eq(kill.id))
         .filter(kill_to_user::Column::UserId.eq(user.id))
         .one(&db)
@@ -56,18 +68,28 @@ pub async fn activate_kill_for_user(kill: String, username: String) -> SheefErro
             log::error!("{err}");
             sheef_db_error!("kill", "Failed to create kill for user")
         })
-        .map(|_| ())
+        .map(|_| ());
+
+    let _ = db.close().await;
+
+    result
 }
 
 pub async fn deactivate_kill_for_user(kill: String, username: String) -> SheefErrorResult {
     let db = open_db_connection!();
-    let user = get_user_by_username!(username);
+    let user = match crate::user::get_user(username.clone()).await {
+        Ok(user) => user,
+        Err(err) => {
+            log::error!("Failed to load user {}: {err}", username);
+            return Err(err);
+        }
+    };
     let kill = match get_kill(kill).await {
         Ok(kill) => kill,
         Err(_) => return Err(sheef_not_found_error!("kill", "Kill was not found"))
     };
 
-    kill_to_user::Entity::delete_many()
+    let result = kill_to_user::Entity::delete_many()
         .filter(kill_to_user::Column::KillId.eq(kill.id))
         .filter(kill_to_user::Column::UserId.eq(user.id))
         .exec(&db)
@@ -76,13 +98,17 @@ pub async fn deactivate_kill_for_user(kill: String, username: String) -> SheefEr
             log::error!("{err}");
             sheef_db_error!("kill", "Failed to remove kill from user")
         })
-        .map(|_| ())
+        .map(|_| ());
+
+    let _ = db.close().await;
+
+    result
 }
 
 pub async fn delete_kill(kill: String) -> SheefErrorResult {
     let db = open_db_connection!();
 
-    kill::Entity::delete_many()
+    let result = kill::Entity::delete_many()
         .filter(kill::Column::Name.eq(kill))
         .exec(&db)
         .await
@@ -90,7 +116,11 @@ pub async fn delete_kill(kill: String) -> SheefErrorResult {
             log::error!("{err}");
             sheef_db_error!("kill", "Failed to delete kill")
         })
-        .map(|_| ())
+        .map(|_| ());
+
+    let _ = db.close().await;
+
+    result
 }
 
 pub async fn create_kill(kill: Kill) -> SheefResult<Kill> {
@@ -98,13 +128,17 @@ pub async fn create_kill(kill: Kill) -> SheefResult<Kill> {
 
     let mut model = kill.into_active_model();
     model.id = NotSet;
-    model
+    let result = model
         .insert(&db)
         .await
         .map_err(|err| {
             log::error!("{err}");
             sheef_db_error!("kill", "Failed to create kill")
-        })
+        });
+
+    let _ = db.close().await;
+
+    result
 }
 
 pub async fn update_kill(kill: String, name: String) -> SheefErrorResult {
@@ -116,44 +150,37 @@ pub async fn update_kill(kill: String, name: String) -> SheefErrorResult {
     };
 
     model.name = Set(name);
-    model
+    let result = model
         .update(&db)
         .await
         .map_err(|err| {
             log::error!("{err}");
             sheef_db_error!("kill", "Failed to update kill")
         })
-        .map(|_| ())
+        .map(|_| ());
+
+    let _ = db.close().await;
+
+    result
 }
 
-pub async fn get_kills() -> SheefResult<Vec<Kill>> {
+pub async fn get_kills() -> SheefResult<BTreeMap<String, Vec<String>>> {
     let db = open_db_connection!();
 
-    match kill::Entity::find()
-        .order_by_asc(kill::Column::Name)
-        .all(&db)
-        .await {
-        Ok(kills) => Ok(kills),
+    let data = match kill::Entity::find().find_with_related(user::Entity).all(&db).await {
+        Ok(result) => result,
         Err(err) => {
             log::error!("{err}");
-            Err(sheef_db_error!("kill", "Failed to load kills"))
+            return Err(sheef_db_error!("kill", "Failed to load kills"));
         }
-    }
-}
+    };
 
-pub async fn get_users_for_kill(kill: String) -> SheefResult<Vec<String>> {
-    let db = open_db_connection!();
+    let _ = db.close().await;
 
-    match user::Entity::find()
-        .order_by_asc(user::Column::Username)
-        .inner_join(kill::Entity)
-        .filter(kill::Column::Name.eq(kill))
-        .all(&db)
-        .await {
-        Ok(users) => Ok(users.iter().map(|user| user.username.clone()).collect()),
-        Err(err) => {
-            log::error!("{err}");
-            Err(sheef_db_error!("kill", "Failed to load kills"))
-        }
+    let mut result = BTreeMap::new();
+    for (kill, users) in data {
+        result.insert(kill.name, users.iter().map(|user| user.username.clone()).collect());
     }
+
+    Ok(result)
 }

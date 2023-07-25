@@ -13,7 +13,7 @@ pub struct Calendar {
     pub days: Vec<CalendarDay>,
 }
 
-#[derive(Serialize, Deserialize, Eq, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Eq, PartialEq, Clone, Default)]
 pub struct CalendarDay {
     pub date: NaiveDate,
     pub events: Vec<event::Model>,

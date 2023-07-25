@@ -26,7 +26,7 @@ pub async fn validate_auth_and_create_token(username: String, password: String) 
 
     let db = open_db_connection!();
 
-    match token.insert(&db).await {
+    let result = match token.insert(&db).await {
         Ok(token) => Ok(LoginResult {
             token: token.token,
             user: user.to_web_user(),
@@ -35,21 +35,27 @@ pub async fn validate_auth_and_create_token(username: String, password: String) 
             log::error!("{err}");
             Err(sheef_db_error!("token", "Failed to create token"))
         }
-    }
+    };
+
+    let _ = db.close().await;
+
+    result
 }
 
-pub async fn delete_token(username: String, token: String) -> SheefErrorResult {
-    let user = get_user_by_username!(username);
+pub async fn delete_token(token: String) -> SheefErrorResult {
     let db = open_db_connection!();
 
-    sheef_entities::token::Entity::delete_many()
+    let result = sheef_entities::token::Entity::delete_many()
         .filter(sheef_entities::token::Column::Token.eq(token))
-        .filter(sheef_entities::token::Column::UserId.eq(user.id))
         .exec(&db)
         .await
         .map(|_| ())
         .map_err(|err| {
             log::error!("{err}");
             sheef_db_error!("token", "Failed to delete the token")
-        })
+        });
+
+    let _ = db.close().await;
+
+    result
 }
