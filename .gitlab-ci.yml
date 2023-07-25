@@ -28,6 +28,15 @@ docker-docs-build:
     - docker push "quay.imanuel.dev/creastina/sheef-api-docs:2.${CI_PIPELINE_IID}"
     - docker push "quay.imanuel.dev/creastina/sheef-api-docs:latest"
   rules:
-    - if: $CI_COMMIT_BRANCH
+    - if: $CI_COMMIT_BRANCH == "main"
       exists:
         - Dockerfile
+
+build-merge-request:
+  image: rust:1.70-alpine3.18
+  stage: build
+  script:
+    - apk add musl-dev
+    - rustup target add wasm32-unknown-unknown
+    - cargo install --locked trunk
+    - trunk build --release
