@@ -7,10 +7,12 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[cfg_attr(feature = "backend", sea_orm(primary_key))]
     #[serde(skip)]
+    #[cfg(feature = "backend")]
     pub id: i32,
     pub job: String,
     pub level: Option<String>,
     pub gear_score: Option<String>,
+    #[cfg(feature = "backend")]
     pub user_id: i32,
 }
 
@@ -36,15 +38,3 @@ impl Related<super::user::Entity> for Entity {
 
 #[cfg(feature = "backend")]
 impl ActiveModelBehavior for ActiveModel {}
-
-impl Model {
-    pub fn new(job: String, level: Option<String>, gear_score: Option<String>) -> Self {
-        Self {
-            id: 0,
-            job,
-            level,
-            gear_score,
-            user_id: 0,
-        }
-    }
-}

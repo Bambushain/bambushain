@@ -1,7 +1,8 @@
 use chrono::{Datelike, Days, Months, NaiveDate};
+use tokio_stream::StreamExt;
 
-use sheef_api_entities::{Calendar, Event, sheef_invalid_data_error, sheef_io_error, sheef_not_found_error};
-use sheef_api_entities::event::CalendarDay;
+use sheef_yaml_entities::{Calendar, Event, sheef_invalid_data_error, sheef_io_error, sheef_not_found_error};
+use sheef_yaml_entities::event::CalendarDay;
 
 use crate::{persist_entity, read_entity, read_entity_dir, SheefResult, validate_database_dir};
 use crate::user::{get_user, get_users, user_exists};
@@ -134,7 +135,7 @@ pub async fn get_events_for_month(year: i32, month: u32) -> SheefResult<Calendar
             }
         };
 
-        let users = get_users().await.unwrap().into_iter();
+        let users = get_users(false).await.unwrap().into_iter();
         if let Ok(events) = read_entity_dir::<Event>(event_dir).await {
             calendar.days.push(CalendarDay {
                 events: users.map(|user| if let Some(event) = events.iter().find(|evt| evt.username == user.username.clone()) {
@@ -167,6 +168,72 @@ pub async fn get_events_for_month(year: i32, month: u32) -> SheefResult<Calendar
                 }).collect(),
                 date,
             });
+        }
+    }
+
+    Ok(calendar)
+}
+
+pub async fn get_full_calendar() -> SheefResult<Calendar> {
+    let mut calendar = Calendar {
+        year: 0,
+        month: 0,
+        days: vec![],
+    };
+
+    let read_dir = match tokio::fs::read_dir(validate_event_dir().await).await {
+        Ok(dir) => dir,
+        Err(err) => {
+            log::error!("Failed to load entity files {}", err);
+            return Err(sheef_io_error!("", "Failed to load entity files"));
+        }
+    };
+
+    let mut tokio_data = tokio_stream::wrappers::ReadDirStream::new(read_dir);
+    while let Some(item) = tokio_data.next().await {
+        match item {
+            Ok(entry) => {
+                let path = entry.path();
+                if path.is_dir() {
+                    let date = match NaiveDate::parse_from_str(path.file_name().unwrap().to_str().unwrap(), "%Y-%m-%d") {
+                        Ok(date) => date,
+                        Err(err) => {
+                            log::error!("Failed to load event directory {}", err);
+                            continue;
+                        }
+                    };
+                    let event_dir = match get_date_event_dir(&date).await {
+                        Ok(dir) => dir,
+                        Err(err) => {
+                            log::warn!("Failed to get date event dir ({}): {err}", date.format("%Y-%m-%d"));
+                            continue;
+                        }
+                    };
+
+                    let users = get_users(false).await.unwrap().into_iter();
+                    if let Ok(events) = read_entity_dir::<Event>(event_dir).await {
+                        let mut day = CalendarDay {
+                            events: vec![],
+                            date,
+                        };
+                        for user in users {
+                            if let Some(event) = events.iter().find(|evt| evt.username == user.username.clone()) {
+                                day.events.push(Event {
+                                    username: event.username.clone(),
+                                    time: event.time.clone(),
+                                    available: event.available,
+                                    date,
+                                    user: event.user.clone(),
+                                });
+                            }
+                        }
+                        calendar.days.push(day);
+                    }
+                }
+            }
+            Err(err) => {
+                log::error!("Invalid DirEntry {}", err);
+            }
         }
     }
 

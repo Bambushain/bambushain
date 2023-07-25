@@ -46,10 +46,10 @@ pub async fn delete_mount(mount: String) -> SheefApiResult<()> {
 
 pub async fn create_mount(name: String) -> SheefApiResult<Mount> {
     log::debug!("Create new mount {name}");
-    post("/api/mount", &Mount { id: 0, name }).await
+    post("/api/mount", &Mount { name }).await
 }
 
 pub async fn rename_mount(old_name: String, new_name: String) -> SheefApiResult<()> {
     log::debug!("Rename mount {old_name} to {new_name}");
-    put(format!("/api/mount/{old_name}"), &Mount { id: 0, name: new_name }).await
+    put(format!("/api/mount/{old_name}"), &Mount { name: new_name }).await
 }

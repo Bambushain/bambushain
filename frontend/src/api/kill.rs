@@ -46,10 +46,10 @@ pub async fn delete_kill(kill: String) -> SheefApiResult<()> {
 
 pub async fn create_kill(name: String) -> SheefApiResult<Kill> {
     log::debug!("Create new kill {name}");
-    post("/api/kill", &Kill { id: 0, name }).await
+    post("/api/kill", &Kill { name }).await
 }
 
 pub async fn rename_kill(old_name: String, new_name: String) -> SheefApiResult<()> {
     log::debug!("Rename kill {old_name} to {new_name}");
-    put(format!("/api/kill/{old_name}"), &Kill { id: 0, name: new_name }).await
+    put(format!("/api/kill/{old_name}"), &Kill { name: new_name }).await
 }

@@ -37,11 +37,11 @@ fn modify_fighter_modal(props: &ModifyFighterModalProps) -> Html {
 
         Callback::from(move |evt: SubmitEvent| {
             evt.prevent_default();
-            let fighter = Fighter::new(
-                (*job_state).to_string(),
-                Some((*level_state).to_string()),
-                Some((*gear_score_state).to_string()),
-            );
+            let fighter = Fighter {
+                job: (*job_state).to_string(),
+                level: Some((*level_state).to_string()),
+                gear_score: Some((*gear_score_state).to_string()),
+            };
 
             on_save.emit(fighter);
         })

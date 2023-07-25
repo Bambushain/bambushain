@@ -7,14 +7,16 @@ use crate::middleware::authenticate_user::AuthenticationState;
 
 pub async fn login(body: web::Json<Login>) -> HttpResponse {
     let data = validate_auth_and_create_token(body.username.clone(), body.password.clone()).await;
-    if let Ok(result) = data {
-        ok_json!(result)
-    } else {
-        HttpResponse::Unauthorized().json(SheefError {
-            entity_type: "user".to_string(),
-            message: "Username or Password is invalid".to_string(),
-            error_type: SheefErrorCode::InvalidDataError,
-        })
+    match data {
+        Ok(result) => ok_json!(result),
+        Err(err) => {
+            log::error!("Failed to login {err}");
+            HttpResponse::Unauthorized().json(SheefError {
+                entity_type: "user".to_string(),
+                message: "Username or Password is invalid".to_string(),
+                error_type: SheefErrorCode::InvalidDataError,
+            })
+        }
     }
 }
 

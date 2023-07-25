@@ -1,11 +1,15 @@
-use sea_orm::Database;
+use log::LevelFilter;
+use sea_orm::{ConnectOptions, Database};
 use sea_orm::prelude::*;
 
 macro_rules! open_db_connection {
     () => {
         match crate::get_database_connection().await {
             Ok(db) => db,
-            Err(_) => return Err(sheef_entities::sheef_db_error!("token", "Failed to open database connection"))
+            Err(err) => {
+                log::error!("Failed to open database connection: {err}");
+                return Err(sheef_entities::sheef_db_error!("database", "Failed to open database connection"))
+            }
         }
     };
 }
@@ -16,8 +20,8 @@ macro_rules! get_user_by_username {
             match crate::user::get_user($username.clone()).await {
                 Ok(user) => user,
                 Err(err) => {
-                    log::warn!("Failed to load user {}: {err}", $username);
-                    return Err(sheef_entities::sheef_not_found_error!("token", "User not found"));
+                    log::error!("Failed to load user {}: {err}", $username);
+                    return Err(sheef_entities::sheef_not_found_error!("user", "User not found"));
                 }
             }
         }
@@ -34,7 +38,11 @@ pub mod mount;
 pub mod savage_mount;
 
 pub async fn get_database_connection() -> Result<DatabaseConnection, DbErr> {
-    Database::connect(std::env::var("DATABASE_URL").expect("Needs DATABASE_URL")).await
+    let mut opts = ConnectOptions::new(std::env::var("DATABASE_URL").expect("Needs DATABASE_URL"));
+    opts.sqlx_logging(true)
+        .sqlx_logging_level(LevelFilter::Debug);
+
+    Database::connect(opts).await
 }
 
 pub mod prelude {

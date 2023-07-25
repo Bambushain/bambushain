@@ -16,6 +16,8 @@ pub mod error;
 pub mod result;
 pub mod authentication;
 pub mod calendar;
+#[cfg(feature = "backend")]
+pub mod status;
 
 pub mod prelude {
     pub use crate::{sheef_exists_already_error, sheef_insufficient_rights_error, sheef_invalid_data_error, sheef_not_found_error, sheef_unknown_error, sheef_validation_error};

@@ -1,4 +1,4 @@
-use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, IntoActiveModel, QueryFilter, QueryOrder};
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, IntoActiveModel, NotSet, QueryFilter, QueryOrder};
 use sea_orm::sea_query::Expr;
 
 use sheef_entities::{sheef_db_error, sheef_not_found_error, sheef_unauthorized_error, token, user};
@@ -10,7 +10,10 @@ pub async fn get_user(username: String) -> SheefResult<User> {
     match user::Entity::find().filter(user::Column::Username.eq(username)).one(&db).await {
         Ok(Some(res)) => Ok(res),
         Ok(None) => Err(sheef_not_found_error!("user", "The user was not found")),
-        Err(_) => Err(sheef_db_error!("user", "Failed to execute database query"))
+        Err(err) => {
+            log::error!("{err}");
+            Err(sheef_db_error!("user", "Failed to execute database query"))
+        }
     }
 }
 
@@ -21,7 +24,10 @@ pub async fn get_users() -> SheefResult<Vec<User>> {
         .order_by_asc(user::Column::Username)
         .all(&db)
         .await
-        .map_err(|_| sheef_db_error!("user", "Failed to load users"))
+        .map_err(|err| {
+            log::error!("{err}");
+            sheef_db_error!("user", "Failed to load users")
+        })
 }
 
 pub async fn user_exists(username: String) -> bool {
@@ -31,10 +37,14 @@ pub async fn user_exists(username: String) -> bool {
 pub async fn create_user(user: User) -> SheefResult<User> {
     let db = open_db_connection!();
 
-    user.into_active_model()
-        .insert(&db)
+    let mut model = user.into_active_model();
+    model.id = NotSet;
+    model.insert(&db)
         .await
-        .map_err(|_| sheef_db_error!("user", "Failed to create user"))
+        .map_err(|err| {
+            log::error!("{err}");
+            sheef_db_error!("user", "Failed to create user")
+        })
 }
 
 pub async fn delete_user(username: String) -> SheefErrorResult {
@@ -44,7 +54,10 @@ pub async fn delete_user(username: String) -> SheefErrorResult {
         .filter(user::Column::Username.eq(username))
         .exec(&db)
         .await
-        .map_err(|_| sheef_db_error!("user", "Failed to delete"))
+        .map_err(|err| {
+            log::error!("{err}");
+            sheef_db_error!("user", "Failed to delete user")
+        })
         .map(|_| ())
 }
 
@@ -56,7 +69,10 @@ pub async fn change_mod_status(username: String, is_mod: bool) -> SheefErrorResu
         .filter(user::Column::Username.eq(username))
         .exec(&db)
         .await
-        .map_err(|_| sheef_db_error!("user", "Failed to update user"))
+        .map_err(|err| {
+            log::error!("{err}");
+            sheef_db_error!("user", "Failed to update user")
+        })
         .map(|_| ())
 }
 
@@ -68,7 +84,10 @@ pub async fn change_main_group(username: String, is_main_group: bool) -> SheefEr
         .filter(user::Column::Username.eq(username))
         .exec(&db)
         .await
-        .map_err(|_| sheef_db_error!("user", "Failed to update user"))
+        .map_err(|err| {
+            log::error!("{err}");
+            sheef_db_error!("user", "Failed to update user")
+        })
         .map(|_| ())
 }
 
@@ -77,7 +96,11 @@ pub async fn change_password(username: String, password: String) -> SheefErrorRe
 
     let hashed_password = match bcrypt::hash(password, 12) {
         Ok(pw) => pw,
-        Err(_) => return Err(sheef_unknown_error!("user", "Failed to hash the password"))
+        Err(err) => {
+            log::error!("{err}");
+
+            return Err(sheef_unknown_error!("user", "Failed to hash the password"));
+        }
     };
 
     user::Entity::update_many()
@@ -85,7 +108,10 @@ pub async fn change_password(username: String, password: String) -> SheefErrorRe
         .filter(user::Column::Username.eq(username))
         .exec(&db)
         .await
-        .map_err(|_| sheef_db_error!("user", "Failed to update user"))
+        .map_err(|err| {
+            log::error!("{err}");
+            sheef_db_error!("user", "Failed to update user")
+        })
         .map(|_| ())
 }
 
@@ -97,7 +123,10 @@ pub async fn update_me(username: String, job: String, gear_level: String) -> She
         .filter(user::Column::Username.eq(username))
         .exec(&db)
         .await
-        .map_err(|_| sheef_db_error!("user", "Failed to update user"))
+        .map_err(|err| {
+            log::error!("{err}");
+            sheef_db_error!("user", "Failed to update user")
+        })
         .map(|_| ())
 }
 
@@ -127,7 +156,10 @@ pub async fn change_my_password(username: String, old_password: String, new_pass
         .filter(user::Column::Username.eq(username))
         .exec(&db)
         .await
-        .map_err(|_| PasswordError::UnknownError)
+        .map_err(|err| {
+            log::error!("{err}");
+            PasswordError::UnknownError
+        })
         .map(|_| ())
 }
 

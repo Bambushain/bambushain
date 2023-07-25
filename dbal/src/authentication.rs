@@ -5,7 +5,13 @@ use sheef_entities::{sheef_db_error, sheef_validation_error};
 use sheef_entities::prelude::*;
 
 pub async fn validate_auth_and_create_token(username: String, password: String) -> SheefResult<LoginResult> {
-    let user = get_user_by_username!(username);
+    let user = match crate::user::get_user(username.clone()).await {
+        Ok(user) => user,
+        Err(err) => {
+            log::error!("Failed to load user {}: {err}", username);
+            return Err(sheef_entities::sheef_not_found_error!("user", "User not found"));
+        }
+    };
     let is_valid = user.validate_password(password);
 
     if !is_valid {
@@ -25,7 +31,10 @@ pub async fn validate_auth_and_create_token(username: String, password: String) 
             token: token.token,
             user: user.to_web_user(),
         }),
-        Err(_) => Err(sheef_db_error!("token", "Failed to create token")),
+        Err(err) => {
+            log::error!("{err}");
+            Err(sheef_db_error!("token", "Failed to create token"))
+        }
     }
 }
 
@@ -39,5 +48,8 @@ pub async fn delete_token(username: String, token: String) -> SheefErrorResult {
         .exec(&db)
         .await
         .map(|_| ())
-        .map_err(|_| sheef_db_error!("token", "Failed to delete the token"))
+        .map_err(|err| {
+            log::error!("{err}");
+            sheef_db_error!("token", "Failed to delete the token")
+        })
 }

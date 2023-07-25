@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::fmt::{Display, Formatter};
 
 use serde::{Deserialize, Serialize};
@@ -42,6 +43,8 @@ impl Display for SheefError {
         f.write_str(format!("{:?}", self).as_str())
     }
 }
+
+impl Error for SheefError {}
 
 pub enum PasswordError {
     WrongPassword,

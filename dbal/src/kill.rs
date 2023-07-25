@@ -14,7 +14,10 @@ pub async fn get_kill(kill: String) -> SheefResult<Kill> {
         .await {
         Ok(Some(kill)) => Ok(kill),
         Ok(None) => Err(sheef_not_found_error!("kill", "Kill was not found")),
-        Err(_) => Err(sheef_db_error!("kill", "Failed to load kill"))
+        Err(err) => {
+            log::error!("{err}");
+            Err(sheef_db_error!("kill", "Failed to load kill"))
+        }
     }
 }
 
@@ -49,7 +52,10 @@ pub async fn activate_kill_for_user(kill: String, username: String) -> SheefErro
         }
     }.save(&db)
         .await
-        .map_err(|_| sheef_db_error!("kill", "Failed to create kill for user"))
+        .map_err(|err| {
+            log::error!("{err}");
+            sheef_db_error!("kill", "Failed to create kill for user")
+        })
         .map(|_| ())
 }
 
@@ -66,7 +72,10 @@ pub async fn deactivate_kill_for_user(kill: String, username: String) -> SheefEr
         .filter(kill_to_user::Column::UserId.eq(user.id))
         .exec(&db)
         .await
-        .map_err(|_| sheef_db_error!("kill", "Failed to remove kill from user"))
+        .map_err(|err| {
+            log::error!("{err}");
+            sheef_db_error!("kill", "Failed to remove kill from user")
+        })
         .map(|_| ())
 }
 
@@ -77,18 +86,25 @@ pub async fn delete_kill(kill: String) -> SheefErrorResult {
         .filter(kill::Column::Name.eq(kill))
         .exec(&db)
         .await
-        .map_err(|_| sheef_db_error!("kill", "Failed to delete kill"))
+        .map_err(|err| {
+            log::error!("{err}");
+            sheef_db_error!("kill", "Failed to delete kill")
+        })
         .map(|_| ())
 }
 
 pub async fn create_kill(kill: Kill) -> SheefResult<Kill> {
     let db = open_db_connection!();
 
-    let model = kill.into_active_model();
+    let mut model = kill.into_active_model();
+    model.id = NotSet;
     model
         .insert(&db)
         .await
-        .map_err(|_| sheef_db_error!("kill", "Failed to create kill"))
+        .map_err(|err| {
+            log::error!("{err}");
+            sheef_db_error!("kill", "Failed to create kill")
+        })
 }
 
 pub async fn update_kill(kill: String, name: String) -> SheefErrorResult {
@@ -103,7 +119,10 @@ pub async fn update_kill(kill: String, name: String) -> SheefErrorResult {
     model
         .update(&db)
         .await
-        .map_err(|_| sheef_db_error!("kill", "Failed to update kill"))
+        .map_err(|err| {
+            log::error!("{err}");
+            sheef_db_error!("kill", "Failed to update kill")
+        })
         .map(|_| ())
 }
 
@@ -115,7 +134,10 @@ pub async fn get_kills() -> SheefResult<Vec<Kill>> {
         .all(&db)
         .await {
         Ok(kills) => Ok(kills),
-        Err(_) => Err(sheef_db_error!("kill", "Failed to load kills"))
+        Err(err) => {
+            log::error!("{err}");
+            Err(sheef_db_error!("kill", "Failed to load kills"))
+        }
     }
 }
 
@@ -129,6 +151,9 @@ pub async fn get_users_for_kill(kill: String) -> SheefResult<Vec<String>> {
         .all(&db)
         .await {
         Ok(users) => Ok(users.iter().map(|user| user.username.clone()).collect()),
-        Err(_) => Err(sheef_db_error!("kill", "Failed to load kills"))
+        Err(err) => {
+            log::error!("{err}");
+            Err(sheef_db_error!("kill", "Failed to load kills"))
+        }
     }
 }

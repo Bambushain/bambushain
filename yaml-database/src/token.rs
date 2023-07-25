@@ -5,9 +5,9 @@ use bcrypt::verify;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha512};
 
-use sheef_api_entities::{sheef_io_error, sheef_not_found_error, sheef_validation_error};
-use sheef_api_entities::authentication::LoginResult;
-use sheef_api_entities::user::User;
+use sheef_yaml_entities::{sheef_io_error, sheef_not_found_error, sheef_validation_error};
+use sheef_yaml_entities::authentication::LoginResult;
+use sheef_yaml_entities::user::User;
 
 use crate::SheefResult;
 use crate::user::{get_user, validate_user_dir};

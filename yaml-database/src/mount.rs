@@ -1,6 +1,6 @@
 use tokio_stream::StreamExt;
 
-use sheef_api_entities::{sheef_io_error, sheef_not_found_error};
+use sheef_yaml_entities::{sheef_io_error, sheef_not_found_error};
 use sheef_utils::sort_strings_insensitive;
 
 use crate::{SheefErrorResult, SheefResult, validate_database_dir};

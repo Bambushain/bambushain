@@ -27,6 +27,11 @@ impl MigrationTrait for Migration {
                     .foreign_key(ForeignKey::create()
                         .from(Fighter::Table, Fighter::UserId)
                         .to(User::Table, User::Id))
+                    .index(Index::create()
+                        .col(Fighter::Job)
+                        .col(Fighter::UserId)
+                        .unique()
+                    )
                     .to_owned(),
             )
             .await

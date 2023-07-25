@@ -1,4 +1,4 @@
-use sheef_api_entities::{Crafter, sheef_io_error, sheef_not_found_error};
+use sheef_yaml_entities::{Crafter, sheef_io_error, sheef_not_found_error};
 
 use crate::{persist_entity, read_entity, read_entity_dir, SheefErrorResult, SheefResult, validate_database_dir};
 

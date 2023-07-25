@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     #[cfg_attr(feature = "backend", sea_orm(primary_key))]
     #[serde(skip)]
+    #[cfg(feature = "backend")]
     pub id: i32,
     #[cfg_attr(feature = "backend", sea_orm(unique))]
     pub name: String,

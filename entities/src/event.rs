@@ -3,7 +3,6 @@ use chrono::NaiveDate;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::prelude::Event;
 use crate::user::WebUser;
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
@@ -11,8 +10,10 @@ use crate::user::WebUser;
 pub struct Model {
     #[cfg_attr(feature = "backend", sea_orm(primary_key))]
     #[serde(skip)]
+    #[cfg(feature = "backend")]
     pub id: i32,
     #[serde(skip)]
+    #[cfg(feature = "backend")]
     pub user_id: i32,
     #[cfg_attr(feature = "backend", sea_orm(ignore))]
     pub username: String,
@@ -46,17 +47,3 @@ impl Related<super::user::Entity> for Entity {
 
 #[cfg(feature = "backend")]
 impl ActiveModelBehavior for ActiveModel {}
-
-impl Event {
-    pub fn new(username: String, time: String, date: NaiveDate, available: bool, user: WebUser) -> Self {
-        Self {
-            id: 0,
-            user_id: 0,
-            username,
-            time,
-            date,
-            available,
-            user,
-        }
-    }
-}

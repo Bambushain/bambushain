@@ -8,7 +8,6 @@ edition = "2021"
 sheef-backend = { path = "backend" }
 sheef-migration = { path = "migration" }
 sheef-dbal = { path = "dbal" }
-#sheef-yaml-database = { path = "yaml-database" }
 
 stderrlog = "0.5.4"
 
@@ -28,7 +27,8 @@ members = [
     "migration",
     "utils",
     "yaml-database",
-    "yaml-entities"
+    "yaml-entities",
+    "yaml-to-postgres-migrator"
 ]
 
 [workspace.dependencies]

@@ -35,10 +35,10 @@ fn modify_crafter_modal(props: &ModifyCrafterModalProps) -> Html {
 
         Callback::from(move |evt: SubmitEvent| {
             evt.prevent_default();
-            let crafter = Crafter::new(
-                (*job_state).to_string(),
-                Some((*level_state).to_string()),
-            );
+            let crafter = Crafter {
+                job: (*job_state).to_string(),
+                level: Some((*level_state).to_string()),
+            };
 
             on_save.emit(crafter);
         })

@@ -1,4 +1,4 @@
-use sea_orm::{IntoActiveModel, QueryOrder};
+use sea_orm::{IntoActiveModel, NotSet, QueryOrder};
 use sea_orm::ActiveValue::Set;
 use sea_orm::prelude::*;
 use sea_orm::sea_query::Expr;
@@ -15,7 +15,10 @@ pub async fn get_fighters(username: String) -> SheefResult<Vec<Fighter>> {
         .order_by_asc(fighter::Column::Job)
         .all(&db)
         .await
-        .map_err(|_| sheef_db_error!("fighter", "Failed to load fighters"))
+        .map_err(|err| {
+            log::error!("{err}");
+            sheef_db_error!("fighter", "Failed to load fighters")
+        })
 }
 
 pub async fn get_fighter(username: String, job: String) -> SheefResult<Fighter> {
@@ -29,7 +32,10 @@ pub async fn get_fighter(username: String, job: String) -> SheefResult<Fighter> 
         .await {
         Ok(Some(res)) => Ok(res),
         Ok(None) => Err(sheef_not_found_error!("fighter", "The fighter was not found")),
-        Err(_) => Err(sheef_db_error!("fighter", "Failed to execute database query"))
+        Err(err) => {
+            log::error!("{err}");
+            Err(sheef_db_error!("fighter", "Failed to execute database query"))
+        }
     }
 }
 
@@ -43,8 +49,15 @@ pub async fn create_fighter(username: String, fighter: Fighter) -> SheefResult<F
 
     let mut model = fighter.into_active_model();
     model.user_id = Set(user.id);
+    model.id = NotSet;
 
-    model.insert(&db).await.map_err(|_| sheef_db_error!("fighter", "Failed to create fighter"))
+    model
+        .insert(&db)
+        .await
+        .map_err(|err| {
+            log::error!("{err}");
+            sheef_db_error!("fighter", "Failed to create fighter")
+        })
 }
 
 pub async fn update_fighter(username: String, job: String, fighter: Fighter) -> SheefErrorResult {
@@ -59,7 +72,10 @@ pub async fn update_fighter(username: String, job: String, fighter: Fighter) -> 
         .col_expr(fighter::Column::GearScore, Expr::value(fighter.gear_score))
         .exec(&db)
         .await
-        .map_err(|_| sheef_db_error!("fighter", "Failed to update fighter"))
+        .map_err(|err| {
+            log::error!("{err}");
+            sheef_db_error!("fighter", "Failed to update fighter")
+        })
         .map(|_| ())
 }
 
@@ -72,6 +88,9 @@ pub async fn delete_fighter(username: String, job: String) -> SheefErrorResult {
         .filter(fighter::Column::UserId.eq(user.id))
         .exec(&db)
         .await
-        .map_err(|_| sheef_db_error!("fighter", "Failed to delete fighter"))
+        .map_err(|err| {
+            log::error!("{err}");
+            sheef_db_error!("fighter", "Failed to delete fighter")
+        })
         .map(|_| ())
 }

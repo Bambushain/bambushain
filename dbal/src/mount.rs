@@ -14,7 +14,10 @@ pub async fn get_mount(mount: String) -> SheefResult<Mount> {
         .await {
         Ok(Some(mount)) => Ok(mount),
         Ok(None) => Err(sheef_not_found_error!("mount", "Mount was not found")),
-        Err(_) => Err(sheef_db_error!("mount", "Failed to load mount"))
+        Err(err) => {
+            log::error!("{err}");
+            Err(sheef_db_error!("mount", "Failed to load mount"))
+        }
     }
 }
 
@@ -49,7 +52,10 @@ pub async fn activate_mount_for_user(mount: String, username: String) -> SheefEr
         }
     }.save(&db)
         .await
-        .map_err(|_| sheef_db_error!("mount", "Failed to create mount for user"))
+        .map_err(|err| {
+            log::error!("{err}");
+            sheef_db_error!("mount", "Failed to create mount for user")
+        })
         .map(|_| ())
 }
 
@@ -66,7 +72,10 @@ pub async fn deactivate_mount_for_user(mount: String, username: String) -> Sheef
         .filter(mount_to_user::Column::UserId.eq(user.id))
         .exec(&db)
         .await
-        .map_err(|_| sheef_db_error!("mount", "Failed to remove mount from user"))
+        .map_err(|err| {
+            log::error!("{err}");
+            sheef_db_error!("mount", "Failed to remove mount from user")
+        })
         .map(|_| ())
 }
 
@@ -77,18 +86,25 @@ pub async fn delete_mount(mount: String) -> SheefErrorResult {
         .filter(mount::Column::Name.eq(mount))
         .exec(&db)
         .await
-        .map_err(|_| sheef_db_error!("mount", "Failed to delete mount"))
+        .map_err(|err| {
+            log::error!("{err}");
+            sheef_db_error!("mount", "Failed to delete mount")
+        })
         .map(|_| ())
 }
 
 pub async fn create_mount(mount: Mount) -> SheefResult<Mount> {
     let db = open_db_connection!();
 
-    let model = mount.into_active_model();
+    let mut model = mount.into_active_model();
+    model.id = NotSet;
     model
         .insert(&db)
         .await
-        .map_err(|_| sheef_db_error!("mount", "Failed to create mount"))
+        .map_err(|err| {
+            log::error!("{err}");
+            sheef_db_error!("mount", "Failed to create mount")
+        })
 }
 
 pub async fn update_mount(mount: String, name: String) -> SheefErrorResult {
@@ -103,7 +119,10 @@ pub async fn update_mount(mount: String, name: String) -> SheefErrorResult {
     model
         .update(&db)
         .await
-        .map_err(|_| sheef_db_error!("mount", "Failed to update mount"))
+        .map_err(|err| {
+            log::error!("{err}");
+            sheef_db_error!("mount", "Failed to update mount")
+        })
         .map(|_| ())
 }
 
@@ -115,7 +134,10 @@ pub async fn get_mounts() -> SheefResult<Vec<Mount>> {
         .all(&db)
         .await {
         Ok(mounts) => Ok(mounts),
-        Err(_) => Err(sheef_db_error!("mount", "Failed to load mounts"))
+        Err(err) => {
+            log::error!("{err}");
+            Err(sheef_db_error!("mount", "Failed to load mounts"))
+        }
     }
 }
 
@@ -129,6 +151,9 @@ pub async fn get_users_for_mount(mount: String) -> SheefResult<Vec<String>> {
         .all(&db)
         .await {
         Ok(users) => Ok(users.iter().map(|user| user.username.clone()).collect()),
-        Err(_) => Err(sheef_db_error!("mount", "Failed to load mounts"))
+        Err(err) => {
+            log::error!("{err}");
+            Err(sheef_db_error!("mount", "Failed to load mounts"))
+        }
     }
 }

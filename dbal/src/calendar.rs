@@ -16,7 +16,10 @@ async fn get_events_for_day(date: NaiveDate) -> SheefResult<Vec<Event>> {
         .all(&db)
         .await {
         Ok(events) => Ok(events),
-        Err(_) => Err(sheef_db_error!("calendar", "Failed to load events for date"))
+        Err(err) => {
+            log::error!("{err}");
+            Err(sheef_db_error!("calendar", "Failed to load events for date"))
+        }
     }
 }
 
@@ -28,7 +31,10 @@ pub async fn get_events_for_month(year: i32, month: u32) -> SheefResult<Calendar
 
     let users = match get_users().await {
         Ok(users) => users,
-        Err(_) => return Err(sheef_db_error!("calendar", "Failed to load users"))
+        Err(err) => {
+            log::error!("{err}");
+            return Err(sheef_db_error!("calendar", "Failed to load users"));
+        }
     };
 
     let mut days = vec![];
@@ -82,10 +88,17 @@ pub async fn get_event(username: String, date: NaiveDate) -> SheefResult<Event> 
     let db = open_db_connection!();
     let user = get_user_by_username!(username);
 
-    match event::Entity::find().filter(event::Column::Date.eq(date)).filter(event::Column::UserId.eq(user.id)).one(&db).await {
+    match event::Entity::find()
+        .filter(event::Column::Date.eq(date))
+        .filter(event::Column::UserId.eq(user.id))
+        .one(&db)
+        .await {
         Ok(Some(event)) => Ok(event),
         Ok(None) => Err(sheef_not_found_error!("event", "The event was not found")),
-        Err(_) => Err(sheef_not_found_error!("event", "Failed to load event")),
+        Err(err) => {
+            log::error!("{err}");
+            Err(sheef_not_found_error!("event", "Failed to load event"))
+        }
     }
 }
 
@@ -110,5 +123,12 @@ pub async fn set_event(username: String, set_event: SetEvent, date: NaiveDate) -
                 id: NotSet,
             }
         }
-    }.save(&db).await.map_err(|_| sheef_db_error!("event", "Failed to create event")).map(|_| ())
+    }
+        .save(&db)
+        .await
+        .map_err(|err| {
+            log::error!("{err}");
+            sheef_db_error!("event", "Failed to create event")
+        })
+        .map(|_| ())
 }

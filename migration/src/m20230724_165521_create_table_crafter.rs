@@ -20,12 +20,17 @@ impl MigrationTrait for Migration {
                             .auto_increment()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(Crafter::Job).string().not_null().unique_key())
+                    .col(ColumnDef::new(Crafter::Job).string().not_null())
                     .col(ColumnDef::new(Crafter::Level).string())
                     .col(ColumnDef::new(Crafter::UserId).integer().not_null())
                     .foreign_key(ForeignKey::create()
                         .from(Crafter::Table, Crafter::UserId)
                         .to(User::Table, User::Id))
+                    .index(Index::create()
+                        .col(Crafter::Job)
+                        .col(Crafter::UserId)
+                        .unique()
+                    )
                     .to_owned(),
             )
             .await

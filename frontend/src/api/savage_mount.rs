@@ -46,10 +46,10 @@ pub async fn delete_savage_mount(savage_mount: String) -> SheefApiResult<()> {
 
 pub async fn create_savage_mount(name: String) -> SheefApiResult<SavageMount> {
     log::debug!("Create new savage mount {name}");
-    post("/api/savage-mount", &SavageMount { id: 0, name }).await
+    post("/api/savage-mount", &SavageMount { name }).await
 }
 
 pub async fn rename_savage_mount(old_name: String, new_name: String) -> SheefApiResult<()> {
     log::debug!("Rename savage mount {old_name} to {new_name}");
-    put(format!("/api/savage-mount/{old_name}"), &SavageMount { id: 0, name: new_name }).await
+    put(format!("/api/savage-mount/{old_name}"), &SavageMount { name: new_name }).await
 }

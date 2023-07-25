@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::fmt::{Display, Formatter};
 
 use serde::{Deserialize, Serialize};
@@ -42,13 +43,15 @@ impl Display for SheefError {
     }
 }
 
+impl Error for SheefError {}
+
 #[macro_export]
 macro_rules! sheef_not_found_error {
     ($entity_type:expr, $message:expr) => {
-        sheef_api_entities::SheefError {
+        sheef_yaml_entities::SheefError {
             entity_type: $entity_type.to_string(),
             message: $message.to_string(),
-            error_type: sheef_api_entities::SheefErrorCode::NotFoundError,
+            error_type: sheef_yaml_entities::SheefErrorCode::NotFoundError,
         }
     }
 }
@@ -56,10 +59,10 @@ macro_rules! sheef_not_found_error {
 #[macro_export]
 macro_rules! sheef_exists_already_error {
     ($entity_type:expr, $message:expr) => {
-        sheef_api_entities::SheefError {
+        sheef_yaml_entities::SheefError {
             entity_type: $entity_type.to_string(),
             message: $message.to_string(),
-            error_type: sheef_api_entities::SheefErrorCode::ExistsAlreadyError,
+            error_type: sheef_yaml_entities::SheefErrorCode::ExistsAlreadyError,
         }
     }
 }
@@ -67,10 +70,10 @@ macro_rules! sheef_exists_already_error {
 #[macro_export]
 macro_rules! sheef_invalid_data_error {
     ($entity_type:expr, $message:expr) => {
-        sheef_api_entities::SheefError {
+        sheef_yaml_entities::SheefError {
             entity_type: $entity_type.to_string(),
             message: $message.to_string(),
-            error_type: sheef_api_entities::SheefErrorCode::InvalidDataError,
+            error_type: sheef_yaml_entities::SheefErrorCode::InvalidDataError,
         }
     }
 }
@@ -78,10 +81,10 @@ macro_rules! sheef_invalid_data_error {
 #[macro_export]
 macro_rules! sheef_io_error {
     ($entity_type:expr, $message:expr) => {
-        sheef_api_entities::SheefError {
+        sheef_yaml_entities::SheefError {
             entity_type: $entity_type.to_string(),
             message: $message.to_string(),
-            error_type: sheef_api_entities::SheefErrorCode::IoError,
+            error_type: sheef_yaml_entities::SheefErrorCode::IoError,
         }
     }
 }
@@ -89,10 +92,10 @@ macro_rules! sheef_io_error {
 #[macro_export]
 macro_rules! sheef_serialization_error {
     ($entity_type:expr, $message:expr) => {
-        sheef_api_entities::SheefError {
+        sheef_yaml_entities::SheefError {
             entity_type: $entity_type.to_string(),
             message: $message.to_string(),
-            error_type: sheef_api_entities::SheefErrorCode::SerializationError,
+            error_type: sheef_yaml_entities::SheefErrorCode::SerializationError,
         }
     }
 }
@@ -100,10 +103,10 @@ macro_rules! sheef_serialization_error {
 #[macro_export]
 macro_rules! sheef_validation_error {
     ($entity_type:expr, $message:expr) => {
-        sheef_api_entities::SheefError {
+        sheef_yaml_entities::SheefError {
             entity_type: $entity_type.to_string(),
             message: $message.to_string(),
-            error_type: sheef_api_entities::SheefErrorCode::ValidationError,
+            error_type: sheef_yaml_entities::SheefErrorCode::ValidationError,
         }
     }
 }
@@ -111,10 +114,10 @@ macro_rules! sheef_validation_error {
 #[macro_export]
 macro_rules! sheef_unknown_error {
     ($entity_type:expr, $message:expr) => {
-        sheef_api_entities::SheefError {
+        sheef_yaml_entities::SheefError {
             entity_type: $entity_type.to_string(),
             message: $message.to_string(),
-            error_type: sheef_api_entities::SheefErrorCode::UnknownError,
+            error_type: sheef_yaml_entities::SheefErrorCode::UnknownError,
         }
     }
 }
@@ -122,10 +125,10 @@ macro_rules! sheef_unknown_error {
 #[macro_export]
 macro_rules! sheef_insufficient_rights_error {
     ($entity_type:expr, $message:expr) => {
-        sheef_api_entities::SheefError {
+        sheef_yaml_entities::SheefError {
             entity_type: $entity_type.to_string(),
             message: $message.to_string(),
-            error_type: sheef_api_entities::SheefErrorCode::InsufficientRightsError,
+            error_type: sheef_yaml_entities::SheefErrorCode::InsufficientRightsError,
         }
     }
 }
@@ -133,10 +136,10 @@ macro_rules! sheef_insufficient_rights_error {
 #[macro_export]
 macro_rules! sheef_unauthorized_error {
     ($entity_type:expr, $message:expr) => {
-        sheef_api_entities::SheefError {
+        sheef_yaml_entities::SheefError {
             entity_type: $entity_type.to_string(),
             message: $message.to_string(),
-            error_type: sheef_api_entities::SheefErrorCode::UnauthorizedError,
+            error_type: sheef_yaml_entities::SheefErrorCode::UnauthorizedError,
         }
     }
 }

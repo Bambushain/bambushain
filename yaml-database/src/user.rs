@@ -1,5 +1,5 @@
-use sheef_api_entities::{sheef_io_error, sheef_not_found_error, sheef_serialization_error, sheef_unknown_error};
-use sheef_api_entities::user::User;
+use sheef_yaml_entities::{sheef_io_error, sheef_not_found_error, sheef_serialization_error, sheef_unknown_error};
+use sheef_yaml_entities::user::User;
 
 use crate::{persist_entity, read_entity, read_entity_dir, SheefErrorResult, SheefResult, validate_database_dir};
 use crate::token::get_user_token_dir;
@@ -52,9 +52,9 @@ pub async fn get_user(username: &String) -> SheefResult<User> {
     map_err!(read_entity(validate_user_dir().await, username).await, "user")
 }
 
-pub async fn get_users() -> SheefResult<Vec<User>> {
+pub async fn get_users(include_hidden: bool) -> SheefResult<Vec<User>> {
     match read_entity_dir::<User>(validate_user_dir().await).await {
-        Ok(users) => Ok(users.into_iter().filter(|user| !user.is_hidden).collect::<Vec<User>>()),
+        Ok(users) => Ok(users.into_iter().filter(|user| !user.is_hidden || include_hidden).collect::<Vec<User>>()),
         Err(err) => Err(sheef_unknown_error!("user", err.message))
     }
 }
