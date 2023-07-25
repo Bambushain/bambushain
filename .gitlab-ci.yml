@@ -33,7 +33,7 @@ docker-docs-build:
         - Dockerfile
 
 build-merge-request:
-  image: rust:1.70-alpine3.18
+  image: quay.imanuel.dev/dockerhub/library---rust:1.70-alpine3.18
   stage: build
   script:
     - apk add musl-dev
