@@ -1,5 +1,6 @@
 use bounce::Atom;
 use gloo::storage::{LocalStorage, Storage};
+use sheef_entities::user::WebUser;
 
 pub fn get_token() -> Option<String> {
     LocalStorage::get("/sheef/token").ok()
@@ -23,5 +24,5 @@ pub fn is_logging_on() -> bool {
 
 #[derive(Atom, PartialEq, Clone, Default)]
 pub struct CurrentUser {
-    pub profile: sheef_entities::User,
+    pub profile: WebUser,
 }

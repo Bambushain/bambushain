@@ -3,7 +3,8 @@ use actix_web::web;
 use chrono::{Datelike, NaiveDate, Utc};
 use serde::Deserialize;
 
-use sheef_entities::event::SetEvent;
+use sheef_dbal::prelude::*;
+use sheef_entities::prelude::*;
 
 use crate::sse::NotificationState;
 
@@ -36,7 +37,7 @@ macro_rules! date_from_values {
             if let Some(date) = NaiveDate::from_ymd_opt($year, $month, $day) {
                 date
             } else {
-                return no_content_or_error!(Err::<(), sheef_entities::SheefError>(sheef_entities::sheef_invalid_data_error!("calendar", "The date is invalid")));
+                return no_content_or_error!(Err::<(), SheefError>(sheef_invalid_data_error!("calendar", "The date is invalid")));
             }
         }
     };
@@ -48,21 +49,21 @@ macro_rules! date_from_values {
 pub async fn get_calendar(query: web::Query<CalendarQueryInfo>) -> HttpResponse {
     date_from_values!(query.year, query.month);
 
-    ok_or_error!(sheef_database::event::get_events_for_month(query.year, query.month).await)
+    ok_or_error!(get_events_for_month(query.year, query.month).await)
 }
 
 pub async fn get_day_details(path: web::Path<DayDetailsPathInfo>, req: HttpRequest) -> HttpResponse {
     let date = date_from_values!(path.year, path.month, path.day);
     let username = username!(req);
 
-    ok_or_error!(sheef_database::event::get_event(&username, &date).await)
+    ok_or_error!(get_event(username.clone(), date).await)
 }
 
 pub async fn update_day_details(path: web::Path<DayDetailsPathInfo>, body: web::Json<SetEvent>, notification_state: web::Data<NotificationState>, req: HttpRequest) -> HttpResponse {
     let date = date_from_values!(path.year, path.month, path.day);
     let username = username!(req);
 
-    let data = sheef_database::event::set_event(&username, &body.time, body.available, &date).await;
+    let data = set_event(username.to_string(), body.into_inner().clone(), date).await;
     actix_web::rt::spawn(async move {
         notification_state.calendar_broadcaster.notify_change().await;
     });

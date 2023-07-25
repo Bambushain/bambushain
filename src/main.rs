@@ -24,6 +24,8 @@ use sheef_backend::sse::kill::kill_sse_client;
 use sheef_backend::sse::mount::mount_sse_client;
 use sheef_backend::sse::NotificationState;
 use sheef_backend::sse::savage_mount::savage_mount_sse_client;
+use sheef_dbal::get_database_connection;
+use sheef_migration::{IntoSchemaManagerConnection, Migrator, MigratorTrait};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -33,6 +35,16 @@ async fn main() -> std::io::Result<()> {
         .unwrap();
 
     log::info!("Running sheef planing on :8070");
+
+    let db = match get_database_connection().await {
+        Ok(db) => db,
+        Err(err) => panic!("{err}")
+    };
+
+    match Migrator::up(db.into_schema_manager_connection(), None).await {
+        Ok(_) => log::info!("Successfully migrated database"),
+        Err(err) => panic!("{err}")
+    }
 
     let calendar_broadcaster = CalendarBroadcaster::create();
     let kill_broadcaster = KillBroadcaster::create();
@@ -123,10 +135,10 @@ async fn main() -> std::io::Result<()> {
 
             .service(
                 actix_web_lab::web::spa()
-                .index_file(format!("{base_path}/dist/index.html"))
-                .static_resources_location(format!("{base_path}/dist"))
-                .static_resources_mount("/static")
-                .finish()
+                    .index_file(format!("{base_path}/dist/index.html"))
+                    .static_resources_location(format!("{base_path}/dist"))
+                    .static_resources_mount("/static")
+                    .finish()
             )
     })
         .bind(("0.0.0.0", 8070))?

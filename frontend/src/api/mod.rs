@@ -4,6 +4,8 @@ use std::fmt::{Debug, Display, Formatter};
 use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
 
+use sheef_entities::prelude::*;
+
 use crate::storage::get_token;
 
 pub mod authentication;
@@ -49,7 +51,7 @@ impl From<i32> for ErrorCode {
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone, Serialize, Deserialize, Debug)]
 pub struct ApiError {
     pub code: ErrorCode,
-    pub sheef_error: sheef_entities::SheefError,
+    pub sheef_error: SheefError,
 }
 
 impl std::error::Error for ApiError {}
@@ -89,12 +91,12 @@ macro_rules! handle_response {
                         log::trace!("Error text: {text}");
                         let error = serde_json::from_str(text.as_str()).expect("Should deserialize the data");
 
-                        return Err(ApiError { code: ErrorCode::from(response.status() as i32), sheef_error: error });
+                        return Err(crate::api::ApiError { code: crate::api::ErrorCode::from(response.status() as i32), sheef_error: error });
                     }
                 }
                 Err(err) => {
                     log::warn!("Request failed to execute {}", err);
-                    return Err(ApiError { code: SEND_ERROR, sheef_error: sheef_entities::SheefError::default() });
+                    return Err(crate::api::ApiError { code: SEND_ERROR, sheef_error: sheef_entities::prelude::SheefError::default() });
                 }
             };
 
@@ -105,7 +107,7 @@ macro_rules! handle_response {
                 }
                 Err(err) => {
                     log::warn!("Json deserialize failed {}", err);
-                    Err(ApiError { code: JSON_DESERIALIZE_ERROR, sheef_error: sheef_entities::SheefError::default() })
+                    Err(crate::api::ApiError { code: JSON_DESERIALIZE_ERROR, sheef_error: sheef_entities::prelude::SheefError::default() })
                 }
             }
         }
@@ -130,12 +132,12 @@ macro_rules! handle_response_code {
                         log::trace!("Error text: {text}");
                         let error = serde_json::from_str(text.as_str()).expect("Should deserialize the data");
 
-                        return Err(ApiError { code: ErrorCode::from(response.status() as i32), sheef_error: error });
+                        return Err(crate::api::ApiError { code: crate::api::ErrorCode::from(response.status() as i32), sheef_error: error });
                     }
                 }
                 Err(err) => {
                     log::warn!("Request failed to execute {}", err);
-                    Err(ApiError { code: SEND_ERROR, sheef_error: sheef_entities::SheefError::default() })
+                    Err(ApiError { code: SEND_ERROR, sheef_error: sheef_entities::prelude::SheefError::default() })
                 }
             }
         }
@@ -192,7 +194,7 @@ pub async fn put<IN>(uri: impl Into<String>, body: &IN) -> SheefApiResult<()> wh
         Ok(request) => handle_response_code!(request.send().await),
         Err(err) => {
             log::warn!("Serialize failed {}", err);
-            Err(ApiError { sheef_error: sheef_entities::SheefError::default(), code: JSON_SERIALIZE_ERROR })
+            Err(ApiError { sheef_error: SheefError::default(), code: JSON_SERIALIZE_ERROR })
         }
     }
 }
@@ -210,7 +212,7 @@ pub async fn post<IN, OUT>(uri: impl Into<String>, body: &IN) -> SheefApiResult<
         Ok(request) => handle_response!(request.send().await),
         Err(err) => {
             log::warn!("Serialize failed {}", err);
-            Err(ApiError { sheef_error: sheef_entities::SheefError::default(), code: JSON_SERIALIZE_ERROR })
+            Err(ApiError { sheef_error: SheefError::default(), code: JSON_SERIALIZE_ERROR })
         }
     }
 }

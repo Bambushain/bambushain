@@ -46,7 +46,7 @@ impl<S, B> dev::Service<dev::ServiceRequest> for CheckModMiddleware<S>
         let svc = self.service.clone();
 
         Box::pin(async move {
-            let needs_to_be_mod = HttpResponse::Forbidden().json(sheef_entities::SheefError { entity_type: "".to_string(), error_type: sheef_entities::SheefErrorCode::InsufficientRightsError, message: "You need to be a mod".to_string() }).map_into_right_body();
+            let needs_to_be_mod = HttpResponse::Forbidden().json(sheef_entities::error::SheefError { entity_type: "".to_string(), error_type: sheef_entities::error::SheefErrorCode::InsufficientRightsError, message: "You need to be a mod".to_string() }).map_into_right_body();
             let request = req.request();
 
             let is_mod = {
@@ -57,6 +57,7 @@ impl<S, B> dev::Service<dev::ServiceRequest> for CheckModMiddleware<S>
                 }
                 state.unwrap().user.is_mod
             };
+
             if is_mod {
                 let res = svc.call(req).await;
                 res.map(dev::ServiceResponse::map_into_left_body)

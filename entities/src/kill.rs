@@ -1,6 +1,30 @@
+#[cfg(feature = "backend")]
+use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize, Ord, PartialOrd, Eq, PartialEq, Clone)]
-pub struct Kill {
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
+#[cfg_attr(feature = "backend", derive(DeriveEntityModel), sea_orm(table_name = "kill"))]
+pub struct Model {
+    #[cfg_attr(feature = "backend", sea_orm(primary_key))]
+    #[serde(skip)]
+    pub id: i32,
+    #[cfg_attr(feature = "backend", sea_orm(unique))]
     pub name: String,
 }
+
+#[cfg(feature = "backend")]
+#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+pub enum Relation {}
+
+#[cfg(feature = "backend")]
+impl Related<super::user::Entity> for Entity {
+    fn to() -> RelationDef {
+        super::kill_to_user::Relation::User.def()
+    }
+    fn via() -> Option<RelationDef> {
+        Some(super::kill_to_user::Relation::Kill.def().rev())
+    }
+}
+
+#[cfg(feature = "backend")]
+impl ActiveModelBehavior for ActiveModel {}

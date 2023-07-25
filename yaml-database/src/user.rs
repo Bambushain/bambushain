@@ -1,5 +1,5 @@
-use sheef_entities::{sheef_io_error, sheef_not_found_error, sheef_serialization_error, sheef_unknown_error};
-use sheef_entities::user::User;
+use sheef_api_entities::{sheef_io_error, sheef_not_found_error, sheef_serialization_error, sheef_unknown_error};
+use sheef_api_entities::user::User;
 
 use crate::{persist_entity, read_entity, read_entity_dir, SheefErrorResult, SheefResult, validate_database_dir};
 use crate::token::get_user_token_dir;

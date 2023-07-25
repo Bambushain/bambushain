@@ -7,6 +7,8 @@ use yew_feather::LogIn;
 use yew_router::hooks::use_navigator;
 use yew_router::prelude::*;
 
+use sheef_entities::prelude::*;
+
 use crate::api::my::Profile;
 use crate::routing::AppRoute;
 use crate::storage::{CurrentUser, get_token};
@@ -42,7 +44,7 @@ pub fn login_page() -> Html {
                 let login_user_state = login_user_state.clone();
                 let loading_state = loading_state.clone();
                 loading_state.set(true);
-                match login_user_state.run(sheef_entities::Login {
+                match login_user_state.run(Login {
                     username,
                     password,
                 }).await {

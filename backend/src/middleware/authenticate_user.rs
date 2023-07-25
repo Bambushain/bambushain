@@ -4,9 +4,9 @@ use std::rc::Rc;
 use actix_web::{body, dev, Error, HttpMessage};
 use futures_util::future::LocalBoxFuture;
 
-use sheef_database::token::get_user_by_token;
+use sheef_dbal::prelude::*;
+use sheef_entities::prelude::*;
 use sheef_entities::sheef_unauthorized_error;
-use sheef_entities::user::User;
 
 pub struct AuthenticationState {
     pub token: String,
@@ -64,17 +64,8 @@ impl<S, B> dev::Service<dev::ServiceRequest> for AuthenticateUserMiddleware<S>
                 Some(token) => token,
                 _ => return Ok(dev::ServiceResponse::new(request.clone(), unauthorized))
             };
-            let mut split_token = token.split('/');
-            let username = match split_token.next() {
-                Some(username) => username,
-                _ => return Ok(dev::ServiceResponse::new(request.clone(), unauthorized))
-            };
-            let token = match split_token.next() {
-                Some(token) => token,
-                _ => return Ok(dev::ServiceResponse::new(request.clone(), unauthorized))
-            };
 
-            let user = match get_user_by_token(&username.to_string(), &token.to_string()).await {
+            let user = match get_user_by_token(token.to_string()).await {
                 Ok(user) => user,
                 _ => return Ok(dev::ServiceResponse::new(request.clone(), unauthorized))
             };

@@ -1,0 +1,17 @@
+[package]
+name = "sheef-dbal"
+version = "3.0.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+sheef-entities = { path = "../entities" }
+
+base64 = "0.21.2"
+uuid = { version = "1.4.0", features = ["v4"] }
+
+bcrypt = { workspace = true }
+log = { workspace = true }
+sea-orm = { workspace = true }
+chrono = { workspace = true }

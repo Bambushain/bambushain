@@ -1,64 +1,62 @@
-use std::cmp::Ordering;
-
 use chrono::NaiveDate;
+#[cfg(feature = "backend")]
+use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
+use crate::prelude::Event;
 use crate::user::WebUser;
 
-#[derive(Serialize, Deserialize, Eq, PartialEq, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct Event {
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
+#[cfg_attr(feature = "backend", derive(DeriveEntityModel), sea_orm(table_name = "event"))]
+pub struct Model {
+    #[cfg_attr(feature = "backend", sea_orm(primary_key))]
+    #[serde(skip)]
+    pub id: i32,
+    #[serde(skip)]
+    pub user_id: i32,
+    #[cfg_attr(feature = "backend", sea_orm(ignore))]
     pub username: String,
     pub time: String,
-    pub available: bool,
     #[serde(skip)]
     pub date: NaiveDate,
-    #[serde(default)]
+    pub available: bool,
+    #[cfg_attr(feature = "backend", sea_orm(ignore))]
     pub user: WebUser,
 }
 
-impl PartialOrd<Self> for Event {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.date.partial_cmp(&other.date).map(|o| o.then(self.username.to_lowercase().cmp(&other.username.to_lowercase())))
+#[cfg(feature = "backend")]
+#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+pub enum Relation {
+    #[sea_orm(
+    belongs_to = "super::user::Entity",
+    from = "Column::UserId",
+    to = "super::user::Column::Id",
+    on_update = "Cascade",
+    on_delete = "Cascade"
+    )]
+    User,
+}
+
+#[cfg(feature = "backend")]
+impl Related<super::user::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::User.def()
     }
 }
 
-impl Ord for Event {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.date.cmp(&other.date).then(self.username.to_lowercase().cmp(&other.username.to_lowercase()))
+#[cfg(feature = "backend")]
+impl ActiveModelBehavior for ActiveModel {}
+
+impl Event {
+    pub fn new(username: String, time: String, date: NaiveDate, available: bool, user: WebUser) -> Self {
+        Self {
+            id: 0,
+            user_id: 0,
+            username,
+            time,
+            date,
+            available,
+            user,
+        }
     }
-}
-
-#[derive(Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq, Clone, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct Calendar {
-    pub year: i32,
-    pub month: u32,
-    pub days: Vec<CalendarDay>,
-}
-
-#[derive(Serialize, Deserialize, Eq, PartialEq, Clone)]
-pub struct CalendarDay {
-    pub date: NaiveDate,
-    pub events: Vec<Event>,
-}
-
-impl PartialOrd for CalendarDay {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.date.partial_cmp(&other.date)
-    }
-}
-
-impl Ord for CalendarDay {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.date.cmp(&other.date)
-    }
-}
-
-#[derive(Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct SetEvent {
-    pub available: bool,
-    #[serde(default)]
-    pub time: String,
 }

@@ -4,22 +4,24 @@ use async_trait::async_trait;
 use bounce::BounceStates;
 use bounce::query::{Query, QueryResult};
 
+use sheef_entities::prelude::*;
+
 use crate::api::{ApiError, delete, get, post, put, SheefApiResult};
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
 pub struct MyCrafter {
-    pub crafter: Vec<sheef_entities::Crafter>,
+    pub crafter: Vec<Crafter>,
 }
 
-impl From<Vec<sheef_entities::Crafter>> for MyCrafter {
-    fn from(value: Vec<sheef_entities::Crafter>) -> Self {
+impl From<Vec<Crafter>> for MyCrafter {
+    fn from(value: Vec<Crafter>) -> Self {
         Self {
             crafter: value,
         }
     }
 }
 
-async fn get_crafter() -> SheefApiResult<Vec<sheef_entities::Crafter>> {
+async fn get_crafter() -> SheefApiResult<Vec<Crafter>> {
     log::debug!("Get crafter");
     get("/api/crafter").await
 }
@@ -34,17 +36,17 @@ impl Query for MyCrafter {
     }
 }
 
-pub async fn create_crafter(crafter: sheef_entities::Crafter) -> SheefApiResult<sheef_entities::Crafter> {
+pub async fn create_crafter(crafter: Crafter) -> SheefApiResult<Crafter> {
     log::debug!("Create crafter {}", crafter.job);
     post("/api/crafter", &crafter).await
 }
 
-pub async fn update_crafter(job: String, crafter: sheef_entities::Crafter) -> SheefApiResult<()> {
+pub async fn update_crafter(job: String, crafter: Crafter) -> SheefApiResult<()> {
     log::debug!("Create crafter {}", crafter.job);
     put(format!("/api/crafter/{}", job), &crafter).await
 }
 
-pub async fn delete_crafter(crafter: sheef_entities::Crafter) -> SheefApiResult<()> {
+pub async fn delete_crafter(crafter: Crafter) -> SheefApiResult<()> {
     log::debug!("Delete crafter {}", crafter.job);
     delete(format!("/api/crafter/{}", crafter.job)).await
 }

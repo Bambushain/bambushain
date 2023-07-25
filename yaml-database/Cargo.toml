@@ -1,20 +1,22 @@
 [package]
-name = "sheef-database"
-version = "2.0.0"
+name = "sheef-yaml-database"
+version = "3.0.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+sheef-yaml-entities = { path = "../yaml-entities" }
 sheef-entities = { path = "../entities" }
 sheef-utils = { path = "../utils" }
-serde_yaml = "0.9.22"
-bcrypt = "0.15.0"
+
 sha2 = "0.10.7"
 base64 = "0.21.2"
 tokio = { version = "1.29.1", features = ["fs", "io-std", "io-util", "rt"] }
 tokio-stream = { version = "0.1.14", features = ["fs"] }
+serde_yaml = "0.9.22"
 
+bcrypt = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

@@ -7,8 +7,7 @@ use rand::Rng;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
-use sheef_entities::UpdateProfile;
-use sheef_entities::user::WebUser;
+use sheef_entities::prelude::*;
 
 use crate::api::{CONFLICT, FORBIDDEN, INTERNAL_SERVER_ERROR, NO_CONTENT, NOT_FOUND};
 use crate::api::user::{change_user_password, create_user, Crew, delete_user, make_user_main, make_user_mod, remove_user_main, remove_user_mod, update_profile};
@@ -18,7 +17,7 @@ use crate::ui::modal::{PicoAlert, PicoConfirm, PicoModal};
 
 #[derive(Properties, PartialEq, Clone, Eq)]
 struct TableBodyProps {
-    users: Vec<sheef_entities::User>,
+    users: Vec<WebUser>,
     is_mod: bool,
     username: AttrValue,
 }
@@ -90,15 +89,15 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
 
             let crew_query_state = crew_query_state.clone();
 
-            let user = sheef_entities::user::User {
-                username: (*username_state).to_string(),
-                password: (*password_state).to_string(),
-                job: (*job_state).to_string(),
-                gear_level: (*gear_level_state).to_string(),
-                is_mod: *is_mod_state,
-                is_main_group: *is_main_group_state,
-                is_hidden: false,
-            };
+            let user = User::new(
+                (*username_state).to_string(),
+                (*password_state).to_string(),
+                (*job_state).to_string(),
+                (*gear_level_state).to_string(),
+                *is_mod_state,
+                *is_main_group_state,
+                false,
+            );
 
             yew::platform::spawn_local(async move {
                 log::debug!("Create new user with username {}", user.username.clone());
@@ -176,12 +175,12 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
 
 #[derive(PartialEq, Clone)]
 enum UserConfirmActions {
-    MakeMod(sheef_entities::User),
-    RemoveMod(sheef_entities::User),
-    Delete(sheef_entities::User),
-    MakeMain(sheef_entities::User),
-    RemoveMain(sheef_entities::User),
-    ChangePassword(sheef_entities::User, String),
+    MakeMod(WebUser),
+    RemoveMod(WebUser),
+    Delete(WebUser),
+    MakeMain(WebUser),
+    RemoveMain(WebUser),
+    ChangePassword(WebUser, String),
     Closed,
 }
 
@@ -296,7 +295,7 @@ fn table_body(props: &TableBodyProps) -> Html {
     let error_state = use_state_eq(|| false);
     let profile_edit_state = use_state_eq(|| false);
 
-    let profile_edit_data_state = use_state_eq(sheef_entities::User::default);
+    let profile_edit_data_state = use_state_eq(WebUser::default);
 
     let error_message_state = use_state_eq(|| AttrValue::from(""));
 
@@ -617,7 +616,7 @@ pub fn crew_page() -> Html {
     let initially_loaded_state = use_state_eq(|| false);
     let open_create_user_modal_state = use_state_eq(|| false);
 
-    let state = use_state_eq(|| vec![] as Vec<sheef_entities::User>);
+    let state = use_state_eq(|| vec![] as Vec<WebUser>);
 
     let open_create_user_modal_click = use_callback(|_, open_create_user_modal_state| open_create_user_modal_state.set(true), open_create_user_modal_state.clone());
 

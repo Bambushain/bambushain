@@ -4,6 +4,8 @@ use async_trait::async_trait;
 use bounce::BounceStates;
 use bounce::query::{Query, QueryResult};
 
+use sheef_entities::prelude::*;
+
 use crate::api::{ApiError, delete, post, put, put_no_body, SheefApiResult};
 use crate::api::boolean_table::{BooleanTable, get_boolean_table};
 
@@ -42,12 +44,12 @@ pub async fn delete_savage_mount(savage_mount: String) -> SheefApiResult<()> {
     delete(format!("/api/savage-mount/{savage_mount}")).await
 }
 
-pub async fn create_savage_mount(name: String) -> SheefApiResult<sheef_entities::SavageMount> {
+pub async fn create_savage_mount(name: String) -> SheefApiResult<SavageMount> {
     log::debug!("Create new savage mount {name}");
-    post("/api/savage-mount", &sheef_entities::SavageMount { name }).await
+    post("/api/savage-mount", &SavageMount { id: 0, name }).await
 }
 
 pub async fn rename_savage_mount(old_name: String, new_name: String) -> SheefApiResult<()> {
     log::debug!("Rename savage mount {old_name} to {new_name}");
-    put(format!("/api/savage-mount/{old_name}"), &sheef_entities::SavageMount { name: new_name }).await
+    put(format!("/api/savage-mount/{old_name}"), &SavageMount { id: 0, name: new_name }).await
 }

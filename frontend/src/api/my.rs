@@ -5,8 +5,7 @@ use bounce::prelude::*;
 use bounce::query::{Mutation, MutationResult, Query, QueryResult};
 use serde::{Deserialize, Serialize};
 
-use sheef_entities::authentication::ChangeMyPassword;
-use sheef_entities::UpdateProfile;
+use sheef_entities::prelude::*;
 
 use crate::api::{ApiError, delete, get, put, put_no_body, SheefApiResult};
 use crate::api::authentication::login;
@@ -14,20 +13,20 @@ use crate::storage::{delete_token, set_token};
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Profile {
-    pub user: sheef_entities::User,
+    pub user: WebUser,
 }
 
-impl From<sheef_entities::User> for Profile {
-    fn from(value: sheef_entities::User) -> Self {
+impl From<WebUser> for Profile {
+    fn from(value: WebUser) -> Self {
         Self {
             user: value
         }
     }
 }
 
-async fn get_my_profile() -> SheefApiResult<sheef_entities::User> {
+async fn get_my_profile() -> SheefApiResult<WebUser> {
     log::debug!("Get my profile");
-    get::<sheef_entities::User>("/api/my/profile").await
+    get::<WebUser>("/api/my/profile").await
 }
 
 #[async_trait(? Send)]
@@ -48,7 +47,7 @@ impl Query for Profile {
 
 #[async_trait(? Send)]
 impl Mutation for Profile {
-    type Input = sheef_entities::Login;
+    type Input = Login;
     type Error = ApiError;
 
     async fn run(_states: &BounceStates, input: Rc<Self::Input>) -> MutationResult<Self> {

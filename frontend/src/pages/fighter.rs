@@ -2,6 +2,8 @@ use bounce::query::use_query_value;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
+use sheef_entities::prelude::*;
+
 use crate::api::{CONFLICT, NOT_FOUND};
 use crate::api::fighter::{create_fighter, delete_fighter, MyFighter, update_fighter};
 use crate::ui::modal::{PicoAlert, PicoConfirm, PicoModal};
@@ -15,15 +17,15 @@ struct ModifyFighterModalProps {
     has_error: bool,
     is_loading: bool,
     #[prop_or_default]
-    fighter: sheef_entities::Fighter,
-    on_save: Callback<sheef_entities::Fighter>,
+    fighter: Fighter,
+    on_save: Callback<Fighter>,
 }
 
 #[function_component(ModifyFighterModal)]
 fn modify_fighter_modal(props: &ModifyFighterModalProps) -> Html {
     let job_state = use_state_eq(|| AttrValue::from(props.fighter.job.clone()));
-    let level_state = use_state_eq(|| AttrValue::from(props.fighter.level.clone()));
-    let gear_score_state = use_state_eq(|| AttrValue::from(props.fighter.gear_score.clone()));
+    let level_state = use_state_eq(|| AttrValue::from(props.fighter.level.clone().unwrap_or_default()));
+    let gear_score_state = use_state_eq(|| AttrValue::from(props.fighter.gear_score.clone().unwrap_or_default()));
 
     let on_close = props.on_close.clone();
     let on_save = {
@@ -35,11 +37,11 @@ fn modify_fighter_modal(props: &ModifyFighterModalProps) -> Html {
 
         Callback::from(move |evt: SubmitEvent| {
             evt.prevent_default();
-            let fighter = sheef_entities::Fighter {
-                job: (*job_state).to_string(),
-                level: (*level_state).to_string(),
-                gear_score: (*gear_score_state).to_string(),
-            };
+            let fighter = Fighter::new(
+                (*job_state).to_string(),
+                Some((*level_state).to_string()),
+                Some((*gear_score_state).to_string()),
+            );
 
             on_save.emit(fighter);
         })
@@ -72,13 +74,13 @@ fn modify_fighter_modal(props: &ModifyFighterModalProps) -> Html {
 
 #[derive(Properties, PartialEq, Clone)]
 struct TableBodyProps {
-    fighter: Vec<sheef_entities::Fighter>,
+    fighter: Vec<Fighter>,
 }
 
 #[derive(PartialEq, Clone)]
 enum FighterActions {
-    Edit(sheef_entities::Fighter),
-    Delete(sheef_entities::Fighter),
+    Edit(Fighter),
+    Delete(Fighter),
     Closed,
 }
 
@@ -101,8 +103,8 @@ fn table_body(props: &TableBodyProps) -> Html {
 
     let fighter_query_state = use_query_value::<MyFighter>(().into());
 
-    let edit_fighter_click = use_callback(|fighter: sheef_entities::Fighter, state| state.set(FighterActions::Edit(fighter)), action_state.clone());
-    let delete_fighter_click = use_callback(|fighter: sheef_entities::Fighter, state| state.set(FighterActions::Delete(fighter)), action_state.clone());
+    let edit_fighter_click = use_callback(|fighter: Fighter, state| state.set(FighterActions::Edit(fighter)), action_state.clone());
+    let delete_fighter_click = use_callback(|fighter: Fighter, state| state.set(FighterActions::Delete(fighter)), action_state.clone());
 
     let on_modal_close = {
         let action_state = action_state.clone();
@@ -131,7 +133,7 @@ fn table_body(props: &TableBodyProps) -> Html {
 
         let fighter_query_state = fighter_query_state.clone();
 
-        Callback::from(move |fighter: sheef_entities::Fighter| {
+        Callback::from(move |fighter: Fighter| {
             log::debug!("Modal was confirmed lets execute the request");
             loading_state.set(true);
 
@@ -175,7 +177,7 @@ fn table_body(props: &TableBodyProps) -> Html {
 
         let action_state = action_state.clone();
 
-        Callback::from(move |fighter: sheef_entities::Fighter| {
+        Callback::from(move |fighter: Fighter| {
             log::debug!("Modal was confirmed lets execute the request");
             loading_state.set(true);
             let on_modal_close = on_modal_close.clone();
@@ -250,7 +252,7 @@ fn table_body(props: &TableBodyProps) -> Html {
                 FighterActions::Edit(fighter) => html!(<ModifyFighterModal title={format!("Kämpfer {} bearbeiten", fighter.job)} save_label="Kämpfer speichern" on_save={on_modal_save} on_close={on_modal_close} fighter={fighter} error_message={(*error_message_state).clone()} has_error={*error_state == ErrorState::Edit} is_loading={*loading_state} />),
                 FighterActions::Delete(fighter) => {
                     let cloned_fighter = fighter.clone();
-                    html!(<PicoConfirm open={true} on_confirm={move |_| on_modal_delete.emit(cloned_fighter.clone())} on_decline={on_modal_close} confirm_label="Kämpfer löschen" title="Kämpfer löschen" message={format!("Soll der Kämpfer {} auf Level {} wirklich gelöscht werden?", fighter.job, fighter.level)} />)
+                    html!(<PicoConfirm open={true} on_confirm={move |_| on_modal_delete.emit(cloned_fighter.clone())} on_decline={on_modal_close} confirm_label="Kämpfer löschen" title="Kämpfer löschen" message={format!("Soll der Kämpfer {} auf Level {} wirklich gelöscht werden?", fighter.job, fighter.level.unwrap_or_default())} />)
                 }
                 FighterActions::Closed => html!(),
             }}
@@ -270,7 +272,7 @@ pub fn fighter_page() -> Html {
     let initially_loaded_state = use_state_eq(|| false);
     let open_create_fighter_modal_state = use_state_eq(|| false);
 
-    let state = use_state_eq(|| vec![] as Vec<sheef_entities::Fighter>);
+    let state = use_state_eq(|| vec![] as Vec<Fighter>);
 
     let error_state = use_state_eq(|| false);
     let loading_state = use_state_eq(|| false);
@@ -288,7 +290,7 @@ pub fn fighter_page() -> Html {
 
         let fighter_query_state = fighter_query_state.clone();
 
-        Callback::from(move |fighter: sheef_entities::Fighter| {
+        Callback::from(move |fighter: Fighter| {
             log::debug!("Modal was confirmed lets execute the request");
             loading_state.set(true);
 

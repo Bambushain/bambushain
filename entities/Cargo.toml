@@ -1,14 +1,18 @@
 [package]
 name = "sheef-entities"
-version = "2.0.0"
+version = "3.0.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bcrypt = "0.15.0"
-
+bcrypt = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 chrono = { workspace = true }
+sea-orm = { workspace = true, optional = true }
+
+[features]
+backend = ["dep:sea-orm"]
+default = ["backend"]

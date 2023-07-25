@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use tokio::io::AsyncWriteExt;
 use tokio_stream::StreamExt;
 
-use sheef_entities::{sheef_io_error, sheef_serialization_error, SheefError};
+use sheef_api_entities::{sheef_io_error, sheef_serialization_error, SheefError};
 
 macro_rules! path_exists {
     ($path:expr) => {
@@ -133,3 +133,4 @@ pub mod kill;
 pub mod mount;
 pub mod savage_mount;
 pub mod event;
+pub mod migrator;

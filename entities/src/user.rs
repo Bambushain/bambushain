@@ -1,43 +1,115 @@
-use std::cmp::Ordering;
 use std::fmt::{Display, Formatter};
 
-use bcrypt::{BcryptError, hash, verify};
+#[cfg(feature = "backend")]
+use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Eq, PartialEq, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct User {
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
+#[cfg_attr(feature = "backend", derive(DeriveEntityModel), sea_orm(table_name = "user"))]
+pub struct Model {
+    #[cfg_attr(feature = "backend", sea_orm(primary_key))]
+    #[serde(skip)]
+    pub id: i32,
+    #[cfg_attr(feature = "backend", sea_orm(unique))]
     pub username: String,
     pub password: String,
-    #[serde(default)]
     pub is_mod: bool,
-    #[serde(rename = "mainGroup")]
-    #[serde(default)]
     pub is_main_group: bool,
-    #[serde(rename = "gearlevel")]
-    #[serde(default)]
     pub gear_level: String,
-    #[serde(default)]
     pub job: String,
-    #[serde(default)]
     pub is_hidden: bool,
 }
 
-impl PartialOrd for User {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.username.to_lowercase().partial_cmp(&other.username.to_lowercase())
+#[cfg(feature = "backend")]
+#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+pub enum Relation {
+    #[sea_orm(has_many = "super::crafter::Entity")]
+    Crafter,
+    #[sea_orm(has_many = "super::event::Entity")]
+    Event,
+    #[sea_orm(has_many = "super::fighter::Entity")]
+    Fighter,
+    #[sea_orm(has_many = "super::token::Entity")]
+    Token,
+}
+
+#[cfg(feature = "backend")]
+impl Related<super::crafter::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Crafter.def()
     }
 }
 
-impl Ord for User {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.username.to_lowercase().cmp(&other.username.to_lowercase())
+#[cfg(feature = "backend")]
+impl Related<super::event::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Event.def()
     }
 }
 
-impl User {
-    pub fn set_password(&mut self, plain_password: &String) -> Result<(), BcryptError> {
-        let hashed = hash(plain_password.as_bytes(), 12);
+#[cfg(feature = "backend")]
+impl Related<super::fighter::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Fighter.def()
+    }
+}
+
+#[cfg(feature = "backend")]
+impl Related<super::token::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Token.def()
+    }
+}
+
+#[cfg(feature = "backend")]
+impl Related<super::mount::Entity> for Entity {
+    fn to() -> RelationDef {
+        super::mount_to_user::Relation::Mount.def()
+    }
+    fn via() -> Option<RelationDef> {
+        Some(super::mount_to_user::Relation::User.def().rev())
+    }
+}
+
+#[cfg(feature = "backend")]
+impl Related<super::savage_mount::Entity> for Entity {
+    fn to() -> RelationDef {
+        super::savage_mount_to_user::Relation::SavageMount.def()
+    }
+    fn via() -> Option<RelationDef> {
+        Some(super::savage_mount_to_user::Relation::User.def().rev())
+    }
+}
+
+#[cfg(feature = "backend")]
+impl Related<super::kill::Entity> for Entity {
+    fn to() -> RelationDef {
+        super::kill_to_user::Relation::Kill.def()
+    }
+    fn via() -> Option<RelationDef> {
+        Some(super::kill_to_user::Relation::User.def().rev())
+    }
+}
+
+#[cfg(feature = "backend")]
+impl ActiveModelBehavior for ActiveModel {}
+
+impl Model {
+    pub fn new(username: String, password: String, job: String, gear_level: String, is_mod: bool, is_main_group: bool, is_hidden: bool) -> Self {
+        Self {
+            id: 0,
+            username,
+            password,
+            is_mod,
+            is_main_group,
+            gear_level,
+            job,
+            is_hidden,
+        }
+    }
+
+    pub fn set_password(&mut self, plain_password: &String) -> Result<(), bcrypt::BcryptError> {
+        let hashed = bcrypt::hash(plain_password.as_bytes(), 12);
         match hashed {
             Ok(hashed_password) => {
                 self.password = hashed_password;
@@ -47,8 +119,8 @@ impl User {
         }
     }
 
-    pub fn validate_password(&self, password: &String) -> bool {
-        verify(password, self.password.as_str()).unwrap_or(false)
+    pub fn validate_password(&self, password: String) -> bool {
+        bcrypt::verify(password, self.password.as_str()).unwrap_or(false)
     }
 
     pub fn to_web_user(&self) -> WebUser {
@@ -62,8 +134,7 @@ impl User {
     }
 }
 
-
-#[derive(Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq, Clone, Default, Debug)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct WebUser {
     pub username: String,
@@ -79,7 +150,7 @@ impl Display for WebUser {
     }
 }
 
-#[derive(Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq, Clone, Debug)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateProfile {
     pub gear_level: String,

@@ -1,8 +1,7 @@
 use actix_web::{HttpRequest, HttpResponse, web};
 use serde::Deserialize;
 
-use sheef_database::crafter::crafter_exists;
-use sheef_entities::{Crafter, sheef_exists_already_error, sheef_not_found_error};
+use sheef_entities::prelude::*;
 
 #[derive(Deserialize)]
 pub struct CrafterPathInfo {
@@ -12,42 +11,43 @@ pub struct CrafterPathInfo {
 pub async fn get_crafters(req: HttpRequest) -> HttpResponse {
     let username = username!(req);
 
-    ok_or_error!(sheef_database::crafter::get_crafters(&username).await)
+    ok_or_error!(sheef_dbal::crafter::get_crafters(username).await)
 }
 
 pub async fn get_crafter(info: web::Path<CrafterPathInfo>, req: HttpRequest) -> HttpResponse {
     let username = username!(req);
 
-    ok_or_error!(sheef_database::crafter::get_crafter(&username, &info.job).await)
+    ok_or_error!(sheef_dbal::crafter::get_crafter(username, info.job.clone()).await)
 }
 
 pub async fn create_crafter(body: web::Json<Crafter>, req: HttpRequest) -> HttpResponse {
     let username = username!(req);
-    if crafter_exists(&username, &body.job).await {
+    if sheef_dbal::crafter::crafter_exists(username.clone(), body.job.clone()).await {
         return conflict!(sheef_exists_already_error!("crafter", "The crafter already exists"));
     }
 
-    created_or_error!(sheef_database::crafter::create_crafter(&username, &body.job, &body.level).await)
+    created_or_error!(sheef_dbal::crafter::create_crafter(username.clone(), body.into_inner()).await)
 }
 
 pub async fn update_crafter(body: web::Json<Crafter>, path: web::Path<CrafterPathInfo>, req: HttpRequest) -> HttpResponse {
     let username = username!(req);
-    if !crafter_exists(&username, &path.job).await {
+    let crafter_exists = sheef_dbal::crafter::crafter_exists(username.clone(), path.job.clone()).await;
+    if !crafter_exists {
         return not_found!(sheef_not_found_error!("crafter", "The crafter was not found"));
     }
 
-    if crafter_exists(&username, &body.job).await && body.job != path.job {
+    if crafter_exists && body.job != path.job {
         return conflict!(sheef_exists_already_error!("crafter", "The crafter already exists"));
     }
 
-    no_content_or_error!(sheef_database::crafter::update_crafter(&username, &path.job, &body.level, &body.job).await)
+    no_content_or_error!(sheef_dbal::crafter::update_crafter(username.clone(), path.job.clone(), body.into_inner()).await)
 }
 
 pub async fn delete_crafter(path: web::Path<CrafterPathInfo>, req: HttpRequest) -> HttpResponse {
     let username = username!(req);
-    if !crafter_exists(&username, &path.job).await {
+    if !sheef_dbal::crafter::crafter_exists(username.clone(), path.job.clone()).await {
         return not_found!(sheef_not_found_error!("crafter", "The crafter was not found"));
     }
 
-    no_content_or_error!(sheef_database::crafter::delete_crafter(&username, &path.job).await)
+    no_content_or_error!(sheef_dbal::crafter::delete_crafter(username, path.job.clone()).await)
 }

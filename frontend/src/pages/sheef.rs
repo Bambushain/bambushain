@@ -6,7 +6,7 @@ use yew::prelude::*;
 use yew_feather::{Key, LogOut, User};
 use yew_router::prelude::*;
 
-use sheef_entities::UpdateProfile;
+use sheef_entities::prelude::*;
 
 use crate::api::{FORBIDDEN, NOT_FOUND};
 use crate::api::authentication::logout;

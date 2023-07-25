@@ -2,6 +2,8 @@ use bounce::query::use_query_value;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
+use sheef_entities::prelude::*;
+
 use crate::api::{CONFLICT, NOT_FOUND};
 use crate::api::crafter::{create_crafter, delete_crafter, MyCrafter, update_crafter};
 use crate::ui::modal::{PicoAlert, PicoConfirm, PicoModal};
@@ -15,14 +17,14 @@ struct ModifyCrafterModalProps {
     has_error: bool,
     is_loading: bool,
     #[prop_or_default]
-    crafter: sheef_entities::Crafter,
-    on_save: Callback<sheef_entities::Crafter>,
+    crafter: Crafter,
+    on_save: Callback<Crafter>,
 }
 
 #[function_component(ModifyCrafterModal)]
 fn modify_crafter_modal(props: &ModifyCrafterModalProps) -> Html {
     let job_state = use_state_eq(|| AttrValue::from(props.crafter.job.clone()));
-    let level_state = use_state_eq(|| AttrValue::from(props.crafter.level.clone()));
+    let level_state = use_state_eq(|| AttrValue::from(props.crafter.level.clone().unwrap_or_default()));
 
     let on_close = props.on_close.clone();
     let on_save = {
@@ -33,10 +35,10 @@ fn modify_crafter_modal(props: &ModifyCrafterModalProps) -> Html {
 
         Callback::from(move |evt: SubmitEvent| {
             evt.prevent_default();
-            let crafter = sheef_entities::Crafter {
-                job: (*job_state).to_string(),
-                level: (*level_state).to_string(),
-            };
+            let crafter = Crafter::new(
+                (*job_state).to_string(),
+                Some((*level_state).to_string()),
+            );
 
             on_save.emit(crafter);
         })
@@ -66,13 +68,13 @@ fn modify_crafter_modal(props: &ModifyCrafterModalProps) -> Html {
 
 #[derive(Properties, PartialEq, Clone)]
 struct TableBodyProps {
-    crafter: Vec<sheef_entities::Crafter>,
+    crafter: Vec<Crafter>,
 }
 
 #[derive(PartialEq, Clone)]
 enum CrafterActions {
-    Edit(sheef_entities::Crafter),
-    Delete(sheef_entities::Crafter),
+    Edit(Crafter),
+    Delete(Crafter),
     Closed,
 }
 
@@ -95,8 +97,8 @@ fn table_body(props: &TableBodyProps) -> Html {
 
     let crafter_query_state = use_query_value::<MyCrafter>(().into());
 
-    let edit_crafter_click = use_callback(|crafter: sheef_entities::Crafter, state| state.set(CrafterActions::Edit(crafter)), action_state.clone());
-    let delete_crafter_click = use_callback(|crafter: sheef_entities::Crafter, state| state.set(CrafterActions::Delete(crafter)), action_state.clone());
+    let edit_crafter_click = use_callback(|crafter: Crafter, state| state.set(CrafterActions::Edit(crafter)), action_state.clone());
+    let delete_crafter_click = use_callback(|crafter: Crafter, state| state.set(CrafterActions::Delete(crafter)), action_state.clone());
 
     let on_modal_close = {
         let action_state = action_state.clone();
@@ -125,7 +127,7 @@ fn table_body(props: &TableBodyProps) -> Html {
 
         let crafter_query_state = crafter_query_state.clone();
 
-        Callback::from(move |crafter: sheef_entities::Crafter| {
+        Callback::from(move |crafter: Crafter| {
             log::debug!("Modal was confirmed lets execute the request");
             loading_state.set(true);
 
@@ -171,7 +173,7 @@ fn table_body(props: &TableBodyProps) -> Html {
 
         let action_state = action_state.clone();
 
-        Callback::from(move |crafter: sheef_entities::Crafter| {
+        Callback::from(move |crafter: Crafter| {
             log::debug!("Modal was confirmed lets execute the request");
             loading_state.set(true);
             let on_modal_close = on_modal_close.clone();
@@ -247,7 +249,7 @@ fn table_body(props: &TableBodyProps) -> Html {
                 CrafterActions::Edit(crafter) => html!(<ModifyCrafterModal title={format!("Crafter {} bearbeiten", crafter.job)} save_label="Crafter speichern" on_save={on_modal_save} on_close={on_modal_close} crafter={crafter} error_message={(*error_message_state).clone()} has_error={*error_state == ErrorState::Edit} is_loading={*loading_state} />),
                 CrafterActions::Delete(crafter) => {
                     let cloned_crafter = crafter.clone();
-                    html!(<PicoConfirm open={true} on_confirm={move |_| on_modal_delete.emit(cloned_crafter.clone())} on_decline={on_modal_close} confirm_label="Crafter löschen" title="Crafter löschen" message={format!("Soll der Crafter {} auf Level {} wirklich gelöscht werden?", crafter.job, crafter.level)} />)
+                    html!(<PicoConfirm open={true} on_confirm={move |_| on_modal_delete.emit(cloned_crafter.clone())} on_decline={on_modal_close} confirm_label="Crafter löschen" title="Crafter löschen" message={format!("Soll der Crafter {} auf Level {} wirklich gelöscht werden?", crafter.job, crafter.level.unwrap_or_default())} />)
                 }
                 CrafterActions::Closed => html!(),
             }}
@@ -267,7 +269,7 @@ pub fn crafter_page() -> Html {
     let initially_loaded_state = use_state_eq(|| false);
     let open_create_crafter_modal_state = use_state_eq(|| false);
 
-    let state = use_state_eq(|| vec![] as Vec<sheef_entities::Crafter>);
+    let state = use_state_eq(|| vec![] as Vec<Crafter>);
 
     let error_state = use_state_eq(|| false);
     let loading_state = use_state_eq(|| false);
@@ -285,7 +287,7 @@ pub fn crafter_page() -> Html {
 
         let crafter_query_state = crafter_query_state.clone();
 
-        Callback::from(move |crafter: sheef_entities::Crafter| {
+        Callback::from(move |crafter: Crafter| {
             log::debug!("Modal was confirmed lets execute the request");
             loading_state.set(true);
 

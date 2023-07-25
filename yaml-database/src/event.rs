@@ -1,7 +1,7 @@
 use chrono::{Datelike, Days, Months, NaiveDate};
 
-use sheef_entities::{Calendar, Event, sheef_invalid_data_error, sheef_io_error, sheef_not_found_error};
-use sheef_entities::event::CalendarDay;
+use sheef_api_entities::{Calendar, Event, sheef_invalid_data_error, sheef_io_error, sheef_not_found_error};
+use sheef_api_entities::event::CalendarDay;
 
 use crate::{persist_entity, read_entity, read_entity_dir, SheefResult, validate_database_dir};
 use crate::user::{get_user, get_users, user_exists};

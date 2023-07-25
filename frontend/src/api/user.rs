@@ -4,25 +4,24 @@ use async_trait::async_trait;
 use bounce::BounceStates;
 use bounce::query::{Query, QueryResult};
 
-use sheef_entities::authentication::ChangePassword;
-use sheef_entities::UpdateProfile;
+use sheef_entities::prelude::*;
 
 use crate::api::{ApiError, delete, get, post, put, put_no_body, SheefApiResult};
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
 pub struct Crew {
-    pub users: Vec<sheef_entities::User>,
+    pub users: Vec<WebUser>,
 }
 
-impl From<Vec<sheef_entities::User>> for Crew {
-    fn from(value: Vec<sheef_entities::User>) -> Self {
+impl From<Vec<WebUser>> for Crew {
+    fn from(value: Vec<WebUser>) -> Self {
         Self {
             users: value
         }
     }
 }
 
-pub(crate) async fn get_users() -> SheefApiResult<Vec<sheef_entities::User>> {
+pub(crate) async fn get_users() -> SheefApiResult<Vec<WebUser>> {
     log::debug!("Get users");
     get("/api/user").await
 }
@@ -37,37 +36,37 @@ impl Query for Crew {
     }
 }
 
-pub async fn create_user(user: sheef_entities::user::User) -> SheefApiResult<sheef_entities::User> {
+pub async fn create_user(user: User) -> SheefApiResult<WebUser> {
     log::debug!("Create user {}", user.username);
     post("/api/user", &user).await
 }
 
-pub async fn make_user_mod(user: sheef_entities::User) -> SheefApiResult<()> {
+pub async fn make_user_mod(user: WebUser) -> SheefApiResult<()> {
     log::debug!("Make user {} mod", user.username);
     put_no_body(format!("/api/user/{}/mod", user.username)).await
 }
 
-pub async fn remove_user_mod(user: sheef_entities::User) -> SheefApiResult<()> {
+pub async fn remove_user_mod(user: WebUser) -> SheefApiResult<()> {
     log::debug!("Remove user {} mod", user.username);
     delete(format!("/api/user/{}/mod", user.username)).await
 }
 
-pub async fn make_user_main(user: sheef_entities::User) -> SheefApiResult<()> {
+pub async fn make_user_main(user: WebUser) -> SheefApiResult<()> {
     log::debug!("Make user {} main", user.username);
     put_no_body(format!("/api/user/{}/main", user.username)).await
 }
 
-pub async fn remove_user_main(user: sheef_entities::User) -> SheefApiResult<()> {
+pub async fn remove_user_main(user: WebUser) -> SheefApiResult<()> {
     log::debug!("Remove user {} main", user.username);
     delete(format!("/api/user/{}/main", user.username)).await
 }
 
-pub async fn delete_user(user: sheef_entities::User) -> SheefApiResult<()> {
+pub async fn delete_user(user: WebUser) -> SheefApiResult<()> {
     log::debug!("Remove user {} main", user.username);
     delete(format!("/api/user/{}", user.username)).await
 }
 
-pub async fn change_user_password(user: sheef_entities::User, new_password: String) -> SheefApiResult<()> {
+pub async fn change_user_password(user: WebUser, new_password: String) -> SheefApiResult<()> {
     log::debug!("Change user {} password", user.username);
     put(format!("/api/user/{}/password", user.username), &ChangePassword { new_password }).await
 }
