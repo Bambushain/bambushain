@@ -6,12 +6,12 @@ docker-build:
   before_script:
     - docker login -u "$QUAY_USER" -p "$QUAY_PASSWORD" quay.imanuel.dev
   script:
-    - docker build --pull -t "quay.imanuel.dev/creastina/sheef:3.${CI_PIPELINE_IID}" -f ./Dockerfile .
-    - docker tag "quay.imanuel.dev/creastina/sheef:3.${CI_PIPELINE_IID}" "quay.imanuel.dev/creastina/sheef:latest"
-    - docker push "quay.imanuel.dev/creastina/sheef:3.${CI_PIPELINE_IID}"
+    - docker build --pull -t "quay.imanuel.dev/creastina/sheef:3.0.${CI_PIPELINE_IID}" -f ./Dockerfile .
+    - docker tag "quay.imanuel.dev/creastina/sheef:3.0.${CI_PIPELINE_IID}" "quay.imanuel.dev/creastina/sheef:latest"
+    - docker push "quay.imanuel.dev/creastina/sheef:3.0.${CI_PIPELINE_IID}"
     - docker push "quay.imanuel.dev/creastina/sheef:latest"
   rules:
-    - if: $CI_COMMIT_BRANCH
+    - if: $CI_COMMIT_BRANCH == "main"
       exists:
         - Dockerfile
 
@@ -23,9 +23,9 @@ docker-docs-build:
   before_script:
     - docker login -u "$QUAY_USER" -p "$QUAY_PASSWORD" quay.imanuel.dev
   script:
-    - docker build --pull -t "quay.imanuel.dev/creastina/sheef-api-docs:3.${CI_PIPELINE_IID}" -f ./api-docs/Dockerfile ./api-docs
-    - docker tag "quay.imanuel.dev/creastina/sheef-api-docs:3.${CI_PIPELINE_IID}" "quay.imanuel.dev/creastina/sheef-api-docs:latest"
-    - docker push "quay.imanuel.dev/creastina/sheef-api-docs:3.${CI_PIPELINE_IID}"
+    - docker build --pull -t "quay.imanuel.dev/creastina/sheef-api-docs:3.0.${CI_PIPELINE_IID}" -f ./api-docs/Dockerfile ./api-docs
+    - docker tag "quay.imanuel.dev/creastina/sheef-api-docs:3.0.${CI_PIPELINE_IID}" "quay.imanuel.dev/creastina/sheef-api-docs:latest"
+    - docker push "quay.imanuel.dev/creastina/sheef-api-docs:3.0.${CI_PIPELINE_IID}"
     - docker push "quay.imanuel.dev/creastina/sheef-api-docs:latest"
   rules:
     - if: $CI_COMMIT_BRANCH == "main"

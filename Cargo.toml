@@ -9,8 +9,6 @@ sheef-backend = { path = "backend" }
 sheef-migration = { path = "migration" }
 sheef-entities = { path = "entities" }
 sheef-dbal = { path = "dbal" }
-sheef-yaml-database = { path = "yaml-database" }
-sheef-yaml-entities = { path = "yaml-entities" }
 
 stderrlog = "0.5.4"
 tokio = { version = "1.29.1", features = ["full"] }
@@ -31,9 +29,7 @@ members = [
     "entities",
     "frontend",
     "migration",
-    "utils",
-    "yaml-database",
-    "yaml-entities"
+    "utils"
 ]
 
 [workspace.dependencies]
