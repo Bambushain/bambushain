@@ -7,9 +7,14 @@ edition = "2021"
 [dependencies]
 sheef-backend = { path = "backend" }
 sheef-migration = { path = "migration" }
+sheef-entities = { path = "entities" }
 sheef-dbal = { path = "dbal" }
+sheef-yaml-database = { path = "yaml-database" }
+sheef-yaml-entities = { path = "yaml-entities" }
 
 stderrlog = "0.5.4"
+tokio = { version = "1.29.1", features = ["full"] }
+anyhow = "1.0.71"
 
 log = { workspace = true }
 serde = { workspace = true }
@@ -28,8 +33,7 @@ members = [
     "migration",
     "utils",
     "yaml-database",
-    "yaml-entities",
-    "yaml-to-postgres-migrator"
+    "yaml-entities"
 ]
 
 [workspace.dependencies]

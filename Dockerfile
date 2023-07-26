@@ -15,5 +15,6 @@ ENV FRONTEND_DIR=/usr/local/share/sheef-planing/web/
 
 COPY --from=build /usr/src/sheef-planing/dist /usr/local/share/sheef-planing/web/dist
 COPY --from=build /usr/local/cargo/bin/sheef-planing /usr/local/bin/sheef-planing
+COPY --from=build /usr/local/cargo/bin/sheef-migrator /usr/local/bin/sheef-migrator
 
 CMD ["sheef-planing"]
