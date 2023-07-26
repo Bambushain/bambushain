@@ -6,11 +6,12 @@ use sea_orm::prelude::*;
 
 use sheef_entities::{mount, mount_to_user, sheef_db_error, user};
 use sheef_entities::prelude::*;
+use crate::user::get_user;
 
 pub async fn get_mount(mount: String) -> SheefResult<Mount> {
     let db = open_db_connection!();
 
-    let result = match mount::Entity::find()
+    match mount::Entity::find()
         .filter(mount::Column::Name.eq(mount))
         .one(&db)
         .await {
@@ -20,11 +21,7 @@ pub async fn get_mount(mount: String) -> SheefResult<Mount> {
             log::error!("{err}");
             Err(sheef_db_error!("mount", "Failed to load mount"))
         }
-    };
-
-    let _ = db.close().await;
-
-    result
+    }
 }
 
 pub async fn mount_exists(mount: String) -> bool {
@@ -32,8 +29,7 @@ pub async fn mount_exists(mount: String) -> bool {
 }
 
 pub async fn activate_mount_for_user(mount: String, username: String) -> SheefErrorResult {
-    let db = open_db_connection!();
-    let user = match crate::user::get_user(username.clone()).await {
+    let user = match get_user(username.clone()).await {
         Ok(user) => user,
         Err(err) => {
             log::error!("Failed to load user {}: {err}", username);
@@ -45,7 +41,8 @@ pub async fn activate_mount_for_user(mount: String, username: String) -> SheefEr
         Err(_) => return Err(sheef_not_found_error!("mount", "Mount was not found"))
     };
 
-    let result = match mount_to_user::Entity::find()
+    let db = open_db_connection!();
+    match mount_to_user::Entity::find()
         .filter(mount_to_user::Column::MountId.eq(mount.id))
         .filter(mount_to_user::Column::UserId.eq(user.id))
         .one(&db)
@@ -62,22 +59,18 @@ pub async fn activate_mount_for_user(mount: String, username: String) -> SheefEr
                 mount_id: Set(mount.id),
             }
         }
-    }.save(&db)
+    }
+        .save(&db)
         .await
         .map_err(|err| {
             log::error!("{err}");
             sheef_db_error!("mount", "Failed to create mount for user")
         })
-        .map(|_| ());
-
-    let _ = db.close().await;
-
-    result
+        .map(|_| ())
 }
 
 pub async fn deactivate_mount_for_user(mount: String, username: String) -> SheefErrorResult {
-    let db = open_db_connection!();
-    let user = match crate::user::get_user(username.clone()).await {
+    let user = match get_user(username.clone()).await {
         Ok(user) => user,
         Err(err) => {
             log::error!("Failed to load user {}: {err}", username);
@@ -89,7 +82,8 @@ pub async fn deactivate_mount_for_user(mount: String, username: String) -> Sheef
         Err(_) => return Err(sheef_not_found_error!("mount", "Mount was not found"))
     };
 
-    let result = mount_to_user::Entity::delete_many()
+    let db = open_db_connection!();
+    mount_to_user::Entity::delete_many()
         .filter(mount_to_user::Column::MountId.eq(mount.id))
         .filter(mount_to_user::Column::UserId.eq(user.id))
         .exec(&db)
@@ -98,17 +92,13 @@ pub async fn deactivate_mount_for_user(mount: String, username: String) -> Sheef
             log::error!("{err}");
             sheef_db_error!("mount", "Failed to remove mount from user")
         })
-        .map(|_| ());
-
-    let _ = db.close().await;
-
-    result
+        .map(|_| ())
 }
 
 pub async fn delete_mount(mount: String) -> SheefErrorResult {
     let db = open_db_connection!();
 
-    let result = mount::Entity::delete_many()
+    mount::Entity::delete_many()
         .filter(mount::Column::Name.eq(mount))
         .exec(&db)
         .await
@@ -116,66 +106,55 @@ pub async fn delete_mount(mount: String) -> SheefErrorResult {
             log::error!("{err}");
             sheef_db_error!("mount", "Failed to delete mount")
         })
-        .map(|_| ());
-
-    let _ = db.close().await;
-
-    result
+        .map(|_| ())
 }
 
 pub async fn create_mount(mount: Mount) -> SheefResult<Mount> {
-    let db = open_db_connection!();
-
     let mut model = mount.into_active_model();
     model.id = NotSet;
-    let result = model
+
+    let db = open_db_connection!();
+    model
         .insert(&db)
         .await
         .map_err(|err| {
             log::error!("{err}");
             sheef_db_error!("mount", "Failed to create mount")
-        });
-
-    let _ = db.close().await;
-
-    result
+        })
 }
 
 pub async fn update_mount(mount: String, name: String) -> SheefErrorResult {
-    let db = open_db_connection!();
-
     let mut model = match get_mount(mount).await {
         Ok(mount) => mount.into_active_model(),
         Err(err) => return Err(err)
     };
 
     model.name = Set(name);
-    let result = model
+
+    let db = open_db_connection!();
+    model
         .update(&db)
         .await
         .map_err(|err| {
             log::error!("{err}");
             sheef_db_error!("mount", "Failed to update mount")
         })
-        .map(|_| ());
-
-    let _ = db.close().await;
-
-    result
+        .map(|_| ())
 }
 
 pub async fn get_mounts() -> SheefResult<BTreeMap<String, Vec<String>>> {
     let db = open_db_connection!();
 
-    let data = match mount::Entity::find().find_with_related(user::Entity).all(&db).await {
+    let data = match mount::Entity::find()
+        .find_with_related(user::Entity)
+        .all(&db)
+        .await {
         Ok(result) => result,
         Err(err) => {
             log::error!("{err}");
             return Err(sheef_db_error!("mount", "Failed to load mounts"));
         }
     };
-
-    let _ = db.close().await;
 
     let mut result = BTreeMap::new();
     for (mount, users) in data {

@@ -84,8 +84,6 @@ pub async fn get_events_for_month(year: i32, month: u32) -> SheefResult<Calendar
         }
     }
 
-    let _ = db.close().await;
-
     Ok(Calendar {
         month,
         year,
@@ -96,7 +94,7 @@ pub async fn get_events_for_month(year: i32, month: u32) -> SheefResult<Calendar
 pub async fn get_event(username: String, date: NaiveDate) -> SheefResult<Event> {
     let db = open_db_connection!();
 
-    let result = match event::Entity::find()
+    match event::Entity::find()
         .filter(event::Column::Date.eq(date))
         .filter(user::Column::Username.eq(username))
         .join(JoinType::InnerJoin, event::Relation::User.def())
@@ -108,21 +106,17 @@ pub async fn get_event(username: String, date: NaiveDate) -> SheefResult<Event> 
             log::error!("{err}");
             Err(sheef_not_found_error!("event", "Failed to load event"))
         }
-    };
-
-    let _ = db.close().await;
-
-    result
+    }
 }
 
 pub async fn set_event(username: String, set_event: SetEvent, date: NaiveDate) -> SheefErrorResult {
-    let db = open_db_connection!();
     let user = match get_user(username.clone()).await {
         Ok(user) => user,
         Err(err) => return Err(err)
     };
 
-    let result = match get_event(username.clone(), date).await {
+    let db = open_db_connection!();
+    match get_event(username.clone(), date).await {
         Ok(evt) => {
             let mut evt = evt.into_active_model();
             evt.time = Set(set_event.time.clone());
@@ -146,9 +140,5 @@ pub async fn set_event(username: String, set_event: SetEvent, date: NaiveDate) -
             log::error!("{err}");
             sheef_db_error!("event", "Failed to create event")
         })
-        .map(|_| ());
-
-    let _ = db.close().await;
-
-    result
+        .map(|_| ())
 }

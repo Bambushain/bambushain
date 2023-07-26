@@ -6,11 +6,12 @@ use sea_orm::prelude::*;
 
 use sheef_entities::{savage_mount, savage_mount_to_user, sheef_db_error, user};
 use sheef_entities::prelude::*;
+use crate::user::get_user;
 
 pub async fn get_savage_mount(savage_mount: String) -> SheefResult<SavageMount> {
     let db = open_db_connection!();
 
-    let result = match savage_mount::Entity::find()
+    match savage_mount::Entity::find()
         .filter(savage_mount::Column::Name.eq(savage_mount))
         .one(&db)
         .await {
@@ -20,11 +21,7 @@ pub async fn get_savage_mount(savage_mount: String) -> SheefResult<SavageMount> 
             log::error!("{err}");
             Err(sheef_db_error!("savage-mount", "Failed to load savage mount"))
         }
-    };
-
-    let _ = db.close().await;
-
-    result
+    }
 }
 
 pub async fn savage_mount_exists(savage_mount: String) -> bool {
@@ -32,8 +29,7 @@ pub async fn savage_mount_exists(savage_mount: String) -> bool {
 }
 
 pub async fn activate_savage_mount_for_user(savage_mount: String, username: String) -> SheefErrorResult {
-    let db = open_db_connection!();
-    let user = match crate::user::get_user(username.clone()).await {
+    let user = match get_user(username.clone()).await {
         Ok(user) => user,
         Err(err) => {
             log::error!("Failed to load user {}: {err}", username);
@@ -45,7 +41,8 @@ pub async fn activate_savage_mount_for_user(savage_mount: String, username: Stri
         Err(_) => return Err(sheef_not_found_error!("savage-mount", "Savage mount was not found"))
     };
 
-    let result = match savage_mount_to_user::Entity::find()
+    let db = open_db_connection!();
+    match savage_mount_to_user::Entity::find()
         .filter(savage_mount_to_user::Column::SavageMountId.eq(savage_mount.id))
         .filter(savage_mount_to_user::Column::UserId.eq(user.id))
         .one(&db)
@@ -62,22 +59,18 @@ pub async fn activate_savage_mount_for_user(savage_mount: String, username: Stri
                 savage_mount_id: Set(savage_mount.id),
             }
         }
-    }.save(&db)
+    }
+        .save(&db)
         .await
         .map_err(|err| {
             log::error!("{err}");
             sheef_db_error!("savage-mount", "Failed to create savage mount for user")
         })
-        .map(|_| ());
-
-    let _ = db.close().await;
-
-    result
+        .map(|_| ())
 }
 
 pub async fn deactivate_savage_mount_for_user(savage_mount: String, username: String) -> SheefErrorResult {
-    let db = open_db_connection!();
-    let user = match crate::user::get_user(username.clone()).await {
+    let user = match get_user(username.clone()).await {
         Ok(user) => user,
         Err(err) => {
             log::error!("Failed to load user {}: {err}", username);
@@ -89,7 +82,8 @@ pub async fn deactivate_savage_mount_for_user(savage_mount: String, username: St
         Err(_) => return Err(sheef_not_found_error!("savage-mount", "Savage mount was not found"))
     };
 
-    let result = savage_mount_to_user::Entity::delete_many()
+    let db = open_db_connection!();
+    savage_mount_to_user::Entity::delete_many()
         .filter(savage_mount_to_user::Column::SavageMountId.eq(savage_mount.id))
         .filter(savage_mount_to_user::Column::UserId.eq(user.id))
         .exec(&db)
@@ -98,17 +92,13 @@ pub async fn deactivate_savage_mount_for_user(savage_mount: String, username: St
             log::error!("{err}");
             sheef_db_error!("savage-mount", "Failed to remove savage mount from user")
         })
-        .map(|_| ());
-
-    let _ = db.close().await;
-
-    result
+        .map(|_| ())
 }
 
 pub async fn delete_savage_mount(savage_mount: String) -> SheefErrorResult {
     let db = open_db_connection!();
 
-    let result = savage_mount::Entity::delete_many()
+    savage_mount::Entity::delete_many()
         .filter(savage_mount::Column::Name.eq(savage_mount))
         .exec(&db)
         .await
@@ -116,66 +106,55 @@ pub async fn delete_savage_mount(savage_mount: String) -> SheefErrorResult {
             log::error!("{err}");
             sheef_db_error!("savage-mount", "Failed to delete savage mount")
         })
-        .map(|_| ());
-
-    let _ = db.close().await;
-
-    result
+        .map(|_| ())
 }
 
 pub async fn create_savage_mount(savage_mount: SavageMount) -> SheefResult<SavageMount> {
-    let db = open_db_connection!();
-
     let mut model = savage_mount.into_active_model();
     model.id = NotSet;
-    let result = model
+
+    let db = open_db_connection!();
+    model
         .insert(&db)
         .await
         .map_err(|err| {
             log::error!("{err}");
             sheef_db_error!("savage-mount", "Failed to create savage mount")
-        });
-
-    let _ = db.close().await;
-
-    result
+        })
 }
 
 pub async fn update_savage_mount(savage_mount: String, name: String) -> SheefErrorResult {
-    let db = open_db_connection!();
-
     let mut model = match get_savage_mount(savage_mount).await {
         Ok(savage_mount) => savage_mount.into_active_model(),
         Err(err) => return Err(err)
     };
 
     model.name = Set(name);
-    let result = model
+
+    let db = open_db_connection!();
+    model
         .update(&db)
         .await
         .map_err(|err| {
             log::error!("{err}");
             sheef_db_error!("savage-mount", "Failed to update savage mount")
         })
-        .map(|_| ());
-
-    let _ = db.close().await;
-
-    result
+        .map(|_| ())
 }
 
 pub async fn get_savage_mounts() -> SheefResult<BTreeMap<String, Vec<String>>> {
     let db = open_db_connection!();
 
-    let data = match savage_mount::Entity::find().find_with_related(user::Entity).all(&db).await {
+    let data = match savage_mount::Entity::find()
+        .find_with_related(user::Entity)
+        .all(&db)
+        .await {
         Ok(result) => result,
         Err(err) => {
             log::error!("{err}");
             return Err(sheef_db_error!("savage-mount", "Failed to load savage mounts"));
         }
     };
-
-    let _ = db.close().await;
 
     let mut result = BTreeMap::new();
     for (savage_mount, users) in data {

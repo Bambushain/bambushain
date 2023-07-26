@@ -5,11 +5,12 @@ use sea_orm::sea_query::Expr;
 
 use sheef_entities::{fighter, sheef_db_error, user};
 use sheef_entities::prelude::*;
+use crate::user::get_user;
 
 pub async fn get_fighters(username: String) -> SheefResult<Vec<Fighter>> {
     let db = open_db_connection!();
 
-    let result = fighter::Entity::find()
+    fighter::Entity::find()
         .filter(user::Column::Username.eq(username))
         .join(JoinType::InnerJoin, fighter::Relation::User.def())
         .order_by_asc(fighter::Column::Job)
@@ -18,17 +19,13 @@ pub async fn get_fighters(username: String) -> SheefResult<Vec<Fighter>> {
         .map_err(|err| {
             log::error!("{err}");
             sheef_db_error!("fighter", "Failed to load fighters")
-        });
-
-    let _ = db.close().await;
-
-    result
+        })
 }
 
 pub async fn get_fighter(username: String, job: String) -> SheefResult<Fighter> {
     let db = open_db_connection!();
 
-    let result = match fighter::Entity::find()
+    match fighter::Entity::find()
         .filter(fighter::Column::Job.eq(job))
         .filter(user::Column::Username.eq(username))
         .join(JoinType::InnerJoin, fighter::Relation::User.def())
@@ -40,11 +37,7 @@ pub async fn get_fighter(username: String, job: String) -> SheefResult<Fighter> 
             log::error!("{err}");
             Err(sheef_db_error!("fighter", "Failed to execute database query"))
         }
-    };
-
-    let _ = db.close().await;
-
-    result
+    }
 }
 
 pub async fn fighter_exists(username: String, job: String) -> bool {
@@ -52,8 +45,7 @@ pub async fn fighter_exists(username: String, job: String) -> bool {
 }
 
 pub async fn create_fighter(username: String, fighter: Fighter) -> SheefResult<Fighter> {
-    let db = open_db_connection!();
-    let user = match crate::user::get_user(username.clone()).await {
+    let user = match get_user(username.clone()).await {
         Ok(user) => user,
         Err(err) => {
             log::error!("Failed to load user {}: {err}", username);
@@ -65,22 +57,18 @@ pub async fn create_fighter(username: String, fighter: Fighter) -> SheefResult<F
     model.user_id = Set(user.id);
     model.id = NotSet;
 
-    let result = model
+    let db = open_db_connection!();
+    model
         .insert(&db)
         .await
         .map_err(|err| {
             log::error!("{err}");
             sheef_db_error!("fighter", "Failed to create fighter")
-        });
-
-    let _ = db.close().await;
-
-    result
+        })
 }
 
 pub async fn update_fighter(username: String, job: String, fighter: Fighter) -> SheefErrorResult {
-    let db = open_db_connection!();
-    let user = match crate::user::get_user(username.clone()).await {
+    let user = match get_user(username.clone()).await {
         Ok(user) => user,
         Err(err) => {
             log::error!("Failed to load user {}: {err}", username);
@@ -88,7 +76,8 @@ pub async fn update_fighter(username: String, job: String, fighter: Fighter) -> 
         }
     };
 
-    let result = fighter::Entity::update_many()
+    let db = open_db_connection!();
+    fighter::Entity::update_many()
         .filter(fighter::Column::Job.eq(job))
         .filter(fighter::Column::UserId.eq(user.id))
         .col_expr(fighter::Column::Job, Expr::value(fighter.job))
@@ -100,16 +89,11 @@ pub async fn update_fighter(username: String, job: String, fighter: Fighter) -> 
             log::error!("{err}");
             sheef_db_error!("fighter", "Failed to update fighter")
         })
-        .map(|_| ());
-
-    let _ = db.close().await;
-
-    result
+        .map(|_| ())
 }
 
 pub async fn delete_fighter(username: String, job: String) -> SheefErrorResult {
-    let db = open_db_connection!();
-    let user = match crate::user::get_user(username.clone()).await {
+    let user = match get_user(username.clone()).await {
         Ok(user) => user,
         Err(err) => {
             log::error!("Failed to load user {}: {err}", username);
@@ -117,7 +101,8 @@ pub async fn delete_fighter(username: String, job: String) -> SheefErrorResult {
         }
     };
 
-    let result = fighter::Entity::delete_many()
+    let db = open_db_connection!();
+    fighter::Entity::delete_many()
         .filter(fighter::Column::Job.eq(job))
         .filter(fighter::Column::UserId.eq(user.id))
         .exec(&db)
@@ -126,9 +111,5 @@ pub async fn delete_fighter(username: String, job: String) -> SheefErrorResult {
             log::error!("{err}");
             sheef_db_error!("fighter", "Failed to delete fighter")
         })
-        .map(|_| ());
-
-    let _ = db.close().await;
-
-    result
+        .map(|_| ())
 }
