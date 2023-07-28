@@ -14,7 +14,7 @@ use crate::api::my::{change_my_password, Profile, update_my_profile};
 use crate::api::user::get_users;
 use crate::pages::calendar::CalendarPage;
 use crate::pages::crafter::CrafterPage;
-use crate::pages::crew::CrewPage;
+use crate::pages::user::CrewPage;
 use crate::pages::fighter::FighterPage;
 use crate::pages::kill::KillPage;
 use crate::pages::mount::MountPage;
@@ -29,15 +29,15 @@ fn switch(route: SheefRoute) -> Html {
         SheefRoute::Calendar => html!(
             <>
                 <Helmet>
-                    <title>{"Static Kalender"}</title>
+                    <title>{"Event Kalender"}</title>
                 </Helmet>
                 <CalendarPage />
             </>
         ),
-        SheefRoute::Crew => html!(
+        SheefRoute::Benutzer => html!(
             <>
                 <Helmet>
-                    <title>{"Static „Sheef”"}</title>
+                    <title>{"Benutzer"}</title>
                 </Helmet>
                 <CrewPage />
             </>
@@ -373,7 +373,7 @@ pub fn sheef_layout() -> Html {
                                 <ul>
                                     <li><strong>{"Sheef"}</strong></li>
                                     <li><Link<SheefRoute> to={SheefRoute::Calendar}>{"Kalender"}</Link<SheefRoute>></li>
-                                    <li><Link<SheefRoute> to={SheefRoute::Crew}>{"Crew"}</Link<SheefRoute>></li>
+                                    <li><Link<SheefRoute> to={SheefRoute::Benutzer}>{"Benutzer"}</Link<SheefRoute>></li>
                                     <li><Link<SheefRoute> to={SheefRoute::Crafter}>{"Crafter"}</Link<SheefRoute>></li>
                                     <li><Link<SheefRoute> to={SheefRoute::Fighter}>{"Kämpfer"}</Link<SheefRoute>></li>
                                     <li><Link<SheefRoute> to={SheefRoute::Mounts}>{"Mounts"}</Link<SheefRoute>></li>

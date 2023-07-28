@@ -22,7 +22,6 @@ pub async fn get_users() -> SheefResult<Vec<User>> {
 
     user::Entity::find()
         .order_by_asc(user::Column::Username)
-        .filter(user::Column::IsHidden.eq(false))
         .all(&db)
         .await
         .map_err(|err| {
@@ -67,21 +66,6 @@ pub async fn change_mod_status(username: String, is_mod: bool) -> SheefErrorResu
 
     user::Entity::update_many()
         .col_expr(user::Column::IsMod, Expr::value(is_mod))
-        .filter(user::Column::Username.eq(username))
-        .exec(&db)
-        .await
-        .map_err(|err| {
-            log::error!("{err}");
-            sheef_db_error!("user", "Failed to update user")
-        })
-        .map(|_| ())
-}
-
-pub async fn change_main_group(username: String, is_main_group: bool) -> SheefErrorResult {
-    let db = open_db_connection!();
-
-    user::Entity::update_many()
-        .col_expr(user::Column::IsMainGroup, Expr::value(is_main_group))
         .filter(user::Column::Username.eq(username))
         .exec(&db)
         .await

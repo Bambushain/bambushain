@@ -84,32 +84,6 @@ pub async fn remove_mod_user(info: web::Path<UserPathInfo>, notification_state: 
     no_content_or_error!(data)
 }
 
-pub async fn add_main_group_user(info: web::Path<UserPathInfo>, notification_state: web::Data<NotificationState>) -> HttpResponse {
-    if !user_exists(info.username.clone()).await {
-        return not_found!(sheef_not_found_error!("user", "The user was not found"));
-    }
-
-    let data = change_main_group(info.username.clone(), true).await;
-    actix_web::rt::spawn(async move {
-        notification_state.crew_broadcaster.notify_change().await;
-    });
-
-    no_content_or_error!(data)
-}
-
-pub async fn remove_main_group_user(info: web::Path<UserPathInfo>, notification_state: web::Data<NotificationState>) -> HttpResponse {
-    if !user_exists(info.username.clone()).await {
-        return not_found!(sheef_not_found_error!("user", "The user was not found"));
-    }
-
-    let data = change_main_group(info.username.clone(), false).await;
-    actix_web::rt::spawn(async move {
-        notification_state.crew_broadcaster.notify_change().await;
-    });
-
-    no_content_or_error!(data)
-}
-
 pub async fn change_password(info: web::Path<UserPathInfo>, body: web::Json<ChangePassword>, req: HttpRequest) -> HttpResponse {
     prevent_me!(req, info.username, "You cannot change your own password using this endpoint");
     if !user_exists(info.username.clone()).await {

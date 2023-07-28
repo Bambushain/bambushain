@@ -51,16 +51,6 @@ pub async fn remove_user_mod(user: WebUser) -> SheefApiResult<()> {
     delete(format!("/api/user/{}/mod", user.username)).await
 }
 
-pub async fn make_user_main(user: WebUser) -> SheefApiResult<()> {
-    log::debug!("Make user {} main", user.username);
-    put_no_body(format!("/api/user/{}/main", user.username)).await
-}
-
-pub async fn remove_user_main(user: WebUser) -> SheefApiResult<()> {
-    log::debug!("Remove user {} main", user.username);
-    delete(format!("/api/user/{}/main", user.username)).await
-}
-
 pub async fn delete_user(user: WebUser) -> SheefApiResult<()> {
     log::debug!("Remove user {} main", user.username);
     delete(format!("/api/user/{}", user.username)).await

@@ -342,10 +342,6 @@ pub fn calendar_page() -> Html {
 
                 let main_group_members = cal_day.events
                     .iter()
-                    .filter(|evt| {
-                        log::debug!("Evt: {:?}", evt);
-                        evt.user.is_main_group
-                    })
                     .collect::<Vec<&sheef_entities::prelude::Event>>();
                 log::debug!("We have {} main group members for {}", main_group_members.len(), cal_day.date);
 
@@ -379,7 +375,7 @@ pub fn calendar_page() -> Html {
 
     html!(
         <>
-            <h1>{"Static Kalender"}</h1>
+            <h1>{"Event Kalender"}</h1>
             <div class="calendar-header">
                 <Link<SheefRoute, CalendarQuery> to={SheefRoute::Calendar} query={Some(prev_month.into())}>{month_to_german(prev_month.month())}</Link<SheefRoute, CalendarQuery>>
                 <h4>{format!("{} {}", month_to_german(date.month()), date.year())}</h4>

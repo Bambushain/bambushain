@@ -14,10 +14,8 @@ pub struct Model {
     pub username: String,
     pub password: String,
     pub is_mod: bool,
-    pub is_main_group: bool,
     pub gear_level: String,
     pub job: String,
-    pub is_hidden: bool,
 }
 
 #[cfg(feature = "backend")]
@@ -95,16 +93,14 @@ impl Related<super::kill::Entity> for Entity {
 impl ActiveModelBehavior for ActiveModel {}
 
 impl Model {
-    pub fn new(username: String, password: String, job: String, gear_level: String, is_mod: bool, is_main_group: bool, is_hidden: bool) -> Self {
+    pub fn new(username: String, password: String, job: String, gear_level: String, is_mod: bool) -> Self {
         Self {
             id: 0,
             username,
             password,
             is_mod,
-            is_main_group,
             gear_level,
             job,
-            is_hidden,
         }
     }
 
@@ -127,7 +123,6 @@ impl Model {
         WebUser {
             username: self.username.to_string(),
             is_mod: self.is_mod,
-            is_main_group: self.is_main_group,
             gear_level: self.gear_level.to_string(),
             job: self.job.to_string(),
         }
@@ -139,7 +134,6 @@ impl Model {
 pub struct WebUser {
     pub username: String,
     pub is_mod: bool,
-    pub is_main_group: bool,
     pub gear_level: String,
     pub job: String,
 }

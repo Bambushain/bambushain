@@ -188,7 +188,7 @@ pub fn boolean_table(props: &BooleanTableProps) -> Html {
                 <table role="grid">
                     <thead>
                         <tr>
-                            <th>{"Crewmitglied"}</th>
+                            <th>{"Benutzer"}</th>
                             {for props.table_data.keys.clone().into_iter().map(|key| html!(
                                 <th key={key.to_string()}>
                                     <div class="small-gap-row">

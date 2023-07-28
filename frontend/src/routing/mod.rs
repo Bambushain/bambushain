@@ -27,7 +27,7 @@ pub enum SheefRoute {
     #[at("/sheef/calendar")]
     Calendar,
     #[at("/sheef/crew")]
-    Crew,
+    Benutzer,
     #[at("/sheef/crafter")]
     Crafter,
     #[at("/sheef/fighter")]

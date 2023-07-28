@@ -10,7 +10,7 @@ use yew::prelude::*;
 use sheef_entities::prelude::*;
 
 use crate::api::{CONFLICT, FORBIDDEN, INTERNAL_SERVER_ERROR, NO_CONTENT, NOT_FOUND};
-use crate::api::user::{change_user_password, create_user, Crew, delete_user, make_user_main, make_user_mod, remove_user_main, remove_user_mod, update_profile};
+use crate::api::user::{change_user_password, create_user, Crew, delete_user, make_user_mod, remove_user_mod, update_profile};
 use crate::hooks::event_source::use_event_source;
 use crate::storage::CurrentUser;
 use crate::ui::modal::{PicoAlert, PicoConfirm, PicoModal};
@@ -42,7 +42,6 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
     let error_message_state = use_state_eq(|| AttrValue::from(""));
 
     let is_mod_state = use_state_eq(|| false);
-    let is_main_group_state = use_state_eq(|| false);
     let error_state = use_state_eq(|| false);
     let loading_state = use_state_eq(|| false);
     let created_state = use_state_eq(|| false);
@@ -52,7 +51,6 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
     let update_gear_level = use_callback(|evt: InputEvent, state| state.set(evt.target_unchecked_into::<HtmlInputElement>().value().into()), gear_level_state.clone());
 
     let update_is_mod = use_callback(|evt: MouseEvent, state| state.set(evt.target_unchecked_into::<HtmlInputElement>().checked()), is_mod_state.clone());
-    let update_is_main_group = use_callback(|evt: MouseEvent, state| state.set(evt.target_unchecked_into::<HtmlInputElement>().checked()), is_main_group_state.clone());
 
     let on_close = props.on_close.clone();
 
@@ -66,7 +64,6 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
         let error_message_state = error_message_state.clone();
 
         let is_mod_state = is_mod_state.clone();
-        let is_main_group_state = is_main_group_state.clone();
         let error_state = error_state.clone();
         let loading_state = loading_state.clone();
         let created_state = created_state.clone();
@@ -82,7 +79,6 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
             let error_message_state = error_message_state.clone();
 
             let is_mod_state = is_mod_state.clone();
-            let is_main_group_state = is_main_group_state.clone();
             let error_state = error_state.clone();
             let loading_state = loading_state.clone();
             let created_state = created_state.clone();
@@ -95,8 +91,6 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
                 (*job_state).to_string(),
                 (*gear_level_state).to_string(),
                 *is_mod_state,
-                *is_main_group_state,
-                false,
             );
 
             yew::platform::spawn_local(async move {
@@ -114,9 +108,9 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
                         log::warn!("Failed to create user {}", err);
                         error_state.set(true);
                         if err.code == CONFLICT {
-                            error_message_state.set(AttrValue::from("Ein Mitglied mit diesem Namen existiert bereits"));
+                            error_message_state.set(AttrValue::from("Ein Benutzer mit diesem Namen existiert bereits"));
                         } else {
-                            error_message_state.set(AttrValue::from("Das Mitglied konnte nicht hinzugefügt werden, bitte wende dich an Azami"));
+                            error_message_state.set(AttrValue::from("Der Benutzer konnte nicht hinzugefügt werden, bitte wende dich an Azami"));
                         }
                         password_state.set(AttrValue::from(rand::thread_rng()
                             .sample_iter(&Alphanumeric)
@@ -131,7 +125,7 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
     };
 
     html!(
-        <PicoModal on_close={props.on_close.clone()} title="Mitglied hinzufügen" open={true} buttons={
+        <PicoModal on_close={props.on_close.clone()} title="Benutzer hinzufügen" open={true} buttons={
             html!(if *created_state {
                 <button onclick={move |_| on_close.clone().emit(())} type="button">{"Alles klar"}</button>
             } else {
@@ -147,7 +141,7 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
                     if *error_state {
                         <p data-msg="negative">{(*error_message_state).clone()}</p>
                     } else {
-                        <p data-msg="info">{"Füge ein neues Mitglied hinzu"}<br />{"Das Passwort wird angezeigt wenn das Mitglied erfolgreich hinzugefügt wurde"}</p>
+                        <p data-msg="info">{"Füge einen neuen Benutzer hinzu"}<br />{"Das Passwort wird angezeigt wenn der Benutzer erfolgreich hinzugefügt wurde"}</p>
                     }
                     <form id="create-user-modal-form" onsubmit={form_submit}>
                         <label for="username">{"Name"}</label>
@@ -160,10 +154,6 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
                             <label for="isMod">
                                 <input readonly={*loading_state} type="checkbox" id="isMod" name="isMod" role="switch" checked={*is_mod_state} onclick={update_is_mod} />
                                 {"Moderator"}
-                            </label>
-                            <label for="isMainGroup">
-                                <input readonly={*loading_state} type="checkbox" id="isMainGroup" name="isMainGroup" role="switch" checked={*is_main_group_state} onclick={update_is_main_group} />
-                                {"Mainkader"}
                             </label>
                         </fieldset>
                     </form>
@@ -178,8 +168,6 @@ enum UserConfirmActions {
     MakeMod(WebUser),
     RemoveMod(WebUser),
     Delete(WebUser),
-    MakeMain(WebUser),
-    RemoveMain(WebUser),
     ChangePassword(WebUser, String),
     Closed,
 }
@@ -304,8 +292,6 @@ fn table_body(props: &TableBodyProps) -> Html {
     let make_mod_click = use_callback(|user: WebUser, state| state.set(UserConfirmActions::MakeMod(user)), confirm_state.clone());
     let remove_mod_click = use_callback(|user: WebUser, state| state.set(UserConfirmActions::RemoveMod(user)), confirm_state.clone());
     let delete_click = use_callback(|user: WebUser, state| state.set(UserConfirmActions::Delete(user)), confirm_state.clone());
-    let make_main_click = use_callback(|user: WebUser, state| state.set(UserConfirmActions::MakeMain(user)), confirm_state.clone());
-    let remove_main_click = use_callback(|user: WebUser, state| state.set(UserConfirmActions::RemoveMain(user)), confirm_state.clone());
     let update_profile_click = use_callback(|user: WebUser, (profile_edit_state, profile_edit_data_state)| {
         profile_edit_state.set(true);
         profile_edit_data_state.set(user.clone());
@@ -347,7 +333,7 @@ fn table_body(props: &TableBodyProps) -> Html {
                                     CONFLICT
                                 }
                                 _ => {
-                                    error_message_state.set(AttrValue::from("Das Mitglied konnte nicht zum Mod gemacht werden, bitte wende dich an Azami"));
+                                    error_message_state.set(AttrValue::from("Der Benutzer konnte nicht zum Mod gemacht werden, bitte wende dich an Azami"));
                                     INTERNAL_SERVER_ERROR
                                 }
                             }
@@ -361,7 +347,7 @@ fn table_body(props: &TableBodyProps) -> Html {
                             }
                             Err(err) => match err.code {
                                 FORBIDDEN => {
-                                    error_message_state.set(AttrValue::from("Du musst Mod sein um Mitgliedern die Modrechte zu entziehen"));
+                                    error_message_state.set(AttrValue::from("Du musst Mod sein um Benutzern die Modrechte zu entziehen"));
                                     FORBIDDEN
                                 }
                                 CONFLICT => {
@@ -369,7 +355,7 @@ fn table_body(props: &TableBodyProps) -> Html {
                                     CONFLICT
                                 }
                                 _ => {
-                                    error_message_state.set(AttrValue::from("Dem Mitglied konnten die Modrechte nicht entzogen werden, bitte wende dich an Azami"));
+                                    error_message_state.set(AttrValue::from("Dem Benutzer konnten die Modrechte nicht entzogen werden, bitte wende dich an Azami"));
                                     INTERNAL_SERVER_ERROR
                                 }
                             }
@@ -383,7 +369,7 @@ fn table_body(props: &TableBodyProps) -> Html {
                             }
                             Err(err) => match err.code {
                                 FORBIDDEN => {
-                                    error_message_state.set(AttrValue::from("Du musst Mod sein um Mitgliedern zu entfernen"));
+                                    error_message_state.set(AttrValue::from("Du musst Mod sein um Benutzern zu entfernen"));
                                     FORBIDDEN
                                 }
                                 CONFLICT => {
@@ -391,51 +377,7 @@ fn table_body(props: &TableBodyProps) -> Html {
                                     CONFLICT
                                 }
                                 _ => {
-                                    error_message_state.set(AttrValue::from("Das Mitglied konnte nicht gelöscht werden, bitte wende dich an Azami"));
-                                    INTERNAL_SERVER_ERROR
-                                }
-                            }
-                        }
-                    }
-                    UserConfirmActions::MakeMain(user) => {
-                        match make_user_main(user.clone()).await {
-                            Ok(_) => {
-                                confirm_state.set(UserConfirmActions::Closed);
-                                NO_CONTENT
-                            }
-                            Err(err) => match err.code {
-                                FORBIDDEN => {
-                                    error_message_state.set(AttrValue::from("Du musst Mod sein um Mitgliedern in den Mainkader hinzuzufügen"));
-                                    FORBIDDEN
-                                }
-                                CONFLICT => {
-                                    error_message_state.set(AttrValue::from("Du kannst dich nicht selbst in den Mainkader hinzufügen"));
-                                    CONFLICT
-                                }
-                                _ => {
-                                    error_message_state.set(AttrValue::from("Das Mitglied konnte nicht in den Mainkader hinzugefügt werden, bitte wende dich an Azami"));
-                                    INTERNAL_SERVER_ERROR
-                                }
-                            }
-                        }
-                    }
-                    UserConfirmActions::RemoveMain(user) => {
-                        match remove_user_main(user.clone()).await {
-                            Ok(_) => {
-                                confirm_state.set(UserConfirmActions::Closed);
-                                NO_CONTENT
-                            }
-                            Err(err) => match err.code {
-                                FORBIDDEN => {
-                                    error_message_state.set(AttrValue::from("Du musst Mod sein um Mitgliedern aus dem Mainkader zu entfernen"));
-                                    FORBIDDEN
-                                }
-                                CONFLICT => {
-                                    error_message_state.set(AttrValue::from("Du kannst dich nicht selbst aus dem Mainkader entfernen"));
-                                    CONFLICT
-                                }
-                                _ => {
-                                    error_message_state.set(AttrValue::from("Das Mitglied konnte nicht aus dem Mainkader entfernt werden, bitte wende dich an Azami"));
+                                    error_message_state.set(AttrValue::from("Das Benutzer konnte nicht gelöscht werden, bitte wende dich an Azami"));
                                     INTERNAL_SERVER_ERROR
                                 }
                             }
@@ -507,7 +449,6 @@ fn table_body(props: &TableBodyProps) -> Html {
                         <th>{user.username.clone()}</th>
                         <td>{user.job.clone()}</td>
                         <td>{user.gear_level.clone()}</td>
-                        <td>{if user.is_main_group { "Ja" } else { "Nein" }}</td>
                         <td>{if user.is_mod { "Ja" } else { "Nein" }}</td>
                         if props.is_mod {
                             <td>
@@ -535,19 +476,6 @@ fn table_body(props: &TableBodyProps) -> Html {
                                                     <button onclick={move |_| make_mod_click.emit(user.clone())} type="button" class="outline">{"Zum Mod machen"}</button>
                                                 )
                                             }}
-                                            {if user.is_main_group {
-                                                let remove_main_click = remove_main_click.clone();
-                                                let user = user.clone();
-                                                html!(
-                                                    <button onclick={move |_| remove_main_click.emit(user.clone())} type="button" class="outline">{"Aus Mainkader entfernen"}</button>
-                                                )
-                                            } else {
-                                                let make_main_click = make_main_click.clone();
-                                                let user = user.clone();
-                                                html!(
-                                                    <button onclick={move |_| make_main_click.emit(user.clone())} type="button" class="outline">{"Zum Mainkader hinzufügen"}</button>
-                                                )
-                                            }}
                                             <button onclick={move |_| update_profile_click.emit(profile_user.clone())} type="button" class="outline">{"Profil bearbeiten"}</button>
                                             <button onclick={move |_| change_password_click.emit(password_user.clone())} type="button" class="outline">{"Passwort ändern"}</button>
                                             <button onclick={move |_| delete_click.emit(delete_user.clone())} type="button" class="outline">{"Entfernen"}</button>
@@ -563,19 +491,13 @@ fn table_body(props: &TableBodyProps) -> Html {
             </tbody>
             {match (*confirm_state).clone() {
                 UserConfirmActions::MakeMod(user) => html!(
-                    <PicoConfirm message={format!("Soll das Mitglied {} zum Mod gemacht werden?", user.username)} title="Zum Mod machen" open={true} on_decline={on_decline} on_confirm={on_confirm} confirm_label="Zum Mod machen" />
+                    <PicoConfirm message={format!("Soll der Benutzer {} zum Mod gemacht werden?", user.username)} title="Zum Mod machen" open={true} on_decline={on_decline} on_confirm={on_confirm} confirm_label="Zum Mod machen" />
                 ),
                 UserConfirmActions::RemoveMod(user) => html!(
-                    <PicoConfirm message={format!("Sollen dem Mitglied {} wirklich die Modrechte entzogen werden?", user.username)} title="Modrechte entziehen" open={true} on_decline={on_decline} on_confirm={on_confirm} confirm_label="Modrechte entziehen" />
+                    <PicoConfirm message={format!("Sollen dem Benutzer {} wirklich die Modrechte entzogen werden?", user.username)} title="Modrechte entziehen" open={true} on_decline={on_decline} on_confirm={on_confirm} confirm_label="Modrechte entziehen" />
                 ),
                 UserConfirmActions::Delete(user) => html!(
-                    <PicoConfirm message={format!("Soll das Mitglied {} wirklich entfernt werden?", user.username)} title="Mitglied entfernen" open={true} on_decline={on_decline} on_confirm={on_confirm} confirm_label="Mitglied entfernen" />
-                ),
-                UserConfirmActions::MakeMain(user) => html!(
-                    <PicoConfirm message={format!("Soll das Mitglied {} zum Mainkader hinzugefügt werden?", user.username)} title="Zum Mainkader hinzufügen" open={true} on_decline={on_decline} on_confirm={on_confirm} confirm_label="Zum Mainkader hinzufügen" />
-                ),
-                UserConfirmActions::RemoveMain(user) => html!(
-                    <PicoConfirm message={format!("Soll das Mitglied {} aus dem Mainkader entfernt werden?", user.username)} title="Aus Mainkader entfernen" open={true} on_decline={on_decline} on_confirm={on_confirm} confirm_label="Aus Mainkader entfernen" />
+                    <PicoConfirm message={format!("Soll der Benutzer {} wirklich entfernt werden?", user.username)} title="Benutzer entfernen" open={true} on_decline={on_decline} on_confirm={on_confirm} confirm_label="Benutzer entfernen" />
                 ),
                 UserConfirmActions::ChangePassword(user, password) => {
                     let on_decline = on_decline.clone();
@@ -608,7 +530,7 @@ fn table_body(props: &TableBodyProps) -> Html {
 
 #[function_component(CrewPage)]
 pub fn crew_page() -> Html {
-    log::debug!("Render crew page");
+    log::debug!("Render users page");
     log::debug!("Initialize state and callbacks");
     let current_user = use_atom_value::<CurrentUser>();
     let users_query_state = use_query_value::<Crew>(().into());
@@ -639,7 +561,7 @@ pub fn crew_page() -> Html {
         None => {
             log::debug!("Still loading");
             if !*initially_loaded_state {
-                return html!(<p data-msg="info">{"Die Crew wird geladen"}</p>);
+                return html!(<p data-msg="info">{"Die Benutzer werden geladen"}</p>);
             }
         }
         Some(Ok(users)) => {
@@ -649,18 +571,18 @@ pub fn crew_page() -> Html {
         }
         Some(Err(err)) => {
             log::warn!("Failed to load {}", err);
-            return html!(<p data-msg="negative">{"Die Crew konnte nicht geladen werden, bitte wende dich an Azami"}</p>);
+            return html!(<p data-msg="negative">{"Die Benutzer konnten nicht geladen werden, bitte wende dich an Azami"}</p>);
         }
     }
 
     html!(
         <>
-            <h1>{"Static „Sheef”"}</h1>
+            <h1>{"Benutzer"}</h1>
             if current_user.profile.is_mod {
                 <nav>
                     <ul>
                         <li>
-                            <button onclick={open_create_user_modal_click} type="button">{"Mitglied hinzufügen"}</button>
+                            <button onclick={open_create_user_modal_click} type="button">{"Benutzer hinzufügen"}</button>
                             {if *open_create_user_modal_state {
                                 html!(
                                     <CreateUserModal on_close={move |_| open_create_user_modal_state.clone().set(false)} />
@@ -679,7 +601,6 @@ pub fn crew_page() -> Html {
                         <th>{"Name"}</th>
                         <th>{"Job"}</th>
                         <th>{"Gear Level"}</th>
-                        <th>{"Mainkader"}</th>
                         <th>{"Moderator"}</th>
                         {if current_user.profile.is_mod {
                             html!(
