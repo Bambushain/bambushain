@@ -4,9 +4,9 @@ use std::rc::Rc;
 use actix_web::{body, dev, Error, HttpMessage};
 use futures_util::future::LocalBoxFuture;
 
-use sheef_dbal::prelude::*;
-use sheef_entities::prelude::*;
-use sheef_entities::sheef_unauthorized_error;
+use pandaparty_dbal::prelude::*;
+use pandaparty_entities::prelude::*;
+use pandaparty_entities::pandaparty_unauthorized_error;
 
 pub struct AuthenticationState {
     pub token: String,
@@ -52,7 +52,7 @@ impl<S, B> dev::Service<dev::ServiceRequest> for AuthenticateUserMiddleware<S>
         let svc = self.service.clone();
 
         Box::pin(async move {
-            let unauthorized = unauthorized!(sheef_unauthorized_error!("", "No auth present")).map_into_right_body();
+            let unauthorized = unauthorized!(pandaparty_unauthorized_error!("", "No auth present")).map_into_right_body();
             let request = req.request();
 
             let auth_header = match request.headers().get("Authorization") {
@@ -60,7 +60,7 @@ impl<S, B> dev::Service<dev::ServiceRequest> for AuthenticateUserMiddleware<S>
                 _ => return Ok(dev::ServiceResponse::new(request.clone(), unauthorized))
             };
 
-            let token = match auth_header.strip_prefix("Sheef ") {
+            let token = match auth_header.strip_prefix("Panda ") {
                 Some(token) => token,
                 _ => return Ok(dev::ServiceResponse::new(request.clone(), unauthorized))
             };

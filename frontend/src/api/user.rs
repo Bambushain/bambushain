@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use bounce::BounceStates;
 use bounce::query::{Query, QueryResult};
 
-use sheef_entities::prelude::*;
+use pandaparty_entities::prelude::*;
 
 use crate::api::{ApiError, delete, get, post, put, put_no_body, SheefApiResult};
 

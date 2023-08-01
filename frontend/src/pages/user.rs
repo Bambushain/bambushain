@@ -7,7 +7,7 @@ use rand::Rng;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
-use sheef_entities::prelude::*;
+use pandaparty_entities::prelude::*;
 
 use crate::api::{CONFLICT, FORBIDDEN, INTERNAL_SERVER_ERROR, NO_CONTENT, NOT_FOUND};
 use crate::api::user::{change_user_password, create_user, Crew, delete_user, make_user_mod, remove_user_mod, update_profile};

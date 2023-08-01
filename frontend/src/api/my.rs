@@ -5,7 +5,7 @@ use bounce::prelude::*;
 use bounce::query::{Mutation, MutationResult, Query, QueryResult};
 use serde::{Deserialize, Serialize};
 
-use sheef_entities::prelude::*;
+use pandaparty_entities::prelude::*;
 
 use crate::api::{ApiError, delete, get, put, put_no_body, SheefApiResult};
 use crate::api::authentication::login;

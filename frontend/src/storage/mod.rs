@@ -1,21 +1,21 @@
 use bounce::Atom;
 use gloo::storage::{LocalStorage, Storage};
-use sheef_entities::user::WebUser;
+use pandaparty_entities::user::WebUser;
 
 pub fn get_token() -> Option<String> {
-    LocalStorage::get("/sheef/token").ok()
+    LocalStorage::get("/pandaparty/token").ok()
 }
 
 pub fn set_token(token: String) {
-    _ = LocalStorage::set("/sheef/token", token);
+    _ = LocalStorage::set("/pandaparty/token", token);
 }
 
 pub fn delete_token() {
-    LocalStorage::delete("/sheef/token");
+    LocalStorage::delete("/pandaparty/token");
 }
 
 pub fn get_log_level() -> Option<String> {
-    LocalStorage::get("/sheef/log/level").ok()
+    LocalStorage::get("/pandaparty/log/level").ok()
 }
 
 pub fn is_logging_on() -> bool {

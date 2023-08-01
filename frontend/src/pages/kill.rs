@@ -72,7 +72,7 @@ pub fn kill_page() -> Html {
                     Err(err) => match err.code {
                         NOT_FOUND => {
                             log::warn!("User or kill not found");
-                            error_message_state.set(AttrValue::from(if err.sheef_error.entity_type == "kill".to_string() {
+                            error_message_state.set(AttrValue::from(if err.pandaparty_error.entity_type == "kill".to_string() {
                                 "Der Kill konnte nicht gefunden werden"
                             } else {
                                 "Das Crewmitglied konnte nicht gefunden werden"
@@ -136,7 +136,7 @@ pub fn kill_page() -> Html {
                     Err(err) => match err.code {
                         NOT_FOUND => {
                             log::warn!("User or kill not found");
-                            error_message_state.set(AttrValue::from(if err.sheef_error.entity_type == "kill".to_string() {
+                            error_message_state.set(AttrValue::from(if err.pandaparty_error.entity_type == "kill".to_string() {
                                 "Der Kill konnte nicht gefunden werden"
                             } else {
                                 "Das Crewmitglied konnte nicht gefunden werden"

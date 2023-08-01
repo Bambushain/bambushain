@@ -6,7 +6,7 @@ use yew::prelude::*;
 use yew_feather::{Key, LogOut, User};
 use yew_router::prelude::*;
 
-use sheef_entities::prelude::*;
+use pandaparty_entities::prelude::*;
 
 use crate::api::{FORBIDDEN, NOT_FOUND};
 use crate::api::authentication::logout;
@@ -313,7 +313,7 @@ fn update_my_profile_dialog(props: &UpdateMyProfileDialogProps) -> Html {
 }
 
 #[function_component(SheefLayout)]
-pub fn sheef_layout() -> Html {
+pub fn pandaparty_layout() -> Html {
     let authentication_state_query = use_query_value::<Profile>(().into());
 
     let navigator = use_navigator();
@@ -371,7 +371,7 @@ pub fn sheef_layout() -> Html {
                         <BrowserRouter>
                             <nav class="container-fluid">
                                 <ul>
-                                    <li><strong>{"Sheef"}</strong></li>
+                                    <li><strong>{"Pandaparty"}</strong></li>
                                     <li><Link<SheefRoute> to={SheefRoute::Calendar}>{"Kalender"}</Link<SheefRoute>></li>
                                     <li><Link<SheefRoute> to={SheefRoute::Benutzer}>{"Benutzer"}</Link<SheefRoute>></li>
                                     <li><Link<SheefRoute> to={SheefRoute::Crafter}>{"Crafter"}</Link<SheefRoute>></li>
@@ -382,7 +382,7 @@ pub fn sheef_layout() -> Html {
                                 </ul>
                                 <ul>
                                     <li role="list" dir="rtl">
-                                        <a href="#" aria-haspopup="listbox">{format!("{}s Sheef", profile.user.username.clone())}</a>
+                                        <a href="#" aria-haspopup="listbox">{format!("{}s Pandaparty", profile.user.username.clone())}</a>
                                         <ul role="listbox">
                                             <li>
                                                 <a href="#" onclick={update_my_profile_click}>

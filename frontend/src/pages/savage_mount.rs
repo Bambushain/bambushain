@@ -73,7 +73,7 @@ pub fn savage_mount_page() -> Html {
                     Err(err) => match err.code {
                         NOT_FOUND => {
                             log::warn!("User or savage mount not found");
-                            error_message_state.set(AttrValue::from(if err.sheef_error.entity_type == "savage-mount".to_string() {
+                            error_message_state.set(AttrValue::from(if err.pandaparty_error.entity_type == "savage-mount".to_string() {
                                 "Das Savage Mount konnte nicht gefunden werden"
                             } else {
                                 "Das Crewmitglied konnte nicht gefunden werden"
@@ -138,7 +138,7 @@ pub fn savage_mount_page() -> Html {
                     Err(err) => match err.code {
                         NOT_FOUND => {
                             log::warn!("User or savage mount not found");
-                            error_message_state.set(AttrValue::from(if err.sheef_error.entity_type == "savage-mount".to_string() {
+                            error_message_state.set(AttrValue::from(if err.pandaparty_error.entity_type == "savage-mount".to_string() {
                                 "Das Savage Mount konnte nicht gefunden werden"
                             } else {
                                 "Das Crewmitglied konnte nicht gefunden werden"

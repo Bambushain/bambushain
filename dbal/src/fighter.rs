@@ -3,8 +3,8 @@ use sea_orm::ActiveValue::Set;
 use sea_orm::prelude::*;
 use sea_orm::sea_query::Expr;
 
-use sheef_entities::{fighter, sheef_db_error, user};
-use sheef_entities::prelude::*;
+use pandaparty_entities::{fighter, pandaparty_db_error, user};
+use pandaparty_entities::prelude::*;
 use crate::user::get_user;
 
 pub async fn get_fighters(username: String) -> SheefResult<Vec<Fighter>> {
@@ -18,7 +18,7 @@ pub async fn get_fighters(username: String) -> SheefResult<Vec<Fighter>> {
         .await
         .map_err(|err| {
             log::error!("{err}");
-            sheef_db_error!("fighter", "Failed to load fighters")
+            pandaparty_db_error!("fighter", "Failed to load fighters")
         })
 }
 
@@ -32,10 +32,10 @@ pub async fn get_fighter(username: String, job: String) -> SheefResult<Fighter> 
         .one(&db)
         .await {
         Ok(Some(res)) => Ok(res),
-        Ok(None) => Err(sheef_not_found_error!("fighter", "The fighter was not found")),
+        Ok(None) => Err(pandaparty_not_found_error!("fighter", "The fighter was not found")),
         Err(err) => {
             log::error!("{err}");
-            Err(sheef_db_error!("fighter", "Failed to execute database query"))
+            Err(pandaparty_db_error!("fighter", "Failed to execute database query"))
         }
     }
 }
@@ -63,7 +63,7 @@ pub async fn create_fighter(username: String, fighter: Fighter) -> SheefResult<F
         .await
         .map_err(|err| {
             log::error!("{err}");
-            sheef_db_error!("fighter", "Failed to create fighter")
+            pandaparty_db_error!("fighter", "Failed to create fighter")
         })
 }
 
@@ -87,7 +87,7 @@ pub async fn update_fighter(username: String, job: String, fighter: Fighter) -> 
         .await
         .map_err(|err| {
             log::error!("{err}");
-            sheef_db_error!("fighter", "Failed to update fighter")
+            pandaparty_db_error!("fighter", "Failed to update fighter")
         })
         .map(|_| ())
 }
@@ -109,7 +109,7 @@ pub async fn delete_fighter(username: String, job: String) -> SheefErrorResult {
         .await
         .map_err(|err| {
             log::error!("{err}");
-            sheef_db_error!("fighter", "Failed to delete fighter")
+            pandaparty_db_error!("fighter", "Failed to delete fighter")
         })
         .map(|_| ())
 }

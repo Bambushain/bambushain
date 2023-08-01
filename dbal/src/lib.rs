@@ -10,7 +10,7 @@ macro_rules! open_db_connection {
                 Ok(db) => db,
                 Err(err) => {
                     log::error!("Failed to open database connection: {err}");
-                    return Err(sheef_entities::sheef_db_error!("database", "Failed to open database connection"))
+                    return Err(pandaparty_entities::pandaparty_db_error!("database", "Failed to open database connection"))
                 }
             }
         }

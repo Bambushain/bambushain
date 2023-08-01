@@ -4,8 +4,8 @@ use sea_orm::{IntoActiveModel, NotSet};
 use sea_orm::ActiveValue::Set;
 use sea_orm::prelude::*;
 
-use sheef_entities::{savage_mount, savage_mount_to_user, sheef_db_error, user};
-use sheef_entities::prelude::*;
+use pandaparty_entities::{savage_mount, savage_mount_to_user, pandaparty_db_error, user};
+use pandaparty_entities::prelude::*;
 use crate::user::get_user;
 
 pub async fn get_savage_mount(savage_mount: String) -> SheefResult<SavageMount> {
@@ -16,10 +16,10 @@ pub async fn get_savage_mount(savage_mount: String) -> SheefResult<SavageMount> 
         .one(&db)
         .await {
         Ok(Some(savage_mount)) => Ok(savage_mount),
-        Ok(None) => Err(sheef_not_found_error!("savage-mount", "Savage mount was not found")),
+        Ok(None) => Err(pandaparty_not_found_error!("savage-mount", "Savage mount was not found")),
         Err(err) => {
             log::error!("{err}");
-            Err(sheef_db_error!("savage-mount", "Failed to load savage mount"))
+            Err(pandaparty_db_error!("savage-mount", "Failed to load savage mount"))
         }
     }
 }
@@ -38,7 +38,7 @@ pub async fn activate_savage_mount_for_user(savage_mount: String, username: Stri
     };
     let savage_mount = match get_savage_mount(savage_mount).await {
         Ok(savage_mount) => savage_mount,
-        Err(_) => return Err(sheef_not_found_error!("savage-mount", "Savage mount was not found"))
+        Err(_) => return Err(pandaparty_not_found_error!("savage-mount", "Savage mount was not found"))
     };
 
     let db = open_db_connection!();
@@ -64,7 +64,7 @@ pub async fn activate_savage_mount_for_user(savage_mount: String, username: Stri
         .await
         .map_err(|err| {
             log::error!("{err}");
-            sheef_db_error!("savage-mount", "Failed to create savage mount for user")
+            pandaparty_db_error!("savage-mount", "Failed to create savage mount for user")
         })
         .map(|_| ())
 }
@@ -79,7 +79,7 @@ pub async fn deactivate_savage_mount_for_user(savage_mount: String, username: St
     };
     let savage_mount = match get_savage_mount(savage_mount).await {
         Ok(savage_mount) => savage_mount,
-        Err(_) => return Err(sheef_not_found_error!("savage-mount", "Savage mount was not found"))
+        Err(_) => return Err(pandaparty_not_found_error!("savage-mount", "Savage mount was not found"))
     };
 
     let db = open_db_connection!();
@@ -90,7 +90,7 @@ pub async fn deactivate_savage_mount_for_user(savage_mount: String, username: St
         .await
         .map_err(|err| {
             log::error!("{err}");
-            sheef_db_error!("savage-mount", "Failed to remove savage mount from user")
+            pandaparty_db_error!("savage-mount", "Failed to remove savage mount from user")
         })
         .map(|_| ())
 }
@@ -104,7 +104,7 @@ pub async fn delete_savage_mount(savage_mount: String) -> SheefErrorResult {
         .await
         .map_err(|err| {
             log::error!("{err}");
-            sheef_db_error!("savage-mount", "Failed to delete savage mount")
+            pandaparty_db_error!("savage-mount", "Failed to delete savage mount")
         })
         .map(|_| ())
 }
@@ -119,7 +119,7 @@ pub async fn create_savage_mount(savage_mount: SavageMount) -> SheefResult<Savag
         .await
         .map_err(|err| {
             log::error!("{err}");
-            sheef_db_error!("savage-mount", "Failed to create savage mount")
+            pandaparty_db_error!("savage-mount", "Failed to create savage mount")
         })
 }
 
@@ -137,7 +137,7 @@ pub async fn update_savage_mount(savage_mount: String, name: String) -> SheefErr
         .await
         .map_err(|err| {
             log::error!("{err}");
-            sheef_db_error!("savage-mount", "Failed to update savage mount")
+            pandaparty_db_error!("savage-mount", "Failed to update savage mount")
         })
         .map(|_| ())
 }
@@ -152,7 +152,7 @@ pub async fn get_savage_mounts() -> SheefResult<BTreeMap<String, Vec<String>>> {
         Ok(result) => result,
         Err(err) => {
             log::error!("{err}");
-            return Err(sheef_db_error!("savage-mount", "Failed to load savage mounts"));
+            return Err(pandaparty_db_error!("savage-mount", "Failed to load savage mounts"));
         }
     };
 

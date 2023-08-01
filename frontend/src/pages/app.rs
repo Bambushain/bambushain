@@ -22,9 +22,9 @@ fn switch(route: AppRoute) -> Html {
 
 fn format_title(s: AttrValue) -> AttrValue {
     if s.is_empty() {
-        AttrValue::from("Sheef Planung")
+        AttrValue::from("Pandaparty")
     } else {
-        AttrValue::from(format!("{} – Sheef Planung", s))
+        AttrValue::from(format!("{} – Pandaparty", s))
     }
 }
 
@@ -32,7 +32,7 @@ fn format_title(s: AttrValue) -> AttrValue {
 pub fn app() -> Html {
     html!(
         <BounceRoot>
-            <HelmetBridge default_title="Sheef Planung" format_title={format_title} />
+            <HelmetBridge default_title="Pandaparty" format_title={format_title} />
             <BrowserRouter>
                 <Switch<AppRoute> render={switch}/>
             </BrowserRouter>

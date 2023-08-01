@@ -73,7 +73,7 @@ pub fn mount_page() -> Html {
                     Err(err) => match err.code {
                         NOT_FOUND => {
                             log::warn!("User or mount not found");
-                            error_message_state.set(AttrValue::from(if err.sheef_error.entity_type == "mount".to_string() {
+                            error_message_state.set(AttrValue::from(if err.pandaparty_error.entity_type == "mount".to_string() {
                                 "Das Mount konnte nicht gefunden werden"
                             } else {
                                 "Das Crewmitglied konnte nicht gefunden werden"
@@ -138,7 +138,7 @@ pub fn mount_page() -> Html {
                     Err(err) => match err.code {
                         NOT_FOUND => {
                             log::warn!("User or mount not found");
-                            error_message_state.set(AttrValue::from(if err.sheef_error.entity_type == "mount".to_string() {
+                            error_message_state.set(AttrValue::from(if err.pandaparty_error.entity_type == "mount".to_string() {
                                 "Das Mount konnte nicht gefunden werden"
                             } else {
                                 "Das Crewmitglied konnte nicht gefunden werden"

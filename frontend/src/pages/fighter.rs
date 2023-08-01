@@ -2,7 +2,7 @@ use bounce::query::use_query_value;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
-use sheef_entities::prelude::*;
+use pandaparty_entities::prelude::*;
 
 use crate::api::{CONFLICT, NOT_FOUND};
 use crate::api::fighter::{create_fighter, delete_fighter, MyFighter, update_fighter};

@@ -1,7 +1,7 @@
 use std::ops::Deref;
 use std::rc::Rc;
 
-use sheef_entities::prelude::*;
+use pandaparty_entities::prelude::*;
 
 use crate::api::{delete, post, SheefApiResult};
 use crate::storage::delete_token;

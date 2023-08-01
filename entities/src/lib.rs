@@ -20,7 +20,7 @@ pub mod calendar;
 pub mod status;
 
 pub mod prelude {
-    pub use crate::{sheef_exists_already_error, sheef_insufficient_rights_error, sheef_invalid_data_error, sheef_not_found_error, sheef_unknown_error, sheef_validation_error};
+    pub use crate::{pandaparty_exists_already_error, pandaparty_insufficient_rights_error, pandaparty_invalid_data_error, pandaparty_not_found_error, pandaparty_unknown_error, pandaparty_validation_error};
     pub use crate::authentication::*;
     pub use crate::calendar::*;
     pub use crate::crafter::Model as Crafter;

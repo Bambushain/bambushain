@@ -3,29 +3,29 @@ use std::sync::Arc;
 use actix_web::{App, HttpResponse, HttpServer};
 use actix_web::web;
 
-use sheef_backend::broadcaster::calendar::CalendarBroadcaster;
-use sheef_backend::broadcaster::crew::CrewBroadcaster;
-use sheef_backend::broadcaster::kill::KillBroadcaster;
-use sheef_backend::broadcaster::mount::MountBroadcaster;
-use sheef_backend::broadcaster::savage_mount::SavageMountBroadcaster;
-use sheef_backend::middleware::authenticate_user::AuthenticateUser;
-use sheef_backend::middleware::check_mod::CheckMod;
-use sheef_backend::routes::authentication::{login, logout};
-use sheef_backend::routes::calendar::{get_calendar, get_day_details, update_day_details};
-use sheef_backend::routes::crafter::{create_crafter, delete_crafter, get_crafter, get_crafters, update_crafter};
-use sheef_backend::routes::fighter::{create_fighter, delete_fighter, get_fighter, get_fighters, update_fighter};
-use sheef_backend::routes::kill::{activate_kill_for_me, activate_kill_for_user, create_kill, deactivate_kill_for_me, deactivate_kill_for_user, delete_kill, get_kills, update_kill};
-use sheef_backend::routes::mount::{activate_mount_for_me, activate_mount_for_user, create_mount, deactivate_mount_for_me, deactivate_mount_for_user, delete_mount, get_mounts, update_mount};
-use sheef_backend::routes::savage_mount::{activate_savage_mount_for_me, activate_savage_mount_for_user, create_savage_mount, deactivate_savage_mount_for_me, deactivate_savage_mount_for_user, delete_savage_mount, get_savage_mounts, update_savage_mount};
-use sheef_backend::routes::user::{add_mod_user, change_my_password, change_password, create_user, delete_user, get_profile, get_user, get_users, remove_mod_user, update_profile, update_user_profile};
-use sheef_backend::sse::calendar::calendar_sse_client;
-use sheef_backend::sse::crew::crew_sse_client;
-use sheef_backend::sse::kill::kill_sse_client;
-use sheef_backend::sse::mount::mount_sse_client;
-use sheef_backend::sse::NotificationState;
-use sheef_backend::sse::savage_mount::savage_mount_sse_client;
-use sheef_dbal::open_db_connection_with_error;
-use sheef_migration::{IntoSchemaManagerConnection, Migrator, MigratorTrait};
+use pandaparty_backend::broadcaster::calendar::CalendarBroadcaster;
+use pandaparty_backend::broadcaster::crew::CrewBroadcaster;
+use pandaparty_backend::broadcaster::kill::KillBroadcaster;
+use pandaparty_backend::broadcaster::mount::MountBroadcaster;
+use pandaparty_backend::broadcaster::savage_mount::SavageMountBroadcaster;
+use pandaparty_backend::middleware::authenticate_user::AuthenticateUser;
+use pandaparty_backend::middleware::check_mod::CheckMod;
+use pandaparty_backend::routes::authentication::{login, logout};
+use pandaparty_backend::routes::calendar::{get_calendar, get_day_details, update_day_details};
+use pandaparty_backend::routes::crafter::{create_crafter, delete_crafter, get_crafter, get_crafters, update_crafter};
+use pandaparty_backend::routes::fighter::{create_fighter, delete_fighter, get_fighter, get_fighters, update_fighter};
+use pandaparty_backend::routes::kill::{activate_kill_for_me, activate_kill_for_user, create_kill, deactivate_kill_for_me, deactivate_kill_for_user, delete_kill, get_kills, update_kill};
+use pandaparty_backend::routes::mount::{activate_mount_for_me, activate_mount_for_user, create_mount, deactivate_mount_for_me, deactivate_mount_for_user, delete_mount, get_mounts, update_mount};
+use pandaparty_backend::routes::savage_mount::{activate_savage_mount_for_me, activate_savage_mount_for_user, create_savage_mount, deactivate_savage_mount_for_me, deactivate_savage_mount_for_user, delete_savage_mount, get_savage_mounts, update_savage_mount};
+use pandaparty_backend::routes::user::{add_mod_user, change_my_password, change_password, create_user, delete_user, get_profile, get_user, get_users, remove_mod_user, update_profile, update_user_profile};
+use pandaparty_backend::sse::calendar::calendar_sse_client;
+use pandaparty_backend::sse::crew::crew_sse_client;
+use pandaparty_backend::sse::kill::kill_sse_client;
+use pandaparty_backend::sse::mount::mount_sse_client;
+use pandaparty_backend::sse::NotificationState;
+use pandaparty_backend::sse::savage_mount::savage_mount_sse_client;
+use pandaparty_dbal::open_db_connection_with_error;
+use pandaparty_migration::{IntoSchemaManagerConnection, Migrator, MigratorTrait};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -34,7 +34,7 @@ async fn main() -> std::io::Result<()> {
         .init()
         .unwrap();
 
-    log::info!("Running sheef planing on :8070");
+    log::info!("Start the Pandaparty");
 
     let db = match open_db_connection_with_error!() {
         Ok(db) => db,
@@ -55,6 +55,7 @@ async fn main() -> std::io::Result<()> {
     let base_path = std::env::var("FRONTEND_DIR").unwrap_or(".".to_string());
     log::info!("Frontend base path: {base_path}");
 
+    log::info!("Serving on port 8070");
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(NotificationState {

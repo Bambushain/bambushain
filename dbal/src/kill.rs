@@ -4,8 +4,8 @@ use sea_orm::{IntoActiveModel, NotSet};
 use sea_orm::ActiveValue::Set;
 use sea_orm::prelude::*;
 
-use sheef_entities::{kill, kill_to_user, sheef_db_error, user};
-use sheef_entities::prelude::*;
+use pandaparty_entities::{kill, kill_to_user, pandaparty_db_error, user};
+use pandaparty_entities::prelude::*;
 use crate::user::get_user;
 
 pub async fn get_kill(kill: String) -> SheefResult<Kill> {
@@ -16,10 +16,10 @@ pub async fn get_kill(kill: String) -> SheefResult<Kill> {
         .one(&db)
         .await {
         Ok(Some(kill)) => Ok(kill),
-        Ok(None) => Err(sheef_not_found_error!("kill", "Kill was not found")),
+        Ok(None) => Err(pandaparty_not_found_error!("kill", "Kill was not found")),
         Err(err) => {
             log::error!("{err}");
-            Err(sheef_db_error!("kill", "Failed to load kill"))
+            Err(pandaparty_db_error!("kill", "Failed to load kill"))
         }
     }
 }
@@ -38,7 +38,7 @@ pub async fn activate_kill_for_user(kill: String, username: String) -> SheefErro
     };
     let kill = match get_kill(kill).await {
         Ok(kill) => kill,
-        Err(_) => return Err(sheef_not_found_error!("kill", "Kill was not found"))
+        Err(_) => return Err(pandaparty_not_found_error!("kill", "Kill was not found"))
     };
 
     let db = open_db_connection!();
@@ -64,7 +64,7 @@ pub async fn activate_kill_for_user(kill: String, username: String) -> SheefErro
         .await
         .map_err(|err| {
             log::error!("{err}");
-            sheef_db_error!("kill", "Failed to create kill for user")
+            pandaparty_db_error!("kill", "Failed to create kill for user")
         })
         .map(|_| ())
 }
@@ -79,7 +79,7 @@ pub async fn deactivate_kill_for_user(kill: String, username: String) -> SheefEr
     };
     let kill = match get_kill(kill).await {
         Ok(kill) => kill,
-        Err(_) => return Err(sheef_not_found_error!("kill", "Kill was not found"))
+        Err(_) => return Err(pandaparty_not_found_error!("kill", "Kill was not found"))
     };
 
     let db = open_db_connection!();
@@ -90,7 +90,7 @@ pub async fn deactivate_kill_for_user(kill: String, username: String) -> SheefEr
         .await
         .map_err(|err| {
             log::error!("{err}");
-            sheef_db_error!("kill", "Failed to remove kill from user")
+            pandaparty_db_error!("kill", "Failed to remove kill from user")
         })
         .map(|_| ())
 }
@@ -104,7 +104,7 @@ pub async fn delete_kill(kill: String) -> SheefErrorResult {
         .await
         .map_err(|err| {
             log::error!("{err}");
-            sheef_db_error!("kill", "Failed to delete kill")
+            pandaparty_db_error!("kill", "Failed to delete kill")
         })
         .map(|_| ())
 }
@@ -119,7 +119,7 @@ pub async fn create_kill(kill: Kill) -> SheefResult<Kill> {
         .await
         .map_err(|err| {
             log::error!("{err}");
-            sheef_db_error!("kill", "Failed to create kill")
+            pandaparty_db_error!("kill", "Failed to create kill")
         })
 }
 
@@ -137,7 +137,7 @@ pub async fn update_kill(kill: String, name: String) -> SheefErrorResult {
         .await
         .map_err(|err| {
             log::error!("{err}");
-            sheef_db_error!("kill", "Failed to update kill")
+            pandaparty_db_error!("kill", "Failed to update kill")
         })
         .map(|_| ())
 }
@@ -152,7 +152,7 @@ pub async fn get_kills() -> SheefResult<BTreeMap<String, Vec<String>>> {
         Ok(result) => result,
         Err(err) => {
             log::error!("{err}");
-            return Err(sheef_db_error!("kill", "Failed to load kills"));
+            return Err(pandaparty_db_error!("kill", "Failed to load kills"));
         }
     };
 

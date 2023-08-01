@@ -2,8 +2,8 @@ use chrono::{Datelike, Days, Months, NaiveDate};
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel, JoinType, NotSet, QueryFilter, QueryOrder, QuerySelect, RelationTrait};
 use sea_orm::ActiveValue::Set;
 
-use sheef_entities::{event, sheef_db_error, user};
-use sheef_entities::prelude::*;
+use pandaparty_entities::{event, pandaparty_db_error, user};
+use pandaparty_entities::prelude::*;
 
 use crate::prelude::get_user;
 use crate::user::get_users;
@@ -17,7 +17,7 @@ async fn get_events_for_day(db: &DatabaseConnection, date: NaiveDate) -> SheefRe
         Ok(events) => Ok(events),
         Err(err) => {
             log::error!("{err}");
-            Err(sheef_db_error!("calendar", "Failed to load events for date"))
+            Err(pandaparty_db_error!("calendar", "Failed to load events for date"))
         }
     }
 }
@@ -34,7 +34,7 @@ pub async fn get_events_for_month(year: i32, month: u32) -> SheefResult<Calendar
         Ok(users) => users,
         Err(err) => {
             log::error!("{err}");
-            return Err(sheef_db_error!("calendar", "Failed to load users"));
+            return Err(pandaparty_db_error!("calendar", "Failed to load users"));
         }
     };
 
@@ -101,10 +101,10 @@ pub async fn get_event(username: String, date: NaiveDate) -> SheefResult<Event> 
         .one(&db)
         .await {
         Ok(Some(event)) => Ok(event),
-        Ok(None) => Err(sheef_not_found_error!("event", "The event was not found")),
+        Ok(None) => Err(pandaparty_not_found_error!("event", "The event was not found")),
         Err(err) => {
             log::error!("{err}");
-            Err(sheef_not_found_error!("event", "Failed to load event"))
+            Err(pandaparty_not_found_error!("event", "Failed to load event"))
         }
     }
 }
@@ -138,7 +138,7 @@ pub async fn set_event(username: String, set_event: SetEvent, date: NaiveDate) -
         .await
         .map_err(|err| {
             log::error!("{err}");
-            sheef_db_error!("event", "Failed to create event")
+            pandaparty_db_error!("event", "Failed to create event")
         })
         .map(|_| ())
 }

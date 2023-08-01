@@ -4,8 +4,8 @@ use sea_orm::{IntoActiveModel, NotSet};
 use sea_orm::ActiveValue::Set;
 use sea_orm::prelude::*;
 
-use sheef_entities::{mount, mount_to_user, sheef_db_error, user};
-use sheef_entities::prelude::*;
+use pandaparty_entities::{mount, mount_to_user, pandaparty_db_error, user};
+use pandaparty_entities::prelude::*;
 use crate::user::get_user;
 
 pub async fn get_mount(mount: String) -> SheefResult<Mount> {
@@ -16,10 +16,10 @@ pub async fn get_mount(mount: String) -> SheefResult<Mount> {
         .one(&db)
         .await {
         Ok(Some(mount)) => Ok(mount),
-        Ok(None) => Err(sheef_not_found_error!("mount", "Mount was not found")),
+        Ok(None) => Err(pandaparty_not_found_error!("mount", "Mount was not found")),
         Err(err) => {
             log::error!("{err}");
-            Err(sheef_db_error!("mount", "Failed to load mount"))
+            Err(pandaparty_db_error!("mount", "Failed to load mount"))
         }
     }
 }
@@ -38,7 +38,7 @@ pub async fn activate_mount_for_user(mount: String, username: String) -> SheefEr
     };
     let mount = match get_mount(mount).await {
         Ok(mount) => mount,
-        Err(_) => return Err(sheef_not_found_error!("mount", "Mount was not found"))
+        Err(_) => return Err(pandaparty_not_found_error!("mount", "Mount was not found"))
     };
 
     let db = open_db_connection!();
@@ -64,7 +64,7 @@ pub async fn activate_mount_for_user(mount: String, username: String) -> SheefEr
         .await
         .map_err(|err| {
             log::error!("{err}");
-            sheef_db_error!("mount", "Failed to create mount for user")
+            pandaparty_db_error!("mount", "Failed to create mount for user")
         })
         .map(|_| ())
 }
@@ -79,7 +79,7 @@ pub async fn deactivate_mount_for_user(mount: String, username: String) -> Sheef
     };
     let mount = match get_mount(mount).await {
         Ok(mount) => mount,
-        Err(_) => return Err(sheef_not_found_error!("mount", "Mount was not found"))
+        Err(_) => return Err(pandaparty_not_found_error!("mount", "Mount was not found"))
     };
 
     let db = open_db_connection!();
@@ -90,7 +90,7 @@ pub async fn deactivate_mount_for_user(mount: String, username: String) -> Sheef
         .await
         .map_err(|err| {
             log::error!("{err}");
-            sheef_db_error!("mount", "Failed to remove mount from user")
+            pandaparty_db_error!("mount", "Failed to remove mount from user")
         })
         .map(|_| ())
 }
@@ -104,7 +104,7 @@ pub async fn delete_mount(mount: String) -> SheefErrorResult {
         .await
         .map_err(|err| {
             log::error!("{err}");
-            sheef_db_error!("mount", "Failed to delete mount")
+            pandaparty_db_error!("mount", "Failed to delete mount")
         })
         .map(|_| ())
 }
@@ -119,7 +119,7 @@ pub async fn create_mount(mount: Mount) -> SheefResult<Mount> {
         .await
         .map_err(|err| {
             log::error!("{err}");
-            sheef_db_error!("mount", "Failed to create mount")
+            pandaparty_db_error!("mount", "Failed to create mount")
         })
 }
 
@@ -137,7 +137,7 @@ pub async fn update_mount(mount: String, name: String) -> SheefErrorResult {
         .await
         .map_err(|err| {
             log::error!("{err}");
-            sheef_db_error!("mount", "Failed to update mount")
+            pandaparty_db_error!("mount", "Failed to update mount")
         })
         .map(|_| ())
 }
@@ -152,7 +152,7 @@ pub async fn get_mounts() -> SheefResult<BTreeMap<String, Vec<String>>> {
         Ok(result) => result,
         Err(err) => {
             log::error!("{err}");
-            return Err(sheef_db_error!("mount", "Failed to load mounts"));
+            return Err(pandaparty_db_error!("mount", "Failed to load mounts"));
         }
     };
 

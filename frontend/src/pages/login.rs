@@ -5,13 +5,12 @@ use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew_feather::LogIn;
 use yew_router::hooks::use_navigator;
-use yew_router::prelude::*;
 
-use sheef_entities::prelude::*;
+use pandaparty_entities::prelude::*;
 
 use crate::api::my::Profile;
 use crate::routing::AppRoute;
-use crate::storage::{CurrentUser, get_token};
+use crate::storage::CurrentUser;
 
 #[function_component(LoginPage)]
 pub fn login_page() -> Html {
@@ -63,39 +62,30 @@ pub fn login_page() -> Html {
     let update_username = use_callback(|evt: InputEvent, state| state.set(evt.target_unchecked_into::<HtmlInputElement>().value().into()), username_state.clone());
     let update_password = use_callback(|evt: InputEvent, state| state.set(evt.target_unchecked_into::<HtmlInputElement>().value().into()), password_state.clone());
 
-    if get_token().is_none() {
-        html!(
-            <>
-                <Helmet>
-                    <title>{"Login"}</title>
-                </Helmet>
-                <main class="container login" data-theme="light">
-                    <article class="grid">
-                        <div>
-                            <hgroup>
-                                <h1>{"Anmelden"}</h1>
-                                <h2>{"\"Das geht bestimmt sheef\", dafür stehen wir mit unserem Namen"}</h2>
-                            </hgroup>
-                            {if *error_state {
-                                html!(<p data-msg="negative">{"Deine Anmeldedaten sind falsch"}</p>)
-                            } else {
-                                html!(<p data-msg="info">{"Gib deine Anmeldedaten ein"}</p>)
-                            }}
-                            <form onsubmit={submit}>
-                                <input readonly={*loading_state} oninput={update_username} value={(*username_state).clone()} type="text" name="username" placeholder="Name" aria-label="Name" required=true />
-                                <input readonly={*loading_state} oninput={update_password} value={(*password_state).clone()} type="password" name="password" placeholder="Passwort" aria-label="Passwort"
-                                       autocomplete="current-password" required=true />
-                                <button disabled={*loading_state} type="submit" class="contrast"><span class="small-gap-row"><LogIn color={"var(--color)"} />{"Anmelden"}</span></button>
-                            </form>
-                        </div>
-                        <div></div>
-                    </article>
-                </main>
-            </>
-        )
-    } else {
-        html!(
-            <Redirect<AppRoute> to={AppRoute::Sheef} />
-        )
-    }
+    html!(
+        <>
+            <Helmet>
+                <title>{"Login"}</title>
+            </Helmet>
+            <main class="container login" data-theme="light">
+                <article class="grid">
+                    <div>
+                        <h1>{"Anmelden"}</h1>
+                        {if *error_state {
+                            html!(<p data-msg="negative">{"Deine Anmeldedaten sind falsch"}</p>)
+                        } else {
+                            html!(<p data-msg="info">{"Gib deine Anmeldedaten ein"}</p>)
+                        }}
+                        <form onsubmit={submit}>
+                            <input readonly={*loading_state} oninput={update_username} value={(*username_state).clone()} type="text" name="username" placeholder="Name" aria-label="Name" required=true />
+                            <input readonly={*loading_state} oninput={update_password} value={(*password_state).clone()} type="password" name="password" placeholder="Passwort" aria-label="Passwort"
+                                   autocomplete="current-password" required=true />
+                            <button disabled={*loading_state} type="submit" class="contrast"><span class="small-gap-row"><LogIn color={"var(--color)"} />{"Anmelden"}</span></button>
+                        </form>
+                    </div>
+                    <div></div>
+                </article>
+            </main>
+        </>
+    )
 }

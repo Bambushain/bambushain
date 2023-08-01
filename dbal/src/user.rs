@@ -1,18 +1,18 @@
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, IntoActiveModel, JoinType, NotSet, QueryFilter, QueryOrder, QuerySelect, RelationTrait};
 use sea_orm::sea_query::Expr;
 
-use sheef_entities::{sheef_db_error, sheef_not_found_error, sheef_unauthorized_error, token, user};
-use sheef_entities::prelude::*;
+use pandaparty_entities::{pandaparty_db_error, pandaparty_not_found_error, pandaparty_unauthorized_error, token, user};
+use pandaparty_entities::prelude::*;
 
 pub async fn get_user(username: String) -> SheefResult<User> {
     let db = open_db_connection!();
 
     match user::Entity::find().filter(user::Column::Username.eq(username)).one(&db).await {
         Ok(Some(res)) => Ok(res),
-        Ok(None) => Err(sheef_not_found_error!("user", "The user was not found")),
+        Ok(None) => Err(pandaparty_not_found_error!("user", "The user was not found")),
         Err(err) => {
             log::error!("{err}");
-            Err(sheef_db_error!("user", "Failed to execute database query"))
+            Err(pandaparty_db_error!("user", "Failed to execute database query"))
         }
     }
 }
@@ -26,7 +26,7 @@ pub async fn get_users() -> SheefResult<Vec<User>> {
         .await
         .map_err(|err| {
             log::error!("{err}");
-            sheef_db_error!("user", "Failed to load users")
+            pandaparty_db_error!("user", "Failed to load users")
         })
 }
 
@@ -43,7 +43,7 @@ pub async fn create_user(user: User) -> SheefResult<User> {
         .await
         .map_err(|err| {
             log::error!("{err}");
-            sheef_db_error!("user", "Failed to create user")
+            pandaparty_db_error!("user", "Failed to create user")
         })
 }
 
@@ -56,7 +56,7 @@ pub async fn delete_user(username: String) -> SheefErrorResult {
         .await
         .map_err(|err| {
             log::error!("{err}");
-            sheef_db_error!("user", "Failed to delete user")
+            pandaparty_db_error!("user", "Failed to delete user")
         })
         .map(|_| ())
 }
@@ -71,7 +71,7 @@ pub async fn change_mod_status(username: String, is_mod: bool) -> SheefErrorResu
         .await
         .map_err(|err| {
             log::error!("{err}");
-            sheef_db_error!("user", "Failed to update user")
+            pandaparty_db_error!("user", "Failed to update user")
         })
         .map(|_| ())
 }
@@ -82,7 +82,7 @@ pub async fn change_password(username: String, password: String) -> SheefErrorRe
         Err(err) => {
             log::error!("{err}");
 
-            return Err(sheef_unknown_error!("user", "Failed to hash the password"));
+            return Err(pandaparty_unknown_error!("user", "Failed to hash the password"));
         }
     };
 
@@ -95,7 +95,7 @@ pub async fn change_password(username: String, password: String) -> SheefErrorRe
         .await
         .map_err(|err| {
             log::error!("{err}");
-            sheef_db_error!("user", "Failed to update user")
+            pandaparty_db_error!("user", "Failed to update user")
         })
         .map(|_| ())
 }
@@ -110,7 +110,7 @@ pub async fn update_me(username: String, job: String, gear_level: String) -> She
         .await
         .map_err(|err| {
             log::error!("{err}");
-            sheef_db_error!("user", "Failed to update user")
+            pandaparty_db_error!("user", "Failed to update user")
         })
         .map(|_| ())
 }
@@ -160,10 +160,10 @@ pub async fn get_user_by_token(token: String) -> SheefResult<User> {
         .one(&db)
         .await {
         Ok(Some(user)) => Ok(user),
-        Ok(None) => Err(sheef_unauthorized_error!("authentication", "Token or user not found")),
+        Ok(None) => Err(pandaparty_unauthorized_error!("authentication", "Token or user not found")),
         Err(err) => {
             log::error!("Failed to get user by token {err}");
-            Err(sheef_unauthorized_error!("authentication", "Token or user not found"))
+            Err(pandaparty_unauthorized_error!("authentication", "Token or user not found"))
         }
     }
 }

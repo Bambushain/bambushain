@@ -1,8 +1,8 @@
 use actix_web::{HttpRequest, HttpResponse, web};
 use serde::Deserialize;
 
-use sheef_dbal::prelude::*;
-use sheef_entities::prelude::*;
+use pandaparty_dbal::prelude::*;
+use pandaparty_entities::prelude::*;
 
 use crate::sse::NotificationState;
 
@@ -18,19 +18,19 @@ pub struct KillPathInfo {
 }
 
 pub async fn get_kills() -> HttpResponse {
-    ok_or_error!(sheef_dbal::kill::get_kills().await)
+    ok_or_error!(pandaparty_dbal::kill::get_kills().await)
 }
 
 pub async fn activate_kill_for_user(path: web::Path<KillUsernamePathInfo>, notification_state: web::Data<NotificationState>) -> HttpResponse {
     if !user_exists(path.username.clone()).await {
-        return not_found!(sheef_not_found_error!("user", "User not found"));
+        return not_found!(pandaparty_not_found_error!("user", "User not found"));
     }
 
     if !kill_exists(path.kill.clone()).await {
-        return not_found!(sheef_not_found_error!("kill", "Kill not found"));
+        return not_found!(pandaparty_not_found_error!("kill", "Kill not found"));
     }
 
-    let data = sheef_dbal::kill::activate_kill_for_user(path.kill.clone(), path.username.clone()).await;
+    let data = pandaparty_dbal::kill::activate_kill_for_user(path.kill.clone(), path.username.clone()).await;
     actix_web::rt::spawn(async move {
         notification_state.kill_broadcaster.notify_change().await;
     });
@@ -45,14 +45,14 @@ pub async fn activate_kill_for_me(path: web::Path<KillPathInfo>, notification_st
 
 pub async fn deactivate_kill_for_user(path: web::Path<KillUsernamePathInfo>, notification_state: web::Data<NotificationState>) -> HttpResponse {
     if !user_exists(path.username.clone()).await {
-        return not_found!(sheef_not_found_error!("user", "User not found"));
+        return not_found!(pandaparty_not_found_error!("user", "User not found"));
     }
 
     if !kill_exists(path.kill.clone()).await {
-        return not_found!(sheef_not_found_error!("kill", "Kill not found"));
+        return not_found!(pandaparty_not_found_error!("kill", "Kill not found"));
     }
 
-    let data = sheef_dbal::kill::deactivate_kill_for_user(path.kill.clone(), path.username.clone()).await;
+    let data = pandaparty_dbal::kill::deactivate_kill_for_user(path.kill.clone(), path.username.clone()).await;
     actix_web::rt::spawn(async move {
         notification_state.kill_broadcaster.notify_change().await;
     });
@@ -67,10 +67,10 @@ pub async fn deactivate_kill_for_me(path: web::Path<KillPathInfo>, notification_
 
 pub async fn delete_kill(path: web::Path<KillPathInfo>, notification_state: web::Data<NotificationState>) -> HttpResponse {
     if !kill_exists(path.kill.clone()).await {
-        return not_found!(sheef_not_found_error!("kill", "Kill not found"));
+        return not_found!(pandaparty_not_found_error!("kill", "Kill not found"));
     }
 
-    let data = sheef_dbal::kill::delete_kill(path.kill.clone()).await;
+    let data = pandaparty_dbal::kill::delete_kill(path.kill.clone()).await;
     actix_web::rt::spawn(async move {
         notification_state.kill_broadcaster.notify_change().await;
     });
@@ -80,10 +80,10 @@ pub async fn delete_kill(path: web::Path<KillPathInfo>, notification_state: web:
 
 pub async fn create_kill(body: web::Json<Kill>, notification_state: web::Data<NotificationState>) -> HttpResponse {
     if kill_exists(body.name.clone()).await {
-        return conflict!(sheef_exists_already_error!("kill", "Kill already exists"));
+        return conflict!(pandaparty_exists_already_error!("kill", "Kill already exists"));
     }
 
-    let data = sheef_dbal::kill::create_kill(body.into_inner()).await.map(|kill| kill);
+    let data = pandaparty_dbal::kill::create_kill(body.into_inner()).await.map(|kill| kill);
     actix_web::rt::spawn(async move {
         notification_state.kill_broadcaster.notify_change().await;
     });
@@ -93,14 +93,14 @@ pub async fn create_kill(body: web::Json<Kill>, notification_state: web::Data<No
 
 pub async fn update_kill(path: web::Path<KillPathInfo>, body: web::Json<Kill>, notification_state: web::Data<NotificationState>) -> HttpResponse {
     if !kill_exists(path.kill.clone()).await {
-        return not_found!(sheef_not_found_error!("kill", "Kill not found"));
+        return not_found!(pandaparty_not_found_error!("kill", "Kill not found"));
     }
 
     if kill_exists(body.name.clone()).await && body.name != path.kill {
-        return conflict!(sheef_exists_already_error!("kill", "Kill already exists"));
+        return conflict!(pandaparty_exists_already_error!("kill", "Kill already exists"));
     }
 
-    let data = sheef_dbal::kill::update_kill(path.kill.clone(), body.name.clone()).await;
+    let data = pandaparty_dbal::kill::update_kill(path.kill.clone(), body.name.clone()).await;
     actix_web::rt::spawn(async move {
         notification_state.kill_broadcaster.notify_change().await;
     });

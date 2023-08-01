@@ -3,8 +3,8 @@ use actix_web::web;
 use chrono::{Datelike, NaiveDate, Utc};
 use serde::Deserialize;
 
-use sheef_dbal::prelude::*;
-use sheef_entities::prelude::*;
+use pandaparty_dbal::prelude::*;
+use pandaparty_entities::prelude::*;
 
 use crate::sse::NotificationState;
 
@@ -37,7 +37,7 @@ macro_rules! date_from_values {
             if let Some(date) = NaiveDate::from_ymd_opt($year, $month, $day) {
                 date
             } else {
-                return no_content_or_error!(Err::<(), SheefError>(sheef_invalid_data_error!("calendar", "The date is invalid")));
+                return no_content_or_error!(Err::<(), SheefError>(pandaparty_invalid_data_error!("calendar", "The date is invalid")));
             }
         }
     };

@@ -1,6 +1,6 @@
 FROM rust:1.70-alpine3.18 as build
 
-WORKDIR /usr/src/sheef-planing
+WORKDIR /usr/src/pandaparty
 COPY . .
 
 RUN apk add musl-dev
@@ -11,9 +11,9 @@ RUN cargo install --path .
 
 FROM alpine:3.18
 
-ENV FRONTEND_DIR=/usr/local/share/sheef-planing/web/
+ENV FRONTEND_DIR=/usr/local/share/pandaparty/web/
 
-COPY --from=build /usr/src/sheef-planing/dist /usr/local/share/sheef-planing/web/dist
-COPY --from=build /usr/local/cargo/bin/sheef-planing /usr/local/bin/sheef-planing
+COPY --from=build /usr/src/pandaparty/dist /usr/local/share/pandaparty/web/dist
+COPY --from=build /usr/local/cargo/bin/pandaparty /usr/local/bin/pandaparty
 
-CMD ["sheef-planing"]
+CMD ["pandaparty"]

@@ -1,10 +1,10 @@
 [package]
-name = "sheef-migration"
+name = "pandaparty-migration"
 version = "3.0.0"
 edition = "2021"
 
 [dependencies]
-sheef-entities = { path = "../entities" }
+pandaparty-entities = { path = "../entities" }
 
 async-std = { version = "1", features = ["attributes", "tokio1"] }
 sea-orm-migration = { version = "0.11.3", features = ["sqlx-mysql", "runtime-tokio-rustls"] }

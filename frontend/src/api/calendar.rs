@@ -11,20 +11,20 @@ use crate::api::{ApiError, get, put, SheefApiResult};
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Calendar {
-    pub calendar: sheef_entities::prelude::Calendar,
+    pub calendar: pandaparty_entities::prelude::Calendar,
 }
 
-impl From<sheef_entities::prelude::Calendar> for Calendar {
-    fn from(value: sheef_entities::prelude::Calendar) -> Self {
+impl From<pandaparty_entities::prelude::Calendar> for Calendar {
+    fn from(value: pandaparty_entities::prelude::Calendar) -> Self {
         Self {
             calendar: value
         }
     }
 }
 
-async fn get_calendar(year: i32, month: u32) -> SheefApiResult<sheef_entities::prelude::Calendar> {
+async fn get_calendar(year: i32, month: u32) -> SheefApiResult<pandaparty_entities::prelude::Calendar> {
     log::debug!("Loading calendar for {}-{}", year, month);
-    get::<sheef_entities::prelude::Calendar>(format!("/api/calendar?year={}&month={}", year, month)).await
+    get::<pandaparty_entities::prelude::Calendar>(format!("/api/calendar?year={}&month={}", year, month)).await
 }
 
 #[async_trait(? Send)]
@@ -38,7 +38,7 @@ impl Query for Calendar {
     }
 }
 
-pub async fn update_event_availability(set_event: sheef_entities::prelude::SetEvent, date: NaiveDate) -> SheefApiResult<()> {
+pub async fn update_event_availability(set_event: pandaparty_entities::prelude::SetEvent, date: NaiveDate) -> SheefApiResult<()> {
     log::debug!("Update event availability on {} to {}", date, set_event.available);
     put(format!("/api/calendar/{}/{}/{}", date.year(), date.month(), date.day()), &set_event).await
 }

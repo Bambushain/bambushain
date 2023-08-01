@@ -1,7 +1,7 @@
 use actix_web::{HttpMessage, HttpRequest, HttpResponse, web};
 
-use sheef_dbal::prelude::*;
-use sheef_entities::prelude::*;
+use pandaparty_dbal::prelude::*;
+use pandaparty_entities::prelude::*;
 
 use crate::middleware::authenticate_user::AuthenticationState;
 

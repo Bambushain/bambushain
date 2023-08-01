@@ -3,8 +3,8 @@ use sea_orm::ActiveValue::Set;
 use sea_orm::prelude::*;
 use sea_orm::sea_query::Expr;
 
-use sheef_entities::{crafter, sheef_db_error, user};
-use sheef_entities::prelude::*;
+use pandaparty_entities::{crafter, pandaparty_db_error, user};
+use pandaparty_entities::prelude::*;
 use crate::user::get_user;
 
 pub async fn get_crafters(username: String) -> SheefResult<Vec<Crafter>> {
@@ -18,7 +18,7 @@ pub async fn get_crafters(username: String) -> SheefResult<Vec<Crafter>> {
         .await
         .map_err(|err| {
             log::error!("{err}");
-            sheef_db_error!("crafter", "Failed to load crafters")
+            pandaparty_db_error!("crafter", "Failed to load crafters")
         })
 }
 
@@ -32,10 +32,10 @@ pub async fn get_crafter(username: String, job: String) -> SheefResult<Crafter> 
         .one(&db)
         .await {
         Ok(Some(res)) => Ok(res),
-        Ok(None) => Err(sheef_not_found_error!("crafter", "The crafter was not found")),
+        Ok(None) => Err(pandaparty_not_found_error!("crafter", "The crafter was not found")),
         Err(err) => {
             log::error!("{err}");
-            Err(sheef_db_error!("crafter", "Failed to execute database query"))
+            Err(pandaparty_db_error!("crafter", "Failed to execute database query"))
         }
     }
 }
@@ -63,7 +63,7 @@ pub async fn create_crafter(username: String, crafter: Crafter) -> SheefResult<C
         .await
         .map_err(|err| {
             log::error!("{err}");
-            sheef_db_error!("crafter", "Failed to create crafter")
+            pandaparty_db_error!("crafter", "Failed to create crafter")
         })
 }
 
@@ -86,7 +86,7 @@ pub async fn update_crafter(username: String, job: String, crafter: Crafter) -> 
         .await
         .map_err(|err| {
             log::error!("{err}");
-            sheef_db_error!("crafter", "Failed to update crafter")
+            pandaparty_db_error!("crafter", "Failed to update crafter")
         })
         .map(|_| ())
 }
@@ -108,7 +108,7 @@ pub async fn delete_crafter(username: String, job: String) -> SheefErrorResult {
         .await
         .map_err(|err| {
             log::error!("{err}");
-            sheef_db_error!("crafter", "Failed to delete crafter")
+            pandaparty_db_error!("crafter", "Failed to delete crafter")
         })
         .map(|_| ())
 }

@@ -4,7 +4,7 @@ use std::fmt::{Debug, Display, Formatter};
 use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
 
-use sheef_entities::prelude::*;
+use pandaparty_entities::prelude::*;
 
 use crate::storage::get_token;
 
@@ -51,7 +51,7 @@ impl From<i32> for ErrorCode {
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone, Serialize, Deserialize, Debug)]
 pub struct ApiError {
     pub code: ErrorCode,
-    pub sheef_error: SheefError,
+    pub pandaparty_error: SheefError,
 }
 
 impl std::error::Error for ApiError {}
@@ -91,12 +91,12 @@ macro_rules! handle_response {
                         log::trace!("Error text: {text}");
                         let error = serde_json::from_str(text.as_str()).expect("Should deserialize the data");
 
-                        return Err(crate::api::ApiError { code: crate::api::ErrorCode::from(response.status() as i32), sheef_error: error });
+                        return Err(crate::api::ApiError { code: crate::api::ErrorCode::from(response.status() as i32), pandaparty_error: error });
                     }
                 }
                 Err(err) => {
                     log::warn!("Request failed to execute {}", err);
-                    return Err(crate::api::ApiError { code: SEND_ERROR, sheef_error: sheef_entities::prelude::SheefError::default() });
+                    return Err(crate::api::ApiError { code: SEND_ERROR, pandaparty_error: pandaparty_entities::prelude::SheefError::default() });
                 }
             };
 
@@ -107,7 +107,7 @@ macro_rules! handle_response {
                 }
                 Err(err) => {
                     log::warn!("Json deserialize failed {}", err);
-                    Err(crate::api::ApiError { code: JSON_DESERIALIZE_ERROR, sheef_error: sheef_entities::prelude::SheefError::default() })
+                    Err(crate::api::ApiError { code: JSON_DESERIALIZE_ERROR, pandaparty_error: pandaparty_entities::prelude::SheefError::default() })
                 }
             }
         }
@@ -132,12 +132,12 @@ macro_rules! handle_response_code {
                         log::trace!("Error text: {text}");
                         let error = serde_json::from_str(text.as_str()).expect("Should deserialize the data");
 
-                        return Err(crate::api::ApiError { code: crate::api::ErrorCode::from(response.status() as i32), sheef_error: error });
+                        return Err(crate::api::ApiError { code: crate::api::ErrorCode::from(response.status() as i32), pandaparty_error: error });
                     }
                 }
                 Err(err) => {
                     log::warn!("Request failed to execute {}", err);
-                    Err(ApiError { code: SEND_ERROR, sheef_error: sheef_entities::prelude::SheefError::default() })
+                    Err(ApiError { code: SEND_ERROR, pandaparty_error: pandaparty_entities::prelude::SheefError::default() })
                 }
             }
         }
@@ -150,7 +150,7 @@ pub async fn get<OUT>(uri: impl Into<String>) -> SheefApiResult<OUT> where OUT: 
     log::debug!("Use auth token {}", token);
     log::debug!("Execute get request against {}", &into_uri);
     let response = gloo::net::http::Request::get(into_uri.as_str())
-        .header("Authorization", format!("Sheef {}", token).as_str())
+        .header("Authorization", format!("Panda {}", token).as_str())
         .send()
         .await;
 
@@ -163,7 +163,7 @@ pub async fn delete(uri: impl Into<String>) -> SheefApiResult<()> {
     log::debug!("Use auth token {}", token);
     log::debug!("Execute get request against {}", &into_uri);
     let response = gloo::net::http::Request::delete(into_uri.as_str())
-        .header("Authorization", format!("Sheef {}", token).as_str())
+        .header("Authorization", format!("Panda {}", token).as_str())
         .send()
         .await;
 
@@ -176,7 +176,7 @@ pub async fn put_no_body(uri: impl Into<String>) -> SheefApiResult<()> {
     log::debug!("Use auth token {}", token);
     log::debug!("Execute get request against {}", &into_uri);
     let response = gloo::net::http::Request::put(into_uri.as_str())
-        .header("Authorization", format!("Sheef {}", token).as_str())
+        .header("Authorization", format!("Panda {}", token).as_str())
         .send()
         .await;
 
@@ -189,12 +189,12 @@ pub async fn put<IN>(uri: impl Into<String>, body: &IN) -> SheefApiResult<()> wh
     log::debug!("Use auth token {}", token);
     log::debug!("Execute get request against {}", &into_uri);
     match gloo::net::http::Request::put(into_uri.as_str())
-        .header("Authorization", format!("Sheef {}", token).as_str())
+        .header("Authorization", format!("Panda {}", token).as_str())
         .json(body) {
         Ok(request) => handle_response_code!(request.send().await),
         Err(err) => {
             log::warn!("Serialize failed {}", err);
-            Err(ApiError { sheef_error: SheefError::default(), code: JSON_SERIALIZE_ERROR })
+            Err(ApiError { pandaparty_error: SheefError::default(), code: JSON_SERIALIZE_ERROR })
         }
     }
 }
@@ -207,12 +207,12 @@ pub async fn post<IN, OUT>(uri: impl Into<String>, body: &IN) -> SheefApiResult<
 
     log::debug!("Execute post request against {}", &into_uri);
     match gloo::net::http::Request::post(into_uri.as_str())
-        .header("Authorization", format!("Sheef {}", token).as_str())
+        .header("Authorization", format!("Panda {}", token).as_str())
         .json(body) {
         Ok(request) => handle_response!(request.send().await),
         Err(err) => {
             log::warn!("Serialize failed {}", err);
-            Err(ApiError { sheef_error: SheefError::default(), code: JSON_SERIALIZE_ERROR })
+            Err(ApiError { pandaparty_error: SheefError::default(), code: JSON_SERIALIZE_ERROR })
         }
     }
 }

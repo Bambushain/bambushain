@@ -9,7 +9,7 @@ use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-use sheef_entities::prelude::*;
+use pandaparty_entities::prelude::*;
 
 use crate::api::calendar::{Calendar, update_event_availability};
 use crate::hooks::event_source::use_event_source;
@@ -301,7 +301,7 @@ pub fn calendar_page() -> Html {
                     evt.clone()
                 } else {
                     log::debug!("Couldn't find event for current user, create an empty one");
-                    sheef_entities::prelude::Event {
+                    pandaparty_entities::prelude::Event {
                         username: current_user.profile.username.clone(),
                         time: "".to_string(),
                         date: cal_day.date,
@@ -342,7 +342,7 @@ pub fn calendar_page() -> Html {
 
                 let main_group_members = cal_day.events
                     .iter()
-                    .collect::<Vec<&sheef_entities::prelude::Event>>();
+                    .collect::<Vec<&pandaparty_entities::prelude::Event>>();
                 log::debug!("We have {} main group members for {}", main_group_members.len(), cal_day.date);
 
                 let full_group = main_group_members.iter().all(|evt| evt.available);
