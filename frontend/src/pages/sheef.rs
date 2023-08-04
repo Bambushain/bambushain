@@ -14,32 +14,21 @@ use crate::api::my::{change_my_password, Profile, update_my_profile};
 use crate::api::user::get_users;
 use crate::pages::calendar::CalendarPage;
 use crate::pages::crafter::CrafterPage;
-use crate::pages::user::CrewPage;
+use crate::pages::user::UserPage;
 use crate::pages::fighter::FighterPage;
-use crate::pages::kill::KillPage;
-use crate::pages::mount::MountPage;
-use crate::pages::savage_mount::SavageMountPage;
 use crate::routing::{AppRoute, SheefRoute};
 use crate::storage::CurrentUser;
 use crate::ui::modal::PicoModal;
 
 fn switch(route: SheefRoute) -> Html {
     match route {
-        SheefRoute::Home => html!(<Redirect<SheefRoute> to={SheefRoute::Calendar} />),
-        SheefRoute::Calendar => html!(
-            <>
-                <Helmet>
-                    <title>{"Event Kalender"}</title>
-                </Helmet>
-                <CalendarPage />
-            </>
-        ),
-        SheefRoute::Benutzer => html!(
+        SheefRoute::Home => html!(<Redirect<SheefRoute> to={SheefRoute::User} />),
+        SheefRoute::User => html!(
             <>
                 <Helmet>
                     <title>{"Benutzer"}</title>
                 </Helmet>
-                <CrewPage />
+                <UserPage />
             </>
         ),
         SheefRoute::Crafter => html!(
@@ -56,30 +45,6 @@ fn switch(route: SheefRoute) -> Html {
                     <title>{"Meine Kämpfer"}</title>
                 </Helmet>
                 <FighterPage />
-            </>
-        ),
-        SheefRoute::Mounts => html!(
-            <>
-                <Helmet>
-                    <title>{"Mounts"}</title>
-                </Helmet>
-                <MountPage />
-            </>
-        ),
-        SheefRoute::SavageMounts => html!(
-            <>
-                <Helmet>
-                    <title>{"Savage Mounts"}</title>
-                </Helmet>
-                <SavageMountPage />
-            </>
-        ),
-        SheefRoute::Kills => html!(
-            <>
-                <Helmet>
-                    <title>{"Kills"}</title>
-                </Helmet>
-                <KillPage />
             </>
         ),
     }
@@ -372,13 +337,9 @@ pub fn pandaparty_layout() -> Html {
                             <nav class="container-fluid">
                                 <ul>
                                     <li><strong>{"Pandaparty"}</strong></li>
-                                    <li><Link<SheefRoute> to={SheefRoute::Calendar}>{"Kalender"}</Link<SheefRoute>></li>
-                                    <li><Link<SheefRoute> to={SheefRoute::Benutzer}>{"Benutzer"}</Link<SheefRoute>></li>
+                                    <li><Link<SheefRoute> to={SheefRoute::User}>{"Benutzer"}</Link<SheefRoute>></li>
                                     <li><Link<SheefRoute> to={SheefRoute::Crafter}>{"Crafter"}</Link<SheefRoute>></li>
                                     <li><Link<SheefRoute> to={SheefRoute::Fighter}>{"Kämpfer"}</Link<SheefRoute>></li>
-                                    <li><Link<SheefRoute> to={SheefRoute::Mounts}>{"Mounts"}</Link<SheefRoute>></li>
-                                    <li><Link<SheefRoute> to={SheefRoute::SavageMounts}>{"Savage Mounts"}</Link<SheefRoute>></li>
-                                    <li><Link<SheefRoute> to={SheefRoute::Kills}>{"Kills"}</Link<SheefRoute>></li>
                                 </ul>
                                 <ul>
                                     <li role="list" dir="rtl">

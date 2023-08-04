@@ -1,12 +1,13 @@
-use actix_web::{HttpMessage, HttpRequest, HttpResponse, web};
+use actix_web::{HttpResponse, web};
 
 use pandaparty_dbal::prelude::*;
 use pandaparty_entities::prelude::*;
+use crate::DbConnection;
 
 use crate::middleware::authenticate_user::AuthenticationState;
 
-pub async fn login(body: web::Json<Login>) -> HttpResponse {
-    let data = validate_auth_and_create_token(body.username.clone(), body.password.clone()).await;
+pub async fn login(body: web::Json<Login>, db: DbConnection) -> HttpResponse {
+    let data = validate_auth_and_create_token(body.username.clone(), body.password.clone(), &db).await;
     match data {
         Ok(result) => ok_json!(result),
         Err(err) => {
@@ -20,19 +21,8 @@ pub async fn login(body: web::Json<Login>) -> HttpResponse {
     }
 }
 
-pub async fn logout(req: HttpRequest) -> HttpResponse {
-    let token = {
-        let extensions = req.extensions();
-        let state = extensions.get::<AuthenticationState>();
-        if state.is_none() {
-            return no_content!();
-        }
-
-        let result = state.unwrap();
-        result.token.to_string()
-    };
-
-    let _ = delete_token(token).await;
+pub async fn logout(state: web::ReqData<AuthenticationState>, db: DbConnection) -> HttpResponse {
+    let _ = delete_token(state.token.clone(), &db).await;
 
     no_content!()
 }

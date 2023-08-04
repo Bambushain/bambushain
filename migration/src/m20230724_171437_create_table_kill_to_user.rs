@@ -41,7 +41,7 @@ impl MigrationTrait for Migration {
 
 /// Learn more at https://docs.rs/sea-query#iden
 #[derive(Iden)]
-enum KillToUser {
+pub enum KillToUser {
     Table,
     UserId,
     KillId,

@@ -3,9 +3,9 @@ services:
   pandaparty-postgres:
     image: postgres:15.3-alpine
     environment:
-      POSTGRES_DB: sheef
-      POSTGRES_PASSWORD: sheef
-      POSTGRES_ROOT_PASSWORD: sheef
-      POSTGRES_USER: sheef
+      POSTGRES_DB: pandaparty
+      POSTGRES_PASSWORD: pandaparty
+      POSTGRES_ROOT_PASSWORD: pandaparty
+      POSTGRES_USER: pandaparty
     ports:
-      - "6543:5432"
+      - "5434:5432"

@@ -1,13 +1,4 @@
-macro_rules! username {
-    ($req:ident) => {
-        {
-            use actix_web::HttpMessage;
-            let extensions = $req.extensions();
-            let state = extensions.get::<crate::middleware::authenticate_user::AuthenticationState>().expect("AuthenticationState should be set");
-            state.user.username.to_string()
-        }
-    };
-}
+use sea_orm::DatabaseConnection;
 
 macro_rules! no_content {
     () => {
@@ -164,6 +155,8 @@ macro_rules! created_json {
         }
     };
 }
+
+pub type DbConnection = actix_web::web::Data<DatabaseConnection>;
 
 pub mod routes;
 pub mod middleware;

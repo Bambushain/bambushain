@@ -1,6 +1,3 @@
-use std::rc::Rc;
-
-use bounce::query::use_query_value;
 use bounce::use_atom_value;
 use chrono::{Datelike, Local, Month, Months, NaiveDate};
 use num_traits::FromPrimitive;
@@ -9,11 +6,8 @@ use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-use pandaparty_entities::prelude::*;
-
-use crate::api::calendar::{Calendar, update_event_availability};
-use crate::hooks::event_source::use_event_source;
 use crate::routing::SheefRoute;
+use crate::hooks::event_source::use_event_source;
 use crate::storage::CurrentUser;
 use crate::ui::modal::PicoModal;
 
@@ -98,8 +92,6 @@ fn update_day_modal(props: &UpdateDayModalProps) -> Html {
 
     let time_state = use_state(|| props.time.clone());
 
-    let calendar_query_state = use_query_value::<Calendar>(Rc::new((props.date.year(), props.date.month())));
-
     let on_close = props.on_close.clone();
 
     let on_date_save = {
@@ -124,29 +116,10 @@ fn update_day_modal(props: &UpdateDayModalProps) -> Html {
 
             let time_state = time_state.clone();
 
-            let calendar_query_state = calendar_query_state.clone();
-
             let on_close = on_close.clone();
-
-            let data = SetEvent {
-                time: (*time_state).to_string(),
-                available: *available_state,
-            };
 
             yew::platform::spawn_local(async move {
                 log::debug!("Save the data in the system");
-                match update_event_availability(data, date).await {
-                    Ok(_) => {
-                        log::debug!("Saving was successful, refresh the calendar and close the modal");
-                        let _ = calendar_query_state.refresh().await;
-                        on_close.emit(());
-                        error_state.set(false);
-                    }
-                    Err(err) => {
-                        log::warn!("Failed to save event data {}", err);
-                        error_state.set(true);
-                    }
-                };
                 loading_state.set(false);
             });
         })
@@ -265,121 +238,25 @@ pub fn calendar_page() -> Html {
     let date: NaiveDate = if let Some(date) = query.into() {
         date
     } else {
-        return html!(<Redirect<SheefRoute> to={SheefRoute::Calendar} />);
+        return html!(<Redirect<SheefRoute> to={SheefRoute::Home} />);
     };
 
     let prev_month = date - Months::new(1);
     let next_month = date + Months::new(1);
 
-    let calendar_query_state = use_query_value::<Calendar>(Rc::new((query.year, query.month)));
     let state = use_state_eq(|| vec![] as Vec<DayProps>);
     let initially_loaded_state = use_state_eq(|| false);
     let current_user = use_atom_value::<CurrentUser>();
 
-    let event_source_trigger = {
-        let calendar_query_state = calendar_query_state.clone();
-
-        move |_| {
-            log::debug!("Someone changed data on the server, trigger a refresh");
-            let calendar_query_state = calendar_query_state.clone();
-
-            yew::platform::spawn_local(async move {
-                let _ = calendar_query_state.refresh().await;
-            });
-        }
-    };
-
-    use_event_source("/sse/calendar".to_string(), event_source_trigger);
-
-    match calendar_query_state.result() {
-        Some(Ok(result)) => {
-            log::debug!("Loaded calendar data");
-            let data = result.calendar.days.iter().map(|cal_day| {
-                log::debug!("Find event for the current user {}", current_user.profile.username);
-                let my_event = if let Some(evt) = cal_day.events.iter().find(|event| event.username == current_user.profile.username.clone()) {
-                    log::debug!("Found event for current user");
-                    evt.clone()
-                } else {
-                    log::debug!("Couldn't find event for current user, create an empty one");
-                    pandaparty_entities::prelude::Event {
-                        username: current_user.profile.username.clone(),
-                        time: "".to_string(),
-                        date: cal_day.date,
-                        available: false,
-                        user: current_user.profile.clone(),
-                    }
-                };
-                let me_available = my_event.available;
-                let time = AttrValue::from(my_event.time);
-                let date = cal_day.date;
-
-                let available = AttrValue::from(cal_day.events
-                    .iter()
-                    .filter_map(|evt|
-                        if evt.available {
-                            Some(format!("{}{}", evt.username, if evt.time.is_empty() {
-                                "".to_string()
-                            } else {
-                                format!(" ({})", evt.time)
-                            }))
-                        } else {
-                            None
-                        })
-                    .collect::<Vec<String>>()
-                    .join(", "));
-                log::debug!("Available are: {}", available);
-
-                let unavailable = AttrValue::from(cal_day.events
-                    .iter()
-                    .filter_map(|evt|
-                        if !evt.available {
-                            Some(evt.username.clone())
-                        } else {
-                            None
-                        })
-                    .collect::<Vec<String>>()
-                    .join(", "));
-
-                let main_group_members = cal_day.events
-                    .iter()
-                    .collect::<Vec<&pandaparty_entities::prelude::Event>>();
-                log::debug!("We have {} main group members for {}", main_group_members.len(), cal_day.date);
-
-                let full_group = main_group_members.iter().all(|evt| evt.available);
-                log::debug!("Is there a full group? {}", full_group);
-
-                DayProps {
-                    full_group,
-                    available,
-                    unavailable,
-                    me_available,
-                    time,
-                    date,
-                }
-            }).collect::<Vec<DayProps>>();
-
-            initially_loaded_state.set(true);
-            state.set(data);
-        }
-        Some(Err(err)) => {
-            log::warn!("Failed to load {}", err);
-            return html!(<p data-msg="negative">{"Der Kalender konnte nicht geladen werden, bitte wende dich an Azami"}</p>);
-        }
-        None => {
-            log::debug!("Still loading");
-            if !*initially_loaded_state {
-                return html!(<p data-msg="info">{"Der Kalender wird geladen"}</p>);
-            }
-        }
-    };
+    use_event_source("/sse/calendar".to_string(), |_| {});
 
     html!(
         <>
             <h1>{"Event Kalender"}</h1>
             <div class="calendar-header">
-                <Link<SheefRoute, CalendarQuery> to={SheefRoute::Calendar} query={Some(prev_month.into())}>{month_to_german(prev_month.month())}</Link<SheefRoute, CalendarQuery>>
+                <a>{month_to_german(prev_month.month())}</a>
                 <h4>{format!("{} {}", month_to_german(date.month()), date.year())}</h4>
-                <Link<SheefRoute, CalendarQuery> to={SheefRoute::Calendar} query={Some(next_month.into())}>{month_to_german(next_month.month())}</Link<SheefRoute, CalendarQuery>>
+                <a>{month_to_german(next_month.month())}</a>
             </div>
             <div class="calendar">
                 <div class="day-title">{"Montag"}</div>

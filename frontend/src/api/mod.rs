@@ -10,14 +10,10 @@ use crate::storage::get_token;
 
 pub mod authentication;
 pub mod my;
-pub mod calendar;
 pub mod user;
 pub mod crafter;
 pub mod fighter;
 pub mod boolean_table;
-pub mod mount;
-pub mod savage_mount;
-pub mod kill;
 
 macro_rules! error_code {
     ($name:tt,$code:literal) => {

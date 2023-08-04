@@ -1,17 +1,21 @@
 use std::future::{Ready, ready};
 use std::rc::Rc;
 
-use actix_web::{body, dev, Error, HttpMessage};
+use actix_web::{body, dev, Error, HttpMessage, web};
 use futures_util::future::LocalBoxFuture;
 
 use pandaparty_dbal::prelude::*;
 use pandaparty_entities::prelude::*;
 use pandaparty_entities::pandaparty_unauthorized_error;
+use crate::DbConnection;
 
+#[derive(Clone)]
 pub struct AuthenticationState {
     pub token: String,
     pub user: User,
 }
+
+pub type Authentication = web::ReqData<AuthenticationState>;
 
 pub struct AuthenticateUser;
 
@@ -65,7 +69,8 @@ impl<S, B> dev::Service<dev::ServiceRequest> for AuthenticateUserMiddleware<S>
                 _ => return Ok(dev::ServiceResponse::new(request.clone(), unauthorized))
             };
 
-            let user = match get_user_by_token(token.to_string()).await {
+            let db = req.app_data::<DbConnection>().unwrap();
+            let user = match get_user_by_token(token.to_string(), db).await {
                 Ok(user) => user,
                 _ => return Ok(dev::ServiceResponse::new(request.clone(), unauthorized))
             };

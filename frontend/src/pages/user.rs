@@ -528,7 +528,7 @@ fn table_body(props: &TableBodyProps) -> Html {
     )
 }
 
-#[function_component(CrewPage)]
+#[function_component(UserPage)]
 pub fn crew_page() -> Html {
     log::debug!("Render users page");
     log::debug!("Initialize state and callbacks");

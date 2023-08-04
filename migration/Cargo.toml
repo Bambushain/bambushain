@@ -1,10 +1,10 @@
 [package]
 name = "pandaparty-migration"
-version = "3.0.0"
-edition = "2021"
+version.workspace = true
+edition.workspace = true
 
 [dependencies]
 pandaparty-entities = { path = "../entities" }
 
 async-std = { version = "1", features = ["attributes", "tokio1"] }
-sea-orm-migration = { version = "0.11.3", features = ["sqlx-mysql", "runtime-tokio-rustls"] }
+sea-orm-migration = { version = "0.12.1", features = ["sqlx-mysql", "runtime-tokio-rustls"] }

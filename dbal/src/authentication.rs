@@ -1,11 +1,11 @@
-use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, NotSet, QueryFilter};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, NotSet, QueryFilter};
 use sea_orm::ActiveValue::Set;
 
 use pandaparty_entities::{pandaparty_db_error, pandaparty_validation_error};
 use pandaparty_entities::prelude::*;
 
-pub async fn validate_auth_and_create_token(username: String, password: String) -> SheefResult<LoginResult> {
-    let user = match crate::user::get_user(username.clone()).await {
+pub async fn validate_auth_and_create_token(username: String, password: String, db: &DatabaseConnection) -> SheefResult<LoginResult> {
+    let user = match crate::user::get_user(username.clone(), db).await {
         Ok(user) => user,
         Err(err) => {
             log::error!("Failed to load user {}: {err}", username);
@@ -24,9 +24,7 @@ pub async fn validate_auth_and_create_token(username: String, password: String) 
         user_id: Set(user.id),
     };
 
-    let db = open_db_connection!();
-
-    match token.insert(&db).await {
+    match token.insert(db).await {
         Ok(token) => Ok(LoginResult {
             token: token.token,
             user: user.to_web_user(),
@@ -38,12 +36,10 @@ pub async fn validate_auth_and_create_token(username: String, password: String) 
     }
 }
 
-pub async fn delete_token(token: String) -> SheefErrorResult {
-    let db = open_db_connection!();
-
+pub async fn delete_token(token: String, db: &DatabaseConnection) -> SheefErrorResult {
     pandaparty_entities::token::Entity::delete_many()
         .filter(pandaparty_entities::token::Column::Token.eq(token))
-        .exec(&db)
+        .exec(db)
         .await
         .map(|_| ())
         .map_err(|err| {

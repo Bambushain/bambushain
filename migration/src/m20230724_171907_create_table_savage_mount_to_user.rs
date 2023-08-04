@@ -41,7 +41,7 @@ impl MigrationTrait for Migration {
 
 /// Learn more at https://docs.rs/sea-query#iden
 #[derive(Iden)]
-enum SavageMountToUser {
+pub enum SavageMountToUser {
     Table,
     UserId,
     SavageMountId,

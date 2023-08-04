@@ -12,6 +12,7 @@ mod m20230724_171801_create_table_mount_to_user;
 mod m20230724_171834_create_table_savage_mount;
 mod m20230724_171907_create_table_savage_mount_to_user;
 mod m20230725_092805_create_table_status;
+mod m20230804_191618_delete_old_tables;
 
 pub struct Migrator;
 
@@ -31,6 +32,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20230724_171834_create_table_savage_mount::Migration),
             Box::new(m20230724_171907_create_table_savage_mount_to_user::Migration),
             Box::new(m20230725_092805_create_table_status::Migration),
+            Box::new(m20230804_191618_delete_old_tables::Migration),
         ]
     }
 }

@@ -24,20 +24,12 @@ pub enum SheefRoute {
     #[at("/sheef")]
     #[not_found]
     Home,
-    #[at("/sheef/calendar")]
-    Calendar,
     #[at("/sheef/crew")]
-    Benutzer,
+    User,
     #[at("/sheef/crafter")]
     Crafter,
     #[at("/sheef/fighter")]
     Fighter,
-    #[at("/sheef/mount")]
-    Mounts,
-    #[at("/sheef/savage-mount")]
-    SavageMounts,
-    #[at("/sheef/kills")]
-    Kills,
 }
 
 impl Display for SheefRoute {

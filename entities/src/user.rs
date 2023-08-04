@@ -1,6 +1,8 @@
 use std::fmt::{Display, Formatter};
 
 #[cfg(feature = "backend")]
+use sea_orm::ActiveValue::Set;
+#[cfg(feature = "backend")]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -23,8 +25,6 @@ pub struct Model {
 pub enum Relation {
     #[sea_orm(has_many = "super::crafter::Entity")]
     Crafter,
-    #[sea_orm(has_many = "super::event::Entity")]
-    Event,
     #[sea_orm(has_many = "super::fighter::Entity")]
     Fighter,
     #[sea_orm(has_many = "super::token::Entity")]
@@ -35,13 +35,6 @@ pub enum Relation {
 impl Related<super::crafter::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Crafter.def()
-    }
-}
-
-#[cfg(feature = "backend")]
-impl Related<super::event::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::Event.def()
     }
 }
 
@@ -60,37 +53,21 @@ impl Related<super::token::Entity> for Entity {
 }
 
 #[cfg(feature = "backend")]
-impl Related<super::mount::Entity> for Entity {
-    fn to() -> RelationDef {
-        super::mount_to_user::Relation::Mount.def()
-    }
-    fn via() -> Option<RelationDef> {
-        Some(super::mount_to_user::Relation::User.def().rev())
-    }
-}
-
-#[cfg(feature = "backend")]
-impl Related<super::savage_mount::Entity> for Entity {
-    fn to() -> RelationDef {
-        super::savage_mount_to_user::Relation::SavageMount.def()
-    }
-    fn via() -> Option<RelationDef> {
-        Some(super::savage_mount_to_user::Relation::User.def().rev())
-    }
-}
-
-#[cfg(feature = "backend")]
-impl Related<super::kill::Entity> for Entity {
-    fn to() -> RelationDef {
-        super::kill_to_user::Relation::Kill.def()
-    }
-    fn via() -> Option<RelationDef> {
-        Some(super::kill_to_user::Relation::User.def().rev())
-    }
-}
-
-#[cfg(feature = "backend")]
 impl ActiveModelBehavior for ActiveModel {}
+
+#[cfg(feature = "backend")]
+impl ActiveModel {
+    pub fn set_password(&mut self, plain_password: &String) -> Result<(), bcrypt::BcryptError> {
+        let hashed = bcrypt::hash(plain_password.as_bytes(), 12);
+        match hashed {
+            Ok(hashed_password) => {
+                self.password = Set(hashed_password);
+                Ok(())
+            }
+            Err(err) => Err(err)
+        }
+    }
+}
 
 impl Model {
     pub fn new(username: String, password: String, job: String, gear_level: String, is_mod: bool) -> Self {

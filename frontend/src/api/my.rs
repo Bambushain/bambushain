@@ -61,36 +61,6 @@ impl Mutation for Profile {
     }
 }
 
-pub async fn activate_kill_for_me(name: String) -> SheefApiResult<()> {
-    log::debug!("Activate kill {name} for me");
-    put_no_body(format!("/api/my/kill/{name}")).await
-}
-
-pub async fn deactivate_kill_for_me(name: String) -> SheefApiResult<()> {
-    log::debug!("Deactivate kill {name} for me");
-    delete(format!("/api/my/kill/{name}")).await
-}
-
-pub async fn activate_mount_for_me(name: String) -> SheefApiResult<()> {
-    log::debug!("Activate mount {name} for me");
-    put_no_body(format!("/api/my/mount/{name}")).await
-}
-
-pub async fn deactivate_mount_for_me(name: String) -> SheefApiResult<()> {
-    log::debug!("Deactivate mount {name} for me");
-    delete(format!("/api/my/mount/{name}")).await
-}
-
-pub async fn activate_savage_mount_for_me(name: String) -> SheefApiResult<()> {
-    log::debug!("Activate savage mount {name} for me");
-    put_no_body(format!("/api/my/savage-mount/{name}")).await
-}
-
-pub async fn deactivate_savage_mount_for_me(name: String) -> SheefApiResult<()> {
-    log::debug!("Deactivate savage mount {name} for me");
-    delete(format!("/api/my/savage-mount/{name}")).await
-}
-
 pub async fn change_my_password(old_password: String, new_password: String) -> SheefApiResult<()> {
     log::debug!("Change my password");
     put("/api/my/password", &ChangeMyPassword { old_password, new_password }).await
