@@ -1,15 +1,12 @@
-FROM rust:1.70-alpine3.18 as build
+FROM quay.imanuel.dev/imanuel/trunk-docker-base-image:latest as build
 
 WORKDIR /usr/src/pandaparty
 COPY . .
 
-RUN apk add musl-dev
-RUN rustup target add wasm32-unknown-unknown
-RUN cargo install --locked trunk
 RUN trunk build --release
 RUN cargo install --path .
 
-FROM alpine:3.18
+FROM quay.imanuel.dev/dockerhub/library---alpine:3.18
 
 ENV FRONTEND_DIR=/usr/local/share/pandaparty/web/
 
