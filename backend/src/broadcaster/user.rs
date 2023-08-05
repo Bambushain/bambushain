@@ -5,21 +5,21 @@ use actix_web::rt::time::interval;
 use actix_web_lab::sse::{ChannelStream, Sse};
 use parking_lot::Mutex;
 
-pub struct CrewBroadcaster {
-    inner: Mutex<CrewBroadcasterInner>,
+pub struct UserBroadcaster {
+    inner: Mutex<UserBroadcasterInner>,
 }
 
 #[derive(Debug, Clone, Default)]
-struct CrewBroadcasterInner {
+struct UserBroadcasterInner {
     clients: Vec<actix_web_lab::sse::Sender>,
 }
 
-impl CrewBroadcaster {
+impl UserBroadcaster {
     pub fn create() -> Arc<Self> {
-        let this = Arc::new(CrewBroadcaster {
-            inner: Mutex::new(CrewBroadcasterInner::default()),
+        let this = Arc::new(UserBroadcaster {
+            inner: Mutex::new(UserBroadcasterInner::default()),
         });
-        CrewBroadcaster::spawn_ping(Arc::clone(&this));
+        UserBroadcaster::spawn_ping(Arc::clone(&this));
 
         this
     }
@@ -37,7 +37,7 @@ impl CrewBroadcaster {
 
     async fn remove_stale_clients(&self) {
         let clients = self.inner.lock().clients.clone();
-        log::info!("Active crew client {:?}", clients);
+        log::info!("Active user client {:?}", clients);
 
         let mut ok_clients = Vec::new();
 
@@ -51,13 +51,13 @@ impl CrewBroadcaster {
             }
         }
 
-        log::info!("Okay crew active client {:?}", ok_clients);
+        log::info!("Okay user active client {:?}", ok_clients);
 
         self.inner.lock().clients = ok_clients;
     }
 
     pub async fn new_client(&self) -> Sse<ChannelStream> {
-        log::info!("Starting creation of crew broadcaster");
+        log::info!("Starting creation of user broadcaster");
         let (tx, rx) = actix_web_lab::sse::channel(10);
 
         tx.send(actix_web_lab::sse::Data::new("connected")).await.unwrap();

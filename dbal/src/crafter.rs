@@ -1,16 +1,14 @@
-use sea_orm::{IntoActiveModel, JoinType, NotSet, QueryOrder, QuerySelect};
+use sea_orm::{IntoActiveModel, NotSet, QueryOrder, QuerySelect};
 use sea_orm::ActiveValue::Set;
 use sea_orm::prelude::*;
 use sea_orm::sea_query::Expr;
 
-use pandaparty_entities::{crafter, pandaparty_db_error, user};
+use pandaparty_entities::{crafter, pandaparty_db_error};
 use pandaparty_entities::prelude::*;
-use crate::user::get_user;
 
-pub async fn get_crafters(username: String, db: &DatabaseConnection) -> SheefResult<Vec<Crafter>> {
+pub async fn get_crafters(user_id: i32, db: &DatabaseConnection) -> PandaPartyResult<Vec<Crafter>> {
     crafter::Entity::find()
-        .filter(user::Column::Username.eq(username))
-        .join(JoinType::InnerJoin, crafter::Relation::User.def())
+        .filter(crafter::Column::UserId.eq(user_id))
         .order_by_asc(crafter::Column::Job)
         .all(db)
         .await
@@ -20,11 +18,8 @@ pub async fn get_crafters(username: String, db: &DatabaseConnection) -> SheefRes
         })
 }
 
-pub async fn get_crafter(username: String, job: String, db: &DatabaseConnection) -> SheefResult<Crafter> {
-    match crafter::Entity::find()
-        .filter(crafter::Column::Job.eq(job))
-        .filter(user::Column::Username.eq(username))
-        .join(JoinType::InnerJoin, crafter::Relation::User.def())
+pub async fn get_crafter(id: i32, db: &DatabaseConnection) -> PandaPartyResult<Crafter> {
+    match crafter::Entity::find_by_id(id)
         .one(db)
         .await {
         Ok(Some(res)) => Ok(res),
@@ -36,21 +31,33 @@ pub async fn get_crafter(username: String, job: String, db: &DatabaseConnection)
     }
 }
 
-pub async fn crafter_exists(username: String, job: String, db: &DatabaseConnection) -> bool {
-    get_crafter(username, job, db).await.is_ok()
+pub async fn crafter_exists(id: i32, db: &DatabaseConnection) -> bool {
+    match crafter::Entity::find_by_id(id)
+        .select_only()
+        .column(crafter::Column::Id)
+        .count(db)
+        .await {
+        Ok(count) => count > 0,
+        _ => false
+    }
 }
 
-pub async fn create_crafter(username: String, crafter: Crafter, db: &DatabaseConnection) -> SheefResult<Crafter> {
-    let user = match get_user(username.clone(), db).await {
-        Ok(user) => user,
-        Err(err) => {
-            log::error!("Failed to load user {}: {err}", username);
-            return Err(err);
-        }
-    };
+pub async fn crafter_exists_by_job(user_id: i32, job: String, db: &DatabaseConnection) -> bool {
+    match crafter::Entity::find()
+        .select_only()
+        .column(crafter::Column::Id)
+        .filter(crafter::Column::Job.eq(job))
+        .filter(crafter::Column::UserId.eq(user_id))
+        .count(db)
+        .await {
+        Ok(count) => count > 0,
+        _ => false
+    }
+}
 
+pub async fn create_crafter(user_id: i32, crafter: Crafter, db: &DatabaseConnection) -> PandaPartyResult<Crafter> {
     let mut model = crafter.into_active_model();
-    model.user_id = Set(user.id);
+    model.user_id = Set(user_id);
     model.id = NotSet;
 
     model
@@ -62,18 +69,9 @@ pub async fn create_crafter(username: String, crafter: Crafter, db: &DatabaseCon
         })
 }
 
-pub async fn update_crafter(username: String, job: String, crafter: Crafter, db: &DatabaseConnection) -> SheefErrorResult {
-   let user = match get_user(username.clone(), db).await {
-        Ok(user) => user,
-        Err(err) => {
-            log::error!("Failed to load user {}: {err}", username);
-            return Err(err);
-        }
-    };
-
+pub async fn update_crafter(id: i32, crafter: Crafter, db: &DatabaseConnection) -> PandaPartyErrorResult {
     crafter::Entity::update_many()
-        .filter(crafter::Column::Job.eq(job))
-        .filter(crafter::Column::UserId.eq(user.id))
+        .filter(crafter::Column::Id.eq(id))
         .col_expr(crafter::Column::Job, Expr::value(crafter.job))
         .col_expr(crafter::Column::Level, Expr::value(crafter.level))
         .exec(db)
@@ -85,18 +83,9 @@ pub async fn update_crafter(username: String, job: String, crafter: Crafter, db:
         .map(|_| ())
 }
 
-pub async fn delete_crafter(username: String, job: String, db: &DatabaseConnection) -> SheefErrorResult {
-    let user = match get_user(username.clone(), db).await {
-        Ok(user) => user,
-        Err(err) => {
-            log::error!("Failed to load user {}: {err}", username);
-            return Err(err);
-        }
-    };
-
+pub async fn delete_crafter(id: i32, db: &DatabaseConnection) -> PandaPartyErrorResult {
     crafter::Entity::delete_many()
-        .filter(crafter::Column::Job.eq(job))
-        .filter(crafter::Column::UserId.eq(user.id))
+        .filter(crafter::Column::Id.eq(id))
         .exec(db)
         .await
         .map_err(|err| {

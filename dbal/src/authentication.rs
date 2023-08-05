@@ -4,12 +4,12 @@ use sea_orm::ActiveValue::Set;
 use pandaparty_entities::{pandaparty_db_error, pandaparty_validation_error};
 use pandaparty_entities::prelude::*;
 
-pub async fn validate_auth_and_create_token(username: String, password: String, db: &DatabaseConnection) -> SheefResult<LoginResult> {
-    let user = match crate::user::get_user(username.clone(), db).await {
+pub async fn validate_auth_and_create_token(username: String, password: String, db: &DatabaseConnection) -> PandaPartyResult<LoginResult> {
+    let user = match crate::user::get_user_by_username(username.clone(), db).await {
         Ok(user) => user,
         Err(err) => {
             log::error!("Failed to load user {}: {err}", username);
-            return Err(pandaparty_entities::pandaparty_not_found_error!("user", "User not found"));
+            return Err(pandaparty_not_found_error!("user", "User not found"));
         }
     };
     let is_valid = user.validate_password(password);
@@ -36,7 +36,7 @@ pub async fn validate_auth_and_create_token(username: String, password: String, 
     }
 }
 
-pub async fn delete_token(token: String, db: &DatabaseConnection) -> SheefErrorResult {
+pub async fn delete_token(token: String, db: &DatabaseConnection) -> PandaPartyErrorResult {
     pandaparty_entities::token::Entity::delete_many()
         .filter(pandaparty_entities::token::Column::Token.eq(token))
         .exec(db)

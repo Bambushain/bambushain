@@ -1,17 +1,14 @@
-use sea_orm::{IntoActiveModel, JoinType, NotSet, QueryOrder, QuerySelect};
+use sea_orm::{IntoActiveModel, NotSet, QueryOrder, QuerySelect};
 use sea_orm::ActiveValue::Set;
 use sea_orm::prelude::*;
 use sea_orm::sea_query::Expr;
 
-use pandaparty_entities::{fighter, pandaparty_db_error, user};
+use pandaparty_entities::{fighter, pandaparty_db_error};
 use pandaparty_entities::prelude::*;
 
-use crate::user::get_user;
-
-pub async fn get_fighters(username: String, db: &DatabaseConnection) -> SheefResult<Vec<Fighter>> {
+pub async fn get_fighters(user_id: i32, db: &DatabaseConnection) -> PandaPartyResult<Vec<Fighter>> {
     fighter::Entity::find()
-        .filter(user::Column::Username.eq(username))
-        .join(JoinType::InnerJoin, fighter::Relation::User.def())
+        .filter(fighter::Column::UserId.eq(user_id))
         .order_by_asc(fighter::Column::Job)
         .all(db)
         .await
@@ -21,11 +18,9 @@ pub async fn get_fighters(username: String, db: &DatabaseConnection) -> SheefRes
         })
 }
 
-pub async fn get_fighter(username: String, job: String, db: &DatabaseConnection) -> SheefResult<Fighter> {
+pub async fn get_fighter(id: i32, db: &DatabaseConnection) -> PandaPartyResult<Fighter> {
     match fighter::Entity::find()
-        .filter(fighter::Column::Job.eq(job))
-        .filter(user::Column::Username.eq(username))
-        .join(JoinType::InnerJoin, fighter::Relation::User.def())
+        .filter(fighter::Column::Id.eq(id))
         .one(db)
         .await {
         Ok(Some(res)) => Ok(res),
@@ -37,21 +32,33 @@ pub async fn get_fighter(username: String, job: String, db: &DatabaseConnection)
     }
 }
 
-pub async fn fighter_exists(username: String, job: String, db: &DatabaseConnection) -> bool {
-    get_fighter(username, job, db).await.is_ok()
+pub async fn fighter_exists(id: i32, db: &DatabaseConnection) -> bool {
+    match fighter::Entity::find_by_id(id)
+        .select_only()
+        .column(fighter::Column::Id)
+        .count(db)
+        .await {
+        Ok(count) => count > 0,
+        _ => false
+    }
 }
 
-pub async fn create_fighter(username: String, fighter: Fighter, db: &DatabaseConnection) -> SheefResult<Fighter> {
-    let user = match get_user(username.clone(), db).await {
-        Ok(user) => user,
-        Err(err) => {
-            log::error!("Failed to load user {}: {err}", username);
-            return Err(err);
-        }
-    };
+pub async fn fighter_exists_by_job(user_id: i32, job: String, db: &DatabaseConnection) -> bool {
+    match fighter::Entity::find()
+        .select_only()
+        .column(fighter::Column::Id)
+        .filter(fighter::Column::Job.eq(job))
+        .filter(fighter::Column::UserId.eq(user_id))
+        .count(db)
+        .await {
+        Ok(count) => count > 0,
+        _ => false
+    }
+}
 
+pub async fn create_fighter(user_id: i32, fighter: Fighter, db: &DatabaseConnection) -> PandaPartyResult<Fighter> {
     let mut model = fighter.into_active_model();
-    model.user_id = Set(user.id);
+    model.user_id = Set(user_id);
     model.id = NotSet;
 
     model
@@ -63,18 +70,9 @@ pub async fn create_fighter(username: String, fighter: Fighter, db: &DatabaseCon
         })
 }
 
-pub async fn update_fighter(username: String, job: String, fighter: Fighter, db: &DatabaseConnection) -> SheefErrorResult {
-    let user = match get_user(username.clone(), db).await {
-        Ok(user) => user,
-        Err(err) => {
-            log::error!("Failed to load user {}: {err}", username);
-            return Err(err);
-        }
-    };
-
+pub async fn update_fighter(id: i32, fighter: Fighter, db: &DatabaseConnection) -> PandaPartyErrorResult {
     fighter::Entity::update_many()
-        .filter(fighter::Column::Job.eq(job))
-        .filter(fighter::Column::UserId.eq(user.id))
+        .filter(fighter::Column::Id.eq(id))
         .col_expr(fighter::Column::Job, Expr::value(fighter.job))
         .col_expr(fighter::Column::Level, Expr::value(fighter.level))
         .col_expr(fighter::Column::GearScore, Expr::value(fighter.gear_score))
@@ -87,18 +85,9 @@ pub async fn update_fighter(username: String, job: String, fighter: Fighter, db:
         .map(|_| ())
 }
 
-pub async fn delete_fighter(username: String, job: String, db: &DatabaseConnection) -> SheefErrorResult {
-    let user = match get_user(username.clone(), db).await {
-        Ok(user) => user,
-        Err(err) => {
-            log::error!("Failed to load user {}: {err}", username);
-            return Err(err);
-        }
-    };
-
+pub async fn delete_fighter(id: i32, db: &DatabaseConnection) -> PandaPartyErrorResult {
     fighter::Entity::delete_many()
-        .filter(fighter::Column::Job.eq(job))
-        .filter(fighter::Column::UserId.eq(user.id))
+        .filter(fighter::Column::Id.eq(id))
         .exec(db)
         .await
         .map_err(|err| {

@@ -7,9 +7,7 @@ pub use Model as Crafter;
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 #[cfg_attr(feature = "backend", derive(DeriveEntityModel), sea_orm(table_name = "crafter"))]
 pub struct Model {
-    #[cfg(feature = "backend")]
     #[cfg_attr(feature = "backend", sea_orm(primary_key))]
-    #[serde(skip)]
     pub id: i32,
     #[cfg_attr(feature = "backend", sea_orm(unique))]
     pub job: String,
@@ -41,3 +39,15 @@ impl Related<super::user::Entity> for Entity {
 
 #[cfg(feature = "backend")]
 impl ActiveModelBehavior for ActiveModel {}
+
+impl Model {
+    pub fn new(job: String, level: String) -> Self {
+        Self {
+            id: i32::default(),
+            job,
+            level: Some(level),
+            #[cfg(feature = "backend")]
+            user_id: i32::default(),
+        }
+    }
+}

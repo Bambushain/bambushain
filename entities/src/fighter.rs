@@ -6,9 +6,8 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "backend", derive(DeriveEntityModel), sea_orm(table_name = "fighter"))]
 pub struct Model {
     #[cfg_attr(feature = "backend", sea_orm(primary_key))]
-    #[serde(skip)]
-    #[cfg(feature = "backend")]
     pub id: i32,
+    #[cfg_attr(feature = "backend", sea_orm(unique))]
     pub job: String,
     pub level: Option<String>,
     pub gear_score: Option<String>,
@@ -39,3 +38,16 @@ impl Related<super::user::Entity> for Entity {
 
 #[cfg(feature = "backend")]
 impl ActiveModelBehavior for ActiveModel {}
+
+impl Model {
+    pub fn new(job: String, level: String, gear_score: String) -> Self {
+        Self {
+            id: i32::default(),
+            job,
+            gear_score: Some(gear_score),
+            level: Some(level),
+            #[cfg(feature = "backend")]
+            user_id: i32::default(),
+        }
+    }
+}

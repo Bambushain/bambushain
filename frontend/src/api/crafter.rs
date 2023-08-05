@@ -41,12 +41,12 @@ pub async fn create_crafter(crafter: Crafter) -> SheefApiResult<Crafter> {
     post("/api/crafter", &crafter).await
 }
 
-pub async fn update_crafter(job: String, crafter: Crafter) -> SheefApiResult<()> {
+pub async fn update_crafter(id: i32, crafter: Crafter) -> SheefApiResult<()> {
     log::debug!("Create crafter {}", crafter.job);
-    put(format!("/api/crafter/{}", job), &crafter).await
+    put(format!("/api/crafter/{id}"), &crafter).await
 }
 
-pub async fn delete_crafter(crafter: Crafter) -> SheefApiResult<()> {
-    log::debug!("Delete crafter {}", crafter.job);
-    delete(format!("/api/crafter/{}", crafter.job)).await
+pub async fn delete_crafter(id: i32) -> SheefApiResult<()> {
+    log::debug!("Delete crafter {id}");
+    delete(format!("/api/crafter/{id}")).await
 }

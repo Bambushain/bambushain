@@ -11,16 +11,15 @@ pandaparty-entities = { path = "entities" }
 pandaparty-dbal = { path = "dbal" }
 
 stderrlog = "0.5.4"
-tokio = { version = "1.29.1", features = ["full"] }
-anyhow = "1.0.71"
 
+actix-web = { workspace = true }
+actix-web-lab = { workspace = true, features = ["spa"] }
+chrono = { workspace = true }
 log = { workspace = true }
+rand = { workspace = true }
+sea-orm = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-chrono = { workspace = true }
-actix-web-lab = { workspace = true, features = ["spa"] }
-actix-web = { workspace = true }
-sea-orm = { workspace = true }
 
 [workspace]
 members = [
@@ -37,14 +36,15 @@ version = "4.0.0"
 edition = "2021"
 
 [workspace.dependencies]
+actix-web = "4.3.1"
+actix-web-lab = "0.19.1"
+bcrypt = "0.15.0"
+chrono = { version = "0.4.26", features = ["serde"] }
 log = "0.4.19"
+sea-orm = { version = "0.12.2", features = ["with-json", "runtime-actix-rustls", "sqlx-postgres"] }
 serde = { version = "1.0.171", features = ["derive"] }
 serde_json = "1.0.100"
-chrono = { version = "0.4.26", features = ["serde"] }
-actix-web-lab = "0.19.1"
-actix-web = "4.3.1"
-sea-orm = { version = "0.12.1", features = ["with-json", "runtime-actix-rustls", "sqlx-postgres"] }
-bcrypt = "0.15.0"
+rand = "0.8.5"
 
 [profile.release]
 # less code to include into binary

@@ -1,7 +1,6 @@
 use actix_web::{HttpResponse, web};
 use serde::Deserialize;
 
-use pandaparty_dbal::prelude::*;
 use pandaparty_entities::prelude::*;
 
 use crate::DbConnection;
@@ -9,42 +8,42 @@ use crate::middleware::authenticate_user::Authentication;
 
 #[derive(Deserialize)]
 pub struct FighterPathInfo {
-    pub job: String,
+    pub id: i32,
 }
 
-pub async fn get_fighters(authentication_state: Authentication, db: DbConnection) -> HttpResponse {
-    ok_or_error!(pandaparty_dbal::fighter::get_fighters(authentication_state.user.username.clone(), &db).await)
+pub async fn get_fighters(authentication: Authentication, db: DbConnection) -> HttpResponse {
+    ok_or_error!(pandaparty_dbal::fighter::get_fighters(authentication.user.id, &db).await)
 }
 
-pub async fn get_fighter(path: web::Path<FighterPathInfo>, authentication_state: Authentication, db: DbConnection) -> HttpResponse {
-    ok_or_error!(pandaparty_dbal::fighter::get_fighter(authentication_state.user.username.clone(), path.job.clone(), &db).await)
+pub async fn get_fighter(path: web::Path<FighterPathInfo>, db: DbConnection) -> HttpResponse {
+    ok_or_error!(pandaparty_dbal::fighter::get_fighter(path.id, &db).await)
 }
 
-pub async fn create_fighter(body: web::Json<Fighter>, authentication_state: Authentication, db: DbConnection) -> HttpResponse {
-    if fighter_exists(authentication_state.user.username.clone(), body.job.clone(), &db).await {
+pub async fn create_fighter(body: web::Json<Fighter>, authentication: Authentication, db: DbConnection) -> HttpResponse {
+    if pandaparty_dbal::fighter::fighter_exists_by_job(authentication.user.id, body.job.clone(), &db).await {
         return conflict!(pandaparty_exists_already_error!("fighter", "The fighter already exists"));
     }
 
-    created_or_error!(pandaparty_dbal::fighter::create_fighter(authentication_state.user.username.clone(), body.into_inner(), &db).await)
+    created_or_error!(pandaparty_dbal::fighter::create_fighter(authentication.user.id, body.into_inner(), &db).await)
 }
 
-pub async fn update_fighter(body: web::Json<Fighter>, path: web::Path<FighterPathInfo>, authentication_state: Authentication, db: DbConnection) -> HttpResponse {
-    let fighter_exists = fighter_exists(authentication_state.user.username.clone(), path.job.clone(), &db).await;
-    if !fighter_exists {
-        return not_found!(pandaparty_not_found_error!("fighter", "The fighter was not found"));
-    }
+pub async fn update_fighter(body: web::Json<Fighter>, path: web::Path<FighterPathInfo>, db: DbConnection) -> HttpResponse {
+    let fighter = match pandaparty_dbal::fighter::get_fighter(path.id, &db).await {
+        Ok(fighter) => fighter,
+        Err(_) => return not_found!(pandaparty_not_found_error!("fighter", "The fighter was not found"))
+    };
 
-    if fighter_exists && body.job != path.job {
+    if body.job != fighter.job {
         return conflict!(pandaparty_exists_already_error!("fighter", "The fighter already exists"));
     }
 
-    created_or_error!(pandaparty_dbal::fighter::update_fighter(authentication_state.user.username.clone(), path.job.clone(), body.into_inner(), &db).await)
+    no_content_or_error!(pandaparty_dbal::fighter::update_fighter(path.id, body.into_inner(), &db).await)
 }
 
-pub async fn delete_fighter(path: web::Path<FighterPathInfo>, authentication_state: Authentication, db: DbConnection) -> HttpResponse {
-    if !fighter_exists(authentication_state.user.username.clone(), path.job.clone(), &db).await {
+pub async fn delete_fighter(path: web::Path<FighterPathInfo>, db: DbConnection) -> HttpResponse {
+    if !pandaparty_dbal::fighter::fighter_exists(path.id, &db).await {
         return not_found!(pandaparty_not_found_error!("fighter", "The fighter was not found"));
     }
 
-    no_content_or_error!(pandaparty_dbal::fighter::delete_fighter(authentication_state.user.username.clone(), path.job.clone(), &db).await)
+    no_content_or_error!(pandaparty_dbal::fighter::delete_fighter(path.id, &db).await)
 }

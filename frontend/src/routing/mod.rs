@@ -4,11 +4,17 @@ use yew_router::Routable;
 
 #[derive(Clone, Routable, PartialEq)]
 pub enum AppRoute {
-    #[at("/sheef")]
+    #[at("/")]
     #[not_found]
-    Sheef,
-    #[at("/sheef/*")]
-    SheefRoot,
+    Home,
+    #[at("/pandaparty")]
+    PandaPartyRoot,
+    #[at("/pandaparty/*")]
+    PandaParty,
+    #[at("/ff")]
+    FinalFantasyRoot,
+    #[at("/ff/*")]
+    FinalFantasy,
     #[at("/login")]
     Login,
 }
@@ -20,19 +26,22 @@ impl Display for AppRoute {
 }
 
 #[derive(Clone, Routable, PartialEq)]
-pub enum SheefRoute {
-    #[at("/sheef")]
-    #[not_found]
-    Home,
-    #[at("/sheef/crew")]
-    User,
-    #[at("/sheef/crafter")]
+pub enum FinalFantasyRoute {
+    #[at("/ff/crafter")]
     Crafter,
-    #[at("/sheef/fighter")]
+    #[at("/ff/fighter")]
     Fighter,
 }
 
-impl Display for SheefRoute {
+#[derive(Clone, Routable, PartialEq)]
+pub enum PandaPartyRoute {
+    #[at("/pandaparty/calendar")]
+    Calendar,
+    #[at("/pandaparty/user")]
+    User,
+}
+
+impl Display for FinalFantasyRoute {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_str(self.to_path().as_str())
     }

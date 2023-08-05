@@ -41,12 +41,12 @@ pub async fn create_fighter(fighter: Fighter) -> SheefApiResult<Fighter> {
     post("/api/fighter", &fighter).await
 }
 
-pub async fn update_fighter(job: String, fighter: Fighter) -> SheefApiResult<()> {
-    log::debug!("Create fighter {}", fighter.job);
-    put(format!("/api/fighter/{}", job), &fighter).await
+pub async fn update_fighter(id: i32, fighter: Fighter) -> SheefApiResult<()> {
+    log::debug!("Create fighter {id}");
+    put(format!("/api/fighter/{id}"), &fighter).await
 }
 
-pub async fn delete_fighter(fighter: Fighter) -> SheefApiResult<()> {
-    log::debug!("Delete fighter {}", fighter.job);
-    delete(format!("/api/fighter/{}", fighter.job)).await
+pub async fn delete_fighter(id: i32) -> SheefApiResult<()> {
+    log::debug!("Delete fighter {id}");
+    delete(format!("/api/fighter/{id}")).await
 }

@@ -4,7 +4,12 @@ use std::fmt::{Debug, Display, Formatter};
 use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
 
+pub use authentication::*;
+pub use crafter::*;
+pub use fighter::*;
+pub use my::*;
 use pandaparty_entities::prelude::*;
+pub use user::*;
 
 use crate::storage::get_token;
 
@@ -13,7 +18,7 @@ pub mod my;
 pub mod user;
 pub mod crafter;
 pub mod fighter;
-pub mod boolean_table;
+// pub mod boolean_table;
 
 macro_rules! error_code {
     ($name:tt,$code:literal) => {
@@ -47,7 +52,7 @@ impl From<i32> for ErrorCode {
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone, Serialize, Deserialize, Debug)]
 pub struct ApiError {
     pub code: ErrorCode,
-    pub pandaparty_error: SheefError,
+    pub pandaparty_error: PandaPartyError,
 }
 
 impl std::error::Error for ApiError {}
@@ -92,7 +97,7 @@ macro_rules! handle_response {
                 }
                 Err(err) => {
                     log::warn!("Request failed to execute {}", err);
-                    return Err(crate::api::ApiError { code: SEND_ERROR, pandaparty_error: pandaparty_entities::prelude::SheefError::default() });
+                    return Err(crate::api::ApiError { code: SEND_ERROR, pandaparty_error: pandaparty_entities::prelude::PandaPartyError::default() });
                 }
             };
 
@@ -103,7 +108,7 @@ macro_rules! handle_response {
                 }
                 Err(err) => {
                     log::warn!("Json deserialize failed {}", err);
-                    Err(crate::api::ApiError { code: JSON_DESERIALIZE_ERROR, pandaparty_error: pandaparty_entities::prelude::SheefError::default() })
+                    Err(crate::api::ApiError { code: JSON_DESERIALIZE_ERROR, pandaparty_error: pandaparty_entities::prelude::PandaPartyError::default() })
                 }
             }
         }
@@ -133,7 +138,7 @@ macro_rules! handle_response_code {
                 }
                 Err(err) => {
                     log::warn!("Request failed to execute {}", err);
-                    Err(ApiError { code: SEND_ERROR, pandaparty_error: pandaparty_entities::prelude::SheefError::default() })
+                    Err(ApiError { code: SEND_ERROR, pandaparty_error: pandaparty_entities::prelude::PandaPartyError::default() })
                 }
             }
         }
@@ -190,7 +195,7 @@ pub async fn put<IN>(uri: impl Into<String>, body: &IN) -> SheefApiResult<()> wh
         Ok(request) => handle_response_code!(request.send().await),
         Err(err) => {
             log::warn!("Serialize failed {}", err);
-            Err(ApiError { pandaparty_error: SheefError::default(), code: JSON_SERIALIZE_ERROR })
+            Err(ApiError { pandaparty_error: PandaPartyError::default(), code: JSON_SERIALIZE_ERROR })
         }
     }
 }
@@ -208,7 +213,9 @@ pub async fn post<IN, OUT>(uri: impl Into<String>, body: &IN) -> SheefApiResult<
         Ok(request) => handle_response!(request.send().await),
         Err(err) => {
             log::warn!("Serialize failed {}", err);
-            Err(ApiError { pandaparty_error: SheefError::default(), code: JSON_SERIALIZE_ERROR })
+            Err(ApiError { pandaparty_error: PandaPartyError::default(), code: JSON_SERIALIZE_ERROR })
         }
     }
 }
+
+// pub use boolean_table::*;

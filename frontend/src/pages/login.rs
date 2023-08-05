@@ -1,91 +1,165 @@
+use std::rc::Rc;
+
 use bounce::helmet::Helmet;
-use bounce::query::use_mutation;
-use bounce::use_atom_setter;
-use web_sys::HtmlInputElement;
+use bounce::query::use_query_value;
+use stylist::{css, GlobalStyle};
+use stylist::yew::use_style;
 use yew::prelude::*;
-use yew_feather::LogIn;
+use yew_cosmo::prelude::*;
+use yew_icons::Icon;
 use yew_router::hooks::use_navigator;
 
 use pandaparty_entities::prelude::*;
 
-use crate::api::my::Profile;
+use crate::{api, storage};
 use crate::routing::AppRoute;
-use crate::storage::CurrentUser;
 
 #[function_component(LoginPage)]
 pub fn login_page() -> Html {
-    let loading_state = use_state_eq(|| false);
-    let error_state = use_state_eq(|| false);
+    let navigator = use_navigator().expect("Navigator should be available");
+
+    let profile_query = use_query_value::<api::Profile>(().into());
+
     let username_state = use_state_eq(|| AttrValue::from(""));
     let password_state = use_state_eq(|| AttrValue::from(""));
+    let error_message_state = use_state_eq(|| AttrValue::from("Melde dich an und komm in die Pandaparty"));
 
-    let profile_atom_setter = use_atom_setter::<CurrentUser>();
+    let request_successful_state = use_state_eq(|| false);
+    let error_state = use_state_eq(|| false);
 
-    let submit = {
-        let navigator = use_navigator();
-        let login_user_state = use_mutation::<Profile>();
+    let on_username_update = use_callback(|value: AttrValue, state| state.set(value), username_state.clone());
+    let on_password_update = use_callback(|value: AttrValue, state| state.set(value), password_state.clone());
+
+    let login_submit = {
+        let username_state = username_state.clone();
+        let password_state = password_state.clone();
+        let error_message_state = error_message_state.clone();
+
+        let request_successful = request_successful_state.clone();
         let error_state = error_state.clone();
-        let loading_state = loading_state.clone();
-        let profile_atom_setter = profile_atom_setter.clone();
 
-        use_callback(move |evt: SubmitEvent, (username_state, password_state)| {
-            evt.prevent_default();
-            let username = username_state.to_string();
-            let password = password_state.to_string();
-            let navigator = navigator.clone();
-            let login_user_state = login_user_state.clone();
+        Callback::from(move |_: ()| {
+            let username_state = username_state.clone();
+            let password_state = password_state.clone();
+            let error_message_state = error_message_state.clone();
+
+            let request_successful = request_successful.clone();
             let error_state = error_state.clone();
-            let loading_state = loading_state.clone();
-            let profile_atom_setter = profile_atom_setter.clone();
-            log::debug!("Spawn local async future");
+
+            let profile_query = profile_query.clone();
+
+            let navigator = navigator.clone();
+
             yew::platform::spawn_local(async move {
-                log::debug!("Perform login");
-                let login_user_state = login_user_state.clone();
-                let loading_state = loading_state.clone();
-                loading_state.set(true);
-                match login_user_state.run(Login {
-                    username,
-                    password,
-                }).await {
-                    Ok(profile) => {
-                        log::debug!("Redirect to {}, this should change at some point to the original requested uri", AppRoute::Sheef);
-                        profile_atom_setter(CurrentUser { profile: profile.user.clone() });
-                        navigator.expect("Navigator should be there").push(&AppRoute::Sheef);
+                match api::login(Rc::new(Login { username: (*username_state).to_string(), password: (*password_state).to_string() })).await {
+                    Ok(result) => {
+                        request_successful.set(true);
                         error_state.set(false);
+                        error_message_state.set(AttrValue::from(""));
+                        storage::set_token(result.token);
+                        let _ = profile_query.refresh().await;
+                        navigator.push(&AppRoute::PandaPartyRoot);
                     }
-                    Err(_) => error_state.set(true),
-                };
-                loading_state.set(false);
-            });
-        }, (username_state.clone(), password_state.clone()))
+                    Err(_) => {
+                        request_successful.set(false);
+                        error_state.set(true);
+                        error_message_state.set("Die Zugangsdaten sind ungültig".into());
+                    }
+                }
+            })
+        })
     };
-    let update_username = use_callback(|evt: InputEvent, state| state.set(evt.target_unchecked_into::<HtmlInputElement>().value().into()), username_state.clone());
-    let update_password = use_callback(|evt: InputEvent, state| state.set(evt.target_unchecked_into::<HtmlInputElement>().value().into()), password_state.clone());
+
+    let global_style = GlobalStyle::new(css!(r#"
+body.panda-login {
+    --black: #ffffff;
+    --white: transparent;
+    --primary-color: #9F2637;
+    --control-border-color: var(--black);
+    --negative-color: var(--black);
+
+    --font-weight-bold: bold;
+    --font-weight-normal: normal;
+    --font-weight-light: 300;
+    --font-family: Lato, sans-serif;
+}
+
+body.panda-login button {
+    --control-border-color: var(--primary-color);
+    --black: var(--primary-color);
+}
+
+body.panda-login input {
+    --primary-color: var(--control-border-color);
+}
+
+body.panda-login button:hover {
+    color: #ffffff !important;
+}"#)).expect("Should be able to create global style");
+
+    let login_around_style = use_style!(r#"
+position: fixed;
+left: 0;
+right: 0;
+top: 0;
+bottom: 0;
+display: flex;
+justify-content: center;
+align-items: center;
+height: 100vh;
+width: 100vw;
+background: url("/static/background-login.webp");
+background-size: cover;
+background-position-y: bottom;
+
+font-family: var(--font-family);
+color: var(--black);
+    "#);
+
+    let login_container_style = use_style!(r#"
+background: rgba(255, 255, 255, 0.25);
+padding: 32px 64px;
+backdrop-filter: blur(24px) saturate(90%);
+box-sizing: border-box;
+margin-top: -20px;
+min-width: 570px;
+"#);
+    let login_message_style = use_style!(r#"
+font-size: 24px;
+color: #fff;
+font-weight: var(--font-weight-light);
+font-family: var(--font-family);
+display: flex;
+gap: 8px;
+align-items: center;
+    "#);
 
     html!(
         <>
             <Helmet>
-                <title>{"Login"}</title>
+                <title>{"Anmelden"}</title>
+                <body class="panda-login" />
+                <style>
+                    {global_style.get_style_str()}
+                </style>
             </Helmet>
-            <main class="container login" data-theme="light">
-                <article class="grid">
-                    <div>
-                        <h1>{"Anmelden"}</h1>
-                        {if *error_state {
-                            html!(<p data-msg="negative">{"Deine Anmeldedaten sind falsch"}</p>)
+            <div class={login_around_style}>
+                <div class={login_container_style}>
+                    <CosmoTitle title="Anmelden" />
+                    <p class={login_message_style}>
+                        if *error_state {
+                            <Icon icon_id={IconId::LucideXOctagon} style="stroke: #290403;" />
                         } else {
-                            html!(<p data-msg="info">{"Gib deine Anmeldedaten ein"}</p>)
-                        }}
-                        <form onsubmit={submit}>
-                            <input readonly={*loading_state} oninput={update_username} value={(*username_state).clone()} type="text" name="username" placeholder="Name" aria-label="Name" required=true />
-                            <input readonly={*loading_state} oninput={update_password} value={(*password_state).clone()} type="password" name="password" placeholder="Passwort" aria-label="Passwort"
-                                   autocomplete="current-password" required=true />
-                            <button disabled={*loading_state} type="submit" class="contrast"><span class="small-gap-row"><LogIn color={"var(--color)"} />{"Anmelden"}</span></button>
-                        </form>
-                    </div>
-                    <div></div>
-                </article>
-            </main>
+                            <Icon icon_id={IconId::LucideLogIn} />
+                        }
+                        {(*error_message_state).clone()}
+                    </p>
+                    <CosmoForm on_submit={login_submit} buttons={html!(<CosmoButton label="Anmelden" is_submit={true} />)}>
+                        <CosmoTextBox id="username" required={true} value={(*username_state).clone()} on_input={on_username_update} label="Benutzername" />
+                        <CosmoTextBox id="password" input_type={CosmoTextBoxType::Password} required={true} value={(*password_state).clone()} on_input={on_password_update} label="Passwort" />
+                    </CosmoForm>
+                </div>
+            </div>
         </>
     )
 }

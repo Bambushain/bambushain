@@ -46,7 +46,7 @@ impl<S, B> dev::Service<dev::ServiceRequest> for CheckModMiddleware<S>
         let svc = self.service.clone();
 
         Box::pin(async move {
-            let needs_to_be_mod = HttpResponse::Forbidden().json(pandaparty_entities::error::SheefError { entity_type: "".to_string(), error_type: pandaparty_entities::error::SheefErrorCode::InsufficientRightsError, message: "You need to be a mod".to_string() }).map_into_right_body();
+            let needs_to_be_mod = HttpResponse::Forbidden().json(pandaparty_entities::error::PandaPartyError { entity_type: "".to_string(), error_type: pandaparty_entities::error::PandaPartyErrorCode::InsufficientRightsError, message: "You need to be a mod".to_string() }).map_into_right_body();
             let request = req.request();
 
             let is_mod = {

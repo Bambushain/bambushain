@@ -12,6 +12,6 @@ base64 = "0.21.2"
 uuid = { version = "1.4.0", features = ["v4"] }
 
 bcrypt = { workspace = true }
+chrono = { workspace = true }
 log = { workspace = true }
 sea-orm = { workspace = true }
-chrono = { workspace = true }

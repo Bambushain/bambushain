@@ -26,3 +26,11 @@ pub fn is_logging_on() -> bool {
 pub struct CurrentUser {
     pub profile: WebUser,
 }
+
+impl From<WebUser> for CurrentUser {
+    fn from(value: WebUser) -> Self {
+        Self {
+            profile: value
+        }
+    }
+}

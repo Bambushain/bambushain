@@ -1,5 +1,5 @@
-use crate::error::SheefError;
+use crate::error::PandaPartyError;
 
-pub type SheefErrorResult = Result<(), SheefError>;
+pub type PandaPartyErrorResult = Result<(), PandaPartyError>;
 
-pub type SheefResult<T> = Result<T, SheefError>;
+pub type PandaPartyResult<T> = Result<T, PandaPartyError>;

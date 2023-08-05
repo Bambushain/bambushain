@@ -92,12 +92,12 @@ macro_rules! no_content_or_error {
             match $data {
                 Ok(_) => no_content!(),
                 Err(err) => match err.error_type {
-                    pandaparty_entities::prelude::SheefErrorCode::NotFoundError => not_found!(err),
-                    pandaparty_entities::prelude::SheefErrorCode::ExistsAlreadyError => conflict!(err),
-                    pandaparty_entities::prelude::SheefErrorCode::InsufficientRightsError => forbidden!(err),
-                    pandaparty_entities::prelude::SheefErrorCode::UnauthorizedError => unauthorized!(err),
-                    pandaparty_entities::prelude::SheefErrorCode::InvalidDataError | pandaparty_entities::prelude::SheefErrorCode::ValidationError => bad_request!(err),
-                    pandaparty_entities::prelude::SheefErrorCode::DbError | pandaparty_entities::prelude::SheefErrorCode::IoError | pandaparty_entities::prelude::SheefErrorCode::SerializationError | pandaparty_entities::prelude::SheefErrorCode::UnknownError => internal_server_error!(err),
+                    pandaparty_entities::prelude::PandaPartyErrorCode::NotFoundError => not_found!(err),
+                    pandaparty_entities::prelude::PandaPartyErrorCode::ExistsAlreadyError => conflict!(err),
+                    pandaparty_entities::prelude::PandaPartyErrorCode::InsufficientRightsError => forbidden!(err),
+                    pandaparty_entities::prelude::PandaPartyErrorCode::UnauthorizedError => unauthorized!(err),
+                    pandaparty_entities::prelude::PandaPartyErrorCode::InvalidDataError | pandaparty_entities::prelude::PandaPartyErrorCode::ValidationError => bad_request!(err),
+                    pandaparty_entities::prelude::PandaPartyErrorCode::DbError | pandaparty_entities::prelude::PandaPartyErrorCode::IoError | pandaparty_entities::prelude::PandaPartyErrorCode::SerializationError | pandaparty_entities::prelude::PandaPartyErrorCode::UnknownError => internal_server_error!(err),
                 }
             }
         }
@@ -110,12 +110,12 @@ macro_rules! ok_or_error {
             match $data {
                 Ok(data) => ok_json!(data),
                 Err(err) => match err.error_type {
-                    pandaparty_entities::prelude::SheefErrorCode::NotFoundError => not_found!(err),
-                    pandaparty_entities::prelude::SheefErrorCode::ExistsAlreadyError => conflict!(err),
-                    pandaparty_entities::prelude::SheefErrorCode::InsufficientRightsError => forbidden!(err),
-                    pandaparty_entities::prelude::SheefErrorCode::UnauthorizedError => unauthorized!(err),
-                    pandaparty_entities::prelude::SheefErrorCode::InvalidDataError | pandaparty_entities::prelude::SheefErrorCode::ValidationError => bad_request!(err),
-                    pandaparty_entities::prelude::SheefErrorCode::DbError | pandaparty_entities::prelude::SheefErrorCode::IoError | pandaparty_entities::prelude::SheefErrorCode::SerializationError | pandaparty_entities::prelude::SheefErrorCode::UnknownError => internal_server_error!(err),
+                    pandaparty_entities::prelude::PandaPartyErrorCode::NotFoundError => not_found!(err),
+                    pandaparty_entities::prelude::PandaPartyErrorCode::ExistsAlreadyError => conflict!(err),
+                    pandaparty_entities::prelude::PandaPartyErrorCode::InsufficientRightsError => forbidden!(err),
+                    pandaparty_entities::prelude::PandaPartyErrorCode::UnauthorizedError => unauthorized!(err),
+                    pandaparty_entities::prelude::PandaPartyErrorCode::InvalidDataError | pandaparty_entities::prelude::PandaPartyErrorCode::ValidationError => bad_request!(err),
+                    pandaparty_entities::prelude::PandaPartyErrorCode::DbError | pandaparty_entities::prelude::PandaPartyErrorCode::IoError | pandaparty_entities::prelude::PandaPartyErrorCode::SerializationError | pandaparty_entities::prelude::PandaPartyErrorCode::UnknownError => internal_server_error!(err),
                 }
             }
         }
@@ -128,12 +128,12 @@ macro_rules! created_or_error {
             match $data {
                 Ok(data) => created_json!(data),
                 Err(err) => match err.error_type {
-                    pandaparty_entities::prelude::SheefErrorCode::NotFoundError => not_found!(err),
-                    pandaparty_entities::prelude::SheefErrorCode::ExistsAlreadyError => conflict!(err),
-                    pandaparty_entities::prelude::SheefErrorCode::InsufficientRightsError => forbidden!(err),
-                    pandaparty_entities::prelude::SheefErrorCode::UnauthorizedError => unauthorized!(err),
-                    pandaparty_entities::prelude::SheefErrorCode::InvalidDataError | pandaparty_entities::prelude::SheefErrorCode::ValidationError => bad_request!(err),
-                    pandaparty_entities::prelude::SheefErrorCode::DbError | pandaparty_entities::prelude::SheefErrorCode::IoError | pandaparty_entities::prelude::SheefErrorCode::SerializationError | pandaparty_entities::prelude::SheefErrorCode::UnknownError => internal_server_error!(err),
+                    pandaparty_entities::prelude::PandaPartyErrorCode::NotFoundError => not_found!(err),
+                    pandaparty_entities::prelude::PandaPartyErrorCode::ExistsAlreadyError => conflict!(err),
+                    pandaparty_entities::prelude::PandaPartyErrorCode::InsufficientRightsError => forbidden!(err),
+                    pandaparty_entities::prelude::PandaPartyErrorCode::UnauthorizedError => unauthorized!(err),
+                    pandaparty_entities::prelude::PandaPartyErrorCode::InvalidDataError | pandaparty_entities::prelude::PandaPartyErrorCode::ValidationError => bad_request!(err),
+                    pandaparty_entities::prelude::PandaPartyErrorCode::DbError | pandaparty_entities::prelude::PandaPartyErrorCode::IoError | pandaparty_entities::prelude::PandaPartyErrorCode::SerializationError | pandaparty_entities::prelude::PandaPartyErrorCode::UnknownError => internal_server_error!(err),
                 }
             }
         }

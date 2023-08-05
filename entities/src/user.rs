@@ -10,7 +10,6 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(feature = "backend", derive(DeriveEntityModel), sea_orm(table_name = "user"))]
 pub struct Model {
     #[cfg_attr(feature = "backend", sea_orm(primary_key))]
-    #[serde(skip)]
     pub id: i32,
     #[cfg_attr(feature = "backend", sea_orm(unique))]
     pub username: String,
@@ -18,6 +17,7 @@ pub struct Model {
     pub is_mod: bool,
     pub gear_level: String,
     pub job: String,
+    pub discord_name: String,
 }
 
 #[cfg(feature = "backend")]
@@ -70,38 +70,31 @@ impl ActiveModel {
 }
 
 impl Model {
-    pub fn new(username: String, password: String, job: String, gear_level: String, is_mod: bool) -> Self {
+    pub fn new(username: String, password: String, job: String, gear_level: String, discord_name: String, is_mod: bool) -> Self {
         Self {
-            id: 0,
+            id: i32::default(),
             username,
             password,
             is_mod,
             gear_level,
             job,
+            discord_name,
         }
     }
 
-    pub fn set_password(&mut self, plain_password: &String) -> Result<(), bcrypt::BcryptError> {
-        let hashed = bcrypt::hash(plain_password.as_bytes(), 12);
-        match hashed {
-            Ok(hashed_password) => {
-                self.password = hashed_password;
-                Ok(())
-            }
-            Err(err) => Err(err)
-        }
-    }
-
+    #[cfg(feature = "backend")]
     pub fn validate_password(&self, password: String) -> bool {
         bcrypt::verify(password, self.password.as_str()).unwrap_or(false)
     }
 
     pub fn to_web_user(&self) -> WebUser {
         WebUser {
+            id: self.id,
             username: self.username.to_string(),
             is_mod: self.is_mod,
             gear_level: self.gear_level.to_string(),
             job: self.job.to_string(),
+            discord_name: self.discord_name.clone(),
         }
     }
 }
@@ -109,10 +102,12 @@ impl Model {
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct WebUser {
+    pub id: i32,
     pub username: String,
     pub is_mod: bool,
     pub gear_level: String,
     pub job: String,
+    pub discord_name: String,
 }
 
 impl Display for WebUser {
@@ -126,4 +121,15 @@ impl Display for WebUser {
 pub struct UpdateProfile {
     pub gear_level: String,
     pub job: String,
+    pub discord_name: String,
+}
+
+impl UpdateProfile {
+    pub fn new(job: String, gear_level: String, discord_name: String) -> Self {
+        Self {
+            job,
+            gear_level,
+            discord_name,
+        }
+    }
 }

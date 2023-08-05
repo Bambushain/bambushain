@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone)]
 #[serde(rename_all = "camelCase")]
-pub enum SheefErrorCode {
+pub enum PandaPartyErrorCode {
     NotFoundError,
     ExistsAlreadyError,
     InvalidDataError,
@@ -18,13 +18,13 @@ pub enum SheefErrorCode {
     UnknownError,
 }
 
-impl Default for SheefErrorCode {
+impl Default for PandaPartyErrorCode {
     fn default() -> Self {
         Self::UnknownError
     }
 }
 
-impl Display for SheefErrorCode {
+impl Display for PandaPartyErrorCode {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_str(format!("{:?}", self).as_str())
     }
@@ -32,19 +32,19 @@ impl Display for SheefErrorCode {
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone, Debug, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
-pub struct SheefError {
+pub struct PandaPartyError {
     pub entity_type: String,
-    pub error_type: SheefErrorCode,
+    pub error_type: PandaPartyErrorCode,
     pub message: String,
 }
 
-impl Display for SheefError {
+impl Display for PandaPartyError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_str(format!("{:?}", self).as_str())
     }
 }
 
-impl Error for SheefError {}
+impl Error for PandaPartyError {}
 
 pub enum PasswordError {
     WrongPassword,
@@ -55,10 +55,10 @@ pub enum PasswordError {
 #[macro_export]
 macro_rules! pandaparty_not_found_error {
     ($entity_type:expr, $message:expr) => {
-        pandaparty_entities::prelude::SheefError {
+        pandaparty_entities::prelude::PandaPartyError {
             entity_type: $entity_type.to_string(),
             message: $message.to_string(),
-            error_type: pandaparty_entities::prelude::SheefErrorCode::NotFoundError,
+            error_type: pandaparty_entities::prelude::PandaPartyErrorCode::NotFoundError,
         }
     }
 }
@@ -66,10 +66,10 @@ macro_rules! pandaparty_not_found_error {
 #[macro_export]
 macro_rules! pandaparty_exists_already_error {
     ($entity_type:expr, $message:expr) => {
-        pandaparty_entities::prelude::SheefError {
+        pandaparty_entities::prelude::PandaPartyError {
             entity_type: $entity_type.to_string(),
             message: $message.to_string(),
-            error_type: pandaparty_entities::prelude::SheefErrorCode::ExistsAlreadyError,
+            error_type: pandaparty_entities::prelude::PandaPartyErrorCode::ExistsAlreadyError,
         }
     }
 }
@@ -77,10 +77,10 @@ macro_rules! pandaparty_exists_already_error {
 #[macro_export]
 macro_rules! pandaparty_invalid_data_error {
     ($entity_type:expr, $message:expr) => {
-        pandaparty_entities::prelude::SheefError {
+        pandaparty_entities::prelude::PandaPartyError {
             entity_type: $entity_type.to_string(),
             message: $message.to_string(),
-            error_type: pandaparty_entities::prelude::SheefErrorCode::InvalidDataError,
+            error_type: pandaparty_entities::prelude::PandaPartyErrorCode::InvalidDataError,
         }
     }
 }
@@ -88,10 +88,10 @@ macro_rules! pandaparty_invalid_data_error {
 #[macro_export]
 macro_rules! pandaparty_db_error {
     ($entity_type:expr, $message:expr) => {
-        pandaparty_entities::prelude::SheefError {
+        pandaparty_entities::prelude::PandaPartyError {
             entity_type: $entity_type.to_string(),
             message: $message.to_string(),
-            error_type: pandaparty_entities::prelude::SheefErrorCode::DbError,
+            error_type: pandaparty_entities::prelude::PandaPartyErrorCode::DbError,
         }
     }
 }
@@ -99,10 +99,10 @@ macro_rules! pandaparty_db_error {
 #[macro_export]
 macro_rules! pandaparty_serialization_error {
     ($entity_type:expr, $message:expr) => {
-        pandaparty_entities::prelude::SheefError {
+        pandaparty_entities::prelude::PandaPartyError {
             entity_type: $entity_type.to_string(),
             message: $message.to_string(),
-            error_type: pandaparty_entities::prelude::SheefErrorCode::SerializationError,
+            error_type: pandaparty_entities::prelude::PandaPartyErrorCode::SerializationError,
         }
     }
 }
@@ -110,10 +110,10 @@ macro_rules! pandaparty_serialization_error {
 #[macro_export]
 macro_rules! pandaparty_validation_error {
     ($entity_type:expr, $message:expr) => {
-        pandaparty_entities::prelude::SheefError {
+        pandaparty_entities::prelude::PandaPartyError {
             entity_type: $entity_type.to_string(),
             message: $message.to_string(),
-            error_type: pandaparty_entities::prelude::SheefErrorCode::ValidationError,
+            error_type: pandaparty_entities::prelude::PandaPartyErrorCode::ValidationError,
         }
     }
 }
@@ -121,10 +121,10 @@ macro_rules! pandaparty_validation_error {
 #[macro_export]
 macro_rules! pandaparty_unknown_error {
     ($entity_type:expr, $message:expr) => {
-        pandaparty_entities::prelude::SheefError {
+        pandaparty_entities::prelude::PandaPartyError {
             entity_type: $entity_type.to_string(),
             message: $message.to_string(),
-            error_type: pandaparty_entities::prelude::SheefErrorCode::UnknownError,
+            error_type: pandaparty_entities::prelude::PandaPartyErrorCode::UnknownError,
         }
     }
 }
@@ -132,10 +132,10 @@ macro_rules! pandaparty_unknown_error {
 #[macro_export]
 macro_rules! pandaparty_insufficient_rights_error {
     ($entity_type:expr, $message:expr) => {
-        pandaparty_entities::prelude::SheefError {
+        pandaparty_entities::prelude::PandaPartyError {
             entity_type: $entity_type.to_string(),
             message: $message.to_string(),
-            error_type: pandaparty_entities::prelude::SheefErrorCode::InsufficientRightsError,
+            error_type: pandaparty_entities::prelude::PandaPartyErrorCode::InsufficientRightsError,
         }
     }
 }
@@ -143,10 +143,10 @@ macro_rules! pandaparty_insufficient_rights_error {
 #[macro_export]
 macro_rules! pandaparty_unauthorized_error {
     ($entity_type:expr, $message:expr) => {
-        pandaparty_entities::prelude::SheefError {
+        pandaparty_entities::prelude::PandaPartyError {
             entity_type: $entity_type.to_string(),
             message: $message.to_string(),
-            error_type: pandaparty_entities::prelude::SheefErrorCode::UnauthorizedError,
+            error_type: pandaparty_entities::prelude::PandaPartyErrorCode::UnauthorizedError,
         }
     }
 }

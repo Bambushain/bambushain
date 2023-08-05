@@ -12,10 +12,10 @@ pub async fn login(body: web::Json<Login>, db: DbConnection) -> HttpResponse {
         Ok(result) => ok_json!(result),
         Err(err) => {
             log::error!("Failed to login {err}");
-            HttpResponse::Unauthorized().json(SheefError {
+            HttpResponse::Unauthorized().json(PandaPartyError {
                 entity_type: "user".to_string(),
                 message: "Username or Password is invalid".to_string(),
-                error_type: SheefErrorCode::InvalidDataError,
+                error_type: PandaPartyErrorCode::InvalidDataError,
             })
         }
     }

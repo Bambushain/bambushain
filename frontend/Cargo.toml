@@ -8,23 +8,24 @@ edition.workspace = true
 [dependencies]
 pandaparty-entities = { path = "../entities", default-features = false }
 
-yew = { version = "0.20.0", features = ["csr", "hydration"] }
-yew-router = "0.17.0"
+async-trait = "0.1.71"
+bounce = { version = "0.7.0", features = ["query", "helmet"] }
+date-range = "0.3.0"
+futures = "0.3.28"
+getrandom = { version = "0.2.10", features = ["js"] }
+gloo = { version = "0.9.0", default-features = false, features = ["storage", "net"] }
+stylist = { version = "0.12.1", features = ["yew"] }
+wasm-bindgen = "0.2.87"
 wasm-logger = "0.2.0"
 web-sys = "0.3.64"
-js-sys = "0.3.64"
-wasm-bindgen = "0.2.87"
-async-trait = "0.1.71"
-gloo = { version = "0.8.1", default-features = false, features = ["storage", "net"] }
-bounce = { version = "0.7.0", features = ["query", "helmet"] }
-getrandom = { version = "0.2.10", features = ["js"] }
-num-traits = "0.2.15"
-rand = "0.8.5"
+yew = { version = "0.20.0", features = ["csr", "hydration"] }
+yew-cosmo = "0.15.8"
+yew_icons = { version = "0.7.2", features = ["lucide"] }
 yew-hooks = "0.2.0"
-yew-feather = { version = "1.0.0" }
-futures = "0.3.28"
+yew-router = "0.17.0"
 
+chrono = { workspace = true, features = ["unstable-locales"] }
 log = { workspace = true }
+rand = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-chrono = { workspace = true }

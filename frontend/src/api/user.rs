@@ -9,11 +9,11 @@ use pandaparty_entities::prelude::*;
 use crate::api::{ApiError, delete, get, post, put, put_no_body, SheefApiResult};
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
-pub struct Crew {
+pub struct Users {
     pub users: Vec<WebUser>,
 }
 
-impl From<Vec<WebUser>> for Crew {
+impl From<Vec<WebUser>> for Users {
     fn from(value: Vec<WebUser>) -> Self {
         Self {
             users: value
@@ -27,7 +27,7 @@ pub(crate) async fn get_users() -> SheefApiResult<Vec<WebUser>> {
 }
 
 #[async_trait(? Send)]
-impl Query for Crew {
+impl Query for Users {
     type Input = ();
     type Error = ApiError;
 
@@ -41,27 +41,27 @@ pub async fn create_user(user: User) -> SheefApiResult<WebUser> {
     post("/api/user", &user).await
 }
 
-pub async fn make_user_mod(user: WebUser) -> SheefApiResult<()> {
-    log::debug!("Make user {} mod", user.username);
-    put_no_body(format!("/api/user/{}/mod", user.username)).await
+pub async fn make_user_mod(id: i32) -> SheefApiResult<()> {
+    log::debug!("Make user {id} mod");
+    put_no_body(format!("/api/user/{id}/mod")).await
 }
 
-pub async fn remove_user_mod(user: WebUser) -> SheefApiResult<()> {
-    log::debug!("Remove user {} mod", user.username);
-    delete(format!("/api/user/{}/mod", user.username)).await
+pub async fn remove_user_mod(id: i32) -> SheefApiResult<()> {
+    log::debug!("Remove user {id} mod");
+    delete(format!("/api/user/{id}/mod")).await
 }
 
-pub async fn delete_user(user: WebUser) -> SheefApiResult<()> {
-    log::debug!("Remove user {} main", user.username);
-    delete(format!("/api/user/{}", user.username)).await
+pub async fn delete_user(id: i32) -> SheefApiResult<()> {
+    log::debug!("Remove user {id} main");
+    delete(format!("/api/user/{id}")).await
 }
 
-pub async fn change_user_password(user: WebUser, new_password: String) -> SheefApiResult<()> {
-    log::debug!("Change user {} password", user.username);
-    put(format!("/api/user/{}/password", user.username), &ChangePassword { new_password }).await
+pub async fn change_user_password(id: i32, new_password: String) -> SheefApiResult<()> {
+    log::debug!("Change user {id} password");
+    put(format!("/api/user/{id}/password"), &ChangePassword { new_password }).await
 }
 
-pub async fn update_profile(profile: UpdateProfile, username: String) -> SheefApiResult<()> {
-    log::debug!("Update profile of user {username} to the following data {:?}", profile);
-    put(format!("/api/user/{username}/profile"), &profile).await
+pub async fn update_profile(id: i32, profile: UpdateProfile) -> SheefApiResult<()> {
+    log::debug!("Update profile of user {id} to the following data {:?}", profile);
+    put(format!("/api/user/{id}/profile"), &profile).await
 }

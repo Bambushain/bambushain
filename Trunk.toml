@@ -10,3 +10,6 @@ public_url = "/static/"
 
 [watch]
 watch = ["entities", "frontend"]
+
+[clean]
+cargo = true
