@@ -42,7 +42,7 @@ pub async fn create_fighter(fighter: Fighter) -> SheefApiResult<Fighter> {
 }
 
 pub async fn update_fighter(id: i32, fighter: Fighter) -> SheefApiResult<()> {
-    log::debug!("Create fighter {id}");
+    log::debug!("Update fighter {id}");
     put(format!("/api/fighter/{id}"), &fighter).await
 }
 

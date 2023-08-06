@@ -14,12 +14,9 @@ stderrlog = "0.5.4"
 
 actix-web = { workspace = true }
 actix-web-lab = { workspace = true, features = ["spa"] }
-chrono = { workspace = true }
 log = { workspace = true }
 rand = { workspace = true }
 sea-orm = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
 
 [workspace]
 members = [
@@ -28,7 +25,6 @@ members = [
     "entities",
     "frontend",
     "migration",
-    "utils"
 ]
 
 [workspace.package]
@@ -40,6 +36,8 @@ actix-web = "4.3.1"
 actix-web-lab = "0.19.1"
 bcrypt = "0.15.0"
 chrono = { version = "0.4.26", features = ["serde"] }
+color-art = "0.3.2"
+date-range = "0.3.0"
 log = "0.4.19"
 sea-orm = { version = "0.12.2", features = ["with-json", "runtime-actix-rustls", "sqlx-postgres"] }
 serde = { version = "1.0.171", features = ["derive"] }

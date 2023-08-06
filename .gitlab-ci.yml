@@ -7,7 +7,8 @@ lint:
   image: quay.imanuel.dev/imanuel/trunk-docker-base-image:latest
   stage: lint
   script:
-    - cargo clippy
+    - cargo clippy -p pandaparty
+    - cargo clippy -p pandaparty-frontend
     - cargo check
 
 test-build:

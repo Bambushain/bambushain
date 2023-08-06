@@ -8,10 +8,9 @@ edition.workspace = true
 [dependencies]
 pandaparty-entities = { path = "../entities" }
 
-base64 = "0.21.2"
 uuid = { version = "1.4.0", features = ["v4"] }
 
 bcrypt = { workspace = true }
-chrono = { workspace = true }
+date-range = { workspace = true }
 log = { workspace = true }
 sea-orm = { workspace = true }

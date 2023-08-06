@@ -5,9 +5,10 @@ pub mod user;
 pub mod error;
 pub mod result;
 pub mod authentication;
+pub mod event;
 
 pub mod prelude {
-    pub use crate::{pandaparty_exists_already_error, pandaparty_insufficient_rights_error, pandaparty_invalid_data_error, pandaparty_not_found_error, pandaparty_unknown_error, pandaparty_validation_error};
+    pub use crate::{pandaparty_exists_already_error, pandaparty_insufficient_rights_error, pandaparty_invalid_data_error, pandaparty_not_found_error, pandaparty_unknown_error, pandaparty_validation_error, pandaparty_db_error};
     pub use crate::authentication::*;
     pub use crate::crafter::Model as Crafter;
     pub use crate::error::*;
@@ -17,4 +18,5 @@ pub mod prelude {
     pub use crate::user::Model as User;
     pub use crate::user::UpdateProfile;
     pub use crate::user::WebUser;
+    pub use crate::event::Model as Event;
 }

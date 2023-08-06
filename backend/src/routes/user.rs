@@ -37,9 +37,11 @@ pub async fn create_user(user: web::Json<User>, notification: Notification, db: 
     }
 
     let data = pandaparty_dbal::user::create_user(user.into_inner(), &db).await.map(|u| u.to_web_user());
-    actix_web::rt::spawn(async move {
-        notification.crew_broadcaster.notify_change().await;
-    });
+    if data.is_ok() {
+        actix_web::rt::spawn(async move {
+            notification.user_broadcaster.notify_change().await;
+        });
+    }
 
     created_or_error!(data)
 }
@@ -51,9 +53,11 @@ pub async fn delete_user(info: web::Path<UserPathInfo>, notification: Notificati
     }
 
     let data = pandaparty_dbal::user::delete_user(info.id, &db).await;
-    actix_web::rt::spawn(async move {
-        notification.crew_broadcaster.notify_change().await;
-    });
+    if data.is_ok() {
+        actix_web::rt::spawn(async move {
+            notification.user_broadcaster.notify_change().await;
+        });
+    }
 
     no_content_or_error!(data)
 }
@@ -65,9 +69,11 @@ pub async fn add_mod_user(info: web::Path<UserPathInfo>, notification: Notificat
     }
 
     let data = change_mod_status(info.id, true, &db).await;
-    actix_web::rt::spawn(async move {
-        notification.crew_broadcaster.notify_change().await;
-    });
+    if data.is_ok() {
+        actix_web::rt::spawn(async move {
+            notification.user_broadcaster.notify_change().await;
+        });
+    }
 
     no_content_or_error!(data)
 }
@@ -80,7 +86,7 @@ pub async fn remove_mod_user(info: web::Path<UserPathInfo>, notification: Notifi
 
     let data = change_mod_status(info.id, false, &db).await;
     actix_web::rt::spawn(async move {
-        notification.crew_broadcaster.notify_change().await;
+        notification.user_broadcaster.notify_change().await;
     });
 
     no_content_or_error!(data)
@@ -106,18 +112,22 @@ pub async fn change_my_password(body: web::Json<ChangeMyPassword>, authenticatio
 
 pub async fn update_profile(body: web::Json<UpdateProfile>, notification: Notification, authentication: Authentication, db: DbConnection) -> HttpResponse {
     let data = update_me(authentication.user.id, body.job.clone(), body.gear_level.clone(), body.discord_name.clone(), &db).await;
-    actix_web::rt::spawn(async move {
-        notification.crew_broadcaster.notify_change().await;
-    });
+    if data.is_ok() {
+        actix_web::rt::spawn(async move {
+            notification.user_broadcaster.notify_change().await;
+        });
+    }
 
     no_content_or_error!(data)
 }
 
 pub async fn update_user_profile(info: web::Path<UserPathInfo>, body: web::Json<UpdateProfile>, notification: Notification, db: DbConnection) -> HttpResponse {
     let data = update_me(info.id, body.job.clone(), body.gear_level.clone(), body.discord_name.clone(), &db).await;
-    actix_web::rt::spawn(async move {
-        notification.crew_broadcaster.notify_change().await;
-    });
+    if data.is_ok() {
+        actix_web::rt::spawn(async move {
+            notification.user_broadcaster.notify_change().await;
+        });
+    }
 
     no_content_or_error!(data)
 }

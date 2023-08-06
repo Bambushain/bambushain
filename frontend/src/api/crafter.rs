@@ -42,7 +42,7 @@ pub async fn create_crafter(crafter: Crafter) -> SheefApiResult<Crafter> {
 }
 
 pub async fn update_crafter(id: i32, crafter: Crafter) -> SheefApiResult<()> {
-    log::debug!("Create crafter {}", crafter.job);
+    log::debug!("Update crafter {id}");
     put(format!("/api/crafter/{id}"), &crafter).await
 }
 

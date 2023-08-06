@@ -1,9 +1,18 @@
+use bounce::query::use_query_value;
 use chrono::{Days, Months};
 use chrono::prelude::*;
 use date_range::DateRange;
 use stylist::yew::use_style;
 use yew::prelude::*;
 use yew_cosmo::prelude::*;
+use yew_hooks::use_effect_update;
+use yew_icons::Icon;
+
+use pandaparty_entities::prelude::Event;
+
+use crate::api;
+use crate::api::event::EventRange;
+use crate::hooks::event_source::use_event_source;
 
 #[derive(Properties, PartialEq, Clone, Default)]
 struct DayProps {
@@ -11,10 +20,334 @@ struct DayProps {
     month: u32,
     year: i32,
     selected_month: u32,
+    events: Vec<Event>,
+    on_reload: Callback<()>,
+}
+
+#[derive(Properties, PartialEq, Clone, Default)]
+struct EventEntryProps {
+    event: Event,
+    on_reload: Callback<()>,
+}
+
+#[derive(Properties, PartialEq, Clone)]
+struct CalendarProps {
+    date: NaiveDate,
+}
+
+#[derive(Properties, PartialEq, Clone)]
+struct AddEventDialogProps {
+    start_date: NaiveDate,
+    on_added: Callback<()>,
+}
+
+#[derive(Properties, PartialEq, Clone)]
+struct EditEventDialogProps {
+    event: Event,
+    on_saved: Callback<()>,
+}
+
+enum ColorYiqResult {
+    Light,
+    Dark,
+}
+
+impl ToString for ColorYiqResult {
+    fn to_string(&self) -> String {
+        match self {
+            ColorYiqResult::Light => "#ffffff",
+            ColorYiqResult::Dark => "#333333",
+        }.to_string()
+    }
+}
+
+fn color_yiq(color: Color) -> ColorYiqResult {
+    let yiq = ((color.red() as u32 * 299) + (color.green() as u32 * 587) + (color.blue() as u32 * 114)) / 1000;
+
+    if yiq >= 128 {
+        ColorYiqResult::Dark
+    } else {
+        ColorYiqResult::Light
+    }
+}
+
+#[function_component(AddEventDialog)]
+fn add_event_dialog(props: &AddEventDialogProps) -> Html {
+    let title_state = use_state_eq(|| AttrValue::from(""));
+    let description_state = use_state_eq(|| AttrValue::from(""));
+
+    let end_date_state = use_state_eq(|| props.start_date);
+
+    let color_state = use_state_eq(Color::random);
+
+    let error_state = use_state_eq(|| false);
+
+    let title_input = use_callback(|value, state| state.set(value), title_state.clone());
+    let description_input = use_callback(|value, state| state.set(value), description_state.clone());
+    let end_date_input = use_callback(|value, state| state.set(value), end_date_state.clone());
+    let color_input = use_callback(|value, state| state.set(value), color_state.clone());
+
+    let on_form_submit = {
+        let title_state = title_state.clone();
+        let description_state = description_state.clone();
+
+        let end_date_state = end_date_state.clone();
+
+        let color_state = color_state.clone();
+
+        let error_state = error_state.clone();
+
+        let start_date = props.start_date;
+
+        let on_added = props.on_added.clone();
+
+        Callback::from(move |_| {
+            let title_state = title_state.clone();
+            let description_state = description_state.clone();
+
+            let end_date_state = end_date_state.clone();
+
+            let color_state = color_state.clone();
+
+            let error_state = error_state.clone();
+
+            let start_date = start_date;
+
+            let on_added = on_added.clone();
+
+            yew::platform::spawn_local(async move {
+                match api::create_event(Event::new((*title_state).to_string(), (*description_state).to_string(), start_date, *end_date_state, *color_state)).await {
+                    Ok(_) => on_added.emit(()),
+                    Err(err) => {
+                        log::error!("Failed to create event {err}");
+                        error_state.set(true);
+                    }
+                }
+            })
+        })
+    };
+
+    html!(
+        <>
+            <CosmoModal title="Event hinzufügen" on_form_submit={on_form_submit} is_form={true} buttons={html!(
+                <>
+                    <CosmoButton label="Abbrechen" on_click={props.on_added.clone()} />
+                    <CosmoButton label="Event speichern" is_submit={true} />
+                </>
+            )}>
+                <CosmoInputGroup>
+                    <CosmoTextBox width={CosmoInputWidth::Medium} label="Titel" value={(*title_state).clone()} on_input={title_input} />
+                    <CosmoTextArea width={CosmoInputWidth::Medium} label="Beschreibung" value={(*description_state).clone()} on_input={description_input} />
+                    <CosmoColorPicker width={CosmoInputWidth::Medium} label="Farbe" value={*color_state} on_input={color_input} />
+                    <CosmoDatePicker width={CosmoInputWidth::Medium} label="Von" value={props.start_date} readonly={true} on_input={|_| {}} />
+                    <CosmoDatePicker width={CosmoInputWidth::Medium} label="Bis" min={props.start_date} value={*end_date_state} on_input={end_date_input} />
+                </CosmoInputGroup>
+            </CosmoModal>
+            if *error_state {
+                <CosmoAlert title="Fehler beim Speichern" message="Das Event konnte leider nicht erstellt werden, bitte wende dich an Azami" close_label="Schließen" on_close={move |_| error_state.set(false)} alert_type={CosmoAlertType::Negative} />
+            }
+        </>
+    )
+}
+
+#[function_component(EditEventDialog)]
+fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
+    let title_state = use_state_eq(|| AttrValue::from(props.event.title.clone()));
+    let description_state = use_state_eq(|| AttrValue::from(props.event.description.clone()));
+
+    let color_state = use_state_eq(|| props.event.color());
+
+    let delete_event_open = use_state_eq(|| false);
+    let error_state = use_state_eq(|| false);
+    let delete_error_state = use_state_eq(|| false);
+
+    let title_input = use_callback(|value, state| state.set(value), title_state.clone());
+    let description_input = use_callback(|value, state| state.set(value), description_state.clone());
+    let color_input = use_callback(|value, state| state.set(value), color_state.clone());
+
+    let on_form_submit = {
+        let title_state = title_state.clone();
+        let description_state = description_state.clone();
+
+        let color_state = color_state.clone();
+
+        let error_state = error_state.clone();
+
+        let event = props.event.clone();
+
+        let on_saved = props.on_saved.clone();
+
+        Callback::from(move |_| {
+            let title_state = title_state.clone();
+            let description_state = description_state.clone();
+
+            let color_state = color_state.clone();
+
+            let error_state = error_state.clone();
+
+            let event = event.clone();
+
+            let on_saved = on_saved.clone();
+
+            yew::platform::spawn_local(async move {
+                match api::update_event(event.id, Event::new((*title_state).to_string(), (*description_state).to_string(), event.start_date, event.end_date, *color_state)).await {
+                    Ok(_) => on_saved.emit(()),
+                    Err(err) => {
+                        log::error!("Failed to update event {} {err}", event.id);
+                        error_state.set(true);
+                    }
+                }
+            })
+        })
+    };
+    let on_delete_confirm = {
+        let id = props.event.id;
+        let on_saved = props.on_saved.clone();
+
+        let delete_error_state = delete_error_state.clone();
+
+        Callback::from(move |_| {
+            let id = id;
+            let on_saved = on_saved.clone();
+
+            let delete_error_state = delete_error_state.clone();
+
+            yew::platform::spawn_local(async move {
+                match api::delete_event(id).await {
+                    Ok(_) => on_saved.emit(()),
+                    Err(err) => {
+                        log::error!("Failed to update event {id} {err}");
+                        delete_error_state.set(true);
+                    }
+                }
+            })
+        })
+    };
+
+    let on_open_delete = use_callback(|_, state| state.set(true), delete_event_open.clone());
+    let on_delete_decline = use_callback(|_, state| state.set(false), delete_event_open.clone());
+
+    log::debug!("Color {}", props.event.color().hex());
+    log::debug!("Color string {}", props.event.color.clone());
+
+    html!(
+        <>
+            <CosmoModal title="Event bearbeiten" on_form_submit={on_form_submit} is_form={true} buttons={html!(
+                <>
+                    <CosmoButton label="Event löschen" on_click={on_open_delete} />
+                    <CosmoButton label="Abbrechen" on_click={props.on_saved.clone()} />
+                    <CosmoButton label="Event speichern" is_submit={true} />
+                </>
+            )}>
+                <CosmoInputGroup>
+                    <CosmoTextBox width={CosmoInputWidth::Medium} label="Titel" value={(*title_state).clone()} on_input={title_input} />
+                    <CosmoTextArea width={CosmoInputWidth::Medium} label="Beschreibung" value={(*description_state).clone()} on_input={description_input} />
+                    <CosmoColorPicker width={CosmoInputWidth::Medium} label="Farbe" value={*color_state} on_input={color_input} />
+                </CosmoInputGroup>
+            </CosmoModal>
+            if *delete_event_open {
+                <CosmoConfirm title="Event löschen" message={format!("Soll das Event {} wirklich gelöscht werden?", props.event.title.clone())} confirm_label="Event löschen" decline_label="Nicht löschen" on_confirm={on_delete_confirm} on_decline={on_delete_decline} />
+            }
+            if *error_state {
+                <CosmoAlert title="Fehler beim Speichern" message="Das Event konnte leider nicht geändert werden, bitte wende dich an Azami" close_label="Schließen" on_close={move |_| error_state.set(false)} alert_type={CosmoAlertType::Negative} />
+            }
+            if *delete_error_state {
+                <CosmoAlert title="Fehler beim Löschen" message="Das Event konnte leider nicht gelöscht werden, bitte wende dich an Azami" close_label="Schließen" on_close={move |_| delete_error_state.set(false)} alert_type={CosmoAlertType::Negative} />
+            }
+        </>
+    )
+}
+
+#[function_component(EventEntry)]
+fn event_entry(props: &EventEntryProps) -> Html {
+    let event_style = use_style!(r#"
+background-color: ${event_color};
+flex: 0 0 100%;
+height: auto;
+padding: 2px 4px;
+box-sizing: border-box;
+color: ${color};
+font-size: 18px;
+font-weight: var(--font-weight-light);
+cursor: pointer;
+position: relative;
+display: flex;
+justify-content: space-between;
+align-items: center;
+
+&:hover .panda-calendar-edit {
+    opacity: 1;
+}"#,
+        event_color = props.event.color().hex(),
+        color = color_yiq(props.event.color()).to_string(),
+    );
+    let hover_style = use_style!(r#"
+&:hover::before {
+    content: attr(data-description);
+    position: absolute;
+    background-color: ${event_color};
+    font-weight: var(--font-weight-light);
+    color: ${color};
+    font-size: 16px;
+    bottom: 36px;
+    left: 50%;
+    width: 300px;
+    transform: translate(-50%);
+    padding: 4px 8px;
+    box-sizing: border-box;
+}
+
+&:hover::after {
+    content: "";
+    position: absolute;
+    border: 8px solid transparent;
+    border-top-color: ${event_color};
+    bottom: 20px;
+    left: 50%;
+    transform: translate(-50%);
+}"#,
+        event_color = props.event.color().hex(),
+        color = color_yiq(props.event.color()).to_string(),
+    );
+    let edit_style = use_style!(r#"
+opacity: 0;
+transition: all 0.1s;
+text-decoration: none;
+stroke: ${color};
+cursor: pointer;"#,
+        color = color_yiq(props.event.color()).to_string(),
+    );
+
+    let classes = if props.event.description.is_empty() {
+        classes!(event_style)
+    } else {
+        classes!(event_style, hover_style)
+    };
+
+    let edit_open_state = use_state_eq(|| false);
+    let on_saved = use_callback(|_, (state, on_saved)| {
+        state.set(false);
+        on_saved.emit(());
+    }, (edit_open_state.clone(), props.on_reload.clone()));
+
+    html!(
+        <>
+            if *edit_open_state {
+                <EditEventDialog event={props.event.clone()} on_saved={on_saved} />
+            }
+            <span class={classes} data-description={props.event.description.clone()}>
+                {props.event.title.clone()}
+                <a onclick={move |_| edit_open_state.set(true)}>
+                    <Icon icon_id={IconId::LucidePencil} width="16px" height="16px" class={classes!(edit_style, "panda-calendar-edit")} />
+                </a>
+            </span>
+        </>
+    )
 }
 
 #[function_component(Day)]
 fn day(props: &DayProps) -> Html {
+    let add_event_open_state = use_state_eq(|| false);
     let background_color = if props.selected_month == props.month {
         "transparent"
     } else {
@@ -24,7 +357,7 @@ fn day(props: &DayProps) -> Html {
     let (day_number_color, day_number_weight) = if today.month() == props.month && today.day() == props.day && today.year() == props.year {
         ("var(--primary-color)", "var(--font-weight-bold)")
     } else {
-        ("var(--control-border-color)", "var(--font-weight-light)")
+        ("var(--menu-text-color)", "var(--font-weight-light)")
     };
 
     let style = use_style!(r#"
@@ -33,6 +366,13 @@ border-left: 1px solid var(--primary-color);
 background: ${background_color};
 position: relative;
 box-sizing: border-box;
+display: flex;
+justify-content: stretch;
+padding: 2px;
+align-items: flex-end;
+gap: 2px;
+position: relative;
+flex-flow: row wrap;
 
 --day-background-past-month: #0000000F;
 
@@ -62,24 +402,43 @@ box-sizing: border-box;
     font-size: 28px;
     color: ${day_number_color};
     font-weight: ${day_number_weight};
+}
+
+&:hover .panda-calendar-add {
+    opacity: 1;
 }"#,
         background_color = background_color,
         day = props.day,
         day_number_color = day_number_color,
         day_number_weight = day_number_weight,
     );
+    let add_style = use_style!(r#"
+opacity: 0;
+transition: all 0.1s;
+text-decoration: none;
+position: absolute;
+top: 2px;
+left: 2px;
+stroke: var(--primary-color);
+cursor: pointer;
+    "#);
+
+    let on_added = use_callback(|_, (state, callback)| {
+        state.set(false);
+        callback.emit(());
+    }, (add_event_open_state.clone(), props.on_reload.clone()));
 
     html!(
-        <div class={classes!(style)}>
-        </div>
+        <>
+            if *add_event_open_state {
+                <AddEventDialog start_date={NaiveDate::from_ymd_opt(props.year, props.month, props.day).unwrap()} on_added={on_added} />
+            }
+            <div class={classes!(style)}>
+                <Icon onclick={move |_| add_event_open_state.set(true)} icon_id={IconId::LucideCalendarPlus} class={classes!(add_style, "panda-calendar-add")} />
+                {for props.events.iter().map(|evt| html!(<EventEntry key={evt.id} on_reload={props.on_reload.clone()} event={evt.clone()} />))}
+            </div>
+        </>
     )
-}
-
-#[derive(Properties, PartialEq, Clone)]
-struct CalendarProps {
-    #[prop_or_default]
-    days: Vec<DayProps>,
-    date: NaiveDate,
 }
 
 #[function_component(CalendarData)]
@@ -108,18 +467,118 @@ fn calendar_data(props: &CalendarProps) -> Html {
     log::debug!("First day of next month {first_day_of_next_month:?}");
     log::debug!("Last day of calendar {calendar_end_date:?}");
 
+    let initial_loaded_state = use_state_eq(|| false);
+
+    let events_state = use_state_eq(|| vec![] as Vec<Event>);
+
+    let props_date_memo = use_memo(|date| *date, props.date);
+    let range_memo = use_memo(|(start, end)| DateRange::new(*start, *end).unwrap(), (calendar_start_date, calendar_end_date));
+
+    let event_query_state = use_query_value::<EventRange>(range_memo);
+
+    let event_source_trigger = {
+        let event_query = event_query_state.clone();
+
+        move |_| {
+            log::debug!("Someone changed data on the server, trigger a refresh");
+            let event_query = event_query.clone();
+
+            yew::platform::spawn_local(async move {
+                let _ = event_query.refresh().await;
+            });
+        }
+    };
+
+    use_event_source("/sse/event".to_string(), event_source_trigger);
+
+    let error_message_style = use_style!(r#"
+grid-column: span 7;
+grid-row: 3/4;
+    "#);
+    let progress_ring_style = use_style!(r#"
+grid-column: span 7;
+grid-row: 3/4;
+    "#);
+
+    {
+        let event_query_state = event_query_state.clone();
+        let props = props.clone();
+
+        use_effect_update(move || {
+            if *props_date_memo != props.date {
+                yew::platform::spawn_local(async move {
+                    let _ = event_query_state.refresh().await;
+                });
+            }
+
+            || ()
+        })
+    }
+
+    let on_reload = {
+        let event_query_state = event_query_state.clone();
+
+        Callback::from(move |_| {
+            let event_query_state = event_query_state.clone();
+
+            yew::platform::spawn_local(async move {
+                let _ = event_query_state.refresh().await;
+            })
+        })
+    };
+
+    match event_query_state.result() {
+        None => {
+            log::debug!("Still loading");
+            if !*initial_loaded_state {
+                return html!(
+                    <div class={progress_ring_style}>
+                        <CosmoProgressRing />
+                    </div>
+                );
+            }
+        }
+        Some(Ok(res)) => {
+            log::debug!("Loaded events");
+            events_state.set(res.events.clone());
+            initial_loaded_state.set(true);
+        }
+        Some(Err(err)) => {
+            log::warn!("Failed to load {err}");
+            return html!(
+                <div class={error_message_style}>
+                    <CosmoMessage header="Fehler beim Laden" message="Der Event Kalender konnte nicht geladen werden, bitte wende dich an Azami" message_type={CosmoMessageType::Negative} />
+                </div>
+            );
+        }
+    }
+
+    let events_for_day = {
+        move |day: NaiveDate| {
+            let all_events = (*events_state).clone();
+            let mut events = vec![];
+            for event in all_events {
+                if event.start_date <= day && event.end_date >= day {
+                    events.push(event);
+                }
+            }
+
+            events
+        }
+    };
+
     html!(
         <>
             {for DateRange::new(calendar_start_date, last_day_of_prev_month).unwrap().into_iter().map(|day| html!(
-                <Day key={day.format("%F").to_string()} day={day.day()} month={day.month()} year={day.year()} selected_month={selected_month} />
+                <Day on_reload={on_reload.clone()} events={events_for_day(day)} key={day.format("%F").to_string()} day={day.day()} month={day.month()} year={day.year()} selected_month={selected_month} />
             ))}
 
             {for DateRange::new(first_day_of_month, last_day_of_month).unwrap().into_iter().map(|day| html!(
-                <Day key={day.format("%F").to_string()} day={day.day()} month={day.month()} year={day.year()} selected_month={selected_month} />
+                <Day on_reload={on_reload.clone()} events={events_for_day(day)} key={day.format("%F").to_string()} day={day.day()} month={day.month()} year={day.year()} selected_month={selected_month} />
             ))}
 
             {for DateRange::new(first_day_of_next_month, calendar_end_date).unwrap().into_iter().map(|day| html!(
-                <Day key={day.format("%F").to_string()} day={day.day()} month={day.month()} year={day.year()} selected_month={selected_month} />
+                <Day on_reload={on_reload.clone()} events={events_for_day(day)} key={day.format("%F").to_string()} day={day.day()} month={day.month()} year={day.year()} selected_month={selected_month} />
             ))}
         </>
     )
@@ -148,8 +607,8 @@ margin-bottom: 16px;
 
 h2 {
     margin: 0;
-    flex: 0 0 33%;
-    min-width: 33%;
+    flex: 0 0 calc(100% / 3);
+    min-width: calc(100% / 3);
     text-align: center;
 }
     "#);
@@ -159,8 +618,8 @@ font-weight: var(--font-weight-light);
 color: var(--primary-color);
 text-decoration: none;
 cursor: pointer;
-flex: 0 0 33%;
-min-width: 33%;
+flex: 0 0 calc(100% / 3);
+min-width: calc(100% / 3);
     "#);
     let calendar_action_prev_style = use_style!(r#"
 text-align: left;
@@ -176,16 +635,26 @@ grid-row: 1/2;
 text-align: center;
     "#);
 
-    let move_prev = use_callback(|_, state| state.set((*state).checked_sub_months(Months::new(1)).unwrap()), date_state.clone());
-    let move_next = use_callback(|_, state| state.set((*state).checked_add_months(Months::new(1)).unwrap()), date_state.clone());
+    let move_prev = use_callback(|_: MouseEvent, date_state| date_state
+        .set((*date_state)
+            .checked_sub_months(Months::new(1))
+            .unwrap()), date_state.clone());
+    let move_next = use_callback(|_: MouseEvent, date_state| date_state
+        .set((*date_state)
+            .checked_add_months(Months::new(1))
+            .unwrap()), date_state.clone());
 
     html!(
         <>
             <CosmoTitle title="Event Kalender" />
             <div class={calendar_header_style}>
-                <a onclick={move_prev} class={classes!(calendar_action_style.clone(), calendar_action_prev_style)}>{prev_month.format_localized("%B %Y", Locale::de_DE)}</a>
+                <span class={classes!(calendar_action_style.clone(), calendar_action_prev_style)}>
+                    <a onclick={move_prev}>{prev_month.format_localized("%B %Y", Locale::de_DE)}</a>
+                </span>
                 <CosmoHeader level={CosmoHeaderLevel::H2} header={(*date_state).format_localized("%B %Y", Locale::de_DE).to_string()} />
-                <a onclick={move_next} class={classes!(calendar_action_style, calendar_action_next_style)}>{next_month.format_localized("%B %Y", Locale::de_DE)}</a>
+                <span class={classes!(calendar_action_style.clone(), calendar_action_next_style)}>
+                    <a onclick={move_next}>{next_month.format_localized("%B %Y", Locale::de_DE)}</a>
+                </span>
             </div>
             <div class={calendar_container_style}>
                 <div class={calendar_weekday_style.clone()}>{"Montag"}</div>

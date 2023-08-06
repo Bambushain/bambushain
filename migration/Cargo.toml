@@ -4,7 +4,4 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-pandaparty-entities = { path = "../entities" }
-
-async-std = { version = "1", features = ["attributes", "tokio1"] }
 sea-orm-migration = { version = "0.12.2", features = ["sqlx-mysql", "runtime-tokio-rustls"] }

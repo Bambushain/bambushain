@@ -584,7 +584,7 @@ pub fn users_page() -> Html {
 
             let open_create_user_modal_state = open_create_user_modal_state.clone();
 
-            let username = user.username.clone();
+            let username = user.username;
 
             yew::platform::spawn_local(async move {
                 open_create_user_modal_state.set(false);
@@ -611,7 +611,7 @@ pub fn users_page() -> Html {
             initial_loaded_state.set(true);
         }
         Some(Err(err)) => {
-            log::warn!("Failed to load {}", err);
+            log::warn!("Failed to load {err}");
             return html!(
                 <CosmoMessage header="Fehler beim Laden" message="Die Benutzer konnten nicht geladen werden, bitte wende dich an Azami" message_type={CosmoMessageType::Negative} />
             );

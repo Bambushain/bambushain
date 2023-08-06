@@ -1,12 +1,16 @@
 use std::sync::Arc;
+
 use actix_web::web;
 
+use crate::broadcaster::event::EventBroadcaster;
 use crate::broadcaster::user::UserBroadcaster;
 
-pub mod crew;
+pub mod user;
+pub mod event;
 
 pub struct NotificationState {
-    pub crew_broadcaster: Arc<UserBroadcaster>,
+    pub user_broadcaster: Arc<UserBroadcaster>,
+    pub event_broadcaster: Arc<EventBroadcaster>,
 }
 
 pub type Notification = web::Data<NotificationState>;

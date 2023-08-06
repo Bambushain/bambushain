@@ -14,6 +14,7 @@ mod m20230724_171907_create_table_savage_mount_to_user;
 mod m20230725_092805_create_table_status;
 mod m20230804_191618_delete_old_tables;
 mod m20230805_202224_user_add_discord_name;
+mod m20230805_211912_create_table_calendar;
 
 pub struct Migrator;
 
@@ -35,6 +36,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20230725_092805_create_table_status::Migration),
             Box::new(m20230804_191618_delete_old_tables::Migration),
             Box::new(m20230805_202224_user_add_discord_name::Migration),
+            Box::new(m20230805_211912_create_table_calendar::Migration),
         ]
     }
 }

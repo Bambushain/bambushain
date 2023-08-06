@@ -22,7 +22,7 @@ pub fn login_page() -> Html {
 
     let username_state = use_state_eq(|| AttrValue::from(""));
     let password_state = use_state_eq(|| AttrValue::from(""));
-    let error_message_state = use_state_eq(|| AttrValue::from("Melde dich an und komm in die Pandaparty"));
+    let error_message_state = use_state_eq(|| AttrValue::from("Melde dich an und komm in zur Pandaparty"));
 
     let request_successful_state = use_state_eq(|| false);
     let error_state = use_state_eq(|| false);
@@ -35,7 +35,7 @@ pub fn login_page() -> Html {
         let password_state = password_state.clone();
         let error_message_state = error_message_state.clone();
 
-        let request_successful = request_successful_state.clone();
+        let request_successful = request_successful_state;
         let error_state = error_state.clone();
 
         Callback::from(move |_: ()| {

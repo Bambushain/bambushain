@@ -5,6 +5,7 @@ use actix_web::web;
 use rand::distributions::Alphanumeric;
 use rand::prelude::*;
 use sea_orm::prelude::*;
+use pandaparty_backend::broadcaster::event::EventBroadcaster;
 
 use pandaparty_backend::broadcaster::user::UserBroadcaster;
 use pandaparty_backend::DbConnection;
@@ -12,9 +13,11 @@ use pandaparty_backend::middleware::authenticate_user::AuthenticateUser;
 use pandaparty_backend::middleware::check_mod::CheckMod;
 use pandaparty_backend::routes::authentication::{login, logout};
 use pandaparty_backend::routes::crafter::{create_crafter, delete_crafter, get_crafter, get_crafters, update_crafter};
+use pandaparty_backend::routes::event::{create_event, delete_event, get_events, update_event};
 use pandaparty_backend::routes::fighter::{create_fighter, delete_fighter, get_fighter, get_fighters, update_fighter};
 use pandaparty_backend::routes::user::{add_mod_user, change_my_password, change_password, create_user, delete_user, get_profile, get_user, get_users, remove_mod_user, update_profile, update_user_profile};
-use pandaparty_backend::sse::crew::user_sse_client;
+use pandaparty_backend::sse::event::event_sse_client;
+use pandaparty_backend::sse::user::user_sse_client;
 use pandaparty_backend::sse::NotificationState;
 use pandaparty_entities::user;
 use pandaparty_migration::{IntoSchemaManagerConnection, Migrator, MigratorTrait};
@@ -68,7 +71,8 @@ async fn main() -> std::io::Result<()> {
         }
     }
 
-    let crew_broadcaster = UserBroadcaster::create();
+    let user_broadcaster = UserBroadcaster::create();
+    let event_broadcaster = EventBroadcaster::create();
 
     let base_path = std::env::var("FRONTEND_DIR").unwrap_or(".".to_string());
     log::info!("Frontend base path: {base_path}");
@@ -77,7 +81,8 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(NotificationState {
-                crew_broadcaster: Arc::clone(&crew_broadcaster),
+                user_broadcaster: Arc::clone(&user_broadcaster),
+                event_broadcaster: Arc::clone(&event_broadcaster),
             }))
             .app_data(DbConnection::new(db.clone()))
 
@@ -106,11 +111,17 @@ async fn main() -> std::io::Result<()> {
             .route("/api/fighter/{id}", web::put().to(update_fighter).wrap(AuthenticateUser))
             .route("/api/fighter/{id}", web::delete().to(delete_fighter).wrap(AuthenticateUser))
 
+            .route("/api/event", web::get().to(get_events).wrap(AuthenticateUser))
+            .route("/api/event", web::post().to(create_event).wrap(AuthenticateUser))
+            .route("/api/event/{id}", web::put().to(update_event).wrap(AuthenticateUser))
+            .route("/api/event/{id}", web::delete().to(delete_event).wrap(AuthenticateUser))
+
             .route("/api/my/profile", web::get().to(get_profile).wrap(AuthenticateUser))
             .route("/api/my/profile", web::put().to(update_profile).wrap(AuthenticateUser))
             .route("/api/my/password", web::put().to(change_my_password).wrap(AuthenticateUser))
 
             .route("/sse/user", web::get().to(user_sse_client))
+            .route("/sse/event", web::get().to(event_sse_client))
 
             .service(
                 actix_web_lab::web::spa()

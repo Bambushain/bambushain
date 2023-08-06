@@ -3,7 +3,7 @@ use sea_orm::ActiveValue::Set;
 use sea_orm::prelude::*;
 use sea_orm::sea_query::Expr;
 
-use pandaparty_entities::{fighter, pandaparty_db_error};
+use pandaparty_entities::fighter;
 use pandaparty_entities::prelude::*;
 
 pub async fn get_fighters(user_id: i32, db: &DatabaseConnection) -> PandaPartyResult<Vec<Fighter>> {

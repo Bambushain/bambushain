@@ -10,6 +10,7 @@ pub use fighter::*;
 pub use my::*;
 use pandaparty_entities::prelude::*;
 pub use user::*;
+pub use event::*;
 
 use crate::storage::get_token;
 
@@ -18,6 +19,7 @@ pub mod my;
 pub mod user;
 pub mod crafter;
 pub mod fighter;
+pub mod event;
 // pub mod boolean_table;
 
 macro_rules! error_code {
@@ -145,12 +147,26 @@ macro_rules! handle_response_code {
     };
 }
 
-pub async fn get<OUT>(uri: impl Into<String>) -> SheefApiResult<OUT> where OUT: DeserializeOwned {
+pub async fn get<OUT: DeserializeOwned>(uri: impl Into<String>) -> SheefApiResult<OUT> {
     let into_uri = uri.into();
     let token = get_token().unwrap_or_default();
     log::debug!("Use auth token {}", token);
     log::debug!("Execute get request against {}", &into_uri);
     let response = gloo::net::http::Request::get(into_uri.as_str())
+        .header("Authorization", format!("Panda {}", token).as_str())
+        .send()
+        .await;
+
+    handle_response!(response)
+}
+
+pub async fn get_with_query<OUT: DeserializeOwned, Value: AsRef<str>>(uri: impl Into<String>, query: Vec<(&str, Value)>) -> SheefApiResult<OUT> {
+    let into_uri = uri.into();
+    let token = get_token().unwrap_or_default();
+    log::debug!("Use auth token {}", token);
+    log::debug!("Execute get request against {}", &into_uri);
+    let response = gloo::net::http::Request::get(into_uri.as_str())
+        .query(query.into_iter())
         .header("Authorization", format!("Panda {}", token).as_str())
         .send()
         .await;
@@ -184,7 +200,7 @@ pub async fn put_no_body(uri: impl Into<String>) -> SheefApiResult<()> {
     handle_response_code!(response)
 }
 
-pub async fn put<IN>(uri: impl Into<String>, body: &IN) -> SheefApiResult<()> where IN: Serialize {
+pub async fn put<IN: Serialize>(uri: impl Into<String>, body: &IN) -> SheefApiResult<()> {
     let into_uri = uri.into();
     let token = get_token().unwrap_or_default();
     log::debug!("Use auth token {}", token);
@@ -200,7 +216,7 @@ pub async fn put<IN>(uri: impl Into<String>, body: &IN) -> SheefApiResult<()> wh
     }
 }
 
-pub async fn post<IN, OUT>(uri: impl Into<String>, body: &IN) -> SheefApiResult<OUT> where IN: Serialize, OUT: DeserializeOwned {
+pub async fn post<IN: Serialize, OUT: DeserializeOwned>(uri: impl Into<String>, body: &IN) -> SheefApiResult<OUT> {
     let into_uri = uri.into();
     let token = get_token().unwrap_or_default();
     log::debug!("Use auth token {}", token);
