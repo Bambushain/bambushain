@@ -5,10 +5,10 @@ use actix_web::web;
 use rand::distributions::Alphanumeric;
 use rand::prelude::*;
 use sea_orm::prelude::*;
-use pandaparty_backend::broadcaster::event::EventBroadcaster;
 
+use pandaparty_backend::{DbConnection, Services, ServicesState};
+use pandaparty_backend::broadcaster::event::EventBroadcaster;
 use pandaparty_backend::broadcaster::user::UserBroadcaster;
-use pandaparty_backend::DbConnection;
 use pandaparty_backend::middleware::authenticate_user::AuthenticateUser;
 use pandaparty_backend::middleware::check_mod::CheckMod;
 use pandaparty_backend::routes::authentication::{login, logout};
@@ -16,11 +16,12 @@ use pandaparty_backend::routes::crafter::{create_crafter, delete_crafter, get_cr
 use pandaparty_backend::routes::event::{create_event, delete_event, get_events, update_event};
 use pandaparty_backend::routes::fighter::{create_fighter, delete_fighter, get_fighter, get_fighters, update_fighter};
 use pandaparty_backend::routes::user::{add_mod_user, change_my_password, change_password, create_user, delete_user, get_profile, get_user, get_users, remove_mod_user, update_profile, update_user_profile};
+use pandaparty_backend::sse::{Notification, NotificationState};
 use pandaparty_backend::sse::event::event_sse_client;
 use pandaparty_backend::sse::user::user_sse_client;
-use pandaparty_backend::sse::NotificationState;
 use pandaparty_entities::user;
 use pandaparty_migration::{IntoSchemaManagerConnection, Migrator, MigratorTrait};
+use pandaparty_services::prelude::EnvironmentService;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -74,15 +75,20 @@ async fn main() -> std::io::Result<()> {
     let user_broadcaster = UserBroadcaster::create();
     let event_broadcaster = EventBroadcaster::create();
 
-    let base_path = std::env::var("FRONTEND_DIR").unwrap_or(".".to_string());
-    log::info!("Frontend base path: {base_path}");
+    let environment_service = EnvironmentService::new();
+
+    let frontend_base_path = environment_service.get_env("FRONTEND_DIR", ".");
+    log::info!("Frontend base path: {frontend_base_path}");
 
     log::info!("Serving on port 8070");
     HttpServer::new(move || {
         App::new()
-            .app_data(web::Data::new(NotificationState {
+            .app_data(Notification::new(NotificationState {
                 user_broadcaster: Arc::clone(&user_broadcaster),
                 event_broadcaster: Arc::clone(&event_broadcaster),
+            }))
+            .app_data(Services::new(ServicesState {
+                environment_service: Arc::new(environment_service.clone()),
             }))
             .app_data(DbConnection::new(db.clone()))
 
@@ -125,8 +131,8 @@ async fn main() -> std::io::Result<()> {
 
             .service(
                 actix_web_lab::web::spa()
-                    .index_file(format!("{base_path}/dist/index.html"))
-                    .static_resources_location(format!("{base_path}/dist"))
+                    .index_file(format!("{frontend_base_path}/dist/index.html"))
+                    .static_resources_location(format!("{frontend_base_path}/dist"))
                     .static_resources_mount("/static")
                     .finish()
             )

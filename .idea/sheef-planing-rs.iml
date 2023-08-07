@@ -12,6 +12,7 @@
       <sourceFolder url="file://$MODULE_DIR$/yaml-database/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/yaml-entities/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/yaml-to-postgres-migrator/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/services/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/backend/target" />
       <excludeFolder url="file://$MODULE_DIR$/entities/target" />
       <excludeFolder url="file://$MODULE_DIR$/frontend/target" />

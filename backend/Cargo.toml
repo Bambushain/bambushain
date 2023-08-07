@@ -8,6 +8,7 @@ edition.workspace = true
 [dependencies]
 pandaparty-dbal = { path = "../dbal" }
 pandaparty-entities = { path = "../entities" }
+pandaparty-services = { path = "../services" }
 
 futures-util = "0.3.28"
 parking_lot = "0.12.1"

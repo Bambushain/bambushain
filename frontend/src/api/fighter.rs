@@ -37,7 +37,7 @@ impl Query for MyFighter {
 }
 
 pub async fn create_fighter(fighter: Fighter) -> SheefApiResult<Fighter> {
-    log::debug!("Create fighter {}", fighter.job);
+    log::debug!("Create fighter {}", fighter.job.clone().get_job_name());
     post("/api/fighter", &fighter).await
 }
 

@@ -20,19 +20,35 @@ impl MigrationTrait for Migration {
                             .auto_increment()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(Fighter::Job).string().not_null())
-                    .col(ColumnDef::new(Fighter::Level).string())
-                    .col(ColumnDef::new(Fighter::GearScore).string())
-                    .col(ColumnDef::new(Fighter::UserId).integer().not_null())
-                    .foreign_key(ForeignKey::create()
+                    .col(
+                        ColumnDef::new(Fighter::Job)
+                            .string()
+                            .not_null()
+                    )
+                    .col(
+                        ColumnDef::new(Fighter::Level)
+                            .string()
+                    )
+                    .col(
+                        ColumnDef::new(Fighter::GearScore)
+                            .string()
+                    )
+                    .col(
+                        ColumnDef::new(Fighter::UserId)
+                            .integer()
+                            .not_null()
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
                         .from(Fighter::Table, Fighter::UserId)
                         .to(User::Table, User::Id)
                         .on_delete(ForeignKeyAction::Cascade)
                     )
-                    .index(Index::create()
-                        .col(Fighter::Job)
-                        .col(Fighter::UserId)
-                        .unique()
+                    .index(
+                        Index::create()
+                            .col(Fighter::Job)
+                            .col(Fighter::UserId)
+                            .unique()
                     )
                     .to_owned(),
             )
@@ -48,7 +64,7 @@ impl MigrationTrait for Migration {
 
 /// Learn more at https://docs.rs/sea-query#iden
 #[derive(Iden)]
-enum Fighter {
+pub enum Fighter {
     Table,
     Id,
     Job,

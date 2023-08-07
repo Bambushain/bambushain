@@ -1,7 +1,7 @@
 use sea_orm::{IntoActiveModel, NotSet, QueryOrder, QuerySelect};
 use sea_orm::ActiveValue::Set;
 use sea_orm::prelude::*;
-use sea_orm::sea_query::Expr;
+use sea_orm::sea_query::{Alias, Expr};
 
 use pandaparty_entities::fighter;
 use pandaparty_entities::prelude::*;
@@ -43,7 +43,7 @@ pub async fn fighter_exists(id: i32, db: &DatabaseConnection) -> bool {
     }
 }
 
-pub async fn fighter_exists_by_job(user_id: i32, job: String, db: &DatabaseConnection) -> bool {
+pub async fn fighter_exists_by_job(user_id: i32, job: FighterJob, db: &DatabaseConnection) -> bool {
     match fighter::Entity::find()
         .select_only()
         .column(fighter::Column::Id)
@@ -73,7 +73,7 @@ pub async fn create_fighter(user_id: i32, fighter: Fighter, db: &DatabaseConnect
 pub async fn update_fighter(id: i32, fighter: Fighter, db: &DatabaseConnection) -> PandaPartyErrorResult {
     fighter::Entity::update_many()
         .filter(fighter::Column::Id.eq(id))
-        .col_expr(fighter::Column::Job, Expr::value(fighter.job))
+        .col_expr(fighter::Column::Job, Expr::val(fighter.job).as_enum(Alias::new("fighter_job")))
         .col_expr(fighter::Column::Level, Expr::value(fighter.level))
         .col_expr(fighter::Column::GearScore, Expr::value(fighter.gear_score))
         .exec(db)

@@ -20,20 +20,20 @@ pub async fn get_fighter(path: web::Path<FighterPathInfo>, db: DbConnection) -> 
 }
 
 pub async fn create_fighter(body: web::Json<Fighter>, authentication: Authentication, db: DbConnection) -> HttpResponse {
-    if pandaparty_dbal::fighter::fighter_exists_by_job(authentication.user.id, body.job.clone(), &db).await {
+    if pandaparty_dbal::fighter::fighter_exists_by_job(authentication.user.id, body.job, &db).await {
         return conflict!(pandaparty_exists_already_error!("fighter", "The fighter already exists"));
     }
 
     created_or_error!(pandaparty_dbal::fighter::create_fighter(authentication.user.id, body.into_inner(), &db).await)
 }
 
-pub async fn update_fighter(body: web::Json<Fighter>, path: web::Path<FighterPathInfo>, db: DbConnection) -> HttpResponse {
+pub async fn update_fighter(body: web::Json<Fighter>, path: web::Path<FighterPathInfo>, authentication: Authentication, db: DbConnection) -> HttpResponse {
     let fighter = match pandaparty_dbal::fighter::get_fighter(path.id, &db).await {
         Ok(fighter) => fighter,
         Err(_) => return not_found!(pandaparty_not_found_error!("fighter", "The fighter was not found"))
     };
 
-    if body.job != fighter.job {
+    if body.job != fighter.job && pandaparty_dbal::fighter::fighter_exists_by_job(authentication.user.id, body.job, &db).await {
         return conflict!(pandaparty_exists_already_error!("fighter", "The fighter already exists"));
     }
 

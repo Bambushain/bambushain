@@ -1,4 +1,6 @@
+use std::sync::Arc;
 use sea_orm::DatabaseConnection;
+use pandaparty_services::prelude::*;
 
 macro_rules! no_content {
     () => {
@@ -157,6 +159,13 @@ macro_rules! created_json {
 }
 
 pub type DbConnection = actix_web::web::Data<DatabaseConnection>;
+
+#[derive(Default, Clone)]
+pub struct ServicesState {
+    pub environment_service: Arc<EnvironmentService>,
+}
+
+pub type Services = actix_web::web::Data<ServicesState>;
 
 pub mod routes;
 pub mod middleware;

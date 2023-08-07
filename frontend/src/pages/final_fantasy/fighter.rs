@@ -1,5 +1,7 @@
 use bounce::helmet::Helmet;
 use bounce::query::use_query_value;
+use strum::IntoEnumIterator;
+use stylist::yew::use_style;
 use yew::prelude::*;
 use yew_cosmo::prelude::*;
 
@@ -22,15 +24,17 @@ struct ModifyFighterModalProps {
 
 #[function_component(ModifyFighterModal)]
 fn modify_fighter_modal(props: &ModifyFighterModalProps) -> Html {
-    let job_state = use_state_eq(|| AttrValue::from(props.fighter.job.clone()));
+    let job_state = use_state_eq(|| Some(AttrValue::from(props.fighter.job.get_job_name())));
     let level_state = use_state_eq(|| AttrValue::from(props.fighter.level.clone().unwrap_or_default()));
     let gear_score_state = use_state_eq(|| AttrValue::from(props.fighter.gear_score.clone().unwrap_or_default()));
 
     let on_close = props.on_close.clone();
-    let on_save = use_callback(|_, (job_state, level_state, gear_score, on_save)| on_save.emit(Fighter::new((*job_state).to_string(), (*level_state).to_string(), (*gear_score).to_string())), (job_state.clone(), level_state.clone(), gear_score_state.clone(), props.on_save.clone()));
+    let on_save = use_callback(|_, (job_state, level_state, gear_score, on_save)| on_save.emit(Fighter::new(FighterJob::from((**job_state).clone().unwrap().to_string()), (*level_state).to_string(), (*gear_score).to_string())), (job_state.clone(), level_state.clone(), gear_score_state.clone(), props.on_save.clone()));
     let update_job = use_callback(|value, state| state.set(value), job_state.clone());
     let update_level = use_callback(|value, state| state.set(value), level_state.clone());
     let update_gear_score = use_callback(|value, state| state.set(value), gear_score_state.clone());
+
+    let jobs = FighterJob::iter().map(|job| (Some(AttrValue::from(job.get_job_name())), AttrValue::from(job.to_string()))).collect::<Vec<(Option<AttrValue>, AttrValue)>>();
 
     html!(
         <>
@@ -44,7 +48,7 @@ fn modify_fighter_modal(props: &ModifyFighterModalProps) -> Html {
                     <CosmoMessage message_type={CosmoMessageType::Negative} message={props.error_message.clone()} />
                 }
                 <CosmoInputGroup>
-                    <CosmoTextBox label="Job" on_input={update_job} value={(*job_state).clone()} required={true} />
+                    <CosmoDropdown label="Job" on_select={update_job} value={(*job_state).clone()} required={true} items={jobs} />
                     <CosmoTextBox label="Level" on_input={update_level} value={(*level_state).clone()} required={true} />
                     <CosmoTextBox label="Gear Score" on_input={update_gear_score} value={(*gear_score_state).clone()} required={true} />
                 </CosmoInputGroup>
@@ -204,9 +208,24 @@ fn table_body(props: &FighterDetailsProps) -> Html {
     };
     let on_error_close = use_callback(|_, state| state.set(ErrorState::None), error_state.clone());
 
+    let header_style = use_style!(r#"
+display: flex;
+gap: 16px;
+align-items: center;
+
+img {
+    height: 36px;
+    width: 36px;
+    object-fit: scale-down;
+}
+    "#);
+
     html!(
         <>
-            <CosmoTitle title={props.fighter.job.clone()} />
+            <div class={header_style}>
+                <img src={format!("/static/fighter_jobs/{}", props.fighter.job.get_file_name())} />
+                <CosmoTitle title={props.fighter.job.to_string()} />
+            </div>
             <CosmoToolbar>
                 <CosmoToolbarGroup>
                     <CosmoButton on_click={edit_fighter_click} label="Bearbeiten" />
@@ -227,11 +246,11 @@ fn table_body(props: &FighterDetailsProps) -> Html {
             </CosmoKeyValueList>
             {match (*action_state).clone() {
                 FighterActions::Edit => html!(
-                    <ModifyFighterModal on_error_close={on_error_close} title={format!("Kämpfer {} bearbeiten", props.fighter.job)} save_label="Kämpfer speichern" on_save={on_modal_save} on_close={on_modal_close} fighter={props.fighter.clone()} error_message={(*error_message_state).clone()} has_error={*error_state == ErrorState::Edit} />
+                    <ModifyFighterModal on_error_close={on_error_close} title={format!("Kämpfer {} bearbeiten", props.fighter.job.to_string())} save_label="Kämpfer speichern" on_save={on_modal_save} on_close={on_modal_close} fighter={props.fighter.clone()} error_message={(*error_message_state).clone()} has_error={*error_state == ErrorState::Edit} />
                 ),
                 FighterActions::Delete => {
                     html!(
-                        <CosmoConfirm on_confirm={on_modal_delete} on_decline={on_modal_close} confirm_label="Kämpfer löschen" decline_label="Kämpfer behalten" title="Kämpfer löschen" message={format!("Soll der Kämpfer {} auf Level {} wirklich gelöscht werden?", props.fighter.job.clone(), props.fighter.level.clone().unwrap_or_default())} />
+                        <CosmoConfirm on_confirm={on_modal_delete} on_decline={on_modal_close} confirm_label="Kämpfer löschen" decline_label="Kämpfer behalten" title="Kämpfer löschen" message={format!("Soll der Kämpfer {} auf Level {} wirklich gelöscht werden?", props.fighter.job.to_string(), props.fighter.level.clone().unwrap_or_default())} />
                     )
                 }
                 FighterActions::Closed => html!(),
@@ -353,7 +372,7 @@ pub fn fighter_page() -> Html {
             </Helmet>
             <CosmoSideList on_select_item={on_fighter_select} selected_index={*selected_fighter_state} has_add_button={true} add_button_on_click={open_create_fighter_modal_click} add_button_label="Kämpfer hinzufügen">
                 {for (*fighter_state).clone().into_iter().map(|fighter| {
-                    CosmoSideListItem::from_label_and_children(fighter.job.clone().into(), html!(
+                    CosmoSideListItem::from_label_and_children(fighter.job.to_string().into(), html!(
                         <FighterDetails on_delete={on_delete.clone()} fighter={fighter} />
                     ))
                 })}
