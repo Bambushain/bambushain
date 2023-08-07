@@ -1,9 +1,10 @@
 use sea_orm::{IntoActiveModel, NotSet, QueryOrder, QuerySelect};
 use sea_orm::ActiveValue::Set;
 use sea_orm::prelude::*;
-use sea_orm::sea_query::Expr;
+use sea_orm::sea_query::{Alias, Expr};
 
 use pandaparty_entities::{crafter, pandaparty_db_error};
+use pandaparty_entities::crafter::CrafterJob;
 use pandaparty_entities::prelude::*;
 
 pub async fn get_crafters(user_id: i32, db: &DatabaseConnection) -> PandaPartyResult<Vec<Crafter>> {
@@ -42,7 +43,7 @@ pub async fn crafter_exists(id: i32, db: &DatabaseConnection) -> bool {
     }
 }
 
-pub async fn crafter_exists_by_job(user_id: i32, job: String, db: &DatabaseConnection) -> bool {
+pub async fn crafter_exists_by_job(user_id: i32, job: CrafterJob, db: &DatabaseConnection) -> bool {
     match crafter::Entity::find()
         .select_only()
         .column(crafter::Column::Id)
@@ -72,7 +73,7 @@ pub async fn create_crafter(user_id: i32, crafter: Crafter, db: &DatabaseConnect
 pub async fn update_crafter(id: i32, crafter: Crafter, db: &DatabaseConnection) -> PandaPartyErrorResult {
     crafter::Entity::update_many()
         .filter(crafter::Column::Id.eq(id))
-        .col_expr(crafter::Column::Job, Expr::value(crafter.job))
+        .col_expr(crafter::Column::Job, Expr::val(crafter.job).as_enum(Alias::new("crafter_job")))
         .col_expr(crafter::Column::Level, Expr::value(crafter.level))
         .exec(db)
         .await

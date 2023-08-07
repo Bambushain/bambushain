@@ -1,10 +1,11 @@
+use std::cmp::Ordering;
 #[cfg(feature = "backend")]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 #[cfg(not(feature = "backend"))]
 use strum_macros::EnumIter;
 
-#[derive(Serialize, Deserialize, EnumIter, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default, Copy)]
+#[derive(Serialize, Deserialize, EnumIter, Debug, Eq, PartialEq, Clone, Default, Copy)]
 #[cfg_attr(feature = "backend", derive(DeriveActiveEnum), sea_orm(rs_type = "String", db_type = "Enum", enum_name = "fighter_job"))]
 pub enum FighterJob {
     #[default]
@@ -99,6 +100,18 @@ impl FighterJob {
             FighterJob::RedMage => "RedMage",
             FighterJob::BlueMage => "BlueMage",
         }.to_string()
+    }
+}
+
+impl PartialOrd for FighterJob {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.to_string().partial_cmp(&other.to_string())
+    }
+}
+
+impl Ord for FighterJob {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.to_string().cmp(&other.to_string())
     }
 }
 

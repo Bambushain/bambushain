@@ -1,5 +1,7 @@
 use bounce::helmet::Helmet;
 use bounce::query::use_query_value;
+use strum::IntoEnumIterator;
+use stylist::yew::use_style;
 use yew::prelude::*;
 use yew_cosmo::prelude::*;
 
@@ -22,13 +24,18 @@ struct ModifyCrafterModalProps {
 
 #[function_component(ModifyCrafterModal)]
 fn modify_crafter_modal(props: &ModifyCrafterModalProps) -> Html {
-    let job_state: UseStateHandle<AttrValue> = use_state_eq(|| props.crafter.job.clone().into());
-    let level_state: UseStateHandle<AttrValue> = use_state_eq(|| props.crafter.level.clone().unwrap_or_default().into());
+    let job_state = use_state_eq(|| Some(AttrValue::from(props.crafter.job.get_job_name())));
+    let level_state = use_state_eq(|| AttrValue::from(props.crafter.level.clone().unwrap_or_default()));
 
     let on_close = props.on_close.clone();
-    let on_save = use_callback(|_, (job_state, level_state, on_save)| on_save.emit(Crafter::new((*job_state).to_string(), (*level_state).to_string())), (job_state.clone(), level_state.clone(), props.on_save.clone()));
-    let update_job = use_callback(|value: AttrValue, state| state.set(value), job_state.clone());
+    let on_save = use_callback(|_, (job_state, level_state, on_save)| on_save.emit(Crafter::new(CrafterJob::from((**job_state).clone().unwrap().to_string()), (*level_state).to_string())), (job_state.clone(), level_state.clone(), props.on_save.clone()));
+    let update_job = use_callback(|value: Option<AttrValue>, state| state.set(value), job_state.clone());
     let update_level = use_callback(|value: AttrValue, state| state.set(value), level_state.clone());
+
+    let mut all_jobs = CrafterJob::iter().collect::<Vec<CrafterJob>>();
+    all_jobs.sort();
+
+    let jobs = all_jobs.iter().map(|job| (Some(AttrValue::from(job.get_job_name())), AttrValue::from(job.to_string()))).collect::<Vec<(Option<AttrValue>, AttrValue)>>();
 
     html!(
         <>
@@ -42,7 +49,7 @@ fn modify_crafter_modal(props: &ModifyCrafterModalProps) -> Html {
                     <CosmoMessage message_type={CosmoMessageType::Negative} message={props.error_message.clone()} />
                 }
                 <CosmoInputGroup>
-                    <CosmoTextBox label="Job" on_input={update_job} value={(*job_state).clone()} required={true} />
+                    <CosmoDropdown label="Job" on_select={update_job} value={(*job_state).clone()} required={true} items={jobs} />
                     <CosmoTextBox label="Level" on_input={update_level} value={(*level_state).clone()} required={true} />
                 </CosmoInputGroup>
             </CosmoModal>
@@ -205,9 +212,24 @@ fn crafter_details(props: &CrafterDetailsProps) -> Html {
     };
     let on_error_close = use_callback(|_, state| state.set(ErrorState::None), error_state.clone());
 
+    let header_style = use_style!(r#"
+display: flex;
+gap: 16px;
+align-items: center;
+
+img {
+    height: 36px;
+    width: 36px;
+    object-fit: scale-down;
+}
+    "#);
+
     html!(
         <>
-            <CosmoTitle title={props.crafter.job.clone()} />
+            <div class={header_style}>
+                <img src={format!("/static/crafter_jobs/{}", props.crafter.job.get_file_name())} />
+                <CosmoTitle title={props.crafter.job.to_string()} />
+            </div>
             <CosmoToolbar>
                 <CosmoToolbarGroup>
                     <CosmoButton on_click={edit_crafter_click} label="Bearbeiten" />
@@ -223,12 +245,12 @@ fn crafter_details(props: &CrafterDetailsProps) -> Html {
             </CosmoKeyValueList>
             {match (*action_state).clone() {
                 CrafterActions::Edit => html!(
-                    <ModifyCrafterModal on_error_close={on_error_close.clone()} title={format!("Crafter {} bearbeiten", props.crafter.job)} save_label="Crafter speichern" on_save={on_modal_save} on_close={on_modal_close} crafter={props.crafter.clone()} error_message={(*error_message_state).clone()} has_error={*error_state == ErrorState::Edit} />
+                    <ModifyCrafterModal on_error_close={on_error_close.clone()} title={format!("Crafter {} bearbeiten", props.crafter.job.to_string())} save_label="Crafter speichern" on_save={on_modal_save} on_close={on_modal_close} crafter={props.crafter.clone()} error_message={(*error_message_state).clone()} has_error={*error_state == ErrorState::Edit} />
                 ),
                 CrafterActions::Delete => {
                     let crafter = props.crafter.clone();
                     html!(
-                        <CosmoConfirm on_confirm={on_modal_delete} on_decline={on_modal_close} confirm_label="Crafter löschen" decline_label="Crafter behalten" title="Crafter löschen" message={format!("Soll der Crafter {} auf Level {} wirklich gelöscht werden?", crafter.job, crafter.level.unwrap_or_default())} />
+                        <CosmoConfirm on_confirm={on_modal_delete} on_decline={on_modal_close} confirm_label="Crafter löschen" decline_label="Crafter behalten" title="Crafter löschen" message={format!("Soll der Crafter {} auf Level {} wirklich gelöscht werden?", crafter.job.to_string(), crafter.level.unwrap_or_default())} />
                     )
                 }
                 CrafterActions::Closed => html!(),
@@ -350,7 +372,7 @@ pub fn crafter_page() -> Html {
             </Helmet>
             <CosmoSideList on_select_item={on_crafter_select} selected_index={*selected_crafter_state} has_add_button={true} add_button_on_click={open_create_crafter_modal_click} add_button_label="Crafter hinzufügen">
                 {for (*crafter_state).clone().into_iter().map(|crafter| {
-                    CosmoSideListItem::from_label_and_children(crafter.job.clone().into(), html!(
+                    CosmoSideListItem::from_label_and_children(crafter.job.clone().to_string().into(), html!(
                         <CrafterDetails on_delete={on_delete.clone()} crafter={crafter} />
                     ))
                 })}

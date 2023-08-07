@@ -34,7 +34,10 @@ fn modify_fighter_modal(props: &ModifyFighterModalProps) -> Html {
     let update_level = use_callback(|value, state| state.set(value), level_state.clone());
     let update_gear_score = use_callback(|value, state| state.set(value), gear_score_state.clone());
 
-    let jobs = FighterJob::iter().map(|job| (Some(AttrValue::from(job.get_job_name())), AttrValue::from(job.to_string()))).collect::<Vec<(Option<AttrValue>, AttrValue)>>();
+    let mut all_jobs = FighterJob::iter().collect::<Vec<FighterJob>>();
+    all_jobs.sort();
+
+    let jobs = all_jobs.iter().map(|job| (Some(AttrValue::from(job.get_job_name())), AttrValue::from(job.to_string()))).collect::<Vec<(Option<AttrValue>, AttrValue)>>();
 
     html!(
         <>

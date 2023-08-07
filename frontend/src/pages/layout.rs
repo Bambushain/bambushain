@@ -1,5 +1,5 @@
 use bounce::{use_atom_setter, use_atom_value};
-use bounce::helmet::Helmet;
+use bounce::helmet::{Helmet, HelmetBridge};
 use bounce::query::use_query_value;
 use stylist::{css, GlobalStyle};
 use yew::prelude::*;
@@ -46,7 +46,6 @@ fn switch_sub_menu(route: AppRoute) -> Html {
             <CosmoSubMenuBar>
                 <Switch<FinalFantasyRoute> render={render_sub_menu_entry("Meine Crafter".into(), FinalFantasyRoute::Crafter)} />
                 <Switch<FinalFantasyRoute> render={render_sub_menu_entry("Meine Kämpfer".into(), FinalFantasyRoute::Fighter)} />
-                <Switch<FinalFantasyRoute> render={render_sub_menu_entry("Administration".into(), FinalFantasyRoute::Fighter)} />
             </CosmoSubMenuBar>
         ),
         _ => {
@@ -447,6 +446,14 @@ fn top_bar() -> Html {
     )
 }
 
+fn format_title(s: AttrValue) -> AttrValue {
+    if s.is_empty() {
+        AttrValue::from("Pandaparty")
+    } else {
+        AttrValue::from(format!("{} – Pandaparty", s))
+    }
+}
+
 #[function_component(Layout)]
 fn layout() -> Html {
     log::info!("Run layout");
@@ -469,6 +476,7 @@ body {
 
     html!(
         <CosmoPageLayout primary_color="#9F2637" primary_color_dark="#9F2637">
+            <HelmetBridge default_title="Pandaparty" format_title={format_title} />
             <Helmet>
                 <style>
                     {global_style.get_style_str()}

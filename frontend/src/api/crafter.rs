@@ -37,7 +37,7 @@ impl Query for MyCrafter {
 }
 
 pub async fn create_crafter(crafter: Crafter) -> SheefApiResult<Crafter> {
-    log::debug!("Create crafter {}", crafter.job);
+    log::debug!("Create crafter {}", crafter.job.get_job_name());
     post("/api/crafter", &crafter).await
 }
 

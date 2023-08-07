@@ -16,6 +16,7 @@ mod m20230804_191618_delete_old_tables;
 mod m20230805_202224_user_add_discord_name;
 mod m20230805_211912_create_table_calendar;
 mod m20230807_004619_update_table_fighter;
+mod m20230807_020100_update_table_crafter;
 
 pub struct Migrator;
 
@@ -39,6 +40,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20230805_202224_user_add_discord_name::Migration),
             Box::new(m20230805_211912_create_table_calendar::Migration),
             Box::new(m20230807_004619_update_table_fighter::Migration),
+            Box::new(m20230807_020100_update_table_crafter::Migration),
         ]
     }
 }
