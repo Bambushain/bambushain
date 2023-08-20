@@ -1,4 +1,4 @@
-FROM quay.imanuel.dev/imanuel/trunk-docker-base-image:latest as build
+FROM harbor.ulbricht.casa/imanuel/trunk-docker-base-image:latest as build
 
 WORKDIR /usr/src/pandaparty
 COPY . .
@@ -6,7 +6,7 @@ COPY . .
 RUN trunk build --release
 RUN cargo install --path .
 
-FROM quay.imanuel.dev/dockerhub/library---alpine:3.18
+FROM harbor.ulbricht.casa/dockerhub/library/alpine:3.18
 
 ENV FRONTEND_DIR=/usr/local/share/pandaparty/web/
 
