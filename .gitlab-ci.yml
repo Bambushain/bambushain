@@ -19,28 +19,37 @@ test-build:
     - trunk build --release
 
 docker-build:
-  image: harbor.ulbricht.casa/proxy/library/docker:dind
   stage: deploy
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    pull_policy: always
+    entrypoint: [""]
   before_script:
-    - docker login -u "$HARBOR_USER" -p "$HARBOR_PASSWORD" harbor.ulbricht.casa
+    - echo $KANIKO_DOCKERHUB_AND_HARBOR > /kaniko/.docker/config.json
   script:
-    - docker build --pull -t "harbor.ulbricht.casa/creastina/pandaparty:${CI_COMMIT_TAG}" -f ./Dockerfile .
-    - docker tag "harbor.ulbricht.casa/creastina/pandaparty:${CI_COMMIT_TAG}" "harbor.ulbricht.casa/creastina/pandaparty:latest"
-    - docker push "harbor.ulbricht.casa/creastina/pandaparty:${CI_COMMIT_TAG}"
-    - docker push "harbor.ulbricht.casa/creastina/pandaparty:latest"
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
+      --destination "harbor.ulbricht.casa/creastina/pandaparty:${CI_COMMIT_TAG}"
+      --destination "harbor.ulbricht.casa/creastina/pandaparty:latest"
   rules:
     - if: $CI_COMMIT_TAG
       exists:
         - Dockerfile
 
 docker-build-testing:
-  image: harbor.ulbricht.casa/proxy/library/docker:dind
   stage: deploy
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    pull_policy: always
+    entrypoint: [""]
   before_script:
-    - docker login -u "$HARBOR_USER" -p "$HARBOR_PASSWORD" harbor.ulbricht.casa
+    - echo $KANIKO_DOCKERHUB_AND_HARBOR > /kaniko/.docker/config.json
   script:
-    - docker build --pull -t "harbor.ulbricht.casa/creastina/pandaparty:testing" -f ./Dockerfile .
-    - docker push "harbor.ulbricht.casa/creastina/pandaparty:testing"
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
+      --destination "harbor.ulbricht.casa/creastina/pandaparty:testing"
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       exists:
