@@ -9,3 +9,11 @@ services:
       POSTGRES_USER: pandaparty
     ports:
       - "5434:5432"
+  pandaparty-mailpit:
+    image: harbor.ulbricht.casa/proxy/axllent/mailpit:latest
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+    ports:
+      - "1325:1025"
+      - "8325:8025"

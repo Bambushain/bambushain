@@ -3,7 +3,7 @@ use sea_orm_migration::prelude::extension::postgres::Type;
 use sea_orm_migration::sea_orm::{EnumIter, Iterable};
 
 use crate::m20220101_000001_create_schemas::Schemas;
-use crate::m20230724_121111_create_table_character::Character;
+use crate::m20230724_121011_create_table_user::User;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -14,57 +14,48 @@ impl MigrationTrait for Migration {
         manager
             .create_type(
                 Type::create()
-                    .as_enum(
-                        (Schemas::FinalFantasy, Alias::new("fighter_job"))
-                    )
-                    .values(
-                        FighterJob::iter()
-                            .collect::<Vec<FighterJob>>()
-                    )
+                    .as_enum((Schemas::FinalFantasy, Alias::new("character_race")))
+                    .values(Race::iter().collect::<Vec<Race>>())
                     .to_owned()
             )
             .await?;
         manager
             .create_table(
                 Table::create()
-                    .table((Schemas::FinalFantasy, Fighter::Table))
+                    .table((Schemas::FinalFantasy, Character::Table))
                     .if_not_exists()
                     .col(
-                        ColumnDef::new(Fighter::Id)
+                        ColumnDef::new(Character::Id)
                             .integer()
                             .not_null()
                             .auto_increment()
                             .primary_key(),
                     )
                     .col(
-                        ColumnDef::new(Fighter::Job)
-                            .custom(Alias::new("final_fantasy.fighter_job"))
+                        ColumnDef::new(Character::Name)
+                            .string()
                             .not_null()
                     )
                     .col(
-                        ColumnDef::new(Fighter::Level)
-                            .string()
+                        ColumnDef::new(Character::Race)
+                            .custom(Alias::new("final_fantasy.character_race"))
+                            .not_null()
                     )
                     .col(
-                        ColumnDef::new(Fighter::GearScore)
+                        ColumnDef::new(Character::World)
                             .string()
+                            .not_null()
                     )
                     .col(
-                        ColumnDef::new(Fighter::CharacterId)
+                        ColumnDef::new(Character::UserId)
                             .integer()
                             .not_null()
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .from((Schemas::FinalFantasy, Fighter::Table), Fighter::CharacterId)
-                            .to((Schemas::FinalFantasy, Character::Table), Character::Id)
+                            .from((Schemas::FinalFantasy, Character::Table), Character::UserId)
+                            .to((Schemas::Authentication, User::Table), User::Id)
                             .on_delete(ForeignKeyAction::Cascade)
-                    )
-                    .index(
-                        Index::create()
-                            .col(Fighter::Job)
-                            .col(Fighter::CharacterId)
-                            .unique()
                     )
                     .to_owned(),
             )
@@ -77,14 +68,14 @@ impl MigrationTrait for Migration {
         manager
             .drop_table(
                 Table::drop()
-                    .table((Schemas::FinalFantasy, Fighter::Table))
+                    .table((Schemas::FinalFantasy, Character::Table))
                     .to_owned()
             )
             .await?;
         manager
             .drop_type(
                 Type::drop()
-                    .name((Schemas::FinalFantasy, Alias::new("fighter_job")))
+                    .name((Schemas::FinalFantasy, Alias::new("character_race")))
                     .to_owned()
             )
             .await?;
@@ -95,35 +86,23 @@ impl MigrationTrait for Migration {
 
 /// Learn more at https://docs.rs/sea-query#iden
 #[derive(Iden)]
-pub enum Fighter {
+pub enum Character {
     Table,
     Id,
-    Job,
-    Level,
-    GearScore,
-    CharacterId,
+    Name,
+    Race,
+    World,
+    UserId,
 }
 
 #[derive(Iden, EnumIter)]
-enum FighterJob {
-    Paladin,
-    Warrior,
-    DarkKnight,
-    Gunbreaker,
-    WhiteMage,
-    Scholar,
-    Astrologian,
-    Sage,
-    Monk,
-    Dragoon,
-    Ninja,
-    Samurai,
-    Reaper,
-    Bard,
-    Machinist,
-    Dancer,
-    BlackMage,
-    Summoner,
-    RedMage,
-    BlueMage,
+enum Race {
+    Hyur,
+    Elezen,
+    Lalafell,
+    Miqote,
+    Roegadyn,
+    AuRa,
+    Hrothgar,
+    Viera,
 }

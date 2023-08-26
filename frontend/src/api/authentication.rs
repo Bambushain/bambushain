@@ -1,20 +1,23 @@
-use std::ops::Deref;
-use std::rc::Rc;
-
 use pandaparty_entities::prelude::*;
 
-use crate::api::{delete, post, SheefApiResult};
-use crate::storage::delete_token;
+use crate::api;
+use crate::storage;
 
-pub async fn login(login_data: Rc<Login>) -> SheefApiResult<LoginResult> {
+pub async fn login(login_data: Login) -> api::PandapartyApiResult<either::Either<LoginResult, ()>> {
     log::debug!("Execute login");
-    post("/api/login", login_data.deref()).await
+    if login_data.two_factor_code.is_none() {
+        api::post_no_content("/api/login", &login_data).await?;
+        Ok(either::Right(()))
+    } else {
+        let result = api::post("/api/login", &login_data).await?;
+        Ok(either::Left(result))
+    }
 }
 
 pub fn logout() {
     log::debug!("Execute logout");
-    delete_token();
+    storage::delete_token();
     yew::platform::spawn_local(async {
-        let _ = delete("/api/login").await;
+        let _ = api::delete("/api/login").await;
     });
 }

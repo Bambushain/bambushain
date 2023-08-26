@@ -18,9 +18,9 @@ pub async fn get_user(id: i32, db: &DatabaseConnection) -> PandaPartyResult<User
     }
 }
 
-pub async fn get_user_by_username(username: String, db: &DatabaseConnection) -> PandaPartyResult<User> {
+pub async fn get_user_by_email(email: String, db: &DatabaseConnection) -> PandaPartyResult<User> {
     match user::Entity::find()
-        .filter(user::Column::Username.eq(username))
+        .filter(user::Column::Email.eq(email))
         .one(db)
         .await {
         Ok(Some(res)) => Ok(res),
@@ -34,7 +34,7 @@ pub async fn get_user_by_username(username: String, db: &DatabaseConnection) -> 
 
 pub async fn get_users(db: &DatabaseConnection) -> PandaPartyResult<Vec<User>> {
     user::Entity::find()
-        .order_by_asc(user::Column::Username)
+        .order_by_asc(user::Column::Email)
         .all(db)
         .await
         .map_err(|err| {
@@ -113,10 +113,10 @@ pub async fn change_password(id: i32, password: String, db: &DatabaseConnection)
         .map(|_| ())
 }
 
-pub async fn update_me(id: i32, job: String, gear_level: String, discord_name: String, db: &DatabaseConnection) -> PandaPartyErrorResult {
+pub async fn update_me(id: i32, email: String, display_name: String, discord_name: String, db: &DatabaseConnection) -> PandaPartyErrorResult {
     user::Entity::update_many()
-        .col_expr(user::Column::Job, Expr::value(job))
-        .col_expr(user::Column::GearLevel, Expr::value(gear_level))
+        .col_expr(user::Column::Email, Expr::value(email))
+        .col_expr(user::Column::DisplayName, Expr::value(display_name))
         .col_expr(user::Column::DiscordName, Expr::value(discord_name))
         .filter(user::Column::Id.eq(id))
         .exec(db)

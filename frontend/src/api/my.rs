@@ -2,13 +2,13 @@ use std::rc::Rc;
 
 use async_trait::async_trait;
 use bounce::prelude::*;
-use bounce::query::{Mutation, MutationResult, Query, QueryResult};
+use bounce::query::{Query, QueryResult};
 use serde::{Deserialize, Serialize};
 
 use pandaparty_entities::prelude::*;
 
-use crate::api::*;
-use crate::storage::{delete_token, set_token};
+use crate::api;
+use crate::storage;
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Profile {
@@ -23,49 +23,33 @@ impl From<WebUser> for Profile {
     }
 }
 
-async fn get_my_profile() -> SheefApiResult<WebUser> {
+async fn get_my_profile() -> api::PandapartyApiResult<WebUser> {
     log::debug!("Get my profile");
-    get::<WebUser>("/api/my/profile").await
+    api::get::<WebUser>("/api/my/profile").await
 }
 
 #[async_trait(? Send)]
 impl Query for Profile {
     type Input = ();
-    type Error = ApiError;
+    type Error = api::ApiError;
 
     async fn query(_states: &BounceStates, _input: Rc<Self::Input>) -> QueryResult<Self> {
         match get_my_profile().await {
             Ok(user) => Ok(Rc::new(user.into())),
             Err(err) => {
-                delete_token();
+                storage::delete_token();
                 Err(err)
             }
         }
     }
 }
 
-#[async_trait(? Send)]
-impl Mutation for Profile {
-    type Input = Login;
-    type Error = ApiError;
-
-    async fn run(_states: &BounceStates, input: Rc<Self::Input>) -> MutationResult<Self> {
-        match login(input).await {
-            Ok(result) => {
-                set_token(result.token);
-                Ok(Rc::new(result.user.into()))
-            }
-            Err(err) => Err(err)
-        }
-    }
-}
-
-pub async fn change_my_password(old_password: String, new_password: String) -> SheefApiResult<()> {
+pub async fn change_my_password(old_password: String, new_password: String) -> api::PandapartyApiResult<()> {
     log::debug!("Change my password");
-    put("/api/my/password", &ChangeMyPassword { old_password, new_password }).await
+    api::put("/api/my/password", &ChangeMyPassword { old_password, new_password }).await
 }
 
-pub async fn update_my_profile(profile: UpdateProfile) -> SheefApiResult<()> {
+pub async fn update_my_profile(profile: UpdateProfile) -> api::PandapartyApiResult<()> {
     log::debug!("Update profile to the following data {:?}", profile);
-    put("/api/my/profile", &profile).await
+    api::put("/api/my/profile", &profile).await
 }

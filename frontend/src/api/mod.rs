@@ -20,7 +20,6 @@ pub mod user;
 pub mod crafter;
 pub mod fighter;
 pub mod event;
-// pub mod boolean_table;
 
 macro_rules! error_code {
     ($name:tt,$code:literal) => {
@@ -65,7 +64,7 @@ impl Display for ApiError {
     }
 }
 
-pub type SheefApiResult<T> = Result<T, ApiError>;
+pub type PandapartyApiResult<T> = Result<T, ApiError>;
 
 error_code!(SEND_ERROR, -1);
 error_code!(JSON_SERIALIZE_ERROR, -2);
@@ -147,7 +146,7 @@ macro_rules! handle_response_code {
     };
 }
 
-pub async fn get<OUT: DeserializeOwned>(uri: impl Into<String>) -> SheefApiResult<OUT> {
+pub async fn get<OUT: DeserializeOwned>(uri: impl Into<String>) -> PandapartyApiResult<OUT> {
     let into_uri = uri.into();
     let token = get_token().unwrap_or_default();
     log::debug!("Use auth token {}", token);
@@ -160,7 +159,7 @@ pub async fn get<OUT: DeserializeOwned>(uri: impl Into<String>) -> SheefApiResul
     handle_response!(response)
 }
 
-pub async fn get_with_query<OUT: DeserializeOwned, Value: AsRef<str>>(uri: impl Into<String>, query: Vec<(&str, Value)>) -> SheefApiResult<OUT> {
+pub async fn get_with_query<OUT: DeserializeOwned, Value: AsRef<str>>(uri: impl Into<String>, query: Vec<(&str, Value)>) -> PandapartyApiResult<OUT> {
     let into_uri = uri.into();
     let token = get_token().unwrap_or_default();
     log::debug!("Use auth token {}", token);
@@ -174,7 +173,7 @@ pub async fn get_with_query<OUT: DeserializeOwned, Value: AsRef<str>>(uri: impl 
     handle_response!(response)
 }
 
-pub async fn delete(uri: impl Into<String>) -> SheefApiResult<()> {
+pub async fn delete(uri: impl Into<String>) -> PandapartyApiResult<()> {
     let into_uri = uri.into();
     let token = get_token().unwrap_or_default();
     log::debug!("Use auth token {}", token);
@@ -187,7 +186,7 @@ pub async fn delete(uri: impl Into<String>) -> SheefApiResult<()> {
     handle_response_code!(response)
 }
 
-pub async fn put_no_body(uri: impl Into<String>) -> SheefApiResult<()> {
+pub async fn put_no_body(uri: impl Into<String>) -> PandapartyApiResult<()> {
     let into_uri = uri.into();
     let token = get_token().unwrap_or_default();
     log::debug!("Use auth token {}", token);
@@ -200,7 +199,7 @@ pub async fn put_no_body(uri: impl Into<String>) -> SheefApiResult<()> {
     handle_response_code!(response)
 }
 
-pub async fn put<IN: Serialize>(uri: impl Into<String>, body: &IN) -> SheefApiResult<()> {
+pub async fn put<IN: Serialize>(uri: impl Into<String>, body: &IN) -> PandapartyApiResult<()> {
     let into_uri = uri.into();
     let token = get_token().unwrap_or_default();
     log::debug!("Use auth token {}", token);
@@ -216,7 +215,7 @@ pub async fn put<IN: Serialize>(uri: impl Into<String>, body: &IN) -> SheefApiRe
     }
 }
 
-pub async fn post<IN: Serialize, OUT: DeserializeOwned>(uri: impl Into<String>, body: &IN) -> SheefApiResult<OUT> {
+pub async fn post<IN: Serialize, OUT: DeserializeOwned>(uri: impl Into<String>, body: &IN) -> PandapartyApiResult<OUT> {
     let into_uri = uri.into();
     let token = get_token().unwrap_or_default();
     log::debug!("Use auth token {}", token);
@@ -234,4 +233,20 @@ pub async fn post<IN: Serialize, OUT: DeserializeOwned>(uri: impl Into<String>, 
     }
 }
 
-// pub use boolean_table::*;
+pub async fn post_no_content<IN: Serialize>(uri: impl Into<String>, body: &IN) -> PandapartyApiResult<()> {
+    let into_uri = uri.into();
+    let token = get_token().unwrap_or_default();
+    log::debug!("Use auth token {}", token);
+    let token = get_token().unwrap_or_default();
+
+    log::debug!("Execute post request against {}", &into_uri);
+    match gloo::net::http::Request::post(into_uri.as_str())
+        .header("Authorization", format!("Panda {}", token).as_str())
+        .json(body) {
+        Ok(request) => handle_response_code!(request.send().await),
+        Err(err) => {
+            log::warn!("Serialize failed {}", err);
+            Err(ApiError { pandaparty_error: PandaPartyError::default(), code: JSON_SERIALIZE_ERROR })
+        }
+    }
+}

@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use strum_macros::EnumIter;
 
 #[derive(Serialize, Deserialize, EnumIter, Debug, Eq, PartialEq, Clone, Default, Copy)]
-#[cfg_attr(feature = "backend", derive(DeriveActiveEnum), sea_orm(rs_type = "String", db_type = "Enum", enum_name = "fighter_job"))]
+#[cfg_attr(feature = "backend", derive(DeriveActiveEnum), sea_orm(rs_type = "String", db_type = "Enum", enum_name = "final_fantasy.fighter_job"))]
 pub enum FighterJob {
     #[default]
     #[cfg_attr(feature = "backend", sea_orm(string_value = "paladin"))]
@@ -171,7 +171,7 @@ impl From<String> for FighterJob {
 }
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
-#[cfg_attr(feature = "backend", derive(DeriveEntityModel), sea_orm(table_name = "fighter"))]
+#[cfg_attr(feature = "backend", derive(DeriveEntityModel), sea_orm(table_name = "fighter", schema_name = "final_fantasy"))]
 pub struct Model {
     #[cfg_attr(feature = "backend", sea_orm(primary_key))]
     pub id: i32,

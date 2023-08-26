@@ -64,10 +64,11 @@ async fn main() -> std::io::Result<()> {
             .map(char::from)
             .collect::<String>();
 
-        let username = std::env::var("INITIAL_USER").expect("INITIAL_USER must be set");
+        let display_name = std::env::var("INITIAL_USER_DISPLAY_NAME").expect("INITIAL_USER_DISPLAY_NAME must be set");
+        let email = std::env::var("INITIAL_USER_EMAIL").expect("INITIAL_USER_EMAIL must be set");
 
-        match pandaparty_dbal::user::create_user(user::Model::new(username.clone(), password.clone(), "".into(), "".into(), "".into(), true), &db).await {
-            Ok(_) => log::info!("Created initial user {username} with password {password}"),
+        match pandaparty_dbal::user::create_user(user::Model::new(email.clone(), password.clone(), display_name.clone(), "".into(), true), &db).await {
+            Ok(_) => log::info!("Created initial user {email} with password {password}"),
             Err(err) => panic!("Failed to create initial user, {err}")
         }
     }
@@ -137,7 +138,7 @@ async fn main() -> std::io::Result<()> {
                     .finish()
             )
     })
-        .bind(("0.0.0.0", 8060))?
+        .bind(("0.0.0.0", 8070))?
         .run()
         .await
 }

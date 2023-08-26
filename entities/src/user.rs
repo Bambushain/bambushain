@@ -7,17 +7,17 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
-#[cfg_attr(feature = "backend", derive(DeriveEntityModel), sea_orm(table_name = "user"))]
+#[cfg_attr(feature = "backend", derive(DeriveEntityModel), sea_orm(table_name = "user", schema_name = "authentication"))]
 pub struct Model {
     #[cfg_attr(feature = "backend", sea_orm(primary_key))]
     pub id: i32,
     #[cfg_attr(feature = "backend", sea_orm(unique))]
-    pub username: String,
+    pub email: String,
     pub password: String,
+    pub display_name: String,
     pub is_mod: bool,
-    pub gear_level: String,
-    pub job: String,
     pub discord_name: String,
+    pub two_factor_code: String,
 }
 
 #[cfg(feature = "backend")]
@@ -70,15 +70,15 @@ impl ActiveModel {
 }
 
 impl Model {
-    pub fn new(username: String, password: String, job: String, gear_level: String, discord_name: String, is_mod: bool) -> Self {
+    pub fn new(email: String, password: String, display_name: String, discord_name: String, is_mod: bool) -> Self {
         Self {
             id: i32::default(),
-            username,
+            email,
             password,
             is_mod,
-            gear_level,
-            job,
+            display_name,
             discord_name,
+            two_factor_code: "".into(),
         }
     }
 
@@ -90,10 +90,9 @@ impl Model {
     pub fn to_web_user(&self) -> WebUser {
         WebUser {
             id: self.id,
-            username: self.username.to_string(),
             is_mod: self.is_mod,
-            gear_level: self.gear_level.to_string(),
-            job: self.job.to_string(),
+            display_name: self.display_name.to_string(),
+            email: self.email.to_string(),
             discord_name: self.discord_name.clone(),
         }
     }
@@ -103,32 +102,31 @@ impl Model {
 #[serde(rename_all = "camelCase")]
 pub struct WebUser {
     pub id: i32,
-    pub username: String,
+    pub display_name: String,
+    pub email: String,
     pub is_mod: bool,
-    pub gear_level: String,
-    pub job: String,
     pub discord_name: String,
 }
 
 impl Display for WebUser {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str(serde_json::to_string(self).unwrap_or(self.username.clone()).as_str())
+        f.write_str(serde_json::to_string(self).unwrap_or(self.email.clone()).as_str())
     }
 }
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateProfile {
-    pub gear_level: String,
-    pub job: String,
+    pub email: String,
+    pub display_name: String,
     pub discord_name: String,
 }
 
 impl UpdateProfile {
-    pub fn new(job: String, gear_level: String, discord_name: String) -> Self {
+    pub fn new(email: String, display_name: String, discord_name: String) -> Self {
         Self {
-            job,
-            gear_level,
+            email,
+            display_name,
             discord_name,
         }
     }

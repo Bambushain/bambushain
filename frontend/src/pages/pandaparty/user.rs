@@ -38,8 +38,8 @@ enum UserConfirmActions {
 #[derive(Properties, Clone, PartialEq)]
 struct UpdateProfileDialogProps {
     on_close: Callback<()>,
-    gear_level: AttrValue,
-    job: AttrValue,
+    display_name: AttrValue,
+    email: AttrValue,
     discord_name: AttrValue,
     id: i32,
 }
@@ -48,9 +48,8 @@ struct UpdateProfileDialogProps {
 fn create_user_modal(props: &CreateUserModalProps) -> Html {
     log::debug!("Create create user modal");
     log::debug!("Initialize state and callbacks");
-    let username_state = use_state_eq(|| AttrValue::from(""));
-    let job_state = use_state_eq(|| AttrValue::from(""));
-    let gear_level_state = use_state_eq(|| AttrValue::from(""));
+    let email_state = use_state_eq(|| AttrValue::from(""));
+    let display_name_state = use_state_eq(|| AttrValue::from(""));
     let discord_name_state = use_state_eq(|| AttrValue::from(""));
     let error_message_state = use_state_eq(|| AttrValue::from(""));
     let password_state = use_state_eq(|| AttrValue::from(rand::thread_rng()
@@ -65,18 +64,16 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
 
     let created_user_state = use_state_eq(WebUser::default);
 
-    let update_username = use_callback(|value, state| state.set(value), username_state.clone());
-    let update_job = use_callback(|value, state| state.set(value), job_state.clone());
-    let update_gear_level = use_callback(|value, state| state.set(value), gear_level_state.clone());
+    let update_email = use_callback(|value, state| state.set(value), email_state.clone());
+    let update_display_name = use_callback(|value, state| state.set(value), display_name_state.clone());
     let update_discord_name = use_callback(|value, state| state.set(value), discord_name_state.clone());
 
     let update_is_mod = use_callback(|checked, state| state.set(checked), is_mod_state.clone());
 
     let form_submit = {
-        let username_state = username_state.clone();
+        let email_state = email_state.clone();
         let password_state = password_state.clone();
-        let job_state = job_state.clone();
-        let gear_level_state = gear_level_state.clone();
+        let display_name_state = display_name_state.clone();
         let discord_name_state = discord_name_state.clone();
         let error_message_state = error_message_state.clone();
 
@@ -88,9 +85,9 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
 
         Callback::from(move |_| {
             log::debug!("Submit executed user is about to be created");
-            let username_state = username_state.clone();
-            let job_state = job_state.clone();
-            let gear_level_state = gear_level_state.clone();
+            let email_state = email_state.clone();
+            let display_name_state = display_name_state.clone();
+            let discord_name_state = discord_name_state.clone();
             let password_state = password_state.clone();
             let error_message_state = error_message_state.clone();
 
@@ -101,16 +98,15 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
             let created_user = created_user.clone();
 
             let user = User::new(
-                (*username_state).to_string(),
+                (*email_state).to_string(),
                 (*password_state).to_string(),
-                (*job_state).to_string(),
-                (*gear_level_state).to_string(),
+                (*display_name_state).to_string(),
                 (*discord_name_state).to_string(),
                 *is_mod_state,
             );
 
             yew::platform::spawn_local(async move {
-                log::debug!("Create new user with username {}", user.username.clone());
+                log::debug!("Create new user with email {}", user.email.clone());
                 match create_user(user).await {
                     Ok(user) => {
                         log::debug!("User was created successfully, lets reload the users");
@@ -123,7 +119,7 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
                         log::warn!("Failed to create user {}", err);
                         error_state.set(true);
                         if err.code == CONFLICT {
-                            error_message_state.set("Ein Benutzer mit diesem Namen existiert bereits".into());
+                            error_message_state.set("Ein Benutzer mit dieser Email existiert bereits".into());
                         } else {
                             error_message_state.set("Der Benutzer konnte nicht hinzugefügt werden, bitte wende dich an Azami".into());
                         }
@@ -154,7 +150,7 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
                 }
             )}>
             if *created_state {
-                <CosmoParagraph>{format!("Das Passwort für {} ist ", (*username_state).clone())}<CosmoCode>{(*password_state).clone()}</CosmoCode></CosmoParagraph>
+                <CosmoParagraph>{format!("Das Passwort für {} ist ", (*email_state).clone())}<CosmoCode>{(*password_state).clone()}</CosmoCode></CosmoParagraph>
             } else {
                 <>
                     if *error_state {
@@ -163,9 +159,8 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
                         <CosmoMessage message_type={CosmoMessageType::Information} header="Füge einen neuen Benutzer hinzu" message="Das Passwort wird angezeigt wenn der Benutzer erfolgreich hinzugefügt wurde" />
                     }
                     <CosmoInputGroup>
-                        <CosmoTextBox label="Name" value={(*username_state).clone()} on_input={update_username} required={true} />
-                        <CosmoTextBox label="Job (optional)" value={(*job_state).clone()} on_input={update_job} />
-                        <CosmoTextBox label="Gearlevel (optional)" value={(*gear_level_state).clone()} on_input={update_gear_level} />
+                        <CosmoTextBox label="Email" value={(*email_state).clone()} on_input={update_email} required={true} />
+                        <CosmoTextBox label="Name" value={(*display_name_state).clone()} on_input={update_display_name} />
                         <CosmoTextBox label="Discord Name (optional)" value={(*discord_name_state).clone()} on_input={update_discord_name} />
                         <CosmoSwitch label="Moderator" on_check={update_is_mod} checked={*is_mod_state} />
                     </CosmoInputGroup>
@@ -181,20 +176,20 @@ fn update_profile_dialog(props: &UpdateProfileDialogProps) -> Html {
     let error_state = use_state_eq(|| false);
 
     let error_message_state = use_state_eq(|| AttrValue::from(""));
-    let job_state = use_state_eq(|| props.job.clone());
-    let gear_level_state = use_state_eq(|| props.gear_level.clone());
+    let display_name_state = use_state_eq(|| props.display_name.clone());
+    let email_state = use_state_eq(|| props.email.clone());
     let discord_name_state = use_state_eq(|| props.discord_name.clone());
 
-    let update_job = use_callback(|value, state| state.set(value), job_state.clone());
-    let update_gear_level = use_callback(|value, state| state.set(value), gear_level_state.clone());
+    let update_display_name = use_callback(|value, state| state.set(value), display_name_state.clone());
+    let update_email = use_callback(|value, state| state.set(value), email_state.clone());
     let update_discord_name = use_callback(|value, state| state.set(value), discord_name_state.clone());
 
     let on_save = {
         let error_state = error_state.clone();
 
         let error_message_state = error_message_state.clone();
-        let job_state = job_state.clone();
-        let gear_level_state = gear_level_state.clone();
+        let display_name_state = display_name_state.clone();
+        let email_state = email_state.clone();
         let discord_name_state = discord_name_state.clone();
 
         let id = props.id;
@@ -206,14 +201,14 @@ fn update_profile_dialog(props: &UpdateProfileDialogProps) -> Html {
             let error_state = error_state.clone();
 
             let error_message_state = error_message_state.clone();
-            let job_state = job_state.clone();
-            let gear_level_state = gear_level_state.clone();
+            let display_name_state = display_name_state.clone();
             let discord_name_state = discord_name_state.clone();
+            let email_state = email_state.clone();
 
             let on_close = on_close.clone();
 
             yew::platform::spawn_local(async move {
-                error_state.set(match update_profile(id, UpdateProfile::new((*gear_level_state).to_string(), (*job_state).to_string(), (*discord_name_state).to_string())).await {
+                error_state.set(match update_profile(id, UpdateProfile::new((*email_state).to_string(), (*display_name_state).to_string(), (*discord_name_state).to_string())).await {
                     Ok(_) => {
                         log::debug!("Profile update successful");
                         on_close.emit(());
@@ -253,8 +248,8 @@ fn update_profile_dialog(props: &UpdateProfileDialogProps) -> Html {
                 </>
             )}>
                 <CosmoInputGroup>
-                    <CosmoTextBox label="Rolle/Klasse (optional)" on_input={update_job} value={(*job_state).clone()} />
-                    <CosmoTextBox label="Gear Level (optional)" on_input={update_gear_level} value={(*gear_level_state).clone()} />
+                    <CosmoTextBox label="Email" required={true} input_type={CosmoTextBoxType::Email} on_input={update_email} value={(*email_state).clone()} />
+                    <CosmoTextBox label="Name" required={true} on_input={update_display_name} value={(*display_name_state).clone()} />
                     <CosmoTextBox label="Discord Name (optional)" on_input={update_discord_name} value={(*discord_name_state).clone()} />
                 </CosmoInputGroup>
             </CosmoModal>
@@ -440,7 +435,7 @@ fn user_details(props: &UserDetailsProps) -> Html {
 
     html!(
         <>
-            <CosmoTitle title={props.user.username.clone()} />
+            <CosmoTitle title={props.user.display_name.clone()} subtitle={props.user.email.clone()} />
             if current_user.profile.is_mod {
                 <CosmoToolbar>
                     <CosmoToolbarGroup>
@@ -458,19 +453,11 @@ fn user_details(props: &UserDetailsProps) -> Html {
                 </CosmoToolbar>
             }
             <CosmoKeyValueList>
-                <CosmoKeyValueListItem title="Job">
-                    if props.user.job.is_empty() {
-                        {"Kein Job gesetzt"}
-                    } else {
-                        {props.user.job.clone()}
-                    }
+                <CosmoKeyValueListItem title="Name">
+                    {props.user.display_name.clone()}
                 </CosmoKeyValueListItem>
-                <CosmoKeyValueListItem title="Gear Level">
-                    if props.user.gear_level.is_empty() {
-                        {"Kein Gear Level gesetzt"}
-                    } else {
-                        {props.user.gear_level.clone()}
-                    }
+                <CosmoKeyValueListItem title="Email">
+                    {props.user.email.clone()}
                 </CosmoKeyValueListItem>
                 <CosmoKeyValueListItem title="Discord Name">
                     if props.user.discord_name.is_empty() {
@@ -489,13 +476,13 @@ fn user_details(props: &UserDetailsProps) -> Html {
             </CosmoKeyValueList>
             {match (*confirm_state).clone() {
                 UserConfirmActions::MakeMod => html!(
-                    <CosmoConfirm message={format!("Soll der Benutzer {} zum Mod gemacht werden?", props.user.username.clone())} title="Zum Mod machen" on_decline={on_decline} on_confirm={on_confirm} decline_label="Abbrechen" confirm_label="Zum Mod machen" />
+                    <CosmoConfirm message={format!("Soll der Benutzer {} zum Mod gemacht werden?", props.user.email.clone())} title="Zum Mod machen" on_decline={on_decline} on_confirm={on_confirm} decline_label="Abbrechen" confirm_label="Zum Mod machen" />
                 ),
                 UserConfirmActions::RemoveMod => html!(
-                    <CosmoConfirm message={format!("Sollen dem Benutzer {} wirklich die Modrechte entzogen werden?", props.user.username.clone())} title="Modrechte entziehen" on_decline={on_decline} on_confirm={on_confirm} confirm_label="Modrechte entziehen" decline_label="Abbrechen" />
+                    <CosmoConfirm message={format!("Sollen dem Benutzer {} wirklich die Modrechte entzogen werden?", props.user.email.clone())} title="Modrechte entziehen" on_decline={on_decline} on_confirm={on_confirm} confirm_label="Modrechte entziehen" decline_label="Abbrechen" />
                 ),
                 UserConfirmActions::Delete => html!(
-                    <CosmoConfirm message={format!("Soll der Benutzer {} wirklich gelöscht werden?", props.user.username.clone())} title="Benutzer löschen" on_decline={on_decline} on_confirm={on_confirm} confirm_label="Benutzer löschen" decline_label="Benutzer behalten" />
+                    <CosmoConfirm message={format!("Soll der Benutzer {} wirklich gelöscht werden?", props.user.email.clone())} title="Benutzer löschen" on_decline={on_decline} on_confirm={on_confirm} confirm_label="Benutzer löschen" decline_label="Benutzer behalten" />
                 ),
                 UserConfirmActions::ChangePassword(password) => {
                     html!(
@@ -505,7 +492,7 @@ fn user_details(props: &UserDetailsProps) -> Html {
                                 <CosmoButton on_click={on_confirm} label="Passwort zurücksetzen" />
                             </>
                         )}>
-                            <CosmoParagraph>{format!("Das neue Passwort für {} wird auf ", props.user.username)}<CosmoCode>{password}</CosmoCode>{" gesetzt."}</CosmoParagraph>
+                            <CosmoParagraph>{format!("Das neue Passwort für {} wird auf ", props.user.email)}<CosmoCode>{password}</CosmoCode>{" gesetzt."}</CosmoParagraph>
                         </CosmoModal>
                     )
                 },
@@ -515,7 +502,7 @@ fn user_details(props: &UserDetailsProps) -> Html {
                 <CosmoAlert title="Ein Fehler ist aufgetreten" message={(*error_message_state).clone()} on_close={on_alert_close} close_label="Schließen" />
             }
             if *profile_edit_state {
-                <UpdateProfileDialog on_close={on_update_profile_close} id={props.user.id} gear_level={props.user.gear_level.clone()} job={props.user.job.clone()} discord_name={props.user.discord_name.clone()} />
+                <UpdateProfileDialog on_close={on_update_profile_close} id={props.user.id} email={props.user.email.clone()} display_name={props.user.display_name.clone()} discord_name={props.user.discord_name.clone()} />
             }
         </>
     )
@@ -584,12 +571,12 @@ pub fn users_page() -> Html {
 
             let open_create_user_modal_state = open_create_user_modal_state.clone();
 
-            let username = user.username;
+            let email = user.email;
 
             yew::platform::spawn_local(async move {
                 open_create_user_modal_state.set(false);
                 if let Ok(res) = users_query_state.refresh().await {
-                    selected_user_state.set(res.users.iter().position(move |user| user.username.eq(&username)).unwrap_or(0));
+                    selected_user_state.set(res.users.iter().position(move |user| user.email.eq(&email)).unwrap_or(0));
                 }
             })
         })
@@ -625,7 +612,7 @@ pub fn users_page() -> Html {
             </Helmet>
             <CosmoSideList on_select_item={on_user_select} selected_index={*selected_user_state} has_add_button={current_user.profile.is_mod} add_button_on_click={open_create_user_modal_click} add_button_label="Benutzer hinzufügen">
                 {for (*users_state).clone().into_iter().map(|user| {
-                    CosmoSideListItem::from_label_and_children(user.username.clone().into(), html!(
+                    CosmoSideListItem::from_label_and_children(user.email.clone().into(), html!(
                         <UserDetails on_delete={on_delete.clone()} user={user} />
                     ))
                 })}

@@ -1,5 +1,5 @@
 use bounce::{use_atom_setter, use_atom_value};
-use bounce::helmet::{Helmet, HelmetBridge};
+use bounce::helmet::Helmet;
 use bounce::query::use_query_value;
 use stylist::{css, GlobalStyle};
 use yew::prelude::*;
@@ -302,12 +302,12 @@ fn update_my_profile_dialog(props: &UpdateMyProfileDialogProps) -> Html {
     let error_state = use_state_eq(|| false);
 
     let error_message_state = use_state_eq(|| AttrValue::from(""));
-    let job_state = use_state_eq(|| AttrValue::from(user_atom.profile.job.clone()));
-    let gear_level_state = use_state_eq(|| AttrValue::from(user_atom.profile.gear_level.clone()));
+    let email_state = use_state_eq(|| AttrValue::from(user_atom.profile.email.clone()));
+    let display_name_state = use_state_eq(|| AttrValue::from(user_atom.profile.display_name.clone()));
     let discord_name_state = use_state_eq(|| AttrValue::from(user_atom.profile.discord_name.clone()));
 
-    let update_job = use_callback(|value, state| state.set(value), job_state.clone());
-    let update_gear_level = use_callback(|value, state| state.set(value), gear_level_state.clone());
+    let update_email = use_callback(|value, state| state.set(value), email_state.clone());
+    let update_display_name = use_callback(|value, state| state.set(value), display_name_state.clone());
     let update_discord_name = use_callback(|value, state| state.set(value), discord_name_state.clone());
 
     let on_close = props.on_close.clone();
@@ -317,8 +317,8 @@ fn update_my_profile_dialog(props: &UpdateMyProfileDialogProps) -> Html {
         let error_state = error_state.clone();
 
         let error_message_state = error_message_state.clone();
-        let job_state = job_state.clone();
-        let gear_level_state = gear_level_state.clone();
+        let email_state = email_state.clone();
+        let display_name_state = display_name_state.clone();
         let discord_name_state = discord_name_state.clone();
 
         let on_close = on_close.clone();
@@ -330,14 +330,14 @@ fn update_my_profile_dialog(props: &UpdateMyProfileDialogProps) -> Html {
             let error_state = error_state.clone();
 
             let error_message_state = error_message_state.clone();
-            let job_state = job_state.clone();
-            let gear_level_state = gear_level_state.clone();
+            let email_state = email_state.clone();
+            let display_name_state = display_name_state.clone();
             let discord_name_state = discord_name_state.clone();
 
             let on_close = on_close.clone();
 
             yew::platform::spawn_local(async move {
-                error_state.set(match api::update_my_profile(UpdateProfile::new((*job_state).to_string(), (*gear_level_state).to_string(), (*discord_name_state).to_string())).await {
+                error_state.set(match api::update_my_profile(UpdateProfile::new((*email_state).to_string(), (*display_name_state).to_string(), (*discord_name_state).to_string())).await {
                     Ok(_) => {
                         log::debug!("Profile update successful");
                         let _ = authentication_state_query.refresh().await;
@@ -380,8 +380,8 @@ fn update_my_profile_dialog(props: &UpdateMyProfileDialogProps) -> Html {
                     <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} header="Fehler beim Ändern" />
                 }
                 <CosmoInputGroup>
-                    <CosmoTextBox label="Rolle/Klasse (optional)" on_input={update_job} value={(*job_state).clone()} />
-                    <CosmoTextBox label="Gear Level (optional)" on_input={update_gear_level} value={(*gear_level_state).clone()} />
+                    <CosmoTextBox label="Email" input_type={CosmoTextBoxType::Email} required={true} on_input={update_email} value={(*email_state).clone()} />
+                    <CosmoTextBox label="Name" required={true} on_input={update_display_name} value={(*display_name_state).clone()} />
                     <CosmoTextBox label="Discord Name (optional)" on_input={update_discord_name} value={(*discord_name_state).clone()} />
                 </CosmoInputGroup>
             </CosmoModal>
@@ -418,7 +418,7 @@ fn top_bar() -> Html {
                     mods_state.set(users
                         .into_iter()
                         .filter_map(|user| if user.is_mod {
-                            Some(AttrValue::from(user.username))
+                            Some(AttrValue::from(user.email))
                         } else {
                             None
                         })
@@ -446,14 +446,6 @@ fn top_bar() -> Html {
     )
 }
 
-fn format_title(s: AttrValue) -> AttrValue {
-    if s.is_empty() {
-        AttrValue::from("Pandaparty")
-    } else {
-        AttrValue::from(format!("{} – Pandaparty", s))
-    }
-}
-
 #[function_component(Layout)]
 fn layout() -> Html {
     log::info!("Run layout");
@@ -475,14 +467,13 @@ body {
 }"#)).expect("Should create global style");
 
     html!(
-        <CosmoPageLayout primary_color="#9F2637" primary_color_dark="#9F2637">
-            <HelmetBridge default_title="Pandaparty" format_title={format_title} />
+        <>
             <Helmet>
                 <style>
                     {global_style.get_style_str()}
                 </style>
             </Helmet>
             <AppLayout />
-        </CosmoPageLayout>
+        </>
     )
 }

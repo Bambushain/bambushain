@@ -111,7 +111,7 @@ pub async fn change_my_password(body: web::Json<ChangeMyPassword>, authenticatio
 }
 
 pub async fn update_profile(body: web::Json<UpdateProfile>, notification: Notification, authentication: Authentication, db: DbConnection) -> HttpResponse {
-    let data = update_me(authentication.user.id, body.job.clone(), body.gear_level.clone(), body.discord_name.clone(), &db).await;
+    let data = update_me(authentication.user.id, body.email.clone(), body.display_name.clone(), body.discord_name.clone(), &db).await;
     if data.is_ok() {
         actix_web::rt::spawn(async move {
             notification.user_broadcaster.notify_change().await;
@@ -122,7 +122,7 @@ pub async fn update_profile(body: web::Json<UpdateProfile>, notification: Notifi
 }
 
 pub async fn update_user_profile(info: web::Path<UserPathInfo>, body: web::Json<UpdateProfile>, notification: Notification, db: DbConnection) -> HttpResponse {
-    let data = update_me(info.id, body.job.clone(), body.gear_level.clone(), body.discord_name.clone(), &db).await;
+    let data = update_me(info.id, body.email.clone(), body.display_name.clone(), body.discord_name.clone(), &db).await;
     if data.is_ok() {
         actix_web::rt::spawn(async move {
             notification.user_broadcaster.notify_change().await;

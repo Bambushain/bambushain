@@ -1,101 +1,88 @@
-use std::rc::Rc;
-
 use bounce::helmet::Helmet;
 use bounce::query::use_query_value;
-use stylist::{css, GlobalStyle};
 use stylist::yew::use_style;
 use yew::prelude::*;
 use yew_cosmo::prelude::*;
 use yew_icons::Icon;
 use yew_router::hooks::use_navigator;
 
-use pandaparty_entities::prelude::*;
+use pandaparty_entities::prelude::Login;
 
-use crate::{api, storage};
+use crate::api;
 use crate::routing::AppRoute;
+use crate::storage;
 
-#[function_component(LoginPage)]
-pub fn login_page() -> Html {
+#[function_component(LoginContent)]
+fn login_content() -> Html {
     let navigator = use_navigator().expect("Navigator should be available");
 
     let profile_query = use_query_value::<api::Profile>(().into());
 
-    let username_state = use_state_eq(|| AttrValue::from(""));
+    let email_state = use_state_eq(|| AttrValue::from(""));
     let password_state = use_state_eq(|| AttrValue::from(""));
-    let error_message_state = use_state_eq(|| AttrValue::from("Melde dich an und komm in zur Pandaparty"));
+    let two_factor_code_state = use_state_eq(|| AttrValue::from(""));
+    let error_message_state = use_state_eq(|| AttrValue::from("Melde dich an und komm zur Pandaparty"));
 
-    let request_successful_state = use_state_eq(|| false);
+    let two_factor_code_requested_state = use_state_eq(|| false);
     let error_state = use_state_eq(|| false);
 
-    let on_username_update = use_callback(|value: AttrValue, state| state.set(value), username_state.clone());
+    let on_email_update = use_callback(|value: AttrValue, state| state.set(value), email_state.clone());
     let on_password_update = use_callback(|value: AttrValue, state| state.set(value), password_state.clone());
+    let on_two_factor_code_update = use_callback(|value: AttrValue, state| state.set(value), two_factor_code_state.clone());
 
     let login_submit = {
-        let username_state = username_state.clone();
+        let email_state = email_state.clone();
         let password_state = password_state.clone();
+        let two_factor_code_state = two_factor_code_state.clone();
         let error_message_state = error_message_state.clone();
 
-        let request_successful = request_successful_state;
+        let two_factor_code_requested_state = two_factor_code_requested_state.clone();
         let error_state = error_state.clone();
 
         Callback::from(move |_: ()| {
-            let username_state = username_state.clone();
+            let email_state = email_state.clone();
             let password_state = password_state.clone();
             let error_message_state = error_message_state.clone();
 
-            let request_successful = request_successful.clone();
+            let two_factor_code_requested_state = two_factor_code_requested_state.clone();
             let error_state = error_state.clone();
 
             let profile_query = profile_query.clone();
 
             let navigator = navigator.clone();
 
+            let two_factor_requested = *two_factor_code_requested_state;
+            let two_factor_code = if two_factor_requested {
+                Some((*two_factor_code_state).to_string())
+            } else {
+                None
+            };
+
             yew::platform::spawn_local(async move {
-                match api::login(Rc::new(Login { username: (*username_state).to_string(), password: (*password_state).to_string() })).await {
+                match api::login(Login::new((*email_state).to_string(), (*password_state).to_string(), two_factor_code)).await {
                     Ok(result) => {
-                        request_successful.set(true);
+                        if two_factor_requested {
+                            storage::set_token(result.left().unwrap().token);
+                            let _ = profile_query.refresh().await;
+                            navigator.push(&AppRoute::PandaPartyRoot);
+                        } else {
+                            error_message_state.set("Melde dich an und komm zur Pandaparty".into());
+                            two_factor_code_requested_state.set(true);
+                        }
                         error_state.set(false);
-                        error_message_state.set(AttrValue::from(""));
-                        storage::set_token(result.token);
-                        let _ = profile_query.refresh().await;
-                        navigator.push(&AppRoute::PandaPartyRoot);
                     }
                     Err(_) => {
-                        request_successful.set(false);
+                        if two_factor_requested {
+                            error_message_state.set("Der Zwei Faktor Code ist ungültig".into());
+                        } else {
+                            error_message_state.set("Die Email und das Passwort passen nicht zusammen".into());
+                        }
                         error_state.set(true);
-                        error_message_state.set("Die Zugangsdaten sind ungültig".into());
                     }
                 }
             })
         })
     };
-
-    let global_style = GlobalStyle::new(css!(r#"
-body.panda-login {
-    --black: #ffffff;
-    --white: transparent;
-    --primary-color: #9F2637;
-    --control-border-color: var(--black);
-    --negative-color: var(--black);
-
-    --font-weight-bold: bold;
-    --font-weight-normal: normal;
-    --font-weight-light: 300;
-    --font-family: Lato, sans-serif;
-}
-
-body.panda-login button {
-    --control-border-color: var(--primary-color);
-    --black: var(--primary-color);
-}
-
-body.panda-login input {
-    --primary-color: var(--control-border-color);
-}
-
-body.panda-login button:hover {
-    color: #ffffff !important;
-}"#)).expect("Should be able to create global style");
 
     let login_around_style = use_style!(r#"
 position: fixed;
@@ -114,6 +101,30 @@ background-position-y: bottom;
 
 font-family: var(--font-family);
 color: var(--black);
+
+--black: #ffffff;
+--white: transparent;
+--primary-color: #9F2637;
+--control-border-color: var(--black);
+--negative-color: var(--black);
+
+--font-weight-bold: bold;
+--font-weight-normal: normal;
+--font-weight-light: 300;
+--font-family: Lato, sans-serif;
+
+button {
+    --control-border-color: var(--primary-color);
+    --black: var(--primary-color);
+}
+
+input {
+    --primary-color: var(--control-border-color);
+}
+
+button:hover {
+    color: #ffffff !important;
+}
     "#);
 
     let login_container_style = use_style!(r#"
@@ -135,31 +146,42 @@ align-items: center;
     "#);
 
     html!(
+        <div class={login_around_style}>
+            <div class={login_container_style}>
+                <CosmoTitle title="Anmelden" />
+                <p class={login_message_style}>
+                    if *error_state {
+                        <Icon icon_id={IconId::LucideXOctagon} style="stroke: #290403;" />
+                    } else {
+                        <Icon icon_id={IconId::LucideLogIn} />
+                    }
+                    {(*error_message_state).clone()}
+                </p>
+                if !*two_factor_code_requested_state {
+                    <CosmoForm on_submit={login_submit} buttons={html!(<CosmoButton label="Anmelden" is_submit={true} />)}>
+                        <CosmoTextBox id="email" required={true} value={(*email_state).clone()} on_input={on_email_update} label="Email" />
+                        <CosmoTextBox id="password" input_type={CosmoTextBoxType::Password} required={true} value={(*password_state).clone()} on_input={on_password_update} label="Passwort" />
+                    </CosmoForm>
+                } else {
+                    <CosmoForm on_submit={login_submit} buttons={html!(<CosmoButton label="Anmelden" is_submit={true} />)}>
+                        <CosmoTextBox readonly={true} id="email" required={true} value={(*email_state).clone()} on_input={on_email_update} label="Email" />
+                        <CosmoTextBox readonly={true} id="password" input_type={CosmoTextBoxType::Password} required={true} value={(*password_state).clone()} on_input={on_password_update} label="Passwort" />
+                        <CosmoTextBox id="twofactor" required={true} value={(*two_factor_code_state).clone()} on_input={on_two_factor_code_update} label="Zwei Faktor Code" />
+                    </CosmoForm>
+                }
+            </div>
+        </div>
+    )
+}
+
+#[function_component(LoginPage)]
+pub fn login_page() -> Html {
+    html!(
         <>
             <Helmet>
                 <title>{"Anmelden"}</title>
-                <body class="panda-login" />
-                <style>
-                    {global_style.get_style_str()}
-                </style>
             </Helmet>
-            <div class={login_around_style}>
-                <div class={login_container_style}>
-                    <CosmoTitle title="Anmelden" />
-                    <p class={login_message_style}>
-                        if *error_state {
-                            <Icon icon_id={IconId::LucideXOctagon} style="stroke: #290403;" />
-                        } else {
-                            <Icon icon_id={IconId::LucideLogIn} />
-                        }
-                        {(*error_message_state).clone()}
-                    </p>
-                    <CosmoForm on_submit={login_submit} buttons={html!(<CosmoButton label="Anmelden" is_submit={true} />)}>
-                        <CosmoTextBox id="username" required={true} value={(*username_state).clone()} on_input={on_username_update} label="Benutzername" />
-                        <CosmoTextBox id="password" input_type={CosmoTextBoxType::Password} required={true} value={(*password_state).clone()} on_input={on_password_update} label="Passwort" />
-                    </CosmoForm>
-                </div>
-            </div>
+            <LoginContent />
         </>
     )
 }

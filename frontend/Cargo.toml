@@ -8,24 +8,24 @@ edition.workspace = true
 [dependencies]
 pandaparty-entities = { path = "../entities", default-features = false }
 
-async-trait = "0.1.71"
-bounce = { version = "0.7.0", features = ["query", "helmet"] }
-gloo = { version = "0.9.0", default-features = false, features = ["storage", "net"] }
-stylist = { version = "0.12.1", features = ["yew"] }
-wasm-bindgen = "0.2.87"
-wasm-logger = "0.2.0"
-web-sys = "0.3.64"
-yew = { version = "0.20.0", features = ["csr", "hydration"] }
-yew-cosmo = "0.15.10"
-yew_icons = { version = "0.7.2", features = ["lucide"] }
-yew-hooks = "0.2.0"
-yew-router = "0.17.0"
-
+async-trait = { workspace = true }
+bounce = { workspace = true }
 chrono = { workspace = true, features = ["unstable-locales"] }
-log = { workspace = true }
 date-range = { workspace = true }
+either = { workspace = true }
+gloo = { workspace = true }
+log = { workspace = true }
 rand = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 strum = { workspace = true }
 strum_macros = { workspace = true }
+stylist = { workspace = true }
+wasm-bindgen = { workspace = true }
+wasm-logger = { workspace = true }
+web-sys = { workspace = true }
+yew = { workspace = true }
+yew-cosmo = { workspace = true }
+yew_icons = { workspace = true }
+yew-hooks = { workspace = true }
+yew-router = { workspace = true }

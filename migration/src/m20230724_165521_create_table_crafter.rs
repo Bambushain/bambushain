@@ -1,6 +1,9 @@
 use sea_orm_migration::prelude::*;
+use sea_orm_migration::prelude::extension::postgres::Type;
+use sea_orm_migration::sea_orm::{EnumIter, Iterable};
 
-use crate::m20220101_000001_create_table_user::User;
+use crate::m20220101_000001_create_schemas::Schemas;
+use crate::m20230724_121111_create_table_character::Character;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -9,9 +12,22 @@ pub struct Migration;
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
+            .create_type(
+                Type::create()
+                    .as_enum(
+                        (Schemas::FinalFantasy, Alias::new("crafter_job"))
+                    )
+                    .values(
+                        CrafterJob::iter()
+                            .collect::<Vec<CrafterJob>>()
+                    )
+                    .to_owned()
+            )
+            .await?;
+        manager
             .create_table(
                 Table::create()
-                    .table(Crafter::Table)
+                    .table((Schemas::FinalFantasy, Crafter::Table))
                     .if_not_exists()
                     .col(
                         ColumnDef::new(Crafter::Id)
@@ -20,28 +36,56 @@ impl MigrationTrait for Migration {
                             .auto_increment()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(Crafter::Job).string().not_null())
-                    .col(ColumnDef::new(Crafter::Level).string())
-                    .col(ColumnDef::new(Crafter::UserId).integer().not_null())
-                    .foreign_key(ForeignKey::create()
-                        .from(Crafter::Table, Crafter::UserId)
-                        .to(User::Table, User::Id)
-                        .on_delete(ForeignKeyAction::Cascade)
+                    .col(
+                        ColumnDef::new(Crafter::Job)
+                            .custom(Alias::new("final_fantasy.crafter_job"))
+                            .not_null()
                     )
-                    .index(Index::create()
-                        .col(Crafter::Job)
-                        .col(Crafter::UserId)
-                        .unique()
+                    .col(
+                        ColumnDef::new(Crafter::Level)
+                            .string()
+                    )
+                    .col(
+                        ColumnDef::new(Crafter::UserId)
+                            .integer()
+                            .not_null()
+                    )
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from((Schemas::FinalFantasy, Crafter::Table), Crafter::UserId)
+                            .to((Schemas::FinalFantasy, Character::Table), Character::Id)
+                            .on_delete(ForeignKeyAction::Cascade)
+                    )
+                    .index(
+                        Index::create()
+                            .col(Crafter::Job)
+                            .col(Crafter::UserId)
+                            .unique()
                     )
                     .to_owned(),
             )
-            .await
+            .await?;
+
+        Ok(())
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .drop_table(Table::drop().table(Crafter::Table).to_owned())
-            .await
+            .drop_table(
+                Table::drop()
+                    .table((Schemas::FinalFantasy, Crafter::Table))
+                    .to_owned()
+            )
+            .await?;
+        manager
+            .drop_type(
+                Type::drop()
+                    .name((Schemas::FinalFantasy, Alias::new("crafter_job")))
+                    .to_owned()
+            )
+            .await?;
+
+        Ok(())
     }
 }
 
@@ -53,4 +97,19 @@ pub enum Crafter {
     Job,
     Level,
     UserId,
+}
+
+#[derive(Iden, EnumIter)]
+enum CrafterJob {
+    Carpenter,
+    Blacksmith,
+    Armorer,
+    Goldsmith,
+    Leatherworker,
+    Weaver,
+    Alchemist,
+    Culinarian,
+    Miner,
+    Botanist,
+    Fisher,
 }

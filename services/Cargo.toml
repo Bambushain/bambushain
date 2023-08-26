@@ -8,5 +8,5 @@ edition.workspace = true
 [dependencies]
 pandaparty-entities = { path = "../entities" }
 
-sha2 = "0.10.7"
-tokio = { version = "1.29.1", features = ["fs"] }
+sha2 = { workspace = true }
+tokio = { workspace = true }

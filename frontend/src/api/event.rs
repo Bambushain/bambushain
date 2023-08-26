@@ -7,7 +7,7 @@ use date_range::DateRange;
 
 use pandaparty_entities::prelude::*;
 
-use crate::api::{ApiError, delete, get_with_query, post, put, SheefApiResult};
+use crate::api::{ApiError, delete, get_with_query, post, put, PandapartyApiResult};
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
 pub struct EventRange {
@@ -22,7 +22,7 @@ impl From<Vec<Event>> for EventRange {
     }
 }
 
-async fn get_events(range: Rc<DateRange>) -> SheefApiResult<Vec<Event>> {
+async fn get_events(range: Rc<DateRange>) -> PandapartyApiResult<Vec<Event>> {
     log::debug!("Get events");
     get_with_query("/api/event", vec![
         ("start", range.since().format("%F").to_string().as_str()),
@@ -40,17 +40,17 @@ impl Query for EventRange {
     }
 }
 
-pub async fn create_event(event: Event) -> SheefApiResult<Event> {
+pub async fn create_event(event: Event) -> PandapartyApiResult<Event> {
     log::debug!("Create event {}", event.title);
     post("/api/event", &event).await
 }
 
-pub async fn update_event(id: i32, event: Event) -> SheefApiResult<()> {
+pub async fn update_event(id: i32, event: Event) -> PandapartyApiResult<()> {
     log::debug!("Update event {id}");
     put(format!("/api/event/{id}"), &event).await
 }
 
-pub async fn delete_event(id: i32) -> SheefApiResult<()> {
+pub async fn delete_event(id: i32) -> PandapartyApiResult<()> {
     log::debug!("Delete event {id}");
     delete(format!("/api/event/{id}")).await
 }

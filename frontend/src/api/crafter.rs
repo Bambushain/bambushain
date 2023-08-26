@@ -6,7 +6,7 @@ use bounce::query::{Query, QueryResult};
 
 use pandaparty_entities::prelude::*;
 
-use crate::api::{ApiError, delete, get, post, put, SheefApiResult};
+use crate::api::{ApiError, delete, get, post, put, PandapartyApiResult};
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
 pub struct MyCrafter {
@@ -21,7 +21,7 @@ impl From<Vec<Crafter>> for MyCrafter {
     }
 }
 
-async fn get_crafter() -> SheefApiResult<Vec<Crafter>> {
+async fn get_crafter() -> PandapartyApiResult<Vec<Crafter>> {
     log::debug!("Get crafter");
     get("/api/crafter").await
 }
@@ -36,17 +36,17 @@ impl Query for MyCrafter {
     }
 }
 
-pub async fn create_crafter(crafter: Crafter) -> SheefApiResult<Crafter> {
+pub async fn create_crafter(crafter: Crafter) -> PandapartyApiResult<Crafter> {
     log::debug!("Create crafter {}", crafter.job.get_job_name());
     post("/api/crafter", &crafter).await
 }
 
-pub async fn update_crafter(id: i32, crafter: Crafter) -> SheefApiResult<()> {
+pub async fn update_crafter(id: i32, crafter: Crafter) -> PandapartyApiResult<()> {
     log::debug!("Update crafter {id}");
     put(format!("/api/crafter/{id}"), &crafter).await
 }
 
-pub async fn delete_crafter(id: i32) -> SheefApiResult<()> {
+pub async fn delete_crafter(id: i32) -> PandapartyApiResult<()> {
     log::debug!("Delete crafter {id}");
     delete(format!("/api/crafter/{id}")).await
 }

@@ -6,7 +6,7 @@ use bounce::query::{Query, QueryResult};
 
 use pandaparty_entities::prelude::*;
 
-use crate::api::{ApiError, delete, get, post, put, put_no_body, SheefApiResult};
+use crate::api::{ApiError, delete, get, post, put, put_no_body, PandapartyApiResult};
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
 pub struct Users {
@@ -21,7 +21,7 @@ impl From<Vec<WebUser>> for Users {
     }
 }
 
-pub(crate) async fn get_users() -> SheefApiResult<Vec<WebUser>> {
+pub(crate) async fn get_users() -> PandapartyApiResult<Vec<WebUser>> {
     log::debug!("Get users");
     get("/api/user").await
 }
@@ -36,32 +36,32 @@ impl Query for Users {
     }
 }
 
-pub async fn create_user(user: User) -> SheefApiResult<WebUser> {
-    log::debug!("Create user {}", user.username);
+pub async fn create_user(user: User) -> PandapartyApiResult<WebUser> {
+    log::debug!("Create user {}", user.email);
     post("/api/user", &user).await
 }
 
-pub async fn make_user_mod(id: i32) -> SheefApiResult<()> {
+pub async fn make_user_mod(id: i32) -> PandapartyApiResult<()> {
     log::debug!("Make user {id} mod");
     put_no_body(format!("/api/user/{id}/mod")).await
 }
 
-pub async fn remove_user_mod(id: i32) -> SheefApiResult<()> {
+pub async fn remove_user_mod(id: i32) -> PandapartyApiResult<()> {
     log::debug!("Remove user {id} mod");
     delete(format!("/api/user/{id}/mod")).await
 }
 
-pub async fn delete_user(id: i32) -> SheefApiResult<()> {
+pub async fn delete_user(id: i32) -> PandapartyApiResult<()> {
     log::debug!("Remove user {id} main");
     delete(format!("/api/user/{id}")).await
 }
 
-pub async fn change_user_password(id: i32, new_password: String) -> SheefApiResult<()> {
+pub async fn change_user_password(id: i32, new_password: String) -> PandapartyApiResult<()> {
     log::debug!("Change user {id} password");
     put(format!("/api/user/{id}/password"), &ChangePassword { new_password }).await
 }
 
-pub async fn update_profile(id: i32, profile: UpdateProfile) -> SheefApiResult<()> {
+pub async fn update_profile(id: i32, profile: UpdateProfile) -> PandapartyApiResult<()> {
     log::debug!("Update profile of user {id} to the following data {:?}", profile);
     put(format!("/api/user/{id}/profile"), &profile).await
 }

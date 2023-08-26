@@ -6,7 +6,7 @@ use bounce::query::{Query, QueryResult};
 
 use pandaparty_entities::prelude::*;
 
-use crate::api::{ApiError, delete, get, post, put, SheefApiResult};
+use crate::api::{ApiError, delete, get, post, put, PandapartyApiResult};
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
 pub struct MyFighter {
@@ -21,7 +21,7 @@ impl From<Vec<Fighter>> for MyFighter {
     }
 }
 
-async fn get_fighter() -> SheefApiResult<Vec<Fighter>> {
+async fn get_fighter() -> PandapartyApiResult<Vec<Fighter>> {
     log::debug!("Get fighter");
     get("/api/fighter").await
 }
@@ -36,17 +36,17 @@ impl Query for MyFighter {
     }
 }
 
-pub async fn create_fighter(fighter: Fighter) -> SheefApiResult<Fighter> {
+pub async fn create_fighter(fighter: Fighter) -> PandapartyApiResult<Fighter> {
     log::debug!("Create fighter {}", fighter.job.clone().get_job_name());
     post("/api/fighter", &fighter).await
 }
 
-pub async fn update_fighter(id: i32, fighter: Fighter) -> SheefApiResult<()> {
+pub async fn update_fighter(id: i32, fighter: Fighter) -> PandapartyApiResult<()> {
     log::debug!("Update fighter {id}");
     put(format!("/api/fighter/{id}"), &fighter).await
 }
 
-pub async fn delete_fighter(id: i32) -> SheefApiResult<()> {
+pub async fn delete_fighter(id: i32) -> PandapartyApiResult<()> {
     log::debug!("Delete fighter {id}");
     delete(format!("/api/fighter/{id}")).await
 }

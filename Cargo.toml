@@ -11,13 +11,12 @@ pandaparty-entities = { path = "entities" }
 pandaparty-migration = { path = "migration" }
 pandaparty-services = { path = "services" }
 
-stderrlog = "0.5.4"
-
 actix-web = { workspace = true }
 actix-web-lab = { workspace = true, features = ["spa"] }
 log = { workspace = true }
 rand = { workspace = true }
 sea-orm = { workspace = true }
+stderrlog = { workspace = true }
 
 [workspace]
 members = [
@@ -30,23 +29,43 @@ members = [
 ]
 
 [workspace.package]
-version = "4.0.0"
+version = "1.0.0"
 edition = "2021"
 
 [workspace.dependencies]
 actix-web = "4.3.1"
 actix-web-lab = "0.19.1"
+async-trait = "0.1.71"
 bcrypt = "0.15.0"
+bounce = { version = "0.7.0", features = ["query", "helmet"] }
 chrono = { version = "0.4.26", features = ["serde"] }
 color-art = "0.3.2"
 date-range = "0.3.0"
+either = "1.9.0"
+futures-util = "0.3.28"
+gloo = { version = "0.9.0", default-features = false, features = ["storage", "net"] }
+lettre = { version = "0.10.4", features = ["tokio1-rustls-tls", "smtp-transport", "pool", "hostname", "builder"], default-features = false }
 log = "0.4.19"
+parking_lot = "0.12.1"
+rand = "0.8.5"
 sea-orm = { version = "0.12.2", features = ["with-json", "runtime-actix-rustls", "sqlx-postgres"] }
 serde = { version = "1.0.171", features = ["derive"] }
 serde_json = "1.0.100"
+sha2 = "0.10.7"
+stderrlog = "0.5.4"
 strum = "0.25.0"
 strum_macros = "0.25.1"
-rand = "0.8.5"
+stylist = { version = "0.12.1", features = ["yew"] }
+tokio = { version = "1.29.1", features = ["fs"] }
+uuid = { version = "1.4.0", features = ["v4"] }
+wasm-bindgen = "0.2.87"
+wasm-logger = "0.2.0"
+web-sys = "0.3.64"
+yew = { version = "0.20.0", features = ["csr", "hydration"] }
+yew-cosmo = "0.15.11"
+yew_icons = { version = "0.7.2", features = ["lucide"] }
+yew-hooks = "0.2.0"
+yew-router = "0.17.0"
 
 [profile.release]
 # less code to include into binary
