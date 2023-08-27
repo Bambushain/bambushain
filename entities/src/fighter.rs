@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+
 #[cfg(feature = "backend")]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -178,28 +179,26 @@ pub struct Model {
     pub job: FighterJob,
     pub level: Option<String>,
     pub gear_score: Option<String>,
-    #[cfg(feature = "backend")]
-    #[serde(skip)]
-    pub user_id: i32,
+    pub character_id: i32,
 }
 
 #[cfg(feature = "backend")]
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-    belongs_to = "super::user::Entity",
-    from = "Column::UserId",
-    to = "super::user::Column::Id",
+    belongs_to = "super::character::Entity",
+    from = "Column::CharacterId",
+    to = "super::character::Column::Id",
     on_update = "Cascade",
     on_delete = "Cascade"
     )]
-    User
+    Character
 }
 
 #[cfg(feature = "backend")]
-impl Related<super::user::Entity> for Entity {
+impl Related<super::character::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::User.def()
+        Relation::Character.def()
     }
 }
 
@@ -207,14 +206,13 @@ impl Related<super::user::Entity> for Entity {
 impl ActiveModelBehavior for ActiveModel {}
 
 impl Model {
-    pub fn new(job: FighterJob, level: String, gear_score: String) -> Self {
+    pub fn new(character_id: i32, job: FighterJob, level: String, gear_score: String) -> Self {
         Self {
             id: i32::default(),
             gear_score: Some(gear_score),
             level: Some(level),
             job,
-            #[cfg(feature = "backend")]
-            user_id: i32::default(),
+            character_id,
         }
     }
 }

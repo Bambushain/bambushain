@@ -8,6 +8,7 @@ pub use authentication::*;
 pub use crafter::*;
 pub use event::*;
 pub use fighter::*;
+pub use character::*;
 pub use my::*;
 use pandaparty_entities::prelude::*;
 pub use user::*;
@@ -20,6 +21,7 @@ pub mod user;
 pub mod crafter;
 pub mod fighter;
 pub mod event;
+pub mod character;
 
 macro_rules! error_code {
     ($name:tt,$code:literal) => {

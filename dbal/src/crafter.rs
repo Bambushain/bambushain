@@ -1,15 +1,17 @@
 use sea_orm::{IntoActiveModel, NotSet, QueryOrder, QuerySelect};
 use sea_orm::ActiveValue::Set;
 use sea_orm::prelude::*;
-use sea_orm::sea_query::{Alias, Expr};
+use sea_orm::sea_query::Expr;
 
-use pandaparty_entities::{crafter, pandaparty_db_error};
-use pandaparty_entities::crafter::CrafterJob;
+use pandaparty_entities::{character, crafter};
 use pandaparty_entities::prelude::*;
+use crate::prelude::character_exists;
 
-pub async fn get_crafters(user_id: i32, db: &DatabaseConnection) -> PandaPartyResult<Vec<Crafter>> {
+pub async fn get_crafters(character_id: i32, user_id: i32, db: &DatabaseConnection) -> PandaPartyResult<Vec<Crafter>> {
     crafter::Entity::find()
-        .filter(crafter::Column::UserId.eq(user_id))
+        .filter(crafter::Column::CharacterId.eq(character_id))
+        .filter(character::Column::UserId.eq(user_id))
+        .inner_join(character::Entity)
         .order_by_asc(crafter::Column::Job)
         .all(db)
         .await
@@ -19,8 +21,11 @@ pub async fn get_crafters(user_id: i32, db: &DatabaseConnection) -> PandaPartyRe
         })
 }
 
-pub async fn get_crafter(id: i32, db: &DatabaseConnection) -> PandaPartyResult<Crafter> {
+pub async fn get_crafter(id: i32, user_id: i32, character_id: i32, db: &DatabaseConnection) -> PandaPartyResult<Crafter> {
     match crafter::Entity::find_by_id(id)
+        .filter(crafter::Column::CharacterId.eq(character_id))
+        .filter(character::Column::UserId.eq(user_id))
+        .inner_join(character::Entity)
         .one(db)
         .await {
         Ok(Some(res)) => Ok(res),
@@ -32,10 +37,13 @@ pub async fn get_crafter(id: i32, db: &DatabaseConnection) -> PandaPartyResult<C
     }
 }
 
-pub async fn crafter_exists(id: i32, db: &DatabaseConnection) -> bool {
+pub async fn crafter_exists(id: i32, user_id: i32, character_id: i32, db: &DatabaseConnection) -> bool {
     match crafter::Entity::find_by_id(id)
         .select_only()
         .column(crafter::Column::Id)
+        .filter(crafter::Column::CharacterId.eq(character_id))
+        .filter(character::Column::UserId.eq(user_id))
+        .inner_join(character::Entity)
         .count(db)
         .await {
         Ok(count) => count > 0,
@@ -43,12 +51,14 @@ pub async fn crafter_exists(id: i32, db: &DatabaseConnection) -> bool {
     }
 }
 
-pub async fn crafter_exists_by_job(user_id: i32, job: CrafterJob, db: &DatabaseConnection) -> bool {
+pub async fn crafter_exists_by_job(user_id: i32, character_id: i32, job: CrafterJob, db: &DatabaseConnection) -> bool {
     match crafter::Entity::find()
         .select_only()
         .column(crafter::Column::Id)
         .filter(crafter::Column::Job.eq(job))
-        .filter(crafter::Column::UserId.eq(user_id))
+        .filter(crafter::Column::CharacterId.eq(character_id))
+        .filter(character::Column::UserId.eq(user_id))
+        .inner_join(character::Entity)
         .count(db)
         .await {
         Ok(count) => count > 0,
@@ -56,9 +66,13 @@ pub async fn crafter_exists_by_job(user_id: i32, job: CrafterJob, db: &DatabaseC
     }
 }
 
-pub async fn create_crafter(user_id: i32, crafter: Crafter, db: &DatabaseConnection) -> PandaPartyResult<Crafter> {
+pub async fn create_crafter(user_id: i32, character_id: i32, crafter: Crafter, db: &DatabaseConnection) -> PandaPartyResult<Crafter> {
+    if !character_exists(user_id, character_id, db).await {
+        return Err(pandaparty_not_found_error!("crafter", "The character does not exist"));
+    }
+
     let mut model = crafter.into_active_model();
-    model.user_id = Set(user_id);
+    model.character_id = Set(character_id);
     model.id = NotSet;
 
     model
@@ -73,7 +87,6 @@ pub async fn create_crafter(user_id: i32, crafter: Crafter, db: &DatabaseConnect
 pub async fn update_crafter(id: i32, crafter: Crafter, db: &DatabaseConnection) -> PandaPartyErrorResult {
     crafter::Entity::update_many()
         .filter(crafter::Column::Id.eq(id))
-        .col_expr(crafter::Column::Job, Expr::val(crafter.job).as_enum(Alias::new("crafter_job")))
         .col_expr(crafter::Column::Level, Expr::value(crafter.level))
         .exec(db)
         .await

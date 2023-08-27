@@ -46,20 +46,20 @@ impl MigrationTrait for Migration {
                             .string()
                     )
                     .col(
-                        ColumnDef::new(Crafter::UserId)
+                        ColumnDef::new(Crafter::CharacterId)
                             .integer()
                             .not_null()
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .from((Schemas::FinalFantasy, Crafter::Table), Crafter::UserId)
+                            .from((Schemas::FinalFantasy, Crafter::Table), Crafter::CharacterId)
                             .to((Schemas::FinalFantasy, Character::Table), Character::Id)
                             .on_delete(ForeignKeyAction::Cascade)
                     )
                     .index(
                         Index::create()
                             .col(Crafter::Job)
-                            .col(Crafter::UserId)
+                            .col(Crafter::CharacterId)
                             .unique()
                     )
                     .to_owned(),
@@ -96,7 +96,7 @@ pub enum Crafter {
     Id,
     Job,
     Level,
-    UserId,
+    CharacterId,
 }
 
 #[derive(Iden, EnumIter)]

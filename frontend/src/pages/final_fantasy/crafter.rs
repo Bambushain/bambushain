@@ -86,7 +86,7 @@ fn crafter_details(props: &CrafterDetailsProps) -> Html {
 
     let error_message_state = use_state_eq(|| AttrValue::from(""));
 
-    let crafter_query_state = use_query_value::<MyCrafter>(().into());
+    let crafter_query_state = use_query_value::<CrafterForCharacter>(().into());
 
     let edit_crafter_click = use_callback(|_, state| state.set(CrafterActions::Edit), action_state.clone());
     let delete_crafter_click = use_callback(|_, state| state.set(CrafterActions::Delete), action_state.clone());
@@ -266,7 +266,7 @@ img {
 pub fn crafter_page() -> Html {
     log::debug!("Render crafter page");
     log::debug!("Initialize state and callbacks");
-    let crafter_query_state = use_query_value::<MyCrafter>(().into());
+    let crafter_query_state = use_query_value::<CrafterForCharacter>(().into());
 
     let open_create_crafter_modal_state = use_state_eq(|| false);
     let error_state = use_state_eq(|| false);

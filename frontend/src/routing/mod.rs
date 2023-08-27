@@ -11,9 +11,9 @@ pub enum AppRoute {
     PandaPartyRoot,
     #[at("/pandaparty/*")]
     PandaParty,
-    #[at("/ff")]
+    #[at("/final-fantasy")]
     FinalFantasyRoot,
-    #[at("/ff/*")]
+    #[at("/final-fantasy/*")]
     FinalFantasy,
     #[at("/login")]
     Login,
@@ -27,10 +27,8 @@ impl Display for AppRoute {
 
 #[derive(Clone, Routable, PartialEq)]
 pub enum FinalFantasyRoute {
-    #[at("/ff/crafter")]
-    Crafter,
-    #[at("/ff/fighter")]
-    Fighter,
+    #[at("/final-fantasy/character")]
+    Characters,
 }
 
 #[derive(Clone, Routable, PartialEq)]

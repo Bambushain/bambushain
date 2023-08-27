@@ -10,8 +10,7 @@ use yew_router::prelude::*;
 use pandaparty_entities::user::UpdateProfile;
 
 use crate::{api, storage};
-use crate::pages::final_fantasy::crafter::CrafterPage;
-use crate::pages::final_fantasy::fighter::FighterPage;
+use crate::pages::final_fantasy::character::CharacterPage;
 use crate::pages::login::LoginPage;
 use crate::pages::pandaparty::calendar::CalendarPage;
 use crate::pages::pandaparty::user::UsersPage;
@@ -50,8 +49,7 @@ fn switch_sub_menu(route: AppRoute) -> Html {
         ),
         AppRoute::FinalFantasyRoot | AppRoute::FinalFantasy => html!(
             <CosmoSubMenuBar>
-                <Switch<FinalFantasyRoute> render={render_sub_menu_entry("Meine Crafter".into(), FinalFantasyRoute::Crafter)} />
-                <Switch<FinalFantasyRoute> render={render_sub_menu_entry("Meine Kämpfer".into(), FinalFantasyRoute::Fighter)} />
+                <Switch<FinalFantasyRoute> render={render_sub_menu_entry("Meine Charaktere".into(), FinalFantasyRoute::Characters)} />
             </CosmoSubMenuBar>
         ),
         _ => {
@@ -63,20 +61,12 @@ fn switch_sub_menu(route: AppRoute) -> Html {
 
 fn switch_final_fantasy(route: FinalFantasyRoute) -> Html {
     match route {
-        FinalFantasyRoute::Crafter => html!(
+        FinalFantasyRoute::Characters => html!(
             <>
                 <Helmet>
-                    <title>{"Meine Crafter"}</title>
+                    <title>{"Meine Charaktere"}</title>
                 </Helmet>
-                <CrafterPage />
-            </>
-        ),
-        FinalFantasyRoute::Fighter => html!(
-            <>
-                <Helmet>
-                    <title>{"Meine Kämpfer"}</title>
-                </Helmet>
-                <FighterPage />
+                <CharacterPage />
             </>
         ),
     }
@@ -120,7 +110,7 @@ fn switch_app(route: AppRoute) -> Html {
             </>
         ),
         AppRoute::FinalFantasyRoot => html!(
-            <Redirect<FinalFantasyRoute> to={FinalFantasyRoute::Crafter} />
+            <Redirect<FinalFantasyRoute> to={FinalFantasyRoute::Characters} />
         ),
         AppRoute::FinalFantasy => html!(
             <>

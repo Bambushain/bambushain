@@ -12,6 +12,7 @@ use pandaparty_backend::broadcaster::user::UserBroadcaster;
 use pandaparty_backend::middleware::authenticate_user::AuthenticateUser;
 use pandaparty_backend::middleware::check_mod::CheckMod;
 use pandaparty_backend::routes::authentication::{login, logout};
+use pandaparty_backend::routes::character::{create_character, delete_character, get_character, get_characters, update_character};
 use pandaparty_backend::routes::crafter::{create_crafter, delete_crafter, get_crafter, get_crafters, update_crafter};
 use pandaparty_backend::routes::event::{create_event, delete_event, get_events, update_event};
 use pandaparty_backend::routes::fighter::{create_fighter, delete_fighter, get_fighter, get_fighters, update_fighter};
@@ -106,28 +107,34 @@ async fn main() -> std::io::Result<()> {
             .route("/api/user/{id}/mod", web::delete().to(remove_mod_user).wrap(CheckMod).wrap(AuthenticateUser))
             .route("/api/user/{id}/password", web::put().to(change_password).wrap(CheckMod).wrap(AuthenticateUser))
 
-            .route("/api/crafter", web::get().to(get_crafters).wrap(AuthenticateUser))
-            .route("/api/crafter", web::post().to(create_crafter).wrap(AuthenticateUser))
-            .route("/api/crafter/{id}", web::get().to(get_crafter).wrap(AuthenticateUser))
-            .route("/api/crafter/{id}", web::put().to(update_crafter).wrap(AuthenticateUser))
-            .route("/api/crafter/{id}", web::delete().to(delete_crafter).wrap(AuthenticateUser))
-
-            .route("/api/fighter", web::get().to(get_fighters).wrap(AuthenticateUser))
-            .route("/api/fighter", web::post().to(create_fighter).wrap(AuthenticateUser))
-            .route("/api/fighter/{id}", web::get().to(get_fighter).wrap(AuthenticateUser))
-            .route("/api/fighter/{id}", web::put().to(update_fighter).wrap(AuthenticateUser))
-            .route("/api/fighter/{id}", web::delete().to(delete_fighter).wrap(AuthenticateUser))
-
-            .route("/api/event", web::get().to(get_events).wrap(AuthenticateUser))
-            .route("/api/event", web::post().to(create_event).wrap(AuthenticateUser))
-            .route("/api/event/{id}", web::put().to(update_event).wrap(AuthenticateUser))
-            .route("/api/event/{id}", web::delete().to(delete_event).wrap(AuthenticateUser))
+            .route("/api/pandaparty/event", web::get().to(get_events).wrap(AuthenticateUser))
+            .route("/api/pandaparty/event", web::post().to(create_event).wrap(AuthenticateUser))
+            .route("/api/pandaparty/event/{id}", web::put().to(update_event).wrap(AuthenticateUser))
+            .route("/api/pandaparty/event/{id}", web::delete().to(delete_event).wrap(AuthenticateUser))
 
             .route("/api/my/profile", web::get().to(get_profile).wrap(AuthenticateUser))
             .route("/api/my/profile", web::put().to(update_profile).wrap(AuthenticateUser))
             .route("/api/my/password", web::put().to(change_my_password).wrap(AuthenticateUser))
             .route("/api/my/totp", web::post().to(enable_totp).wrap(AuthenticateUser))
             .route("/api/my/totp/validate", web::put().to(validate_totp).wrap(AuthenticateUser))
+
+            .route("/api/final-fantasy/character", web::get().to(get_characters).wrap(AuthenticateUser))
+            .route("/api/final-fantasy/character", web::post().to(create_character).wrap(AuthenticateUser))
+            .route("/api/final-fantasy/character/{id}", web::get().to(get_character).wrap(AuthenticateUser))
+            .route("/api/final-fantasy/character/{id}", web::put().to(update_character).wrap(AuthenticateUser))
+            .route("/api/final-fantasy/character/{id}", web::delete().to(delete_character).wrap(AuthenticateUser))
+
+            .route("/api/final-fantasy/character/{character_id}/crafter", web::get().to(get_crafters).wrap(AuthenticateUser))
+            .route("/api/final-fantasy/character/{character_id}/crafter", web::post().to(create_crafter).wrap(AuthenticateUser))
+            .route("/api/final-fantasy/character/{character_id}/crafter/{id}", web::get().to(get_crafter).wrap(AuthenticateUser))
+            .route("/api/final-fantasy/character/{character_id}/crafter/{id}", web::put().to(update_crafter).wrap(AuthenticateUser))
+            .route("/api/final-fantasy/character/{character_id}/crafter/{id}", web::delete().to(delete_crafter).wrap(AuthenticateUser))
+
+            .route("/api/final-fantasy/character/{character_id}/fighter", web::get().to(get_fighters).wrap(AuthenticateUser))
+            .route("/api/final-fantasy/character/{character_id}/fighter", web::post().to(create_fighter).wrap(AuthenticateUser))
+            .route("/api/final-fantasy/character/{character_id}/fighter/{id}", web::get().to(get_fighter).wrap(AuthenticateUser))
+            .route("/api/final-fantasy/character/{character_id}/fighter/{id}", web::put().to(update_fighter).wrap(AuthenticateUser))
+            .route("/api/final-fantasy/character/{character_id}/fighter/{id}", web::delete().to(delete_fighter).wrap(AuthenticateUser))
 
             .route("/sse/user", web::get().to(user_sse_client))
             .route("/sse/event", web::get().to(event_sse_client))

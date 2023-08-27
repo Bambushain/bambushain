@@ -20,7 +20,7 @@ pub enum CharacterRace {
     Miqote,
     #[cfg_attr(feature = "backend", sea_orm(string_value = "roegadyn"))]
     Roegadyn,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "aura"))]
+    #[cfg_attr(feature = "backend", sea_orm(string_value = "au_ra"))]
     AuRa,
     #[cfg_attr(feature = "backend", sea_orm(string_value = "hrothgar"))]
     Hrothgar,
@@ -36,7 +36,7 @@ impl CharacterRace {
             Self::Lalafell => "lalafell",
             Self::Miqote => "miqote",
             Self::Roegadyn => "roegadyn",
-            Self::AuRa => "aura",
+            Self::AuRa => "au_ra",
             Self::Hrothgar => "hrothgar",
             Self::Viera => "viera",
         }.to_string()
@@ -78,7 +78,7 @@ impl From<String> for CharacterRace {
             "lalafell" => Self::Lalafell,
             "miqote" => Self::Miqote,
             "roegadyn" => Self::Roegadyn,
-            "aura" => Self::AuRa,
+            "au_ra" => Self::AuRa,
             "hrothgar" => Self::Hrothgar,
             "viera" => Self::Viera,
             _ => unreachable!()
@@ -102,13 +102,7 @@ pub struct Model {
 #[cfg(feature = "backend")]
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(
-    belongs_to = "super::user::Entity",
-    from = "Column::UserId",
-    to = "super::user::Column::Id",
-    on_update = "Cascade",
-    on_delete = "Cascade"
-    )]
+    #[sea_orm(belongs_to = "super::user::Entity", from = "Column::UserId", to = "super::user::Column::Id", on_update = "Cascade", on_delete = "Cascade")]
     User,
 }
 

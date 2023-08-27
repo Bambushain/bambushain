@@ -11,6 +11,7 @@ pub mod character;
 pub mod prelude {
     pub use crate::{pandaparty_db_error, pandaparty_exists_already_error, pandaparty_insufficient_rights_error, pandaparty_invalid_data_error, pandaparty_not_found_error, pandaparty_unknown_error, pandaparty_validation_error};
     pub use crate::authentication::*;
+    pub use crate::character::Model as Character;
     pub use crate::crafter::CrafterJob;
     pub use crate::crafter::Model as Crafter;
     pub use crate::error::*;

@@ -26,25 +26,16 @@ pub struct Model {
 #[cfg(feature = "backend")]
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(has_many = "super::crafter::Entity")]
-    Crafter,
-    #[sea_orm(has_many = "super::fighter::Entity")]
-    Fighter,
+    #[sea_orm(has_many = "super::character::Entity")]
+    Character,
     #[sea_orm(has_many = "super::token::Entity")]
     Token,
 }
 
 #[cfg(feature = "backend")]
-impl Related<super::crafter::Entity> for Entity {
+impl Related<super::character::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Crafter.def()
-    }
-}
-
-#[cfg(feature = "backend")]
-impl Related<super::fighter::Entity> for Entity {
-    fn to() -> RelationDef {
-        Relation::Fighter.def()
+        Relation::Character.def()
     }
 }
 

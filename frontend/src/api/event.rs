@@ -24,7 +24,7 @@ impl From<Vec<Event>> for EventRange {
 
 async fn get_events(range: Rc<DateRange>) -> PandapartyApiResult<Vec<Event>> {
     log::debug!("Get events");
-    get_with_query("/api/event", vec![
+    get_with_query("/api/pandaparty/event", vec![
         ("start", range.since().format("%F").to_string().as_str()),
         ("end", range.until().format("%F").to_string().as_str()),
     ]).await
@@ -42,15 +42,15 @@ impl Query for EventRange {
 
 pub async fn create_event(event: Event) -> PandapartyApiResult<Event> {
     log::debug!("Create event {}", event.title);
-    post("/api/event", &event).await
+    post("/api/pandaparty/event", &event).await
 }
 
 pub async fn update_event(id: i32, event: Event) -> PandapartyApiResult<()> {
     log::debug!("Update event {id}");
-    put_no_content(format!("/api/event/{id}"), &event).await
+    put_no_content(format!("/api/pandaparty/event/{id}"), &event).await
 }
 
 pub async fn delete_event(id: i32) -> PandapartyApiResult<()> {
     log::debug!("Delete event {id}");
-    delete(format!("/api/event/{id}")).await
+    delete(format!("/api/pandaparty/event/{id}")).await
 }

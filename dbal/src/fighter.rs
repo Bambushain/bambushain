@@ -1,14 +1,18 @@
 use sea_orm::{IntoActiveModel, NotSet, QueryOrder, QuerySelect};
 use sea_orm::ActiveValue::Set;
 use sea_orm::prelude::*;
-use sea_orm::sea_query::{Alias, Expr};
+use sea_orm::sea_query::Expr;
 
-use pandaparty_entities::fighter;
+use pandaparty_entities::{character, fighter};
 use pandaparty_entities::prelude::*;
 
-pub async fn get_fighters(user_id: i32, db: &DatabaseConnection) -> PandaPartyResult<Vec<Fighter>> {
+use crate::prelude::character_exists;
+
+pub async fn get_fighters(user_id: i32, character_id: i32, db: &DatabaseConnection) -> PandaPartyResult<Vec<Fighter>> {
     fighter::Entity::find()
-        .filter(fighter::Column::UserId.eq(user_id))
+        .filter(fighter::Column::CharacterId.eq(character_id))
+        .filter(character::Column::UserId.eq(user_id))
+        .inner_join(character::Entity)
         .order_by_asc(fighter::Column::Job)
         .all(db)
         .await
@@ -18,9 +22,12 @@ pub async fn get_fighters(user_id: i32, db: &DatabaseConnection) -> PandaPartyRe
         })
 }
 
-pub async fn get_fighter(id: i32, db: &DatabaseConnection) -> PandaPartyResult<Fighter> {
+pub async fn get_fighter(id: i32, user_id: i32, character_id: i32, db: &DatabaseConnection) -> PandaPartyResult<Fighter> {
     match fighter::Entity::find()
         .filter(fighter::Column::Id.eq(id))
+        .filter(fighter::Column::CharacterId.eq(character_id))
+        .filter(character::Column::UserId.eq(user_id))
+        .inner_join(character::Entity)
         .one(db)
         .await {
         Ok(Some(res)) => Ok(res),
@@ -32,10 +39,13 @@ pub async fn get_fighter(id: i32, db: &DatabaseConnection) -> PandaPartyResult<F
     }
 }
 
-pub async fn fighter_exists(id: i32, db: &DatabaseConnection) -> bool {
+pub async fn fighter_exists(id: i32, user_id: i32, character_id: i32, db: &DatabaseConnection) -> bool {
     match fighter::Entity::find_by_id(id)
         .select_only()
         .column(fighter::Column::Id)
+        .filter(fighter::Column::CharacterId.eq(character_id))
+        .filter(character::Column::UserId.eq(user_id))
+        .inner_join(character::Entity)
         .count(db)
         .await {
         Ok(count) => count > 0,
@@ -43,12 +53,14 @@ pub async fn fighter_exists(id: i32, db: &DatabaseConnection) -> bool {
     }
 }
 
-pub async fn fighter_exists_by_job(user_id: i32, job: FighterJob, db: &DatabaseConnection) -> bool {
+pub async fn fighter_exists_by_job(user_id: i32, character_id: i32, job: FighterJob, db: &DatabaseConnection) -> bool {
     match fighter::Entity::find()
         .select_only()
         .column(fighter::Column::Id)
         .filter(fighter::Column::Job.eq(job))
-        .filter(fighter::Column::UserId.eq(user_id))
+        .filter(fighter::Column::CharacterId.eq(character_id))
+        .filter(character::Column::UserId.eq(user_id))
+        .inner_join(character::Entity)
         .count(db)
         .await {
         Ok(count) => count > 0,
@@ -56,9 +68,13 @@ pub async fn fighter_exists_by_job(user_id: i32, job: FighterJob, db: &DatabaseC
     }
 }
 
-pub async fn create_fighter(user_id: i32, fighter: Fighter, db: &DatabaseConnection) -> PandaPartyResult<Fighter> {
+pub async fn create_fighter(user_id: i32, character_id: i32, fighter: Fighter, db: &DatabaseConnection) -> PandaPartyResult<Fighter> {
+    if !character_exists(user_id, character_id, db).await {
+        return Err(pandaparty_not_found_error!("fighter", "The character does not exist"));
+    }
+
     let mut model = fighter.into_active_model();
-    model.user_id = Set(user_id);
+    model.character_id = Set(character_id);
     model.id = NotSet;
 
     model
@@ -73,7 +89,6 @@ pub async fn create_fighter(user_id: i32, fighter: Fighter, db: &DatabaseConnect
 pub async fn update_fighter(id: i32, fighter: Fighter, db: &DatabaseConnection) -> PandaPartyErrorResult {
     fighter::Entity::update_many()
         .filter(fighter::Column::Id.eq(id))
-        .col_expr(fighter::Column::Job, Expr::val(fighter.job).as_enum(Alias::new("fighter_job")))
         .col_expr(fighter::Column::Level, Expr::value(fighter.level))
         .col_expr(fighter::Column::GearScore, Expr::value(fighter.gear_score))
         .exec(db)
