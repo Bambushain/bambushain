@@ -6,7 +6,7 @@ use bounce::query::{Query, QueryResult};
 
 use pandaparty_entities::prelude::*;
 
-use crate::api::{ApiError, delete, get, post, put, PandapartyApiResult};
+use crate::api::{ApiError, delete, get, post, put_no_content, PandapartyApiResult};
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
 pub struct MyCrafter {
@@ -43,7 +43,7 @@ pub async fn create_crafter(crafter: Crafter) -> PandapartyApiResult<Crafter> {
 
 pub async fn update_crafter(id: i32, crafter: Crafter) -> PandapartyApiResult<()> {
     log::debug!("Update crafter {id}");
-    put(format!("/api/crafter/{id}"), &crafter).await
+    put_no_content(format!("/api/crafter/{id}"), &crafter).await
 }
 
 pub async fn delete_crafter(id: i32) -> PandapartyApiResult<()> {

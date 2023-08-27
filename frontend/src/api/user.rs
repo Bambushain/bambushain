@@ -6,7 +6,7 @@ use bounce::query::{Query, QueryResult};
 
 use pandaparty_entities::prelude::*;
 
-use crate::api::{ApiError, delete, get, post, put, put_no_body, PandapartyApiResult};
+use crate::api::{ApiError, delete, get, post, put_no_content, put_no_body_no_content, PandapartyApiResult};
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
 pub struct Users {
@@ -43,7 +43,7 @@ pub async fn create_user(user: User) -> PandapartyApiResult<WebUser> {
 
 pub async fn make_user_mod(id: i32) -> PandapartyApiResult<()> {
     log::debug!("Make user {id} mod");
-    put_no_body(format!("/api/user/{id}/mod")).await
+    put_no_body_no_content(format!("/api/user/{id}/mod")).await
 }
 
 pub async fn remove_user_mod(id: i32) -> PandapartyApiResult<()> {
@@ -58,10 +58,10 @@ pub async fn delete_user(id: i32) -> PandapartyApiResult<()> {
 
 pub async fn change_user_password(id: i32, new_password: String) -> PandapartyApiResult<()> {
     log::debug!("Change user {id} password");
-    put(format!("/api/user/{id}/password"), &ChangePassword { new_password }).await
+    put_no_content(format!("/api/user/{id}/password"), &ChangePassword { new_password }).await
 }
 
 pub async fn update_profile(id: i32, profile: UpdateProfile) -> PandapartyApiResult<()> {
     log::debug!("Update profile of user {id} to the following data {:?}", profile);
-    put(format!("/api/user/{id}/profile"), &profile).await
+    put_no_content(format!("/api/user/{id}/profile"), &profile).await
 }

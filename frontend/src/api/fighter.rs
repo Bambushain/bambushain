@@ -6,7 +6,7 @@ use bounce::query::{Query, QueryResult};
 
 use pandaparty_entities::prelude::*;
 
-use crate::api::{ApiError, delete, get, post, put, PandapartyApiResult};
+use crate::api::{ApiError, delete, get, post, put_no_content, PandapartyApiResult};
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
 pub struct MyFighter {
@@ -43,7 +43,7 @@ pub async fn create_fighter(fighter: Fighter) -> PandapartyApiResult<Fighter> {
 
 pub async fn update_fighter(id: i32, fighter: Fighter) -> PandapartyApiResult<()> {
     log::debug!("Update fighter {id}");
-    put(format!("/api/fighter/{id}"), &fighter).await
+    put_no_content(format!("/api/fighter/{id}"), &fighter).await
 }
 
 pub async fn delete_fighter(id: i32) -> PandapartyApiResult<()> {

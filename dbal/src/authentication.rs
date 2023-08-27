@@ -1,6 +1,6 @@
 use rand::distributions::Uniform;
 use rand::Rng;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, NotSet, QueryFilter};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel, NotSet, QueryFilter};
 use sea_orm::ActiveValue::Set;
 use sea_orm::prelude::Expr;
 
@@ -21,10 +21,18 @@ pub async fn validate_auth_and_create_token(email: String, password: String, two
         return Err(pandaparty_validation_error!("token", "Password is invalid"));
     }
 
-    let two_factor_code_valid = user.two_factor_code.eq(&two_factor_code);
+    let two_factor_code_valid = if !user.totp_validated.unwrap_or(false) {
+        user.two_factor_code.eq(&Some(two_factor_code))
+    } else {
+        user.check_totp(two_factor_code)
+    };
+
     if !two_factor_code_valid {
         return Err(pandaparty_validation_error!("token", "Two factor code is invalid"));
     }
+
+    let mut active = user.clone().into_active_model();
+    active.two_factor_code = Set(None);
 
     let token = pandaparty_entities::token::ActiveModel {
         id: NotSet,
@@ -58,29 +66,32 @@ pub async fn validate_auth_and_set_two_factor_code(email: String, password: Stri
         return Err(pandaparty_validation_error!("token", "Password is invalid"));
     }
 
+    if user.totp_secret.is_some() && user.totp_validated.unwrap_or(false) {
+        return Ok(TwoFactorResult {
+            user: user.to_web_user(),
+            two_factor_code: None,
+        });
+    }
+
     let two_factor_code = rand::thread_rng()
         .sample_iter(&Uniform::new(0, 10))
         .take(6)
-        .map( |id| id.to_string())
+        .map(|id| id.to_string())
         .collect::<Vec<String>>()
         .join("");
 
-    if let Err(_) = pandaparty_entities::user::Entity::update_many()
+    if pandaparty_entities::user::Entity::update_many()
         .col_expr(pandaparty_entities::user::Column::TwoFactorCode, Expr::value(two_factor_code.clone()))
         .filter(pandaparty_entities::user::Column::Id.eq(user.id))
         .exec(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            pandaparty_db_error!("user", "Failed to update user")
-        })
-        .map(|_| ()) {
+        .is_err() {
         return Err(pandaparty_validation_error!("token", "Failed to set two factor code"));
     }
 
     Ok(TwoFactorResult {
         user: user.to_web_user(),
-        two_factor_code,
+        two_factor_code: Some(two_factor_code),
     })
 }
 

@@ -106,7 +106,7 @@ color: var(--black);
 --white: transparent;
 --primary-color: #9F2637;
 --control-border-color: var(--black);
---negative-color: var(--black);
+--negative-color: var(--primary-color);
 
 --font-weight-bold: bold;
 --font-weight-normal: normal;

@@ -35,7 +35,7 @@ pub struct LoginResult {
 #[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 pub struct TwoFactorResult {
     pub user: WebUser,
-    pub two_factor_code: String,
+    pub two_factor_code: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]

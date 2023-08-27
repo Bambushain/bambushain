@@ -7,7 +7,7 @@ use date_range::DateRange;
 
 use pandaparty_entities::prelude::*;
 
-use crate::api::{ApiError, delete, get_with_query, post, put, PandapartyApiResult};
+use crate::api::{ApiError, delete, get_with_query, post, put_no_content, PandapartyApiResult};
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
 pub struct EventRange {
@@ -47,7 +47,7 @@ pub async fn create_event(event: Event) -> PandapartyApiResult<Event> {
 
 pub async fn update_event(id: i32, event: Event) -> PandapartyApiResult<()> {
     log::debug!("Update event {id}");
-    put(format!("/api/event/{id}"), &event).await
+    put_no_content(format!("/api/event/{id}"), &event).await
 }
 
 pub async fn delete_event(id: i32) -> PandapartyApiResult<()> {

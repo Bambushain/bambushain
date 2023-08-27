@@ -17,7 +17,10 @@ pub struct Model {
     pub display_name: String,
     pub is_mod: bool,
     pub discord_name: String,
-    pub two_factor_code: String,
+    pub two_factor_code: Option<String>,
+    #[cfg(feature = "backend")]
+    pub totp_secret: Option<Vec<u8>>,
+    pub totp_validated: Option<bool>,
 }
 
 #[cfg(feature = "backend")]
@@ -78,13 +81,41 @@ impl Model {
             is_mod,
             display_name,
             discord_name,
-            two_factor_code: "".into(),
+            two_factor_code: None,
+            #[cfg(feature = "backend")]
+            totp_secret: None,
+            totp_validated: None,
         }
     }
 
     #[cfg(feature = "backend")]
     pub fn validate_password(&self, password: String) -> bool {
         bcrypt::verify(password, self.password.as_str()).unwrap_or(false)
+    }
+
+    #[cfg(feature = "backend")]
+    pub fn check_totp(&self, code: String) -> bool {
+        match totp_rs
+        ::TOTP
+        ::from_rfc6238(
+            totp_rs
+            ::Rfc6238
+            ::new(6,
+                  self.totp_secret.clone().unwrap(),
+                  Some("Pandaparty".to_string()),
+                  self.display_name.clone())
+                .expect("Should be valid")) {
+            Ok(totp) => {
+                totp.check_current(code.as_str()).unwrap_or_else(|err| {
+                    log::error!("Failed to validate totp {err}");
+                    false
+                })
+            }
+            Err(err) => {
+                log::error!("Failed to create totp url {err}");
+                false
+            }
+        }
     }
 
     pub fn to_web_user(&self) -> WebUser {
@@ -94,6 +125,7 @@ impl Model {
             display_name: self.display_name.to_string(),
             email: self.email.to_string(),
             discord_name: self.discord_name.clone(),
+            app_totp_enabled: self.totp_validated.unwrap_or(false),
         }
     }
 }
@@ -106,6 +138,7 @@ pub struct WebUser {
     pub email: String,
     pub is_mod: bool,
     pub discord_name: String,
+    pub app_totp_enabled: bool,
 }
 
 impl Display for WebUser {
@@ -130,4 +163,17 @@ impl UpdateProfile {
             discord_name,
         }
     }
+}
+
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ValidateTotp {
+    pub code: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct TotpQrCode {
+    pub qr_code: String,
+    pub secret: String,
 }

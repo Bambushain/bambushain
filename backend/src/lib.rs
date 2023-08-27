@@ -88,19 +88,25 @@ macro_rules! internal_server_error {
     };
 }
 
+macro_rules! error_response {
+    ($err:expr) => {
+        match $err.error_type {
+            pandaparty_entities::prelude::PandaPartyErrorCode::NotFoundError => not_found!($err),
+            pandaparty_entities::prelude::PandaPartyErrorCode::ExistsAlreadyError => conflict!($err),
+            pandaparty_entities::prelude::PandaPartyErrorCode::InsufficientRightsError => forbidden!($err),
+            pandaparty_entities::prelude::PandaPartyErrorCode::UnauthorizedError => unauthorized!($err),
+            pandaparty_entities::prelude::PandaPartyErrorCode::InvalidDataError | pandaparty_entities::prelude::PandaPartyErrorCode::ValidationError => bad_request!($err),
+            pandaparty_entities::prelude::PandaPartyErrorCode::DbError | pandaparty_entities::prelude::PandaPartyErrorCode::IoError | pandaparty_entities::prelude::PandaPartyErrorCode::SerializationError | pandaparty_entities::prelude::PandaPartyErrorCode::UnknownError => internal_server_error!($err),
+        }
+    };
+}
+
 macro_rules! no_content_or_error {
     ($data:expr) => {
         {
             match $data {
                 Ok(_) => no_content!(),
-                Err(err) => match err.error_type {
-                    pandaparty_entities::prelude::PandaPartyErrorCode::NotFoundError => not_found!(err),
-                    pandaparty_entities::prelude::PandaPartyErrorCode::ExistsAlreadyError => conflict!(err),
-                    pandaparty_entities::prelude::PandaPartyErrorCode::InsufficientRightsError => forbidden!(err),
-                    pandaparty_entities::prelude::PandaPartyErrorCode::UnauthorizedError => unauthorized!(err),
-                    pandaparty_entities::prelude::PandaPartyErrorCode::InvalidDataError | pandaparty_entities::prelude::PandaPartyErrorCode::ValidationError => bad_request!(err),
-                    pandaparty_entities::prelude::PandaPartyErrorCode::DbError | pandaparty_entities::prelude::PandaPartyErrorCode::IoError | pandaparty_entities::prelude::PandaPartyErrorCode::SerializationError | pandaparty_entities::prelude::PandaPartyErrorCode::UnknownError => internal_server_error!(err),
-                }
+                Err(err) => error_response!(err)
             }
         }
     };
@@ -111,14 +117,7 @@ macro_rules! ok_or_error {
         {
             match $data {
                 Ok(data) => ok_json!(data),
-                Err(err) => match err.error_type {
-                    pandaparty_entities::prelude::PandaPartyErrorCode::NotFoundError => not_found!(err),
-                    pandaparty_entities::prelude::PandaPartyErrorCode::ExistsAlreadyError => conflict!(err),
-                    pandaparty_entities::prelude::PandaPartyErrorCode::InsufficientRightsError => forbidden!(err),
-                    pandaparty_entities::prelude::PandaPartyErrorCode::UnauthorizedError => unauthorized!(err),
-                    pandaparty_entities::prelude::PandaPartyErrorCode::InvalidDataError | pandaparty_entities::prelude::PandaPartyErrorCode::ValidationError => bad_request!(err),
-                    pandaparty_entities::prelude::PandaPartyErrorCode::DbError | pandaparty_entities::prelude::PandaPartyErrorCode::IoError | pandaparty_entities::prelude::PandaPartyErrorCode::SerializationError | pandaparty_entities::prelude::PandaPartyErrorCode::UnknownError => internal_server_error!(err),
-                }
+                Err(err) => error_response!(err)
             }
         }
     };
@@ -129,14 +128,7 @@ macro_rules! created_or_error {
         {
             match $data {
                 Ok(data) => created_json!(data),
-                Err(err) => match err.error_type {
-                    pandaparty_entities::prelude::PandaPartyErrorCode::NotFoundError => not_found!(err),
-                    pandaparty_entities::prelude::PandaPartyErrorCode::ExistsAlreadyError => conflict!(err),
-                    pandaparty_entities::prelude::PandaPartyErrorCode::InsufficientRightsError => forbidden!(err),
-                    pandaparty_entities::prelude::PandaPartyErrorCode::UnauthorizedError => unauthorized!(err),
-                    pandaparty_entities::prelude::PandaPartyErrorCode::InvalidDataError | pandaparty_entities::prelude::PandaPartyErrorCode::ValidationError => bad_request!(err),
-                    pandaparty_entities::prelude::PandaPartyErrorCode::DbError | pandaparty_entities::prelude::PandaPartyErrorCode::IoError | pandaparty_entities::prelude::PandaPartyErrorCode::SerializationError | pandaparty_entities::prelude::PandaPartyErrorCode::UnknownError => internal_server_error!(err),
-                }
+                Err(err) => error_response!(err)
             }
         }
     };

@@ -2,6 +2,7 @@ use bounce::{use_atom_setter, use_atom_value};
 use bounce::helmet::Helmet;
 use bounce::query::use_query_value;
 use stylist::{css, GlobalStyle};
+use stylist::yew::use_style;
 use yew::prelude::*;
 use yew_cosmo::prelude::*;
 use yew_router::prelude::*;
@@ -24,6 +25,11 @@ struct ChangePasswordDialogProps {
 
 #[derive(Properties, Clone, PartialEq)]
 struct UpdateMyProfileDialogProps {
+    on_close: Callback<()>,
+}
+
+#[derive(Properties, Clone, PartialEq)]
+struct EnableTotpDialogProps {
     on_close: Callback<()>,
 }
 
@@ -159,6 +165,7 @@ fn switch_top_bar(route: AppRoute) -> Html {
 
 #[function_component(AppLayout)]
 fn app_layout() -> Html {
+    log::debug!("Render app layout");
     let initial_loaded_state = use_state_eq(|| false);
 
     let profile_query = use_query_value::<api::Profile>(().into());
@@ -389,12 +396,128 @@ fn update_my_profile_dialog(props: &UpdateMyProfileDialogProps) -> Html {
     )
 }
 
+#[function_component(EnableTotpDialog)]
+fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
+    log::debug!("Open dialog to enable totp");
+    let enable_start_state = use_state_eq(|| false);
+    let error_state = use_state_eq(|| false);
+
+    let error_message_state = use_state_eq(|| AttrValue::from(""));
+    let code_state = use_state_eq(|| AttrValue::from(""));
+    let qrcode_state = use_state_eq(|| AttrValue::from(""));
+    let secret_state = use_state_eq(|| AttrValue::from(""));
+
+    let update_code = use_callback(|value, state| state.set(value), code_state.clone());
+
+    let enable_totp = {
+        let enable_start_state = enable_start_state.clone();
+        let error_state = error_state.clone();
+
+        let qrcode_state = qrcode_state.clone();
+        let secret_state = secret_state.clone();
+        let error_message_state = error_message_state.clone();
+
+        Callback::from(move |_: ()| {
+            let enable_start_state = enable_start_state.clone();
+            let error_state = error_state.clone();
+
+            let qrcode_state = qrcode_state.clone();
+            let secret_state = secret_state.clone();
+            let error_message_state = error_message_state.clone();
+
+            yew::platform::spawn_local(async move {
+                match api::enable_totp().await {
+                    Ok(data) => {
+                        enable_start_state.set(true);
+                        qrcode_state.set(data.qr_code.clone().into());
+                        secret_state.set(data.secret.clone().into());
+                        log::info!("Here is the secret: {}", data.secret);
+                    }
+                    Err(err) => {
+                        log::error!("Failed to enable totp: {err}");
+                        error_state.set(true);
+                        error_message_state.set("Leider konnte Zwei Faktor per App nicht aktiviert werden".into());
+                    }
+                }
+            })
+        })
+    };
+    let on_form_submit = {
+        let error_state = error_state.clone();
+
+        let error_message_state = error_message_state.clone();
+        let code_state = code_state.clone();
+
+        let on_close = props.on_close.clone();
+
+        Callback::from(move |_: ()| {
+            let error_state = error_state.clone();
+
+            let error_message_state = error_message_state.clone();
+            let code_state = code_state.clone();
+
+            let on_close = on_close.clone();
+
+            yew::platform::spawn_local(async move {
+                match api::validate_totp((*code_state).to_string()).await {
+                    Ok(_) => {
+                        on_close.emit(());
+                    }
+                    Err(err) => {
+                        log::error!("Failed to validate token: {err}");
+                        error_state.set(true);
+                        error_message_state.set("Der von dir eingegebene Code ist ungültig, versuch es nochmal".into());
+                    }
+                }
+            })
+        })
+    };
+
+    let img_style = use_style!(r#"
+width: 100%;
+height: auto;
+object-fit: scale-down;
+"#);
+
+    html!(
+        <>
+            <Helmet>
+                <title>{"Zwei Faktor per App aktivieren"}</title>
+            </Helmet>
+            if *enable_start_state {
+                <CosmoModal title="Zwei Faktor per App aktivieren" is_form={true} on_form_submit={on_form_submit} buttons={html!(
+                    <>
+                        <CosmoButton label="Abbrechen" on_click={props.on_close.clone()} />
+                        <CosmoButton label="App aktivieren" is_submit={true} />
+                    </>
+                )}>
+                    <img class={img_style} src={format!("data:image/png;base64,{}", (*qrcode_state).clone())} alt={(*secret_state).clone()} />
+                    <CosmoInputGroup>
+                        <CosmoTextBox label="Zwei Faktor Code" required={true} on_input={update_code} value={(*code_state).clone()} />
+                    </CosmoInputGroup>
+                </CosmoModal>
+            } else {
+                <CosmoConfirm title="Zwei Faktor per App aktivieren" message={r#"Hier kannst du deinen Zwei Faktor Code anpassen, von Haus aus sendet Pandaparty einen Code an deine Emailadresse,
+du kannst allerdings auch eine App wie Google Authenticator oder Authy einrichten und dann damit einen Code generieren.
+Um eine App einzurichten, musst du unten auf App einrichten klicken.
+Anschließend kommt ein QR Code, den musst du scannen und danach einen Code aus deiner App eingeben."#} confirm_label="App einrichten" decline_label="Abbrechen" on_confirm={enable_totp} on_decline={props.on_close.clone()} />
+            }
+            if *error_state {
+                <CosmoAlert title="Fehler beim Aktivieren" message={(*error_message_state).clone()} close_label="Schließen" on_close={move |_| error_state.set(false)} />
+            }
+        </>
+    )
+}
+
 #[function_component(TopBar)]
 fn top_bar() -> Html {
+    log::debug!("Render top bar");
+    let profile_atom = use_atom_value::<storage::CurrentUser>();
     let navigator = use_navigator().expect("Navigator should be available");
 
     let mods_state = use_state_eq(|| vec![] as Vec<AttrValue>);
 
+    let app_two_factor_open_state = use_state_eq(|| false);
     let profile_open_state = use_state_eq(|| false);
     let password_open_state = use_state_eq(|| false);
 
@@ -403,6 +526,7 @@ fn top_bar() -> Html {
         navigator.push(&AppRoute::Login);
     }, navigator);
     let update_my_profile_click = use_callback(|_, profile_open_state| profile_open_state.set(true), profile_open_state.clone());
+    let enable_app_two_factor_click = use_callback(|_, app_two_factor_open_state| app_two_factor_open_state.set(true), app_two_factor_open_state.clone());
     let change_password_click = {
         let password_open_state = password_open_state.clone();
 
@@ -435,12 +559,18 @@ fn top_bar() -> Html {
             <CosmoTopBar has_right_item={true} right_item_on_click={logout} right_item_label="Abmelden">
                 <CosmoTopBarItem label="Mein Profil" on_click={update_my_profile_click} />
                 <CosmoTopBarItem label="Passwort ändern" on_click={change_password_click} />
+                if !profile_atom.profile.app_totp_enabled {
+                    <CosmoTopBarItem label="App Zwei Faktor einrichten" on_click={enable_app_two_factor_click} />
+                }
             </CosmoTopBar>
             if *profile_open_state {
                 <UpdateMyProfileDialog on_close={move |_| profile_open_state.set(false)} />
             }
             if *password_open_state {
                 <ChangePasswordDialog on_close={move |_| password_open_state.set(false)} mods={(*mods_state).clone()} />
+            }
+            if *app_two_factor_open_state {
+                <EnableTotpDialog on_close={move |_| app_two_factor_open_state.set(false)} />
             }
         </>
     )

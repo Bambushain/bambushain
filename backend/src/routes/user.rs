@@ -135,3 +135,45 @@ pub async fn update_user_profile(info: web::Path<UserPathInfo>, body: web::Json<
 pub async fn get_profile(authentication: Authentication) -> HttpResponse {
     ok_json!(authentication.user.to_web_user())
 }
+
+pub async fn enable_totp(authentication: Authentication, db: DbConnection) -> HttpResponse {
+    let mut totp = totp_rs::TOTP::default();
+    let secret = totp.secret.clone();
+    let data = pandaparty_dbal::user::enable_totp(authentication.user.id, secret, &db).await;
+    match data {
+        Ok(_) => {
+            totp.account_name = authentication.user.display_name.clone();
+            totp.issuer = Some("Pandaparty".to_string());
+            let qr = match totp.get_qr() {
+                Ok(qr) => qr,
+                Err(err) => {
+                    log::error!("Failed to enable totp {err}");
+                    let _ = disable_totp(authentication.user.id, &db).await;
+                    return internal_server_error!();
+                }
+            };
+
+            ok_json!(TotpQrCode {
+                qr_code: qr,
+                secret: totp.get_secret_base32(),
+            })
+        }
+        Err(err) => {
+            log::error!("Failed to enable totp {err}");
+            internal_server_error!()
+        }
+    }
+}
+
+pub async fn validate_totp(body: web::Json<ValidateTotp>, authentication: Authentication, db: DbConnection) -> HttpResponse {
+    if authentication.user.totp_validated.unwrap_or(false) {
+        bad_request!("Already validated")
+    } else {
+        let result = pandaparty_dbal::user::validate_totp(authentication.user.id, body.code.clone(), &db).await;
+        match result {
+            Ok(true) => no_content!(),
+            Ok(false) => forbidden!(),
+            Err(err) => error_response!(err)
+        }
+    }
+}

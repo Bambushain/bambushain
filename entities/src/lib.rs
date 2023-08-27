@@ -20,6 +20,8 @@ pub mod prelude {
     pub use crate::result::*;
     pub use crate::token::Model as Token;
     pub use crate::user::Model as User;
+    pub use crate::user::TotpQrCode;
     pub use crate::user::UpdateProfile;
+    pub use crate::user::ValidateTotp;
     pub use crate::user::WebUser;
 }

@@ -1,4 +1,5 @@
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel, JoinType, NotSet, QueryFilter, QueryOrder, QuerySelect, RelationTrait};
+use sea_orm::ActiveValue::Set;
 use sea_orm::prelude::*;
 use sea_orm::sea_query::Expr;
 
@@ -169,4 +170,42 @@ pub async fn get_user_by_token(token: String, db: &DatabaseConnection) -> PandaP
             Err(pandaparty_unauthorized_error!("authentication", "Token or user not found"))
         }
     }
+}
+
+pub async fn enable_totp(id: i32, secret: Vec<u8>, db: &DatabaseConnection) -> PandaPartyErrorResult {
+    user::Entity::update_many()
+        .col_expr(user::Column::TotpSecret, Expr::value(Some(secret)))
+        .filter(user::Column::Id.eq(id))
+        .exec(db)
+        .await
+        .map_err(|_| pandaparty_db_error!("user", "The secret could not be saved"))
+        .map(|_| ())
+}
+
+pub async fn disable_totp(id: i32, db: &DatabaseConnection) -> PandaPartyErrorResult {
+    let user = get_user(id, db).await;
+    match user {
+        Ok(user) => {
+            let mut model = user.into_active_model();
+            model.totp_validated = Set(Some(false));
+            model.totp_secret = Set(None);
+            model.update(db).await
+                .map_err(|_| pandaparty_db_error!("user","Failed to disable totp"))
+                .map(|_| ())
+        }
+        Err(err) => Err(err)
+    }
+}
+
+pub async fn validate_totp(id: i32, code: String, db: &DatabaseConnection) -> PandaPartyResult<bool> {
+    let user = get_user(id, db).await?;
+    let valid = user.check_totp(code);
+
+    user::Entity::update_many()
+        .col_expr(user::Column::TotpValidated, Expr::value(Some(valid)))
+        .filter(user::Column::Id.eq(id))
+        .exec(db)
+        .await
+        .map_err(|_| pandaparty_db_error!("user", "Totp could not be validated"))
+        .map(|_| valid)
 }

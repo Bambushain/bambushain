@@ -15,7 +15,7 @@ use pandaparty_backend::routes::authentication::{login, logout};
 use pandaparty_backend::routes::crafter::{create_crafter, delete_crafter, get_crafter, get_crafters, update_crafter};
 use pandaparty_backend::routes::event::{create_event, delete_event, get_events, update_event};
 use pandaparty_backend::routes::fighter::{create_fighter, delete_fighter, get_fighter, get_fighters, update_fighter};
-use pandaparty_backend::routes::user::{add_mod_user, change_my_password, change_password, create_user, delete_user, get_profile, get_user, get_users, remove_mod_user, update_profile, update_user_profile};
+use pandaparty_backend::routes::user::{add_mod_user, change_my_password, change_password, create_user, delete_user, enable_totp, get_profile, get_user, get_users, remove_mod_user, update_profile, update_user_profile, validate_totp};
 use pandaparty_backend::sse::{Notification, NotificationState};
 use pandaparty_backend::sse::event::event_sse_client;
 use pandaparty_backend::sse::user::user_sse_client;
@@ -126,6 +126,8 @@ async fn main() -> std::io::Result<()> {
             .route("/api/my/profile", web::get().to(get_profile).wrap(AuthenticateUser))
             .route("/api/my/profile", web::put().to(update_profile).wrap(AuthenticateUser))
             .route("/api/my/password", web::put().to(change_my_password).wrap(AuthenticateUser))
+            .route("/api/my/totp", web::post().to(enable_totp).wrap(AuthenticateUser))
+            .route("/api/my/totp/validate", web::put().to(validate_totp).wrap(AuthenticateUser))
 
             .route("/sse/user", web::get().to(user_sse_client))
             .route("/sse/event", web::get().to(event_sse_client))

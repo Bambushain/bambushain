@@ -112,7 +112,13 @@ pub async fn login(body: web::Json<Login>, db: DbConnection, services: Services)
     } else {
         let data = validate_auth_and_set_two_factor_code(body.email.clone(), body.password.clone(), &db).await;
         match data {
-            Ok(result) => send_two_factor_mail(result.user.display_name, result.user.email, result.two_factor_code, services).await,
+            Ok(result) => {
+                if let Some(two_factor_code) = result.two_factor_code {
+                    send_two_factor_mail(result.user.display_name, result.user.email, two_factor_code, services).await
+                } else {
+                    no_content!()
+                }
+            }
             Err(err) => {
                 log::error!("Failed to login {err}");
                 HttpResponse::Unauthorized().json(PandaPartyError {

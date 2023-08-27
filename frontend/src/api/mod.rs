@@ -6,11 +6,11 @@ use serde::de::DeserializeOwned;
 
 pub use authentication::*;
 pub use crafter::*;
+pub use event::*;
 pub use fighter::*;
 pub use my::*;
 use pandaparty_entities::prelude::*;
 pub use user::*;
-pub use event::*;
 
 use crate::storage::get_token;
 
@@ -186,7 +186,7 @@ pub async fn delete(uri: impl Into<String>) -> PandapartyApiResult<()> {
     handle_response_code!(response)
 }
 
-pub async fn put_no_body(uri: impl Into<String>) -> PandapartyApiResult<()> {
+pub async fn put_no_body_no_content(uri: impl Into<String>) -> PandapartyApiResult<()> {
     let into_uri = uri.into();
     let token = get_token().unwrap_or_default();
     log::debug!("Use auth token {}", token);
@@ -199,7 +199,7 @@ pub async fn put_no_body(uri: impl Into<String>) -> PandapartyApiResult<()> {
     handle_response_code!(response)
 }
 
-pub async fn put<IN: Serialize>(uri: impl Into<String>, body: &IN) -> PandapartyApiResult<()> {
+pub async fn put_no_content<IN: Serialize>(uri: impl Into<String>, body: &IN) -> PandapartyApiResult<()> {
     let into_uri = uri.into();
     let token = get_token().unwrap_or_default();
     log::debug!("Use auth token {}", token);
@@ -249,4 +249,17 @@ pub async fn post_no_content<IN: Serialize>(uri: impl Into<String>, body: &IN) -
             Err(ApiError { pandaparty_error: PandaPartyError::default(), code: JSON_SERIALIZE_ERROR })
         }
     }
+}
+
+pub async fn post_no_body<OUT: DeserializeOwned>(uri: impl Into<String>) -> PandapartyApiResult<OUT> {
+    let into_uri = uri.into();
+    let token = get_token().unwrap_or_default();
+    log::debug!("Use auth token {}", token);
+    let token = get_token().unwrap_or_default();
+
+    log::debug!("Execute post request against {}", &into_uri);
+    handle_response!(gloo::net::http::Request::post(into_uri.as_str())
+        .header("Authorization", format!("Panda {}", token).as_str())
+        .send()
+        .await)
 }
