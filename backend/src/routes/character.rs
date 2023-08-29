@@ -38,7 +38,7 @@ pub async fn update_character(body: web::Json<Character>, path: web::Path<Charac
 }
 
 pub async fn delete_character(path: web::Path<CharacterPathInfo>, authentication: Authentication, db: DbConnection) -> HttpResponse {
-    if !pandaparty_dbal::character::character_exists(path.id, authentication.user.id, &db).await {
+    if !pandaparty_dbal::character::character_exists(authentication.user.id, path.id, &db).await {
         return not_found!(pandaparty_not_found_error!("character", "The character was not found"));
     }
 

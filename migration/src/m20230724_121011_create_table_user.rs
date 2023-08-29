@@ -35,6 +35,7 @@ impl MigrationTrait for Migration {
                         ColumnDef::new(User::DisplayName)
                             .string()
                             .not_null()
+                            .unique_key()
                     )
                     .col(
                         ColumnDef
@@ -47,7 +48,6 @@ impl MigrationTrait for Migration {
                         ::new(User::TwoFactorCode)
                             .string()
                             .string_len(6)
-                            .not_null()
                     )
                     .col(
                         ColumnDef::new(User::IsMod)

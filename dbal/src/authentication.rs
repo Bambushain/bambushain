@@ -7,11 +7,11 @@ use sea_orm::prelude::Expr;
 use pandaparty_entities::{pandaparty_db_error, pandaparty_validation_error};
 use pandaparty_entities::prelude::*;
 
-pub async fn validate_auth_and_create_token(email: String, password: String, two_factor_code: String, db: &DatabaseConnection) -> PandaPartyResult<LoginResult> {
-    let user = match crate::user::get_user_by_email(email.clone(), db).await {
+pub async fn validate_auth_and_create_token(username: String, password: String, two_factor_code: String, db: &DatabaseConnection) -> PandaPartyResult<LoginResult> {
+    let user = match crate::user::get_user_by_email_or_username(username.clone(), db).await {
         Ok(user) => user,
         Err(err) => {
-            log::error!("Failed to load user {}: {err}", email);
+            log::error!("Failed to load user {}: {err}", username);
             return Err(pandaparty_not_found_error!("user", "User not found"));
         }
     };
@@ -52,11 +52,11 @@ pub async fn validate_auth_and_create_token(email: String, password: String, two
     }
 }
 
-pub async fn validate_auth_and_set_two_factor_code(email: String, password: String, db: &DatabaseConnection) -> PandaPartyResult<TwoFactorResult> {
-    let user = match crate::user::get_user_by_email(email.clone(), db).await {
+pub async fn validate_auth_and_set_two_factor_code(username: String, password: String, db: &DatabaseConnection) -> PandaPartyResult<TwoFactorResult> {
+    let user = match crate::user::get_user_by_email_or_username(username.clone(), db).await {
         Ok(user) => user,
         Err(err) => {
-            log::error!("Failed to load user {}: {err}", email);
+            log::error!("Failed to load user {}: {err}", username);
             return Err(pandaparty_not_found_error!("user", "User not found"));
         }
     };

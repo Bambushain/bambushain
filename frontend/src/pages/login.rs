@@ -159,7 +159,7 @@ align-items: center;
                 </p>
                 if !*two_factor_code_requested_state {
                     <CosmoForm on_submit={login_submit} buttons={html!(<CosmoButton label="Anmelden" is_submit={true} />)}>
-                        <CosmoTextBox id="email" required={true} value={(*email_state).clone()} on_input={on_email_update} label="Email" />
+                        <CosmoTextBox id="email" required={true} value={(*email_state).clone()} on_input={on_email_update} label="Email oder Name" />
                         <CosmoTextBox id="password" input_type={CosmoTextBoxType::Password} required={true} value={(*password_state).clone()} on_input={on_password_update} label="Passwort" />
                     </CosmoForm>
                 } else {

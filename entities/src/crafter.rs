@@ -37,17 +37,17 @@ pub enum CrafterJob {
 impl CrafterJob {
     pub fn get_file_name(self) -> String {
         match self {
-            CrafterJob::Carpenter => "carpenter.png",
-            CrafterJob::Blacksmith => "blacksmith.png",
-            CrafterJob::Armorer => "armorer.png",
-            CrafterJob::Goldsmith => "goldsmith.png",
-            CrafterJob::Leatherworker => "leatherworker.png",
-            CrafterJob::Weaver => "weaver.png",
-            CrafterJob::Alchemist => "alchemist.png",
-            CrafterJob::Culinarian => "culinarian.png",
-            CrafterJob::Miner => "miner.png",
-            CrafterJob::Botanist => "botanist.png",
-            CrafterJob::Fisher => "fisher.png",
+            CrafterJob::Carpenter => "carpenter.webp",
+            CrafterJob::Blacksmith => "blacksmith.webp",
+            CrafterJob::Armorer => "armorer.webp",
+            CrafterJob::Goldsmith => "goldsmith.webp",
+            CrafterJob::Leatherworker => "leatherworker.webp",
+            CrafterJob::Weaver => "weaver.webp",
+            CrafterJob::Alchemist => "alchemist.webp",
+            CrafterJob::Culinarian => "culinarian.webp",
+            CrafterJob::Miner => "miner.webp",
+            CrafterJob::Botanist => "botanist.webp",
+            CrafterJob::Fisher => "fisher.webp",
         }.to_string()
     }
 

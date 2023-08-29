@@ -32,7 +32,7 @@ pub async fn get_character(id: i32, user_id: i32, db: &DatabaseConnection) -> Pa
     }
 }
 
-pub async fn character_exists(id: i32, user_id: i32, db: &DatabaseConnection) -> bool {
+pub async fn character_exists(user_id: i32, id: i32, db: &DatabaseConnection) -> bool {
     match character::Entity::find_by_id(id)
         .filter(character::Column::UserId.eq(user_id))
         .select_only()

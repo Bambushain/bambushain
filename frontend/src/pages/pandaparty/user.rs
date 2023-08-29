@@ -612,7 +612,7 @@ pub fn users_page() -> Html {
             </Helmet>
             <CosmoSideList on_select_item={on_user_select} selected_index={*selected_user_state} has_add_button={current_user.profile.is_mod} add_button_on_click={open_create_user_modal_click} add_button_label="Benutzer hinzufügen">
                 {for (*users_state).clone().into_iter().map(|user| {
-                    CosmoSideListItem::from_label_and_children(user.email.clone().into(), html!(
+                    CosmoSideListItem::from_label_and_children(user.display_name.clone().into(), html!(
                         <UserDetails on_delete={on_delete.clone()} user={user} />
                     ))
                 })}

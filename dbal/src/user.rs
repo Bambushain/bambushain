@@ -1,4 +1,4 @@
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel, JoinType, NotSet, QueryFilter, QueryOrder, QuerySelect, RelationTrait};
+use sea_orm::{ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, EntityTrait, IntoActiveModel, JoinType, NotSet, QueryFilter, QueryOrder, QuerySelect, RelationTrait};
 use sea_orm::ActiveValue::Set;
 use sea_orm::prelude::*;
 use sea_orm::sea_query::Expr;
@@ -19,9 +19,13 @@ pub async fn get_user(id: i32, db: &DatabaseConnection) -> PandaPartyResult<User
     }
 }
 
-pub async fn get_user_by_email(email: String, db: &DatabaseConnection) -> PandaPartyResult<User> {
+pub async fn get_user_by_email_or_username(username: String, db: &DatabaseConnection) -> PandaPartyResult<User> {
     match user::Entity::find()
-        .filter(user::Column::Email.eq(email))
+        .filter(
+            Condition::any()
+                .add(user::Column::Email.eq(username.clone()))
+                .add(user::Column::DisplayName.eq(username))
+            )
         .one(db)
         .await {
         Ok(Some(res)) => Ok(res),

@@ -28,7 +28,7 @@ pub async fn get_fighter(path: web::Path<FighterPathInfo>, authentication: Authe
     }
 }
 
-pub async fn create_fighter(path: web::Path<FighterPathInfo>, body: web::Json<Fighter>, authentication: Authentication, db: DbConnection) -> HttpResponse {
+pub async fn create_fighter(path: web::Path<FightersPathInfo>, body: web::Json<Fighter>, authentication: Authentication, db: DbConnection) -> HttpResponse {
     if pandaparty_dbal::fighter::fighter_exists_by_job(authentication.user.id, path.character_id, body.job, &db).await {
         return conflict!(pandaparty_exists_already_error!("fighter", "The fighter already exists"));
     }

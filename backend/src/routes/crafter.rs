@@ -28,7 +28,7 @@ pub async fn get_crafter(path: web::Path<CrafterPathInfo>, authentication: Authe
     }
 }
 
-pub async fn create_crafter(path: web::Path<CrafterPathInfo>, body: web::Json<Crafter>, authentication: Authentication, db: DbConnection) -> HttpResponse {
+pub async fn create_crafter(path: web::Path<CraftersPathInfo>, body: web::Json<Crafter>, authentication: Authentication, db: DbConnection) -> HttpResponse {
     if pandaparty_dbal::crafter::crafter_exists_by_job(authentication.user.id, path.character_id, body.job, &db).await {
         return conflict!(pandaparty_exists_already_error!("crafter", "The crafter already exists"));
     }

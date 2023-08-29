@@ -392,6 +392,9 @@ fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
     let enable_start_state = use_state_eq(|| false);
     let error_state = use_state_eq(|| false);
 
+    let profile_query = use_query_value::<api::Profile>(().into());
+    let profile_atom = use_atom_setter::<storage::CurrentUser>();
+
     let error_message_state = use_state_eq(|| AttrValue::from(""));
     let code_state = use_state_eq(|| AttrValue::from(""));
     let qrcode_state = use_state_eq(|| AttrValue::from(""));
@@ -407,6 +410,9 @@ fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
         let secret_state = secret_state.clone();
         let error_message_state = error_message_state.clone();
 
+        let profile_query = profile_query.clone();
+        let profile_atom = profile_atom.clone();
+
         Callback::from(move |_: ()| {
             let enable_start_state = enable_start_state.clone();
             let error_state = error_state.clone();
@@ -415,6 +421,9 @@ fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
             let secret_state = secret_state.clone();
             let error_message_state = error_message_state.clone();
 
+            let profile_query = profile_query.clone();
+            let profile_atom = profile_atom.clone();
+
             yew::platform::spawn_local(async move {
                 match api::enable_totp().await {
                     Ok(data) => {
@@ -422,6 +431,7 @@ fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
                         qrcode_state.set(data.qr_code.clone().into());
                         secret_state.set(data.secret.clone().into());
                         log::info!("Here is the secret: {}", data.secret);
+                        let _ = profile_query.refresh().await.map(|res| profile_atom(storage::CurrentUser { profile: res.user.clone() }));
                     }
                     Err(err) => {
                         log::error!("Failed to enable totp: {err}");
@@ -532,7 +542,7 @@ fn top_bar() -> Html {
                     mods_state.set(users
                         .into_iter()
                         .filter_map(|user| if user.is_mod {
-                            Some(AttrValue::from(user.email))
+                            Some(AttrValue::from(user.display_name))
                         } else {
                             None
                         })

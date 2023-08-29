@@ -9,19 +9,6 @@ use pandaparty_entities::prelude::*;
 
 use crate::api::*;
 
-#[derive(Properties, PartialEq, Clone)]
-struct ModifyCrafterModalProps {
-    on_close: Callback<()>,
-    title: AttrValue,
-    save_label: AttrValue,
-    error_message: AttrValue,
-    has_error: bool,
-    #[prop_or_default]
-    crafter: Crafter,
-    on_save: Callback<Crafter>,
-    on_error_close: Callback<()>,
-}
-
 #[function_component(ModifyCrafterModal)]
 fn modify_crafter_modal(props: &ModifyCrafterModalProps) -> Html {
     let job_state = use_state_eq(|| Some(AttrValue::from(props.crafter.job.get_job_name())));
@@ -61,13 +48,6 @@ fn modify_crafter_modal(props: &ModifyCrafterModalProps) -> Html {
 struct CrafterDetailsProps {
     crafter: Crafter,
     on_delete: Callback<()>,
-}
-
-#[derive(PartialEq, Clone)]
-enum CrafterActions {
-    Edit,
-    Delete,
-    Closed,
 }
 
 #[derive(PartialEq, Clone)]

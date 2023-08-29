@@ -3,14 +3,12 @@ use std::rc::Rc;
 use bounce::helmet::Helmet;
 use bounce::query::use_query_value;
 use strum::IntoEnumIterator;
-use stylist::yew::use_style;
 use yew::prelude::*;
 use yew_cosmo::prelude::*;
 
 use pandaparty_entities::character::CharacterRace;
 use pandaparty_entities::prelude::*;
 
-use crate::api;
 use crate::api::*;
 use crate::api::character::MyCharacters;
 
@@ -25,6 +23,80 @@ struct ModifyCharacterModalProps {
     character: Character,
     on_save: Callback<Character>,
     on_error_close: Callback<()>,
+}
+
+#[derive(Properties, PartialEq, Clone)]
+struct CharacterDetailsProps {
+    character: Character,
+    on_delete: Callback<()>,
+}
+
+#[derive(Properties, PartialEq, Clone)]
+struct CrafterDetailsProps {
+    character: Character,
+}
+
+#[derive(Properties, PartialEq, Clone)]
+struct FighterDetailsProps {
+    character: Character,
+}
+
+#[derive(Properties, PartialEq, Clone)]
+struct ModifyCrafterModalProps {
+    on_close: Callback<()>,
+    title: AttrValue,
+    save_label: AttrValue,
+    error_message: AttrValue,
+    has_error: bool,
+    #[prop_or_default]
+    crafter: Crafter,
+    character_id: i32,
+    on_save: Callback<Crafter>,
+    is_edit: bool,
+    jobs: Vec<CrafterJob>,
+}
+
+#[derive(Properties, PartialEq, Clone)]
+struct ModifyFighterModalProps {
+    on_close: Callback<()>,
+    title: AttrValue,
+    save_label: AttrValue,
+    error_message: AttrValue,
+    has_error: bool,
+    #[prop_or_default]
+    fighter: Fighter,
+    character_id: i32,
+    on_save: Callback<Fighter>,
+    is_edit: bool,
+    jobs: Vec<FighterJob>,
+}
+
+#[derive(PartialEq, Clone)]
+enum CrafterActions {
+    Edit(Crafter),
+    Delete(Crafter),
+    Closed,
+}
+
+#[derive(PartialEq, Clone)]
+enum FighterActions {
+    Edit(Fighter),
+    Delete(Fighter),
+    Closed,
+}
+
+#[derive(PartialEq, Clone)]
+enum CharacterActions {
+    Edit,
+    Delete,
+    Closed,
+}
+
+#[derive(PartialEq, Clone)]
+enum ErrorState {
+    Edit,
+    Delete,
+    None,
 }
 
 #[function_component(ModifyCharacterModal)]
@@ -66,34 +138,71 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
     )
 }
 
-#[derive(Properties, PartialEq, Clone)]
-struct CharacterDetailsProps {
-    character: Character,
-    on_delete: Callback<()>,
+#[function_component(ModifyCrafterModal)]
+fn modify_crafter_modal(props: &ModifyCrafterModalProps) -> Html {
+    let job_state = use_state_eq(|| Some(AttrValue::from(props.crafter.job.get_job_name())));
+    let level_state = use_state_eq(|| AttrValue::from(props.crafter.level.clone().unwrap_or_default()));
+
+    let on_close = props.on_close.clone();
+    let on_save = use_callback(|_, (job_state, level_state, on_save, character_id)| on_save.emit(Crafter::new(*character_id, CrafterJob::from((**job_state).clone().unwrap().to_string()), (*level_state).to_string())), (job_state.clone(), level_state.clone(), props.on_save.clone(), props.character_id));
+    let update_job = use_callback(|value: Option<AttrValue>, state| state.set(value), job_state.clone());
+    let update_level = use_callback(|value: AttrValue, state| state.set(value), level_state.clone());
+
+    let jobs = props.jobs.iter().map(|job| (Some(AttrValue::from(job.get_job_name())), AttrValue::from(job.to_string()))).collect::<Vec<(Option<AttrValue>, AttrValue)>>();
+
+    html!(
+        <>
+            <CosmoModal title={props.title.clone()} is_form={true} on_form_submit={on_save} buttons={html!(
+                <>
+                    <CosmoButton on_click={on_close} label="Abbrechen" />
+                    <CosmoButton label={props.save_label.clone()} is_submit={true} />
+                </>
+            )}>
+                if props.has_error {
+                    <CosmoMessage message_type={CosmoMessageType::Negative} message={props.error_message.clone()} />
+                }
+                <CosmoInputGroup>
+                    <CosmoDropdown readonly={props.is_edit} label="Job" on_select={update_job} value={(*job_state).clone()} required={true} items={jobs} />
+                    <CosmoTextBox label="Level (optional)" on_input={update_level} value={(*level_state).clone()} />
+                </CosmoInputGroup>
+            </CosmoModal>
+        </>
+    )
 }
 
-#[derive(Properties, PartialEq, Clone)]
-struct CrafterDetailsProps {
-    character: Character,
-}
+#[function_component(ModifyFighterModal)]
+fn modify_fighter_modal(props: &ModifyFighterModalProps) -> Html {
+    let job_state = use_state_eq(|| Some(AttrValue::from(props.fighter.job.get_job_name())));
+    let level_state = use_state_eq(|| AttrValue::from(props.fighter.level.clone().unwrap_or_default()));
+    let gear_score_state = use_state_eq(|| AttrValue::from(props.fighter.gear_score.clone().unwrap_or_default()));
 
-#[derive(Properties, PartialEq, Clone)]
-struct FighterDetailsProps {
-    character: Character,
-}
+    let on_close = props.on_close.clone();
+    let on_save = use_callback(|_, (job_state, level_state, gear_score_state, on_save, character_id)| on_save.emit(Fighter::new(*character_id, FighterJob::from((**job_state).clone().unwrap().to_string()), (*level_state).to_string(), (*gear_score_state).to_string())), (job_state.clone(), level_state.clone(), gear_score_state.clone(), props.on_save.clone(), props.character_id));
+    let update_job = use_callback(|value: Option<AttrValue>, state| state.set(value), job_state.clone());
+    let update_level = use_callback(|value: AttrValue, state| state.set(value), level_state.clone());
+    let update_gear_score = use_callback(|value: AttrValue, state| state.set(value), gear_score_state.clone());
 
-#[derive(PartialEq, Clone)]
-enum CharacterActions {
-    Edit,
-    Delete,
-    Closed,
-}
+    let jobs = props.jobs.iter().map(|job| (Some(AttrValue::from(job.get_job_name())), AttrValue::from(job.to_string()))).collect::<Vec<(Option<AttrValue>, AttrValue)>>();
 
-#[derive(PartialEq, Clone)]
-enum ErrorState {
-    Edit,
-    Delete,
-    None,
+    html!(
+        <>
+            <CosmoModal title={props.title.clone()} is_form={true} on_form_submit={on_save} buttons={html!(
+                <>
+                    <CosmoButton on_click={on_close} label="Abbrechen" />
+                    <CosmoButton label={props.save_label.clone()} is_submit={true} />
+                </>
+            )}>
+                if props.has_error {
+                    <CosmoMessage message_type={CosmoMessageType::Negative} message={props.error_message.clone()} />
+                }
+                <CosmoInputGroup>
+                    <CosmoDropdown readonly={props.is_edit} label="Job" on_select={update_job} value={(*job_state).clone()} required={true} items={jobs} />
+                    <CosmoTextBox label="Level (optional)" on_input={update_level} value={(*level_state).clone()} />
+                    <CosmoTextBox label="Gear Score (optional)" on_input={update_gear_score} value={(*gear_score_state).clone()} />
+                </CosmoInputGroup>
+            </CosmoModal>
+        </>
+    )
 }
 
 #[function_component(CharacterDetails)]
@@ -231,18 +340,6 @@ fn character_details(props: &CharacterDetailsProps) -> Html {
     };
     let on_error_close = use_callback(|_, state| state.set(ErrorState::None), error_state.clone());
 
-    let header_style = use_style!(r#"
-display: flex;
-gap: 16px;
-align-items: center;
-
-img {
-    height: 36px;
-    width: 36px;
-    object-fit: scale-down;
-}
-    "#);
-
     html!(
         <>
             <CosmoToolbar>
@@ -263,7 +360,7 @@ img {
                 CharacterActions::Delete => {
                     let character = props.character.clone();
                     html!(
-                        <CosmoConfirm on_confirm={on_modal_delete} on_decline={on_modal_close} confirm_label="Character löschen" decline_label="Character behalten" title="Character löschen" message={format!("Soll der Character {} wirklich gelöscht werden?", character.name.to_string())} />
+                        <CosmoConfirm on_confirm={on_modal_delete} on_decline={on_modal_close} confirm_label="Character löschen" decline_label="Character behalten" title="Character löschen" message={format!("Soll der Character {} wirklich gelöscht werden?", character.name)} />
                     )
                 }
                 CharacterActions::Closed => html!(),
@@ -280,9 +377,153 @@ fn crafter_details(props: &CrafterDetailsProps) -> Html {
     log::debug!("Render crafter details");
     let crafter_query_state = use_query_value::<CrafterForCharacter>(Rc::new(props.character.id));
 
+    let action_state = use_state_eq(|| CrafterActions::Closed);
+
     let initial_loaded_state = use_state_eq(|| false);
+    let open_create_crafter_modal_state = use_state_eq(|| false);
+    let error_state = use_state_eq(|| false);
+
+    let error_message_state = use_state_eq(|| AttrValue::from(""));
 
     let crafter_state = use_state_eq(|| vec![] as Vec<Crafter>);
+
+    let jobs_state = use_state_eq(|| CrafterJob::iter().collect::<Vec<CrafterJob>>());
+
+    let on_modal_create_close = use_callback(|_, state| state.set(false), open_create_crafter_modal_state.clone());
+    let on_modal_create_save = {
+        let error_state = error_state.clone();
+        let open_create_crafter_modal_state = open_create_crafter_modal_state.clone();
+
+        let error_message_state = error_message_state.clone();
+
+        let crafter_query_state = crafter_query_state.clone();
+
+        let character_id = props.character.id;
+
+        Callback::from(move |crafter: Crafter| {
+            log::debug!("Modal was confirmed lets execute the request");
+            let error_state = error_state.clone();
+            let open_create_crafter_modal_state = open_create_crafter_modal_state.clone();
+
+            let error_message_state = error_message_state.clone();
+
+            let crafter_query_state = crafter_query_state.clone();
+
+            yew::platform::spawn_local(async move {
+                error_state.set(match create_crafter(character_id, crafter).await {
+                    Ok(_) => {
+                        open_create_crafter_modal_state.clone().set(false);
+                        let _ = crafter_query_state.refresh().await;
+                        true
+                    }
+                    Err(err) => {
+                        error_message_state.set(if err.code == CONFLICT {
+                            "Ein Crafter mit diesem Job existiert bereits"
+                        } else {
+                            "Der Crafter konnte nicht hinzugefügt werden, bitte wende dich an Azami"
+                        }.into());
+                        true
+                    }
+                });
+            });
+        })
+    };
+    let on_modal_update_save = {
+        let crafter_query_state = crafter_query_state.clone();
+
+        let on_modal_close = on_modal_create_close.clone();
+
+        let error_state = error_state.clone();
+
+        let error_message_state = error_message_state.clone();
+
+        let action_state = action_state.clone();
+
+        let character_id = props.character.id;
+
+        Callback::from(move |crafter: Crafter| {
+            log::debug!("Modal was confirmed lets execute the request");
+            let on_modal_close = on_modal_close.clone();
+
+            let error_state = error_state.clone();
+
+            let error_message_state = error_message_state.clone();
+
+            let action_state = action_state.clone();
+
+            let crafter_query_state = crafter_query_state.clone();
+
+            let id = crafter.id;
+
+            yew::platform::spawn_local(async move {
+                error_state.set(match update_crafter(character_id, id, crafter).await {
+                    Ok(_) => {
+                        let _ = crafter_query_state.refresh().await;
+                        on_modal_close.emit(());
+                        action_state.set(CrafterActions::Closed);
+                        false
+                    }
+                    Err(err) => {
+                        match err.code {
+                            CONFLICT => {
+                                error_message_state.set("Ein Crafter mit diesem Job existiert bereits".into());
+                            }
+                            NOT_FOUND => {
+                                error_message_state.set("Der Crafter konnte nicht gefunden werden".into());
+                            }
+                            _ => {
+                                error_message_state.set("Der Crafter konnte nicht gespeichert werden, bitte wende dich an Azami".into());
+                            }
+                        };
+                        true
+                    }
+                });
+            })
+        })
+    };
+    let on_modal_delete = {
+        let crafter_query_state = crafter_query_state.clone();
+
+        let error_message_state = error_message_state.clone();
+
+        let error_state = error_state.clone();
+
+        let character_id = props.character.id;
+
+        Callback::from(move |id: i32| {
+            let crafter_query_state = crafter_query_state.clone();
+
+            let error_message_state = error_message_state.clone();
+
+            let error_state = error_state.clone();
+
+            yew::platform::spawn_local(async move {
+                error_state.set(match delete_crafter(character_id, id).await {
+                    Ok(_) => {
+                        let _ = crafter_query_state.refresh().await;
+                        false
+                    }
+                    Err(err) => {
+                        match err.code {
+                            NOT_FOUND => {
+                                error_message_state.set("Der Crafter konnte nicht gefunden werden".into());
+                                true
+                            }
+                            _ => {
+                                error_message_state.set("Der Crafter konnte nicht gelöscht werden, bitte wende dich an Azami".into());
+                                true
+                            }
+                        }
+                    }
+                })
+            })
+        })
+    };
+    let on_modal_action_close = use_callback(|_, state| state.set(CrafterActions::Closed), action_state.clone());
+    let on_error_close = use_callback(|_, state| state.set(false), error_state.clone());
+    let on_create_open = use_callback(|_, state| state.set(true), open_create_crafter_modal_state.clone());
+    let on_edit_open = use_callback(|crafter, action_state| action_state.set(CrafterActions::Edit(crafter)), action_state.clone());
+    let on_delete_open = use_callback(|crafter, action_state| action_state.set(CrafterActions::Delete(crafter)), action_state.clone());
 
     match crafter_query_state.result() {
         None => {
@@ -296,6 +537,12 @@ fn crafter_details(props: &CrafterDetailsProps) -> Html {
         Some(Ok(res)) => {
             log::debug!("Loaded crafter");
             initial_loaded_state.set(true);
+            let mut all_jobs = CrafterJob::iter().collect::<Vec<CrafterJob>>();
+            for crafter in res.crafter.clone() {
+                let _ = all_jobs.iter().position(|job| job.eq(&crafter.job)).map(|idx| all_jobs.swap_remove(idx));
+            }
+            all_jobs.sort();
+            jobs_state.set(all_jobs);
             crafter_state.set(res.crafter.clone());
         }
         Some(Err(err)) => {
@@ -311,23 +558,47 @@ fn crafter_details(props: &CrafterDetailsProps) -> Html {
             <CosmoHeader level={CosmoHeaderLevel::H3} header={format!("{}s Crafter", props.character.name.clone())} />
             <CosmoToolbar>
                 <CosmoToolbarGroup>
-                    <CosmoButton label="Crafter hinzufügen" />
+                    <CosmoButton label="Crafter hinzufügen" on_click={on_create_open} />
                 </CosmoToolbarGroup>
             </CosmoToolbar>
-            <CosmoTable headers={vec![AttrValue::from("Job"), AttrValue::from("Level"), AttrValue::from("Aktionen")]}>
-                {for (*crafter_state).clone().into_iter().map(|crafter|
+            <CosmoTable headers={vec![AttrValue::from(""), AttrValue::from("Job"), AttrValue::from("Level"), AttrValue::from("Aktionen")]}>
+                {for (*crafter_state).clone().into_iter().map(|crafter| {
+                    let edit_crafter = crafter.clone();
+                    let delete_crafter = crafter.clone();
+
+                    let on_edit_open = on_edit_open.clone();
+                    let on_delete_open = on_delete_open.clone();
+
                     CosmoTableRow::from_table_cells(vec![
+                        CosmoTableCell::from_html(html!(<img src={format!("/static/crafter_jobs/{}", crafter.job.get_file_name())} />), None),
                         CosmoTableCell::from_html(html!({crafter.job.to_string()}), None),
                         CosmoTableCell::from_html(html!({crafter.level.clone().unwrap_or("".into())}), None),
                         CosmoTableCell::from_html(html!(
                             <>
-                                <CosmoButton label="Bearbeiten" />
-                                <CosmoButton label="Löschen" />
+                                <CosmoButton label="Bearbeiten" on_click={move |_| on_edit_open.emit(edit_crafter.clone())} />
+                                <CosmoButton label="Löschen" on_click={move |_| on_delete_open.emit(delete_crafter.clone())} />
                             </>
                         ), None),
                     ], Some(crafter.id.into()))
-                )}
+                })}
             </CosmoTable>
+            {match (*action_state).clone() {
+                CrafterActions::Edit(crafter) => html!(
+                    <ModifyCrafterModal character_id={props.character.id} is_edit={true} jobs={(*jobs_state).clone()} title={format!("Crafter {} bearbeiten", crafter.job.to_string())} save_label="Crafter speichern" on_save={on_modal_update_save} on_close={on_modal_action_close} crafter={crafter} error_message={(*error_message_state).clone()} has_error={*error_state} />
+                ),
+                CrafterActions::Delete(crafter) => html!(
+                    <>
+                        <CosmoConfirm on_confirm={move |_| on_modal_delete.emit(crafter.id)} on_decline={on_modal_action_close} confirm_label="Crafter löschen" decline_label="Crafter behalten" title="Crafter löschen" message={format!("Soll der Crafter {} auf Level {} wirklich gelöscht werden?", crafter.job.to_string(), crafter.level.unwrap_or_default())} />
+                        if *error_state {
+                            <CosmoAlert alert_type={CosmoAlertType::Negative} close_label="Schließen" title="Ein Fehler ist aufgetreten" message={(*error_message_state).clone()} on_close={on_error_close} />
+                        }
+                    </>
+                ),
+                CrafterActions::Closed => html!(),
+            }}
+            if *open_create_crafter_modal_state {
+                <ModifyCrafterModal character_id={props.character.id} jobs={(*jobs_state).clone()} is_edit={false} error_message={(*error_message_state).clone()} has_error={*error_state} on_close={on_modal_create_close} title="Crafter hinzufügen" save_label="Crafter hinzufügen" on_save={on_modal_create_save} />
+            }
         </>
     )
 }
@@ -337,9 +608,153 @@ fn fighter_details(props: &FighterDetailsProps) -> Html {
     log::debug!("Render fighter details");
     let fighter_query_state = use_query_value::<FighterForCharacter>(Rc::new(props.character.id));
 
+    let action_state = use_state_eq(|| FighterActions::Closed);
+
     let initial_loaded_state = use_state_eq(|| false);
+    let open_create_fighter_modal_state = use_state_eq(|| false);
+    let error_state = use_state_eq(|| false);
+
+    let error_message_state = use_state_eq(|| AttrValue::from(""));
 
     let fighter_state = use_state_eq(|| vec![] as Vec<Fighter>);
+
+    let jobs_state = use_state_eq(|| FighterJob::iter().collect::<Vec<FighterJob>>());
+
+    let on_modal_create_close = use_callback(|_, state| state.set(false), open_create_fighter_modal_state.clone());
+    let on_modal_create_save = {
+        let error_state = error_state.clone();
+        let open_create_fighter_modal_state = open_create_fighter_modal_state.clone();
+
+        let error_message_state = error_message_state.clone();
+
+        let fighter_query_state = fighter_query_state.clone();
+
+        let character_id = props.character.id;
+
+        Callback::from(move |fighter: Fighter| {
+            log::debug!("Modal was confirmed lets execute the request");
+            let error_state = error_state.clone();
+            let open_create_fighter_modal_state = open_create_fighter_modal_state.clone();
+
+            let error_message_state = error_message_state.clone();
+
+            let fighter_query_state = fighter_query_state.clone();
+
+            yew::platform::spawn_local(async move {
+                error_state.set(match create_fighter(character_id, fighter).await {
+                    Ok(_) => {
+                        open_create_fighter_modal_state.clone().set(false);
+                        let _ = fighter_query_state.refresh().await;
+                        true
+                    }
+                    Err(err) => {
+                        error_message_state.set(if err.code == CONFLICT {
+                            "Ein Kämpfer mit diesem Job existiert bereits"
+                        } else {
+                            "Der Kämpfer konnte nicht hinzugefügt werden, bitte wende dich an Azami"
+                        }.into());
+                        true
+                    }
+                });
+            });
+        })
+    };
+    let on_modal_update_save = {
+        let fighter_query_state = fighter_query_state.clone();
+
+        let on_modal_close = on_modal_create_close.clone();
+
+        let error_state = error_state.clone();
+
+        let error_message_state = error_message_state.clone();
+
+        let action_state = action_state.clone();
+
+        let character_id = props.character.id;
+
+        Callback::from(move |fighter: Fighter| {
+            log::debug!("Modal was confirmed lets execute the request");
+            let on_modal_close = on_modal_close.clone();
+
+            let error_state = error_state.clone();
+
+            let error_message_state = error_message_state.clone();
+
+            let action_state = action_state.clone();
+
+            let fighter_query_state = fighter_query_state.clone();
+
+            let id = fighter.id;
+
+            yew::platform::spawn_local(async move {
+                error_state.set(match update_fighter(character_id, id, fighter).await {
+                    Ok(_) => {
+                        let _ = fighter_query_state.refresh().await;
+                        on_modal_close.emit(());
+                        action_state.set(FighterActions::Closed);
+                        false
+                    }
+                    Err(err) => {
+                        match err.code {
+                            CONFLICT => {
+                                error_message_state.set("Ein Kämpfer mit diesem Job existiert bereits".into());
+                            }
+                            NOT_FOUND => {
+                                error_message_state.set("Der Kämpfer konnte nicht gefunden werden".into());
+                            }
+                            _ => {
+                                error_message_state.set("Der Kämpfer konnte nicht gespeichert werden, bitte wende dich an Azami".into());
+                            }
+                        };
+                        true
+                    }
+                });
+            })
+        })
+    };
+    let on_modal_delete = {
+        let fighter_query_state = fighter_query_state.clone();
+
+        let error_message_state = error_message_state.clone();
+
+        let error_state = error_state.clone();
+
+        let character_id = props.character.id;
+
+        Callback::from(move |id: i32| {
+            let fighter_query_state = fighter_query_state.clone();
+
+            let error_message_state = error_message_state.clone();
+
+            let error_state = error_state.clone();
+
+            yew::platform::spawn_local(async move {
+                error_state.set(match delete_fighter(character_id, id).await {
+                    Ok(_) => {
+                        let _ = fighter_query_state.refresh().await;
+                        false
+                    }
+                    Err(err) => {
+                        match err.code {
+                            NOT_FOUND => {
+                                error_message_state.set("Der Kämpfer konnte nicht gefunden werden".into());
+                                true
+                            }
+                            _ => {
+                                error_message_state.set("Der Kämpfer konnte nicht gelöscht werden, bitte wende dich an Azami".into());
+                                true
+                            }
+                        }
+                    }
+                })
+            })
+        })
+    };
+    let on_modal_action_close = use_callback(|_, state| state.set(FighterActions::Closed), action_state.clone());
+    let on_error_close = use_callback(|_, state| state.set(false), error_state.clone());
+    let on_create_open = use_callback(|_, state| state.set(true), open_create_fighter_modal_state.clone());
+    let on_edit_open = use_callback(|fighter, action_state| action_state.set(FighterActions::Edit(fighter)), action_state.clone());
+    let on_delete_open = use_callback(|fighter, action_state| action_state.set(FighterActions::Delete(fighter)), action_state.clone());
 
     match fighter_query_state.result() {
         None => {
@@ -353,12 +768,18 @@ fn fighter_details(props: &FighterDetailsProps) -> Html {
         Some(Ok(res)) => {
             log::debug!("Loaded fighter");
             initial_loaded_state.set(true);
+            let mut all_jobs = FighterJob::iter().collect::<Vec<FighterJob>>();
+            for fighter in res.fighter.clone() {
+                let _ = all_jobs.iter().position(|job| job.eq(&fighter.job)).map(|idx| all_jobs.swap_remove(idx));
+            }
+            all_jobs.sort();
+            jobs_state.set(all_jobs);
             fighter_state.set(res.fighter.clone());
         }
         Some(Err(err)) => {
             log::warn!("Failed to load {err}");
             return html!(
-                <CosmoMessage header="Fehler beim Laden" message="Die Fighter konnten nicht geladen werden, bitte wende dich an Azami" message_type={CosmoMessageType::Negative} />
+                <CosmoMessage header="Fehler beim Laden" message="Die Kämpfer konnten nicht geladen werden, bitte wende dich an Azami" message_type={CosmoMessageType::Negative} />
             );
         }
     }
@@ -368,24 +789,48 @@ fn fighter_details(props: &FighterDetailsProps) -> Html {
             <CosmoHeader level={CosmoHeaderLevel::H3} header={format!("{}s Kämpfer", props.character.name.clone())} />
             <CosmoToolbar>
                 <CosmoToolbarGroup>
-                    <CosmoButton label="Crafter hinzufügen" />
+                    <CosmoButton label="Kämpfer hinzufügen" on_click={on_create_open} />
                 </CosmoToolbarGroup>
             </CosmoToolbar>
-            <CosmoTable headers={vec![AttrValue::from("Job"), AttrValue::from("Level"), AttrValue::from("Gear Score"), AttrValue::from("Aktionen")]}>
-                {for (*fighter_state).clone().into_iter().map(|fighter|
+            <CosmoTable headers={vec![AttrValue::from(""), AttrValue::from("Job"), AttrValue::from("Level"), AttrValue::from("Gear Score"), AttrValue::from("Aktionen")]}>
+                {for (*fighter_state).clone().into_iter().map(|fighter| {
+                    let edit_fighter = fighter.clone();
+                    let delete_fighter = fighter.clone();
+
+                    let on_edit_open = on_edit_open.clone();
+                    let on_delete_open = on_delete_open.clone();
+
                     CosmoTableRow::from_table_cells(vec![
+                        CosmoTableCell::from_html(html!(<img src={format!("/static/fighter_jobs/{}", fighter.job.get_file_name())} />), None),
                         CosmoTableCell::from_html(html!({fighter.job.to_string()}), None),
                         CosmoTableCell::from_html(html!({fighter.level.clone().unwrap_or("".into())}), None),
                         CosmoTableCell::from_html(html!({fighter.gear_score.clone().unwrap_or("".into())}), None),
                         CosmoTableCell::from_html(html!(
                             <>
-                                <CosmoButton label="Bearbeiten" />
-                                <CosmoButton label="Löschen" />
+                                <CosmoButton label="Bearbeiten" on_click={move |_| on_edit_open.emit(edit_fighter.clone())} />
+                                <CosmoButton label="Löschen" on_click={move |_| on_delete_open.emit(delete_fighter.clone())} />
                             </>
                         ), None),
                     ], Some(fighter.id.into()))
-                )}
+                })}
             </CosmoTable>
+            {match (*action_state).clone() {
+                FighterActions::Edit(fighter) => html!(
+                    <ModifyFighterModal character_id={props.character.id} is_edit={true} jobs={(*jobs_state).clone()} title={format!("Kämpfer {} bearbeiten", fighter.job.to_string())} save_label="Kämpfer speichern" on_save={on_modal_update_save} on_close={on_modal_action_close} fighter={fighter} error_message={(*error_message_state).clone()} has_error={*error_state} />
+                ),
+                FighterActions::Delete(fighter) => html!(
+                    <>
+                        <CosmoConfirm on_confirm={move |_| on_modal_delete.emit(fighter.id)} on_decline={on_modal_action_close} confirm_label="Kämpfer löschen" decline_label="Kämpfer behalten" title="Kämpfer löschen" message={format!("Soll der Kämpfer {} auf Level {} wirklich gelöscht werden?", fighter.job.to_string(), fighter.level.unwrap_or_default())} />
+                        if *error_state {
+                            <CosmoAlert alert_type={CosmoAlertType::Negative} close_label="Schließen" title="Ein Fehler ist aufgetreten" message={(*error_message_state).clone()} on_close={on_error_close} />
+                        }
+                    </>
+                ),
+                FighterActions::Closed => html!(),
+            }}
+            if *open_create_fighter_modal_state {
+                <ModifyFighterModal character_id={props.character.id} jobs={(*jobs_state).clone()} is_edit={false} error_message={(*error_message_state).clone()} has_error={*error_state} on_close={on_modal_create_close} title="Kämpfer hinzufügen" save_label="Kämpfer hinzufügen" on_save={on_modal_create_save} />
+            }
         </>
     )
 }
@@ -430,7 +875,7 @@ pub fn character_page() -> Html {
             let character_query_state = character_query_state.clone();
 
             yew::platform::spawn_local(async move {
-                error_state.set(match api::create_character(character).await {
+                error_state.set(match create_character(character).await {
                     Ok(character) => {
                         let id = character.id;
                         open_create_character_modal_state.clone().set(false);

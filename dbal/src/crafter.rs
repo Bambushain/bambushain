@@ -7,7 +7,7 @@ use pandaparty_entities::{character, crafter};
 use pandaparty_entities::prelude::*;
 use crate::prelude::character_exists;
 
-pub async fn get_crafters(character_id: i32, user_id: i32, db: &DatabaseConnection) -> PandaPartyResult<Vec<Crafter>> {
+pub async fn get_crafters(user_id: i32, character_id: i32, db: &DatabaseConnection) -> PandaPartyResult<Vec<Crafter>> {
     crafter::Entity::find()
         .filter(crafter::Column::CharacterId.eq(character_id))
         .filter(character::Column::UserId.eq(user_id))
