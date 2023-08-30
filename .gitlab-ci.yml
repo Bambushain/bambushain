@@ -9,7 +9,8 @@ lint:
   script:
     - cargo clippy -p pandaparty
     - cargo clippy -p pandaparty-frontend
-    - cargo check
+    - cargo check -p pandaparty
+    - cargo check -p pandaparty-frontend
 
 test-build:
   image: harbor.ulbricht.casa/imanuel/trunk-docker-base-image:latest

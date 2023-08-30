@@ -410,7 +410,7 @@ fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
         let secret_state = secret_state.clone();
         let error_message_state = error_message_state.clone();
 
-        let profile_query = profile_query.clone();
+        let profile_query = profile_query;
         let profile_atom = profile_atom.clone();
 
         Callback::from(move |_: ()| {

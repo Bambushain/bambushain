@@ -40,7 +40,7 @@ pub async fn get_custom_field(custom_field_id: i32, user_id: i32, db: &DatabaseC
 
     let mut result = None;
     if let Some((field, options)) = fields.into_iter().next() {
-        let mut f = field.clone();
+        let mut f = field;
         f.options = options;
         result = Some(f);
     }
