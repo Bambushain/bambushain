@@ -1,8 +1,6 @@
 #[cfg(feature = "backend")]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
-#[cfg(not(feature = "backend"))]
-use strum_macros::EnumIter;
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 #[cfg_attr(feature = "backend", derive(DeriveEntityModel), sea_orm(table_name = "custom_character_field_option", schema_name = "final_fantasy"))]

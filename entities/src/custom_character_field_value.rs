@@ -1,8 +1,6 @@
 #[cfg(feature = "backend")]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
-#[cfg(not(feature = "backend"))]
-use strum_macros::EnumIter;
 
 use crate::prelude::{CustomCharacterField, CustomCharacterFieldOption};
 

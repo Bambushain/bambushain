@@ -5,10 +5,11 @@ use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
 
 pub use authentication::*;
+pub use character::*;
 pub use crafter::*;
+pub use custom_field::*;
 pub use event::*;
 pub use fighter::*;
-pub use character::*;
 pub use my::*;
 use pandaparty_entities::prelude::*;
 pub use user::*;
@@ -22,6 +23,7 @@ pub mod crafter;
 pub mod fighter;
 pub mod event;
 pub mod character;
+pub mod custom_field;
 
 macro_rules! error_code {
     ($name:tt,$code:literal) => {

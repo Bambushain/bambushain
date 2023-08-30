@@ -1,12 +1,14 @@
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::rc::Rc;
 
 use bounce::helmet::Helmet;
 use bounce::query::use_query_value;
 use strum::IntoEnumIterator;
 use yew::prelude::*;
+use yew::virtual_dom::{Key, VChild};
 use yew_cosmo::prelude::*;
+use yew_hooks::use_mount;
 
-use pandaparty_entities::character::CharacterRace;
 use pandaparty_entities::prelude::*;
 
 use crate::api::*;
@@ -23,12 +25,14 @@ struct ModifyCharacterModalProps {
     character: Character,
     on_save: Callback<Character>,
     on_error_close: Callback<()>,
+    custom_fields: Vec<CustomCharacterField>,
 }
 
 #[derive(Properties, PartialEq, Clone)]
 struct CharacterDetailsProps {
     character: Character,
     on_delete: Callback<()>,
+    custom_fields: Vec<CustomCharacterField>,
 }
 
 #[derive(Properties, PartialEq, Clone)]
@@ -104,18 +108,105 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
     let race_state = use_state_eq(|| Some(AttrValue::from(props.character.race.get_race_name())));
     let world_state = use_state_eq(|| AttrValue::from(props.character.world.clone()));
     let name_state = use_state_eq(|| AttrValue::from(props.character.name.clone()));
+    let custom_fields_state = use_state_eq(|| {
+        let character_fields = props.character.custom_fields.clone();
+        let mut custom_fields = HashMap::new();
+        for character_field in character_fields {
+            custom_fields.insert(AttrValue::from(character_field.label), character_field.values.iter().map(|val| AttrValue::from(val.clone())).collect::<HashSet<AttrValue>>());
+        }
+
+        custom_fields
+    });
 
     let on_close = props.on_close.clone();
-    let on_save = use_callback(|_, (race_state, world_state, name_state, on_save)| on_save.emit(Character::new(CharacterRace::from((**race_state).clone().unwrap().to_string()), (**name_state).to_string(), (**world_state).to_string())), (race_state.clone(), world_state.clone(), name_state.clone(), props.on_save.clone()));
+    let on_save = use_callback(|_, (race_state, world_state, name_state, custom_fields_state, on_save)| {
+        let mut custom_fields = vec![];
+        for (label, values) in (**custom_fields_state).clone() {
+            custom_fields.push(CustomField {
+                label: label.to_string(),
+                values: values.iter().map(|val| val.to_string()).collect::<BTreeSet<String>>(),
+            })
+        }
+
+        let character = Character::new(CharacterRace::from((**race_state).clone().unwrap().to_string()), (**name_state).to_string(), (**world_state).to_string(), custom_fields);
+        on_save.emit(character);
+    }, (race_state.clone(), world_state.clone(), name_state.clone(), custom_fields_state.clone(), props.on_save.clone()));
 
     let update_race = use_callback(|value: Option<AttrValue>, state| state.set(value), race_state.clone());
     let update_world = use_callback(|value: AttrValue, state| state.set(value), world_state.clone());
     let update_name = use_callback(|value: AttrValue, state| state.set(value), name_state.clone());
+    let custom_field_select = use_callback(|(label, value): (AttrValue, AttrValue), state| {
+        let mut map = (**state).clone();
+        let mut set = if let Some(set) = map.get(&label) {
+            set.clone()
+        } else {
+            HashSet::new()
+        };
+        set.insert(value);
+        map.insert(label, set);
+
+        state.set(map);
+    }, custom_fields_state.clone());
+    let custom_field_deselect = use_callback(|(label, value): (AttrValue, AttrValue), state| {
+        let mut map = (**state).clone();
+        let mut set = if let Some(set) = map.get(&label) {
+            set.clone()
+        } else {
+            HashSet::new()
+        };
+        set.remove(&value);
+        map.insert(label, set);
+
+        state.set(map);
+    }, custom_fields_state.clone());
 
     let mut all_races = CharacterRace::iter().collect::<Vec<CharacterRace>>();
     all_races.sort();
 
     let races = all_races.iter().map(|race| (Some(AttrValue::from(race.get_race_name())), AttrValue::from(race.to_string()))).collect::<Vec<(Option<AttrValue>, AttrValue)>>();
+
+    let mut custom_field_inputs = vec![];
+    for field in props.custom_fields.clone() {
+        let state = (*custom_fields_state).clone();
+        let values = if let Some(values) = state.get(&AttrValue::from(field.label.clone())) {
+            values.clone()
+        } else {
+            HashSet::new()
+        };
+
+        let on_select = custom_field_select.clone();
+        let on_deselect = custom_field_deselect.clone();
+
+        let on_select_label = field.label.clone();
+        let on_deselect_label = field.label.clone();
+        let items = field.options.clone().iter().map(|option| {
+            let item = AttrValue::from(option.label.clone());
+            CosmoModernSelectItem {
+                label: item.clone(),
+                value: item.clone(),
+                selected: values.contains(&item),
+            }
+        }).collect::<Vec<CosmoModernSelectItem>>();
+        let custom_field = VChild::<CosmoModernSelect>::new(
+            CosmoModernSelectProps {
+                label: field.label.clone().into(),
+                id: None,
+                on_select: Callback::from(move |val| {
+                    on_select.emit((on_select_label.clone().into(), val));
+                }),
+                on_deselect: Some(Callback::from(move |val| {
+                    on_deselect.emit((on_deselect_label.clone().into(), val));
+                })),
+                on_filter: None,
+                required: false,
+                readonly: false,
+                width: CosmoInputWidth::Auto,
+                items,
+            },
+            Some(Key::from(field.label.clone())),
+        );
+        custom_field_inputs.push(custom_field);
+    }
 
     html!(
         <>
@@ -132,6 +223,7 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
                     <CosmoTextBox label="Name" on_input={update_name} value={(*name_state).clone()} required={true} />
                     <CosmoDropdown label="Rasse" on_select={update_race} value={(*race_state).clone()} required={true} items={races} />
                     <CosmoTextBox label="Welt" on_input={update_world} value={(*world_state).clone()} required={true} />
+                    {for custom_field_inputs}
                 </CosmoInputGroup>
             </CosmoModal>
         </>
@@ -222,15 +314,20 @@ fn character_details(props: &CharacterDetailsProps) -> Html {
     let on_modal_close = {
         let action_state = action_state.clone();
 
+        let error_state = error_state.clone();
+
         let character_query_state = character_query_state.clone();
 
         Callback::from(move |_| {
             let action_state = action_state.clone();
 
+            let error_state = error_state.clone();
+
             let character_query_state = character_query_state.clone();
 
             yew::platform::spawn_local(async move {
                 action_state.set(CharacterActions::Closed);
+                error_state.set(ErrorState::None);
 
                 let _ = character_query_state.refresh().await;
             });
@@ -352,10 +449,15 @@ fn character_details(props: &CharacterDetailsProps) -> Html {
                 <CosmoKeyValueListItem title="Name">{props.character.name.clone()}</CosmoKeyValueListItem>
                 <CosmoKeyValueListItem title="Rasse">{props.character.race.to_string()}</CosmoKeyValueListItem>
                 <CosmoKeyValueListItem title="Welt">{props.character.world.clone()}</CosmoKeyValueListItem>
+                {for props.character.custom_fields.clone().iter().map(|field| {
+                    html!(
+                        <CosmoKeyValueListItem title={field.label.clone()}>{field.values.clone().into_iter().collect::<Vec<String>>().join(", ")}</CosmoKeyValueListItem>
+                    )
+                })}
             </CosmoKeyValueList>
             {match (*action_state).clone() {
                 CharacterActions::Edit => html!(
-                    <ModifyCharacterModal on_error_close={on_error_close.clone()} title={format!("Charakter {} bearbeiten", props.character.name.clone())} save_label="Character speichern" on_save={on_modal_save} on_close={on_modal_close} character={props.character.clone()} error_message={(*error_message_state).clone()} has_error={*error_state == ErrorState::Edit} />
+                    <ModifyCharacterModal on_error_close={on_error_close.clone()} title={format!("Charakter {} bearbeiten", props.character.name.clone())} save_label="Character speichern" on_save={on_modal_save} on_close={on_modal_close} character={props.character.clone()} custom_fields={props.custom_fields.clone()} error_message={(*error_message_state).clone()} has_error={*error_state == ErrorState::Edit} />
                 ),
                 CharacterActions::Delete => {
                     let character = props.character.clone();
@@ -389,7 +491,10 @@ fn crafter_details(props: &CrafterDetailsProps) -> Html {
 
     let jobs_state = use_state_eq(|| CrafterJob::iter().collect::<Vec<CrafterJob>>());
 
-    let on_modal_create_close = use_callback(|_, state| state.set(false), open_create_crafter_modal_state.clone());
+    let on_modal_create_close = use_callback(|_, (state, error_state)| {
+        state.set(false);
+        error_state.set(false);
+    }, (open_create_crafter_modal_state.clone(), error_state.clone()));
     let on_modal_create_save = {
         let error_state = error_state.clone();
         let open_create_crafter_modal_state = open_create_crafter_modal_state.clone();
@@ -414,7 +519,7 @@ fn crafter_details(props: &CrafterDetailsProps) -> Html {
                     Ok(_) => {
                         open_create_crafter_modal_state.clone().set(false);
                         let _ = crafter_query_state.refresh().await;
-                        true
+                        false
                     }
                     Err(err) => {
                         error_message_state.set(if err.code == CONFLICT {
@@ -453,7 +558,11 @@ fn crafter_details(props: &CrafterDetailsProps) -> Html {
 
             let crafter_query_state = crafter_query_state.clone();
 
-            let id = crafter.id;
+            let id = if let CrafterActions::Edit(crafter) = (*action_state).clone() {
+                crafter.id
+            } else {
+                -1
+            };
 
             yew::platform::spawn_local(async move {
                 error_state.set(match update_crafter(character_id, id, crafter).await {
@@ -519,7 +628,10 @@ fn crafter_details(props: &CrafterDetailsProps) -> Html {
             })
         })
     };
-    let on_modal_action_close = use_callback(|_, state| state.set(CrafterActions::Closed), action_state.clone());
+    let on_modal_action_close = use_callback(|_, (state, error_state)| {
+        state.set(CrafterActions::Closed);
+        error_state.set(false);
+    }, (action_state.clone(), error_state.clone()));
     let on_error_close = use_callback(|_, state| state.set(false), error_state.clone());
     let on_create_open = use_callback(|_, state| state.set(true), open_create_crafter_modal_state.clone());
     let on_edit_open = use_callback(|crafter, action_state| action_state.set(CrafterActions::Edit(crafter)), action_state.clone());
@@ -553,14 +665,18 @@ fn crafter_details(props: &CrafterDetailsProps) -> Html {
         }
     }
 
+    let new_crafter = (*jobs_state).clone().first().map(|job| Crafter { job: *job, ..Crafter::default() });
+
     html!(
         <>
             <CosmoHeader level={CosmoHeaderLevel::H3} header={format!("{}s Crafter", props.character.name.clone())} />
-            <CosmoToolbar>
-                <CosmoToolbarGroup>
-                    <CosmoButton label="Crafter hinzufügen" on_click={on_create_open} />
-                </CosmoToolbarGroup>
-            </CosmoToolbar>
+            if new_crafter.is_some() {
+                <CosmoToolbar>
+                    <CosmoToolbarGroup>
+                        <CosmoButton label="Crafter hinzufügen" on_click={on_create_open} />
+                    </CosmoToolbarGroup>
+                </CosmoToolbar>
+            }
             <CosmoTable headers={vec![AttrValue::from(""), AttrValue::from("Job"), AttrValue::from("Level"), AttrValue::from("Aktionen")]}>
                 {for (*crafter_state).clone().into_iter().map(|crafter| {
                     let edit_crafter = crafter.clone();
@@ -597,7 +713,7 @@ fn crafter_details(props: &CrafterDetailsProps) -> Html {
                 CrafterActions::Closed => html!(),
             }}
             if *open_create_crafter_modal_state {
-                <ModifyCrafterModal character_id={props.character.id} jobs={(*jobs_state).clone()} is_edit={false} error_message={(*error_message_state).clone()} has_error={*error_state} on_close={on_modal_create_close} title="Crafter hinzufügen" save_label="Crafter hinzufügen" on_save={on_modal_create_save} />
+                <ModifyCrafterModal crafter={new_crafter.unwrap_or(Crafter::default())} character_id={props.character.id} jobs={(*jobs_state).clone()} is_edit={false} error_message={(*error_message_state).clone()} has_error={*error_state} on_close={on_modal_create_close} title="Crafter hinzufügen" save_label="Crafter hinzufügen" on_save={on_modal_create_save} />
             }
         </>
     )
@@ -620,7 +736,10 @@ fn fighter_details(props: &FighterDetailsProps) -> Html {
 
     let jobs_state = use_state_eq(|| FighterJob::iter().collect::<Vec<FighterJob>>());
 
-    let on_modal_create_close = use_callback(|_, state| state.set(false), open_create_fighter_modal_state.clone());
+    let on_modal_create_close = use_callback(|_, (state, error_state)| {
+        state.set(false);
+        error_state.set(false);
+    }, (open_create_fighter_modal_state.clone(), error_state.clone()));
     let on_modal_create_save = {
         let error_state = error_state.clone();
         let open_create_fighter_modal_state = open_create_fighter_modal_state.clone();
@@ -645,7 +764,7 @@ fn fighter_details(props: &FighterDetailsProps) -> Html {
                     Ok(_) => {
                         open_create_fighter_modal_state.clone().set(false);
                         let _ = fighter_query_state.refresh().await;
-                        true
+                        false
                     }
                     Err(err) => {
                         error_message_state.set(if err.code == CONFLICT {
@@ -684,7 +803,11 @@ fn fighter_details(props: &FighterDetailsProps) -> Html {
 
             let fighter_query_state = fighter_query_state.clone();
 
-            let id = fighter.id;
+            let id = if let FighterActions::Edit(fighter) = (*action_state).clone() {
+                fighter.id
+            } else {
+                -1
+            };
 
             yew::platform::spawn_local(async move {
                 error_state.set(match update_fighter(character_id, id, fighter).await {
@@ -750,7 +873,10 @@ fn fighter_details(props: &FighterDetailsProps) -> Html {
             })
         })
     };
-    let on_modal_action_close = use_callback(|_, state| state.set(FighterActions::Closed), action_state.clone());
+    let on_modal_action_close = use_callback(|_, (state, error_state)| {
+        state.set(FighterActions::Closed);
+        error_state.set(false);
+    }, (action_state.clone(), error_state.clone()));
     let on_error_close = use_callback(|_, state| state.set(false), error_state.clone());
     let on_create_open = use_callback(|_, state| state.set(true), open_create_fighter_modal_state.clone());
     let on_edit_open = use_callback(|fighter, action_state| action_state.set(FighterActions::Edit(fighter)), action_state.clone());
@@ -784,14 +910,18 @@ fn fighter_details(props: &FighterDetailsProps) -> Html {
         }
     }
 
+    let new_fighter = (*jobs_state).clone().first().map(|job| Fighter { job: *job, ..Fighter::default() });
+
     html!(
         <>
             <CosmoHeader level={CosmoHeaderLevel::H3} header={format!("{}s Kämpfer", props.character.name.clone())} />
-            <CosmoToolbar>
-                <CosmoToolbarGroup>
-                    <CosmoButton label="Kämpfer hinzufügen" on_click={on_create_open} />
-                </CosmoToolbarGroup>
-            </CosmoToolbar>
+            if new_fighter.is_some() {
+                <CosmoToolbar>
+                    <CosmoToolbarGroup>
+                        <CosmoButton label="Kämpfer hinzufügen" on_click={on_create_open} />
+                    </CosmoToolbarGroup>
+                </CosmoToolbar>
+            }
             <CosmoTable headers={vec![AttrValue::from(""), AttrValue::from("Job"), AttrValue::from("Level"), AttrValue::from("Gear Score"), AttrValue::from("Aktionen")]}>
                 {for (*fighter_state).clone().into_iter().map(|fighter| {
                     let edit_fighter = fighter.clone();
@@ -829,7 +959,7 @@ fn fighter_details(props: &FighterDetailsProps) -> Html {
                 FighterActions::Closed => html!(),
             }}
             if *open_create_fighter_modal_state {
-                <ModifyFighterModal character_id={props.character.id} jobs={(*jobs_state).clone()} is_edit={false} error_message={(*error_message_state).clone()} has_error={*error_state} on_close={on_modal_create_close} title="Kämpfer hinzufügen" save_label="Kämpfer hinzufügen" on_save={on_modal_create_save} />
+                <ModifyFighterModal fighter={new_fighter.unwrap_or(Fighter::default())} character_id={props.character.id} jobs={(*jobs_state).clone()} is_edit={false} error_message={(*error_message_state).clone()} has_error={*error_state} on_close={on_modal_create_close} title="Kämpfer hinzufügen" save_label="Kämpfer hinzufügen" on_save={on_modal_create_save} />
             }
         </>
     )
@@ -846,6 +976,8 @@ pub fn character_page() -> Html {
     let initial_loaded_state = use_state_eq(|| false);
 
     let character_state = use_state_eq(|| vec![] as Vec<Character>);
+
+    let custom_fields_state = use_state_eq(|| vec![] as Vec<CustomCharacterField>);
 
     let selected_character_state = use_state_eq(|| 0);
 
@@ -914,6 +1046,20 @@ pub fn character_page() -> Html {
     };
     let on_error_close = use_callback(|_, state| state.set(false), error_state.clone());
 
+    {
+        let custom_fields_state = custom_fields_state.clone();
+
+        use_mount(move || {
+            let custom_fields_state = custom_fields_state;
+
+            yew::platform::spawn_local(async move {
+                if let Ok(custom_fields) = get_custom_fields().await {
+                    custom_fields_state.set(custom_fields);
+                }
+            });
+        });
+    }
+
     match character_query_state.result() {
         None => {
             log::debug!("Still loading");
@@ -948,7 +1094,7 @@ pub fn character_page() -> Html {
                             <CosmoTitle title={character.name.clone()} />
                             <CosmoTabControl>
                                 <CosmoTabItem label="Details">
-                                    <CharacterDetails on_delete={on_delete.clone()} character={character.clone()} />
+                                    <CharacterDetails custom_fields={(*custom_fields_state).clone()} on_delete={on_delete.clone()} character={character.clone()} />
                                 </CosmoTabItem>
                                 <CosmoTabItem label="Kämpfer">
                                     <FighterDetails character={character.clone()} />
@@ -962,7 +1108,7 @@ pub fn character_page() -> Html {
                 })}
             </CosmoSideList>
             if *open_create_character_modal_state {
-                <ModifyCharacterModal on_error_close={on_error_close} error_message={(*error_message_state).clone()} has_error={*error_state} on_close={on_modal_close} title="Charakter hinzufügen" save_label="Charakter hinzufügen" on_save={on_modal_save} />
+                <ModifyCharacterModal on_error_close={on_error_close} error_message={(*error_message_state).clone()} has_error={*error_state} on_close={on_modal_close} title="Charakter hinzufügen" save_label="Charakter hinzufügen" on_save={on_modal_save} custom_fields={(*custom_fields_state).clone()} />
             }
         </>
     )

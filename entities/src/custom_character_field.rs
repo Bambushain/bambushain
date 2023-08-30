@@ -1,14 +1,13 @@
+use std::collections::BTreeSet;
 #[cfg(feature = "backend")]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
-#[cfg(not(feature = "backend"))]
-use strum_macros::EnumIter;
 
 use crate::prelude::CustomCharacterFieldOption;
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 pub struct CustomField {
-    pub values: Vec<String>,
+    pub values: BTreeSet<String>,
     pub label: String,
 }
 
@@ -21,8 +20,6 @@ pub struct Model {
     #[cfg(feature = "backend")]
     #[serde(skip)]
     pub user_id: i32,
-    // #[cfg_attr(feature = "backend", sea_orm(ignore))]
-    // pub values: Vec<CustomField>,
     #[cfg_attr(feature = "backend", sea_orm(ignore))]
     pub options: Vec<CustomCharacterFieldOption>,
 }
