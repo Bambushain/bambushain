@@ -40,21 +40,20 @@ pub async fn get_fighter(id: i32, user_id: i32, character_id: i32, db: &Database
 }
 
 pub async fn fighter_exists(id: i32, user_id: i32, character_id: i32, db: &DatabaseConnection) -> bool {
-    match fighter::Entity::find_by_id(id)
+    fighter::Entity::find_by_id(id)
         .select_only()
         .column(fighter::Column::Id)
         .filter(fighter::Column::CharacterId.eq(character_id))
         .filter(character::Column::UserId.eq(user_id))
         .inner_join(character::Entity)
         .count(db)
-        .await {
-        Ok(count) => count > 0,
-        _ => false
-    }
+        .await
+        .map(|count| count > 0)
+        .unwrap_or(false)
 }
 
 pub async fn fighter_exists_by_job(user_id: i32, character_id: i32, job: FighterJob, db: &DatabaseConnection) -> bool {
-    match fighter::Entity::find()
+    fighter::Entity::find()
         .select_only()
         .column(fighter::Column::Id)
         .filter(fighter::Column::Job.eq(job))
@@ -62,10 +61,9 @@ pub async fn fighter_exists_by_job(user_id: i32, character_id: i32, job: Fighter
         .filter(character::Column::UserId.eq(user_id))
         .inner_join(character::Entity)
         .count(db)
-        .await {
-        Ok(count) => count > 0,
-        _ => false
-    }
+        .await
+        .map(|count| count > 0)
+        .unwrap_or(false)
 }
 
 pub async fn create_fighter(user_id: i32, character_id: i32, fighter: Fighter, db: &DatabaseConnection) -> PandaPartyResult<Fighter> {

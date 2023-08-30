@@ -5,6 +5,7 @@ use sea_orm::sea_query::Expr;
 
 use pandaparty_entities::{character, crafter};
 use pandaparty_entities::prelude::*;
+
 use crate::prelude::character_exists;
 
 pub async fn get_crafters(user_id: i32, character_id: i32, db: &DatabaseConnection) -> PandaPartyResult<Vec<Crafter>> {
@@ -27,7 +28,8 @@ pub async fn get_crafter(id: i32, user_id: i32, character_id: i32, db: &Database
         .filter(character::Column::UserId.eq(user_id))
         .inner_join(character::Entity)
         .one(db)
-        .await {
+        .await
+    {
         Ok(Some(res)) => Ok(res),
         Ok(None) => Err(pandaparty_not_found_error!("crafter", "The crafter was not found")),
         Err(err) => {
@@ -38,21 +40,20 @@ pub async fn get_crafter(id: i32, user_id: i32, character_id: i32, db: &Database
 }
 
 pub async fn crafter_exists(id: i32, user_id: i32, character_id: i32, db: &DatabaseConnection) -> bool {
-    match crafter::Entity::find_by_id(id)
+    crafter::Entity::find_by_id(id)
         .select_only()
         .column(crafter::Column::Id)
         .filter(crafter::Column::CharacterId.eq(character_id))
         .filter(character::Column::UserId.eq(user_id))
         .inner_join(character::Entity)
         .count(db)
-        .await {
-        Ok(count) => count > 0,
-        _ => false
-    }
+        .await
+        .map(|count| count > 0)
+        .unwrap_or(false)
 }
 
 pub async fn crafter_exists_by_job(user_id: i32, character_id: i32, job: CrafterJob, db: &DatabaseConnection) -> bool {
-    match crafter::Entity::find()
+    crafter::Entity::find()
         .select_only()
         .column(crafter::Column::Id)
         .filter(crafter::Column::Job.eq(job))
@@ -60,10 +61,9 @@ pub async fn crafter_exists_by_job(user_id: i32, character_id: i32, job: Crafter
         .filter(character::Column::UserId.eq(user_id))
         .inner_join(character::Entity)
         .count(db)
-        .await {
-        Ok(count) => count > 0,
-        _ => false
-    }
+        .await
+        .map(|count| count > 0)
+        .unwrap_or(false)
 }
 
 pub async fn create_crafter(user_id: i32, character_id: i32, crafter: Crafter, db: &DatabaseConnection) -> PandaPartyResult<Crafter> {

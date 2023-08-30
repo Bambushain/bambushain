@@ -8,13 +8,10 @@ use pandaparty_entities::{pandaparty_db_error, pandaparty_validation_error};
 use pandaparty_entities::prelude::*;
 
 pub async fn validate_auth_and_create_token(username: String, password: String, two_factor_code: String, db: &DatabaseConnection) -> PandaPartyResult<LoginResult> {
-    let user = match crate::user::get_user_by_email_or_username(username.clone(), db).await {
-        Ok(user) => user,
-        Err(err) => {
-            log::error!("Failed to load user {}: {err}", username);
-            return Err(pandaparty_not_found_error!("user", "User not found"));
-        }
-    };
+    let user = crate::user::get_user_by_email_or_username(username.clone(), db).await.map_err(|err| {
+        log::error!("Failed to load user {}: {err}", username);
+        pandaparty_not_found_error!("user", "User not found")
+    })?;
 
     let password_valid = user.validate_password(password);
     if !password_valid {
@@ -34,32 +31,28 @@ pub async fn validate_auth_and_create_token(username: String, password: String, 
     let mut active = user.clone().into_active_model();
     active.two_factor_code = Set(None);
 
-    let token = pandaparty_entities::token::ActiveModel {
+    pandaparty_entities::token::ActiveModel {
         id: NotSet,
         token: Set(uuid::Uuid::new_v4().to_string()),
         user_id: Set(user.id),
-    };
-
-    match token.insert(db).await {
-        Ok(token) => Ok(LoginResult {
+    }
+        .insert(db)
+        .await
+        .map(|token| LoginResult {
             token: token.token,
             user: user.to_web_user(),
-        }),
-        Err(err) => {
+        })
+        .map_err(|err| {
             log::error!("{err}");
-            Err(pandaparty_db_error!("token", "Failed to create token"))
-        }
-    }
+            pandaparty_db_error!("token", "Failed to create token")
+        })
 }
 
 pub async fn validate_auth_and_set_two_factor_code(username: String, password: String, db: &DatabaseConnection) -> PandaPartyResult<TwoFactorResult> {
-    let user = match crate::user::get_user_by_email_or_username(username.clone(), db).await {
-        Ok(user) => user,
-        Err(err) => {
-            log::error!("Failed to load user {}: {err}", username);
-            return Err(pandaparty_not_found_error!("user", "User not found"));
-        }
-    };
+    let user = crate::user::get_user_by_email_or_username(username.clone(), db).await.map_err(|err| {
+        log::error!("Failed to load user {}: {err}", username);
+        pandaparty_not_found_error!("user", "User not found")
+    })?;
 
     let password_valid = user.validate_password(password);
     if !password_valid {
@@ -80,19 +73,16 @@ pub async fn validate_auth_and_set_two_factor_code(username: String, password: S
         .collect::<Vec<String>>()
         .join("");
 
-    if pandaparty_entities::user::Entity::update_many()
+    pandaparty_entities::user::Entity::update_many()
         .col_expr(pandaparty_entities::user::Column::TwoFactorCode, Expr::value(two_factor_code.clone()))
         .filter(pandaparty_entities::user::Column::Id.eq(user.id))
         .exec(db)
         .await
-        .is_err() {
-        return Err(pandaparty_validation_error!("token", "Failed to set two factor code"));
-    }
-
-    Ok(TwoFactorResult {
-        user: user.to_web_user(),
-        two_factor_code: Some(two_factor_code),
-    })
+        .map_err(|_| pandaparty_validation_error!("token", "Failed to set two factor code"))
+        .map(|_| TwoFactorResult {
+            user: user.clone().to_web_user(),
+            two_factor_code: Some(two_factor_code),
+        })
 }
 
 pub async fn delete_token(token: String, db: &DatabaseConnection) -> PandaPartyErrorResult {

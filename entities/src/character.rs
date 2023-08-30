@@ -5,6 +5,7 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 #[cfg(not(feature = "backend"))]
 use strum_macros::EnumIter;
+use crate::prelude::CustomField;
 
 #[derive(Serialize, Deserialize, EnumIter, Debug, Eq, PartialEq, Clone, Default, Copy)]
 #[cfg_attr(feature = "backend", derive(DeriveActiveEnum), sea_orm(rs_type = "String", db_type = "Enum", enum_name = "final_fantasy.character_race"))]
@@ -97,6 +98,8 @@ pub struct Model {
     #[cfg(feature = "backend")]
     #[serde(skip)]
     pub user_id: i32,
+    #[cfg_attr(feature = "backend", sea_orm(ignore))]
+    pub custom_fields: Vec<CustomField>
 }
 
 #[cfg(feature = "backend")]
@@ -104,6 +107,8 @@ pub struct Model {
 pub enum Relation {
     #[sea_orm(belongs_to = "super::user::Entity", from = "Column::UserId", to = "super::user::Column::Id", on_update = "Cascade", on_delete = "Cascade")]
     User,
+    #[sea_orm(has_many = "super::custom_character_field_value::Entity")]
+    CustomFieldValue,
 }
 
 #[cfg(feature = "backend")]
@@ -114,10 +119,17 @@ impl Related<super::user::Entity> for Entity {
 }
 
 #[cfg(feature = "backend")]
+impl Related<super::custom_character_field_value::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::CustomFieldValue.def()
+    }
+}
+
+#[cfg(feature = "backend")]
 impl ActiveModelBehavior for ActiveModel {}
 
 impl Model {
-    pub fn new(race: CharacterRace, name: String, world: String) -> Self {
+    pub fn new(race: CharacterRace, name: String, world: String, custom_fields: Vec<CustomField>) -> Self {
         Self {
             id: i32::default(),
             race,
@@ -125,6 +137,7 @@ impl Model {
             world,
             #[cfg(feature = "backend")]
             user_id: i32::default(),
+            custom_fields,
         }
     }
 }

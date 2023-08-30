@@ -25,7 +25,7 @@ pub async fn get_user_by_email_or_username(username: String, db: &DatabaseConnec
             Condition::any()
                 .add(user::Column::Email.eq(username.clone()))
                 .add(user::Column::DisplayName.eq(username))
-            )
+        )
         .one(db)
         .await {
         Ok(Some(res)) => Ok(res),
@@ -49,20 +49,23 @@ pub async fn get_users(db: &DatabaseConnection) -> PandaPartyResult<Vec<User>> {
 }
 
 pub async fn user_exists(id: i32, db: &DatabaseConnection) -> bool {
-    match user::Entity::find_by_id(id)
+    user::Entity::find_by_id(id)
         .select_only()
         .column(user::Column::Id)
         .count(db)
-        .await {
-        Ok(count) => count > 0,
-        _ => false
-    }
+        .await
+        .map(|count| count > 0)
+        .unwrap_or(false)
 }
 
 pub async fn create_user(user: User, db: &DatabaseConnection) -> PandaPartyResult<User> {
     let mut model = user.into_active_model();
     model.id = NotSet;
-    let _ = model.set_password(model.clone().password.as_ref());
+    model.set_password(model.clone().password.as_ref())
+        .map_err(|err| {
+            log::error!("{err}");
+            pandaparty_db_error!("user", "Failed to hash password user")
+        })?;
 
     model.insert(db)
         .await
@@ -97,14 +100,10 @@ pub async fn change_mod_status(id: i32, is_mod: bool, db: &DatabaseConnection) -
 }
 
 pub async fn change_password(id: i32, password: String, db: &DatabaseConnection) -> PandaPartyErrorResult {
-    let hashed_password = match bcrypt::hash(password, 12) {
-        Ok(pw) => pw,
-        Err(err) => {
-            log::error!("{err}");
-
-            return Err(pandaparty_unknown_error!("user", "Failed to hash the password"));
-        }
-    };
+    let hashed_password = bcrypt::hash(password, 12).map_err(|err| {
+        log::error!("{err}");
+        pandaparty_unknown_error!("user", "Failed to hash the password")
+    })?;
 
     user::Entity::update_many()
         .col_expr(user::Column::Password, Expr::value(hashed_password))
@@ -134,15 +133,12 @@ pub async fn update_me(id: i32, email: String, display_name: String, discord_nam
 }
 
 pub async fn change_my_password(id: i32, old_password: String, new_password: String, db: &DatabaseConnection) -> Result<(), PasswordError> {
-    let hashed_password = match bcrypt::hash(new_password, 12) {
-        Ok(pw) => pw,
-        Err(_) => return Err(PasswordError::UnknownError)
-    };
+    let hashed_password = bcrypt::hash(new_password, 12).map_err(|err| {
+        log::error!("{err}");
+        PasswordError::UnknownError
+    })?;
 
-    let user = match get_user(id, db).await {
-        Ok(user) => user,
-        Err(_) => return Err(PasswordError::UserNotFound)
-    };
+    let user = get_user(id, db).await.map_err(|_| PasswordError::UserNotFound)?;
     let is_valid = user.validate_password(old_password.clone());
 
     if !is_valid {
@@ -187,8 +183,7 @@ pub async fn enable_totp(id: i32, secret: Vec<u8>, db: &DatabaseConnection) -> P
 }
 
 pub async fn disable_totp(id: i32, db: &DatabaseConnection) -> PandaPartyErrorResult {
-    let user = get_user(id, db).await;
-    match user {
+    match get_user(id, db).await {
         Ok(user) => {
             let mut model = user.into_active_model();
             model.totp_validated = Set(Some(false));
@@ -202,8 +197,7 @@ pub async fn disable_totp(id: i32, db: &DatabaseConnection) -> PandaPartyErrorRe
 }
 
 pub async fn validate_totp(id: i32, code: String, db: &DatabaseConnection) -> PandaPartyResult<bool> {
-    let user = get_user(id, db).await?;
-    let valid = user.check_totp(code);
+    let valid = get_user(id, db).await?.check_totp(code);
 
     user::Entity::update_many()
         .col_expr(user::Column::TotpValidated, Expr::value(Some(valid)))

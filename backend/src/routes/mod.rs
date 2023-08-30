@@ -4,3 +4,4 @@ pub mod crafter;
 pub mod fighter;
 pub mod event;
 pub mod character;
+pub mod custom_field;

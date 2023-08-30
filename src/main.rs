@@ -14,6 +14,7 @@ use pandaparty_backend::middleware::check_mod::CheckMod;
 use pandaparty_backend::routes::authentication::{login, logout};
 use pandaparty_backend::routes::character::{create_character, delete_character, get_character, get_characters, update_character};
 use pandaparty_backend::routes::crafter::{create_crafter, delete_crafter, get_crafter, get_crafters, update_crafter};
+use pandaparty_backend::routes::custom_field::{create_custom_field, create_custom_field_option, delete_custom_field, delete_custom_field_option, get_custom_field, get_custom_field_options, get_custom_fields, update_custom_field, update_custom_field_option};
 use pandaparty_backend::routes::event::{create_event, delete_event, get_events, update_event};
 use pandaparty_backend::routes::fighter::{create_fighter, delete_fighter, get_fighter, get_fighters, update_fighter};
 use pandaparty_backend::routes::user::{add_mod_user, change_my_password, change_password, create_user, delete_user, enable_totp, get_profile, get_user, get_users, remove_mod_user, update_profile, update_user_profile, validate_totp};
@@ -117,6 +118,17 @@ async fn main() -> std::io::Result<()> {
             .route("/api/my/password", web::put().to(change_my_password).wrap(AuthenticateUser))
             .route("/api/my/totp", web::post().to(enable_totp).wrap(AuthenticateUser))
             .route("/api/my/totp/validate", web::put().to(validate_totp).wrap(AuthenticateUser))
+
+            .route("/api/final-fantasy/character/custom-field", web::get().to(get_custom_fields).wrap(AuthenticateUser))
+            .route("/api/final-fantasy/character/custom-field", web::post().to(create_custom_field).wrap(AuthenticateUser))
+            .route("/api/final-fantasy/character/custom-field/{id}", web::get().to(get_custom_field).wrap(AuthenticateUser))
+            .route("/api/final-fantasy/character/custom-field/{id}", web::put().to(update_custom_field).wrap(AuthenticateUser))
+            .route("/api/final-fantasy/character/custom-field/{id}", web::delete().to(delete_custom_field).wrap(AuthenticateUser))
+
+            .route("/api/final-fantasy/character/custom-field/{id}/option", web::get().to(get_custom_field_options).wrap(AuthenticateUser))
+            .route("/api/final-fantasy/character/custom-field/{id}/option", web::post().to(create_custom_field_option).wrap(AuthenticateUser))
+            .route("/api/final-fantasy/character/custom-field/{field_id}/option/{id}", web::put().to(update_custom_field_option).wrap(AuthenticateUser))
+            .route("/api/final-fantasy/character/custom-field/{field_id}/option/{id}", web::delete().to(delete_custom_field_option).wrap(AuthenticateUser))
 
             .route("/api/final-fantasy/character", web::get().to(get_characters).wrap(AuthenticateUser))
             .route("/api/final-fantasy/character", web::post().to(create_character).wrap(AuthenticateUser))
