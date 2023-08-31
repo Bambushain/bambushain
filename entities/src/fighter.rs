@@ -106,13 +106,13 @@ impl FighterJob {
 
 impl PartialOrd for FighterJob {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.to_string().partial_cmp(&other.to_string())
+        self.get_job_name().partial_cmp(&other.get_job_name())
     }
 }
 
 impl Ord for FighterJob {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.to_string().cmp(&other.to_string())
+        self.get_job_name().cmp(&other.get_job_name())
     }
 }
 
@@ -171,7 +171,7 @@ impl From<String> for FighterJob {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Default)]
 #[cfg_attr(feature = "backend", derive(DeriveEntityModel), sea_orm(table_name = "fighter", schema_name = "final_fantasy"))]
 pub struct Model {
     #[cfg_attr(feature = "backend", sea_orm(primary_key))]
@@ -180,6 +180,18 @@ pub struct Model {
     pub level: Option<String>,
     pub gear_score: Option<String>,
     pub character_id: i32,
+}
+
+impl PartialOrd for Model {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.job.partial_cmp(&other.job)
+    }
+}
+
+impl Ord for Model {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.job.cmp(&other.job)
+    }
 }
 
 #[cfg(feature = "backend")]

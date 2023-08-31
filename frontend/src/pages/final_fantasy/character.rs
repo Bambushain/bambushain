@@ -200,7 +200,7 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
                 on_filter: None,
                 required: false,
                 readonly: false,
-                width: CosmoInputWidth::Auto,
+                width: CosmoInputWidth::Full,
                 items,
             },
             Some(Key::from(field.label.clone())),
@@ -238,7 +238,11 @@ fn modify_crafter_modal(props: &ModifyCrafterModalProps) -> Html {
     let update_job = use_callback(|value: Option<AttrValue>, state| state.set(value), job_state.clone());
     let update_level = use_callback(|value: AttrValue, state| state.set(value), level_state.clone());
 
-    let jobs = props.jobs.iter().map(|job| (Some(AttrValue::from(job.get_job_name())), AttrValue::from(job.to_string()))).collect::<Vec<(Option<AttrValue>, AttrValue)>>();
+    let jobs = if props.is_edit {
+        vec![(Some(AttrValue::from(props.crafter.job.get_job_name())), AttrValue::from(props.crafter.job.to_string()))]
+    } else {
+        props.jobs.iter().map(|job| (Some(AttrValue::from(job.get_job_name())), AttrValue::from(job.to_string()))).collect::<Vec<(Option<AttrValue>, AttrValue)>>()
+    };
 
     html!(
         <>
@@ -272,7 +276,11 @@ fn modify_fighter_modal(props: &ModifyFighterModalProps) -> Html {
     let update_level = use_callback(|value: AttrValue, state| state.set(value), level_state.clone());
     let update_gear_score = use_callback(|value: AttrValue, state| state.set(value), gear_score_state.clone());
 
-    let jobs = props.jobs.iter().map(|job| (Some(AttrValue::from(job.get_job_name())), AttrValue::from(job.to_string()))).collect::<Vec<(Option<AttrValue>, AttrValue)>>();
+    let jobs = if props.is_edit {
+        vec![(Some(AttrValue::from(props.fighter.job.get_job_name())), AttrValue::from(props.fighter.job.to_string()))]
+    } else {
+        props.jobs.iter().map(|job| (Some(AttrValue::from(job.get_job_name())), AttrValue::from(job.to_string()))).collect::<Vec<(Option<AttrValue>, AttrValue)>>()
+    };
 
     html!(
         <>
@@ -653,7 +661,9 @@ fn crafter_details(props: &CrafterDetailsProps) -> Html {
             }
             all_jobs.sort();
             jobs_state.set(all_jobs);
-            crafter_state.set(res.crafter.clone());
+            let mut crafter = res.crafter.clone();
+            crafter.sort();
+            crafter_state.set(crafter);
         }
         Some(Err(err)) => {
             log::warn!("Failed to load {err}");
@@ -898,7 +908,9 @@ fn fighter_details(props: &FighterDetailsProps) -> Html {
             }
             all_jobs.sort();
             jobs_state.set(all_jobs);
-            fighter_state.set(res.fighter.clone());
+            let mut fighter = res.fighter.clone();
+            fighter.sort();
+            fighter_state.set(fighter);
         }
         Some(Err(err)) => {
             log::warn!("Failed to load {err}");
