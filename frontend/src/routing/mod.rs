@@ -29,6 +29,8 @@ impl Display for AppRoute {
 pub enum FinalFantasyRoute {
     #[at("/final-fantasy/character")]
     Characters,
+    #[at("/final-fantasy/settings")]
+    Settings,
 }
 
 #[derive(Clone, Routable, PartialEq)]

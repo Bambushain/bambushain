@@ -19,7 +19,7 @@ pub async fn get_custom_fields(user_id: i32, db: &DatabaseConnection) -> PandaPa
 
     Ok(fields.iter().map(|(field, options)| {
         CustomCharacterField {
-            options:options.clone(),
+            options: options.clone(),
             label: field.label.clone(),
             id: field.id,
             user_id: field.user_id,
@@ -74,13 +74,15 @@ pub async fn create_custom_field(user_id: i32, custom_field: CustomField, db: &D
         })
         .collect::<Vec<custom_character_field_option::ActiveModel>>();
 
-    custom_character_field_option::Entity::insert_many(models)
-        .exec(db)
-        .await
-        .map_err(|err| {
-            log::error!("{err}");
-            pandaparty_db_error!("character", "Failed to create custom field option")
-        })?;
+    if !models.is_empty() {
+        custom_character_field_option::Entity::insert_many(models)
+            .exec(db)
+            .await
+            .map_err(|err| {
+                log::error!("{err}");
+                pandaparty_db_error!("character", "Failed to create custom field option")
+            })?;
+    }
 
     Ok(result)
 }
@@ -165,7 +167,7 @@ pub async fn delete_custom_field_option(id: i32, custom_field_id: i32, db: &Data
         .map(|_| ())
 }
 
-pub async fn custom_field_exists(id: i32, user_id: i32, db: &DatabaseConnection) -> bool {
+pub async fn custom_field_exists(user_id: i32, id: i32, db: &DatabaseConnection) -> bool {
     custom_character_field::Entity::find_by_id(id)
         .filter(custom_character_field::Column::UserId.eq(user_id))
         .select_only()

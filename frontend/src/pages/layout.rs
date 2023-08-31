@@ -11,6 +11,7 @@ use pandaparty_entities::user::UpdateProfile;
 
 use crate::{api, storage};
 use crate::pages::final_fantasy::character::CharacterPage;
+use crate::pages::final_fantasy::settings::SettingsPage;
 use crate::pages::login::LoginPage;
 use crate::pages::pandaparty::calendar::CalendarPage;
 use crate::pages::pandaparty::user::UsersPage;
@@ -50,6 +51,7 @@ fn switch_sub_menu(route: AppRoute) -> Html {
         AppRoute::FinalFantasyRoot | AppRoute::FinalFantasy => html!(
             <CosmoSubMenuBar>
                 <Switch<FinalFantasyRoute> render={render_sub_menu_entry("Meine Charaktere".into(), FinalFantasyRoute::Characters)} />
+                <Switch<FinalFantasyRoute> render={render_sub_menu_entry("Personalisierung".into(), FinalFantasyRoute::Settings)} />
             </CosmoSubMenuBar>
         ),
         _ => {
@@ -67,6 +69,14 @@ fn switch_final_fantasy(route: FinalFantasyRoute) -> Html {
                     <title>{"Meine Charaktere"}</title>
                 </Helmet>
                 <CharacterPage />
+            </>
+        ),
+        FinalFantasyRoute::Settings => html!(
+            <>
+                <Helmet>
+                    <title>{"Personalisierung"}</title>
+                </Helmet>
+                <SettingsPage />
             </>
         ),
     }

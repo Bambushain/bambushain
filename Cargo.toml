@@ -29,7 +29,7 @@ members = [
 ]
 
 [workspace.package]
-version = "1.0.0"
+version = "1.1.0"
 edition = "2021"
 
 [workspace.dependencies]
@@ -64,7 +64,7 @@ wasm-bindgen = "0.2.87"
 wasm-logger = "0.2.0"
 web-sys = "0.3.64"
 yew = { version = "0.20.0", features = ["csr", "hydration"] }
-yew-cosmo = "0.15.19"
+yew-cosmo = "0.15.20"
 yew_icons = { version = "0.7.2", features = ["lucide"] }
 yew-hooks = "0.2.0"
 yew-router = "0.17.0"

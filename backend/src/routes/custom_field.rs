@@ -68,7 +68,7 @@ pub async fn get_custom_field_options(path: web::Path<CustomFieldPath>, authenti
 }
 
 pub async fn update_custom_field_option(path: web::Path<CustomFieldOptionPath>, body: web::Json<String>, authentication: Authentication, db: DbConnection) -> HttpResponse {
-    if !pandaparty_dbal::custom_field::custom_field_exists(authentication.user.id, path.id, &db).await {
+    if !pandaparty_dbal::custom_field::custom_field_exists(authentication.user.id, path.field_id, &db).await {
         return not_found!(pandaparty_not_found_error!("custom_field", "The custom field was not found"));
     }
 
@@ -76,7 +76,7 @@ pub async fn update_custom_field_option(path: web::Path<CustomFieldOptionPath>, 
 }
 
 pub async fn delete_custom_field_option(path: web::Path<CustomFieldOptionPath>, authentication: Authentication, db: DbConnection) -> HttpResponse {
-    if !pandaparty_dbal::custom_field::custom_field_exists(authentication.user.id, path.id, &db).await {
+    if !pandaparty_dbal::custom_field::custom_field_exists(authentication.user.id, path.field_id, &db).await {
         return not_found!(pandaparty_not_found_error!("custom_field", "The custom field was not found"));
     }
 

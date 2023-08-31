@@ -12,11 +12,16 @@ lint:
     - cargo check -p pandaparty
     - cargo check -p pandaparty-frontend
 
-test-build:
+test-build-backend:
   image: harbor.ulbricht.casa/imanuel/trunk-docker-base-image:latest
   stage: build
   script:
     - cargo build --release
+
+test-build-frontend:
+  image: harbor.ulbricht.casa/imanuel/trunk-docker-base-image:latest
+  stage: build
+  script:
     - trunk build --release
 
 docker-build:

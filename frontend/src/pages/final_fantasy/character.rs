@@ -209,24 +209,22 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
     }
 
     html!(
-        <>
-            <CosmoModal title={props.title.clone()} is_form={true} on_form_submit={on_save} buttons={html!(
-                <>
-                    <CosmoButton on_click={on_close} label="Abbrechen" />
-                    <CosmoButton label={props.save_label.clone()} is_submit={true} />
-                </>
-            )}>
-                if props.has_error {
-                    <CosmoMessage message_type={CosmoMessageType::Negative} message={props.error_message.clone()} />
-                }
-                <CosmoInputGroup>
-                    <CosmoTextBox label="Name" on_input={update_name} value={(*name_state).clone()} required={true} />
-                    <CosmoDropdown label="Rasse" on_select={update_race} value={(*race_state).clone()} required={true} items={races} />
-                    <CosmoTextBox label="Welt" on_input={update_world} value={(*world_state).clone()} required={true} />
-                    {for custom_field_inputs}
-                </CosmoInputGroup>
-            </CosmoModal>
-        </>
+        <CosmoModal title={props.title.clone()} is_form={true} on_form_submit={on_save} buttons={html!(
+            <>
+                <CosmoButton on_click={on_close} label="Abbrechen" />
+                <CosmoButton label={props.save_label.clone()} is_submit={true} />
+            </>
+        )}>
+            if props.has_error {
+                <CosmoMessage message_type={CosmoMessageType::Negative} message={props.error_message.clone()} />
+            }
+            <CosmoInputGroup>
+                <CosmoTextBox label="Name" on_input={update_name} value={(*name_state).clone()} required={true} />
+                <CosmoDropdown label="Rasse" on_select={update_race} value={(*race_state).clone()} required={true} items={races} />
+                <CosmoTextBox label="Welt" on_input={update_world} value={(*world_state).clone()} required={true} />
+                {for custom_field_inputs}
+            </CosmoInputGroup>
+        </CosmoModal>
     )
 }
 
