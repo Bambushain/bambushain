@@ -1,8 +1,9 @@
+use std::cmp::Ordering;
 #[cfg(feature = "backend")]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Default)]
 #[cfg_attr(feature = "backend", derive(DeriveEntityModel), sea_orm(table_name = "custom_character_field_option", schema_name = "final_fantasy"))]
 pub struct Model {
     #[cfg_attr(feature = "backend", sea_orm(primary_key))]
@@ -10,6 +11,18 @@ pub struct Model {
     pub label: String,
     #[serde(skip)]
     pub custom_character_field_id: i32,
+}
+
+impl PartialOrd for Model {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.label.partial_cmp(&other.label)
+    }
+}
+
+impl Ord for Model {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.label.cmp(&other.label)
+    }
 }
 
 #[cfg(feature = "backend")]

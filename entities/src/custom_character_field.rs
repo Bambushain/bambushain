@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::collections::BTreeSet;
 #[cfg(feature = "backend")]
 use sea_orm::entity::prelude::*;
@@ -11,7 +12,7 @@ pub struct CustomField {
     pub label: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Default)]
 #[cfg_attr(feature = "backend", derive(DeriveEntityModel), sea_orm(table_name = "custom_character_field", schema_name = "final_fantasy"))]
 pub struct Model {
     #[cfg_attr(feature = "backend", sea_orm(primary_key))]
@@ -22,6 +23,18 @@ pub struct Model {
     pub user_id: i32,
     #[cfg_attr(feature = "backend", sea_orm(ignore))]
     pub options: Vec<CustomCharacterFieldOption>,
+}
+
+impl PartialOrd for Model {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.label.partial_cmp(&other.label)
+    }
+}
+
+impl Ord for Model {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.label.cmp(&other.label)
+    }
 }
 
 #[cfg(feature = "backend")]

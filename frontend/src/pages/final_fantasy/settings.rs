@@ -266,6 +266,9 @@ min-width: 100%;
 align-items: center;
     "#);
 
+    let mut options = props.field.options.clone();
+    options.sort();
+
     html!(
         <>
             <CosmoToolbar>
@@ -279,7 +282,7 @@ align-items: center;
             </CosmoToolbar>
             <CosmoHeader level={CosmoHeaderLevel::H3} header="Optionen" />
             <div class={list_style}>
-                {for props.field.options.iter().map(|option| {
+                {for options.iter().map(|option| {
                     let delete_option = option.clone();
                     let edit_option = option.clone();
 
@@ -436,7 +439,8 @@ fn custom_field_page() -> Html {
         Some(Ok(res)) => {
             log::debug!("Loaded custom fields");
             initial_loaded_state.set(true);
-            fields_state.set(res.fields.clone());
+            let fields = res.fields.clone();
+            fields_state.set(fields);
         }
         Some(Err(err)) => {
             log::warn!("Failed to load {err}");
