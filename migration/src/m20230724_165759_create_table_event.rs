@@ -20,30 +20,17 @@ impl MigrationTrait for Migration {
                             .auto_increment()
                             .primary_key(),
                     )
-                    .col(ColumnDef::new(Event::Title)
-                        .string()
-                        .not_null()
+                    .col(ColumnDef::new(Event::Title).string().not_null())
+                    .col(
+                        ColumnDef::new(Event::Description)
+                            .text()
+                            .not_null()
+                            .default(""),
                     )
-                    .col(ColumnDef::new(Event::Description)
-                        .text()
-                        .not_null()
-                        .default("")
-                    )
-                    .col(ColumnDef::new(Event::StartDate)
-                        .date()
-                        .not_null()
-                    )
-                    .col(ColumnDef::new(Event::EndDate)
-                        .date()
-                        .not_null()
-                    )
-                    .col(ColumnDef::new(Event::Color)
-                        .string()
-                        .not_null()
-                    )
-                    .check(Expr::col(Event::EndDate)
-                        .gte(Expr::col(Event::StartDate))
-                    )
+                    .col(ColumnDef::new(Event::StartDate).date().not_null())
+                    .col(ColumnDef::new(Event::EndDate).date().not_null())
+                    .col(ColumnDef::new(Event::Color).string().not_null())
+                    .check(Expr::col(Event::EndDate).gte(Expr::col(Event::StartDate)))
                     .to_owned(),
             )
             .await
@@ -54,7 +41,7 @@ impl MigrationTrait for Migration {
             .drop_table(
                 Table::drop()
                     .table((Schemas::PandaParty, Event::Table))
-                    .to_owned()
+                    .to_owned(),
             )
             .await
     }

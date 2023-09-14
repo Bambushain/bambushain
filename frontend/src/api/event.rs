@@ -1,13 +1,13 @@
 use std::rc::Rc;
 
 use async_trait::async_trait;
-use bounce::BounceStates;
 use bounce::query::{Query, QueryResult};
+use bounce::BounceStates;
 use date_range::DateRange;
 
 use pandaparty_entities::prelude::*;
 
-use crate::api::{ApiError, delete, get_with_query, post, put_no_content, PandapartyApiResult};
+use crate::api::{delete, get_with_query, post, put_no_content, ApiError, PandapartyApiResult};
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
 pub struct EventRange {
@@ -16,18 +16,20 @@ pub struct EventRange {
 
 impl From<Vec<Event>> for EventRange {
     fn from(value: Vec<Event>) -> Self {
-        Self {
-            events: value,
-        }
+        Self { events: value }
     }
 }
 
 async fn get_events(range: Rc<DateRange>) -> PandapartyApiResult<Vec<Event>> {
     log::debug!("Get events");
-    get_with_query("/api/pandaparty/event", vec![
-        ("start", range.since().format("%F").to_string().as_str()),
-        ("end", range.until().format("%F").to_string().as_str()),
-    ]).await
+    get_with_query(
+        "/api/pandaparty/event",
+        vec![
+            ("start", range.since().format("%F").to_string().as_str()),
+            ("end", range.until().format("%F").to_string().as_str()),
+        ],
+    )
+    .await
 }
 
 #[async_trait(? Send)]

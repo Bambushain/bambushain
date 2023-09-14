@@ -1,6 +1,6 @@
 use date_range::DateRange;
-use sea_orm::{Condition, IntoActiveModel, NotSet, QueryOrder};
 use sea_orm::prelude::*;
+use sea_orm::{Condition, IntoActiveModel, NotSet, QueryOrder};
 
 use pandaparty_entities::event;
 use pandaparty_entities::prelude::*;
@@ -12,13 +12,13 @@ pub async fn get_events(range: DateRange, db: &DatabaseConnection) -> PandaParty
                 .add(
                     Condition::all()
                         .add(event::Column::StartDate.gte(range.since()))
-                        .add(event::Column::StartDate.lte(range.until()))
+                        .add(event::Column::StartDate.lte(range.until())),
                 )
                 .add(
                     Condition::all()
                         .add(event::Column::EndDate.gte(range.since()))
-                        .add(event::Column::EndDate.lte(range.until()))
-                )
+                        .add(event::Column::EndDate.lte(range.until())),
+                ),
         )
         .order_by_asc(event::Column::Id)
         .all(db)
@@ -33,13 +33,10 @@ pub async fn create_event(event: Event, db: &DatabaseConnection) -> PandaPartyRe
     let mut model = event.into_active_model();
     model.id = NotSet;
 
-    model
-        .insert(db)
-        .await
-        .map_err(|err| {
-            log::error!("{err}");
-            pandaparty_db_error!("event", "Failed to create event")
-        })
+    model.insert(db).await.map_err(|err| {
+        log::error!("{err}");
+        pandaparty_db_error!("event", "Failed to create event")
+    })
 }
 
 pub async fn update_event(id: i32, event: Event, db: &DatabaseConnection) -> PandaPartyErrorResult {

@@ -60,7 +60,7 @@ macro_rules! pandaparty_not_found_error {
             message: $message.to_string(),
             error_type: pandaparty_entities::prelude::PandaPartyErrorCode::NotFoundError,
         }
-    }
+    };
 }
 
 #[macro_export]
@@ -71,7 +71,7 @@ macro_rules! pandaparty_exists_already_error {
             message: $message.to_string(),
             error_type: pandaparty_entities::prelude::PandaPartyErrorCode::ExistsAlreadyError,
         }
-    }
+    };
 }
 
 #[macro_export]
@@ -82,7 +82,7 @@ macro_rules! pandaparty_invalid_data_error {
             message: $message.to_string(),
             error_type: pandaparty_entities::prelude::PandaPartyErrorCode::InvalidDataError,
         }
-    }
+    };
 }
 
 #[macro_export]
@@ -93,7 +93,7 @@ macro_rules! pandaparty_db_error {
             message: $message.to_string(),
             error_type: pandaparty_entities::prelude::PandaPartyErrorCode::DbError,
         }
-    }
+    };
 }
 
 #[macro_export]
@@ -104,7 +104,7 @@ macro_rules! pandaparty_serialization_error {
             message: $message.to_string(),
             error_type: pandaparty_entities::prelude::PandaPartyErrorCode::SerializationError,
         }
-    }
+    };
 }
 
 #[macro_export]
@@ -115,7 +115,7 @@ macro_rules! pandaparty_validation_error {
             message: $message.to_string(),
             error_type: pandaparty_entities::prelude::PandaPartyErrorCode::ValidationError,
         }
-    }
+    };
 }
 
 #[macro_export]
@@ -126,7 +126,7 @@ macro_rules! pandaparty_unknown_error {
             message: $message.to_string(),
             error_type: pandaparty_entities::prelude::PandaPartyErrorCode::UnknownError,
         }
-    }
+    };
 }
 
 #[macro_export]
@@ -137,7 +137,7 @@ macro_rules! pandaparty_insufficient_rights_error {
             message: $message.to_string(),
             error_type: pandaparty_entities::prelude::PandaPartyErrorCode::InsufficientRightsError,
         }
-    }
+    };
 }
 
 #[macro_export]
@@ -148,5 +148,5 @@ macro_rules! pandaparty_unauthorized_error {
             message: $message.to_string(),
             error_type: pandaparty_entities::prelude::PandaPartyErrorCode::UnauthorizedError,
         }
-    }
+    };
 }

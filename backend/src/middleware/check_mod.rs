@@ -1,8 +1,8 @@
-use std::future::{Ready, ready};
+use std::future::{ready, Ready};
 use std::rc::Rc;
 
-use actix_web::{body, Error, HttpMessage, HttpResponse};
 use actix_web::dev;
+use actix_web::{body, Error, HttpMessage, HttpResponse};
 use futures_util::future::LocalBoxFuture;
 
 use crate::middleware::authenticate_user::AuthenticationState;
@@ -10,10 +10,11 @@ use crate::middleware::authenticate_user::AuthenticationState;
 pub struct CheckMod;
 
 impl<S: 'static, B> dev::Transform<S, dev::ServiceRequest> for CheckMod
-    where
-        S: dev::Service<dev::ServiceRequest, Response=dev::ServiceResponse<B>, Error=Error>,
-        S::Future: 'static,
-        B: 'static, {
+where
+    S: dev::Service<dev::ServiceRequest, Response = dev::ServiceResponse<B>, Error = Error>,
+    S::Future: 'static,
+    B: 'static,
+{
     type Response = dev::ServiceResponse<body::EitherBody<B>>;
     type Error = Error;
     type Transform = CheckModMiddleware<S>;
@@ -22,7 +23,7 @@ impl<S: 'static, B> dev::Transform<S, dev::ServiceRequest> for CheckMod
 
     fn new_transform(&self, service: S) -> Self::Future {
         ready(Ok(CheckModMiddleware {
-            service: Rc::new(service)
+            service: Rc::new(service),
         }))
     }
 }
@@ -32,10 +33,12 @@ pub struct CheckModMiddleware<S> {
 }
 
 impl<S, B> dev::Service<dev::ServiceRequest> for CheckModMiddleware<S>
-    where
-        S: dev::Service<dev::ServiceRequest, Response=dev::ServiceResponse<B>, Error=Error> + 'static,
-        S::Future: 'static,
-        B: 'static, {
+where
+    S: dev::Service<dev::ServiceRequest, Response = dev::ServiceResponse<B>, Error = Error>
+        + 'static,
+    S::Future: 'static,
+    B: 'static,
+{
     type Response = dev::ServiceResponse<body::EitherBody<B>>;
     type Error = Error;
     type Future = LocalBoxFuture<'static, Result<Self::Response, Self::Error>>;
@@ -46,7 +49,14 @@ impl<S, B> dev::Service<dev::ServiceRequest> for CheckModMiddleware<S>
         let svc = self.service.clone();
 
         Box::pin(async move {
-            let needs_to_be_mod = HttpResponse::Forbidden().json(pandaparty_entities::error::PandaPartyError { entity_type: "".to_string(), error_type: pandaparty_entities::error::PandaPartyErrorCode::InsufficientRightsError, message: "You need to be a mod".to_string() }).map_into_right_body();
+            let needs_to_be_mod = HttpResponse::Forbidden()
+                .json(pandaparty_entities::error::PandaPartyError {
+                    entity_type: "".to_string(),
+                    error_type:
+                        pandaparty_entities::error::PandaPartyErrorCode::InsufficientRightsError,
+                    message: "You need to be a mod".to_string(),
+                })
+                .map_into_right_body();
             let request = req.request();
 
             let is_mod = {

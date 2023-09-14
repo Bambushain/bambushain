@@ -21,21 +21,18 @@ impl MigrationTrait for Migration {
                             .auto_increment()
                             .primary_key(),
                     )
-                    .col(
-                        ColumnDef::new(Token::UserId)
-                            .integer()
-                            .not_null()
-                    )
+                    .col(ColumnDef::new(Token::UserId).integer().not_null())
                     .col(
                         ColumnDef::new(Token::Token)
                             .string()
                             .not_null()
-                            .unique_key()
+                            .unique_key(),
                     )
-                    .foreign_key(ForeignKey::create()
-                        .from((Schemas::Authentication, Token::Table), Token::UserId)
-                        .to((Schemas::Authentication, User::Table), User::Id)
-                        .on_delete(ForeignKeyAction::Cascade)
+                    .foreign_key(
+                        ForeignKey::create()
+                            .from((Schemas::Authentication, Token::Table), Token::UserId)
+                            .to((Schemas::Authentication, User::Table), User::Id)
+                            .on_delete(ForeignKeyAction::Cascade),
                     )
                     .to_owned(),
             )
@@ -47,7 +44,7 @@ impl MigrationTrait for Migration {
             .drop_table(
                 Table::drop()
                     .table((Schemas::Authentication, Token::Table))
-                    .to_owned()
+                    .to_owned(),
             )
             .await
     }

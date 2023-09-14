@@ -1,38 +1,57 @@
-use sea_orm::{ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, EntityTrait, IntoActiveModel, JoinType, NotSet, QueryFilter, QueryOrder, QuerySelect, RelationTrait};
-use sea_orm::ActiveValue::Set;
 use sea_orm::prelude::*;
 use sea_orm::sea_query::Expr;
+use sea_orm::ActiveValue::Set;
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, EntityTrait, IntoActiveModel,
+    JoinType, NotSet, QueryFilter, QueryOrder, QuerySelect, RelationTrait,
+};
 
-use pandaparty_entities::{pandaparty_db_error, pandaparty_not_found_error, pandaparty_unauthorized_error, token, user};
 use pandaparty_entities::prelude::*;
+use pandaparty_entities::{
+    pandaparty_db_error, pandaparty_not_found_error, pandaparty_unauthorized_error, token, user,
+};
 
 pub async fn get_user(id: i32, db: &DatabaseConnection) -> PandaPartyResult<User> {
-    match user::Entity::find_by_id(id)
-        .one(db)
-        .await {
+    match user::Entity::find_by_id(id).one(db).await {
         Ok(Some(res)) => Ok(res),
-        Ok(None) => Err(pandaparty_not_found_error!("user", "The user was not found")),
+        Ok(None) => Err(pandaparty_not_found_error!(
+            "user",
+            "The user was not found"
+        )),
         Err(err) => {
             log::error!("{err}");
-            Err(pandaparty_db_error!("user", "Failed to execute database query"))
+            Err(pandaparty_db_error!(
+                "user",
+                "Failed to execute database query"
+            ))
         }
     }
 }
 
-pub async fn get_user_by_email_or_username(username: String, db: &DatabaseConnection) -> PandaPartyResult<User> {
+pub async fn get_user_by_email_or_username(
+    username: String,
+    db: &DatabaseConnection,
+) -> PandaPartyResult<User> {
     match user::Entity::find()
         .filter(
             Condition::any()
                 .add(user::Column::Email.eq(username.clone()))
-                .add(user::Column::DisplayName.eq(username))
+                .add(user::Column::DisplayName.eq(username)),
         )
         .one(db)
-        .await {
+        .await
+    {
         Ok(Some(res)) => Ok(res),
-        Ok(None) => Err(pandaparty_not_found_error!("user", "The user was not found")),
+        Ok(None) => Err(pandaparty_not_found_error!(
+            "user",
+            "The user was not found"
+        )),
         Err(err) => {
             log::error!("{err}");
-            Err(pandaparty_db_error!("user", "Failed to execute database query"))
+            Err(pandaparty_db_error!(
+                "user",
+                "Failed to execute database query"
+            ))
         }
     }
 }
@@ -61,18 +80,17 @@ pub async fn user_exists(id: i32, db: &DatabaseConnection) -> bool {
 pub async fn create_user(user: User, db: &DatabaseConnection) -> PandaPartyResult<User> {
     let mut model = user.into_active_model();
     model.id = NotSet;
-    model.set_password(model.clone().password.as_ref())
+    model
+        .set_password(model.clone().password.as_ref())
         .map_err(|err| {
             log::error!("{err}");
             pandaparty_db_error!("user", "Failed to hash password user")
         })?;
 
-    model.insert(db)
-        .await
-        .map_err(|err| {
-            log::error!("{err}");
-            pandaparty_db_error!("user", "Failed to create user")
-        })
+    model.insert(db).await.map_err(|err| {
+        log::error!("{err}");
+        pandaparty_db_error!("user", "Failed to create user")
+    })
 }
 
 pub async fn delete_user(id: i32, db: &DatabaseConnection) -> PandaPartyErrorResult {
@@ -86,7 +104,11 @@ pub async fn delete_user(id: i32, db: &DatabaseConnection) -> PandaPartyErrorRes
         .map(|_| ())
 }
 
-pub async fn change_mod_status(id: i32, is_mod: bool, db: &DatabaseConnection) -> PandaPartyErrorResult {
+pub async fn change_mod_status(
+    id: i32,
+    is_mod: bool,
+    db: &DatabaseConnection,
+) -> PandaPartyErrorResult {
     user::Entity::update_many()
         .filter(user::Column::Id.eq(id))
         .col_expr(user::Column::IsMod, Expr::value(is_mod))
@@ -99,7 +121,11 @@ pub async fn change_mod_status(id: i32, is_mod: bool, db: &DatabaseConnection) -
         .map(|_| ())
 }
 
-pub async fn change_password(id: i32, password: String, db: &DatabaseConnection) -> PandaPartyErrorResult {
+pub async fn change_password(
+    id: i32,
+    password: String,
+    db: &DatabaseConnection,
+) -> PandaPartyErrorResult {
     let hashed_password = bcrypt::hash(password, 12).map_err(|err| {
         log::error!("{err}");
         pandaparty_unknown_error!("user", "Failed to hash the password")
@@ -117,7 +143,13 @@ pub async fn change_password(id: i32, password: String, db: &DatabaseConnection)
         .map(|_| ())
 }
 
-pub async fn update_me(id: i32, email: String, display_name: String, discord_name: String, db: &DatabaseConnection) -> PandaPartyErrorResult {
+pub async fn update_me(
+    id: i32,
+    email: String,
+    display_name: String,
+    discord_name: String,
+    db: &DatabaseConnection,
+) -> PandaPartyErrorResult {
     user::Entity::update_many()
         .col_expr(user::Column::Email, Expr::value(email))
         .col_expr(user::Column::DisplayName, Expr::value(display_name))
@@ -132,13 +164,20 @@ pub async fn update_me(id: i32, email: String, display_name: String, discord_nam
         .map(|_| ())
 }
 
-pub async fn change_my_password(id: i32, old_password: String, new_password: String, db: &DatabaseConnection) -> Result<(), PasswordError> {
+pub async fn change_my_password(
+    id: i32,
+    old_password: String,
+    new_password: String,
+    db: &DatabaseConnection,
+) -> Result<(), PasswordError> {
     let hashed_password = bcrypt::hash(new_password, 12).map_err(|err| {
         log::error!("{err}");
         PasswordError::UnknownError
     })?;
 
-    let user = get_user(id, db).await.map_err(|_| PasswordError::UserNotFound)?;
+    let user = get_user(id, db)
+        .await
+        .map_err(|_| PasswordError::UserNotFound)?;
     let is_valid = user.validate_password(old_password.clone());
 
     if !is_valid {
@@ -162,17 +201,28 @@ pub async fn get_user_by_token(token: String, db: &DatabaseConnection) -> PandaP
         .filter(token::Column::Token.eq(token))
         .join(JoinType::InnerJoin, user::Relation::Token.def())
         .one(db)
-        .await {
+        .await
+    {
         Ok(Some(user)) => Ok(user),
-        Ok(None) => Err(pandaparty_unauthorized_error!("authentication", "Token or user not found")),
+        Ok(None) => Err(pandaparty_unauthorized_error!(
+            "authentication",
+            "Token or user not found"
+        )),
         Err(err) => {
             log::error!("Failed to get user by token {err}");
-            Err(pandaparty_unauthorized_error!("authentication", "Token or user not found"))
+            Err(pandaparty_unauthorized_error!(
+                "authentication",
+                "Token or user not found"
+            ))
         }
     }
 }
 
-pub async fn enable_totp(id: i32, secret: Vec<u8>, db: &DatabaseConnection) -> PandaPartyErrorResult {
+pub async fn enable_totp(
+    id: i32,
+    secret: Vec<u8>,
+    db: &DatabaseConnection,
+) -> PandaPartyErrorResult {
     user::Entity::update_many()
         .col_expr(user::Column::TotpSecret, Expr::value(Some(secret)))
         .filter(user::Column::Id.eq(id))
@@ -188,15 +238,21 @@ pub async fn disable_totp(id: i32, db: &DatabaseConnection) -> PandaPartyErrorRe
             let mut model = user.into_active_model();
             model.totp_validated = Set(Some(false));
             model.totp_secret = Set(None);
-            model.update(db).await
-                .map_err(|_| pandaparty_db_error!("user","Failed to disable totp"))
+            model
+                .update(db)
+                .await
+                .map_err(|_| pandaparty_db_error!("user", "Failed to disable totp"))
                 .map(|_| ())
         }
-        Err(err) => Err(err)
+        Err(err) => Err(err),
     }
 }
 
-pub async fn validate_totp(id: i32, code: String, db: &DatabaseConnection) -> PandaPartyResult<bool> {
+pub async fn validate_totp(
+    id: i32,
+    code: String,
+    db: &DatabaseConnection,
+) -> PandaPartyResult<bool> {
     let valid = get_user(id, db).await?.check_totp(code);
 
     user::Entity::update_many()

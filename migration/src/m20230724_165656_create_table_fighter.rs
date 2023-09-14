@@ -1,5 +1,5 @@
-use sea_orm_migration::prelude::*;
 use sea_orm_migration::prelude::extension::postgres::Type;
+use sea_orm_migration::prelude::*;
 use sea_orm_migration::sea_orm::{EnumIter, Iterable};
 
 use crate::m20220101_000001_create_schemas::Schemas;
@@ -14,14 +14,9 @@ impl MigrationTrait for Migration {
         manager
             .create_type(
                 Type::create()
-                    .as_enum(
-                        (Schemas::FinalFantasy, Alias::new("fighter_job"))
-                    )
-                    .values(
-                        FighterJob::iter()
-                            .collect::<Vec<FighterJob>>()
-                    )
-                    .to_owned()
+                    .as_enum((Schemas::FinalFantasy, Alias::new("fighter_job")))
+                    .values(FighterJob::iter().collect::<Vec<FighterJob>>())
+                    .to_owned(),
             )
             .await?;
         manager
@@ -39,32 +34,25 @@ impl MigrationTrait for Migration {
                     .col(
                         ColumnDef::new(Fighter::Job)
                             .custom(Alias::new("final_fantasy.fighter_job"))
-                            .not_null()
+                            .not_null(),
                     )
-                    .col(
-                        ColumnDef::new(Fighter::Level)
-                            .string()
-                    )
-                    .col(
-                        ColumnDef::new(Fighter::GearScore)
-                            .string()
-                    )
-                    .col(
-                        ColumnDef::new(Fighter::CharacterId)
-                            .integer()
-                            .not_null()
-                    )
+                    .col(ColumnDef::new(Fighter::Level).string())
+                    .col(ColumnDef::new(Fighter::GearScore).string())
+                    .col(ColumnDef::new(Fighter::CharacterId).integer().not_null())
                     .foreign_key(
                         ForeignKey::create()
-                            .from((Schemas::FinalFantasy, Fighter::Table), Fighter::CharacterId)
+                            .from(
+                                (Schemas::FinalFantasy, Fighter::Table),
+                                Fighter::CharacterId,
+                            )
                             .to((Schemas::FinalFantasy, Character::Table), Character::Id)
-                            .on_delete(ForeignKeyAction::Cascade)
+                            .on_delete(ForeignKeyAction::Cascade),
                     )
                     .index(
                         Index::create()
                             .col(Fighter::Job)
                             .col(Fighter::CharacterId)
-                            .unique()
+                            .unique(),
                     )
                     .to_owned(),
             )
@@ -78,14 +66,14 @@ impl MigrationTrait for Migration {
             .drop_table(
                 Table::drop()
                     .table((Schemas::FinalFantasy, Fighter::Table))
-                    .to_owned()
+                    .to_owned(),
             )
             .await?;
         manager
             .drop_type(
                 Type::drop()
                     .name((Schemas::FinalFantasy, Alias::new("fighter_job")))
-                    .to_owned()
+                    .to_owned(),
             )
             .await?;
 

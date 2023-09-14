@@ -23,7 +23,7 @@ impl MigrationTrait for Migration {
                     )
                     .col(
                         ColumnDef::new(CustomCharacterField::Label)
-                        .string()
+                            .string()
                             .not_null(),
                     )
                     .col(
@@ -33,7 +33,10 @@ impl MigrationTrait for Migration {
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .from((Schemas::FinalFantasy, CustomCharacterField::Table), CustomCharacterField::UserId)
+                            .from(
+                                (Schemas::FinalFantasy, CustomCharacterField::Table),
+                                CustomCharacterField::UserId,
+                            )
                             .to((Schemas::Authentication, User::Table), User::Id)
                             .on_delete(ForeignKeyAction::Cascade),
                     )

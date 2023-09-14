@@ -19,7 +19,6 @@ impl Login {
     }
 }
 
-
 #[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 pub struct RequestTwoFactor {
     pub email: String,

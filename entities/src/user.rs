@@ -1,13 +1,17 @@
 use std::fmt::{Display, Formatter};
 
 #[cfg(feature = "backend")]
-use sea_orm::ActiveValue::Set;
-#[cfg(feature = "backend")]
 use sea_orm::entity::prelude::*;
+#[cfg(feature = "backend")]
+use sea_orm::ActiveValue::Set;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
-#[cfg_attr(feature = "backend", derive(DeriveEntityModel), sea_orm(table_name = "user", schema_name = "authentication"))]
+#[cfg_attr(
+    feature = "backend",
+    derive(DeriveEntityModel),
+    sea_orm(table_name = "user", schema_name = "authentication")
+)]
 pub struct Model {
     #[cfg_attr(feature = "backend", sea_orm(primary_key))]
     pub id: i32,
@@ -58,13 +62,19 @@ impl ActiveModel {
                 self.password = Set(hashed_password);
                 Ok(())
             }
-            Err(err) => Err(err)
+            Err(err) => Err(err),
         }
     }
 }
 
 impl Model {
-    pub fn new(email: String, password: String, display_name: String, discord_name: String, is_mod: bool) -> Self {
+    pub fn new(
+        email: String,
+        password: String,
+        display_name: String,
+        discord_name: String,
+        is_mod: bool,
+    ) -> Self {
         Self {
             id: i32::default(),
             email,
@@ -86,22 +96,19 @@ impl Model {
 
     #[cfg(feature = "backend")]
     pub fn check_totp(&self, code: String) -> bool {
-        match totp_rs
-        ::TOTP
-        ::from_rfc6238(
-            totp_rs
-            ::Rfc6238
-            ::new(6,
-                  self.totp_secret.clone().unwrap(),
-                  Some("Pandaparty".to_string()),
-                  self.display_name.clone())
-                .expect("Should be valid")) {
-            Ok(totp) => {
-                totp.check_current(code.as_str()).unwrap_or_else(|err| {
-                    log::error!("Failed to validate totp {err}");
-                    false
-                })
-            }
+        match totp_rs::TOTP::from_rfc6238(
+            totp_rs::Rfc6238::new(
+                6,
+                self.totp_secret.clone().unwrap(),
+                Some("Pandaparty".to_string()),
+                self.display_name.clone(),
+            )
+            .expect("Should be valid"),
+        ) {
+            Ok(totp) => totp.check_current(code.as_str()).unwrap_or_else(|err| {
+                log::error!("Failed to validate totp {err}");
+                false
+            }),
             Err(err) => {
                 log::error!("Failed to create totp url {err}");
                 false
@@ -134,7 +141,11 @@ pub struct WebUser {
 
 impl Display for WebUser {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str(serde_json::to_string(self).unwrap_or(self.email.clone()).as_str())
+        f.write_str(
+            serde_json::to_string(self)
+                .unwrap_or(self.email.clone())
+                .as_str(),
+        )
     }
 }
 

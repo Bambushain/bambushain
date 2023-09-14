@@ -1,14 +1,22 @@
 use std::cmp::Ordering;
 
+use crate::prelude::CustomField;
 #[cfg(feature = "backend")]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 #[cfg(not(feature = "backend"))]
 use strum_macros::EnumIter;
-use crate::prelude::CustomField;
 
 #[derive(Serialize, Deserialize, EnumIter, Debug, Eq, PartialEq, Clone, Default, Copy)]
-#[cfg_attr(feature = "backend", derive(DeriveActiveEnum), sea_orm(rs_type = "String", db_type = "Enum", enum_name = "final_fantasy.character_race"))]
+#[cfg_attr(
+    feature = "backend",
+    derive(DeriveActiveEnum),
+    sea_orm(
+        rs_type = "String",
+        db_type = "Enum",
+        enum_name = "final_fantasy.character_race"
+    )
+)]
 pub enum CharacterRace {
     #[default]
     #[cfg_attr(feature = "backend", sea_orm(string_value = "hyur"))]
@@ -40,7 +48,8 @@ impl CharacterRace {
             Self::AuRa => "au_ra",
             Self::Hrothgar => "hrothgar",
             Self::Viera => "viera",
-        }.to_string()
+        }
+        .to_string()
     }
 }
 
@@ -67,7 +76,8 @@ impl ToString for CharacterRace {
             Self::AuRa => "Au Ra",
             Self::Hrothgar => "Hrothgar",
             Self::Viera => "Viera",
-        }.to_string()
+        }
+        .to_string()
     }
 }
 
@@ -82,13 +92,17 @@ impl From<String> for CharacterRace {
             "au_ra" => Self::AuRa,
             "hrothgar" => Self::Hrothgar,
             "viera" => Self::Viera,
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 }
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
-#[cfg_attr(feature = "backend", derive(DeriveEntityModel), sea_orm(table_name = "character", schema_name = "final_fantasy"))]
+#[cfg_attr(
+    feature = "backend",
+    derive(DeriveEntityModel),
+    sea_orm(table_name = "character", schema_name = "final_fantasy")
+)]
 pub struct Model {
     #[cfg_attr(feature = "backend", sea_orm(primary_key))]
     pub id: i32,
@@ -99,13 +113,19 @@ pub struct Model {
     #[serde(skip)]
     pub user_id: i32,
     #[cfg_attr(feature = "backend", sea_orm(ignore))]
-    pub custom_fields: Vec<CustomField>
+    pub custom_fields: Vec<CustomField>,
 }
 
 #[cfg(feature = "backend")]
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(belongs_to = "super::user::Entity", from = "Column::UserId", to = "super::user::Column::Id", on_update = "Cascade", on_delete = "Cascade")]
+    #[sea_orm(
+        belongs_to = "super::user::Entity",
+        from = "Column::UserId",
+        to = "super::user::Column::Id",
+        on_update = "Cascade",
+        on_delete = "Cascade"
+    )]
     User,
     #[sea_orm(has_many = "super::custom_character_field_value::Entity")]
     CustomFieldValue,
@@ -129,7 +149,12 @@ impl Related<super::custom_character_field_value::Entity> for Entity {
 impl ActiveModelBehavior for ActiveModel {}
 
 impl Model {
-    pub fn new(race: CharacterRace, name: String, world: String, custom_fields: Vec<CustomField>) -> Self {
+    pub fn new(
+        race: CharacterRace,
+        name: String,
+        world: String,
+        custom_fields: Vec<CustomField>,
+    ) -> Self {
         Self {
             id: i32::default(),
             race,

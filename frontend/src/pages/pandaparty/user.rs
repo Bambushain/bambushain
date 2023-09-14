@@ -52,11 +52,15 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
     let display_name_state = use_state_eq(|| AttrValue::from(""));
     let discord_name_state = use_state_eq(|| AttrValue::from(""));
     let error_message_state = use_state_eq(|| AttrValue::from(""));
-    let password_state = use_state_eq(|| AttrValue::from(rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(8)
-        .map(char::from)
-        .collect::<String>()));
+    let password_state = use_state_eq(|| {
+        AttrValue::from(
+            rand::thread_rng()
+                .sample_iter(&Alphanumeric)
+                .take(8)
+                .map(char::from)
+                .collect::<String>(),
+        )
+    });
 
     let is_mod_state = use_state_eq(|| false);
     let error_state = use_state_eq(|| false);
@@ -65,8 +69,10 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
     let created_user_state = use_state_eq(WebUser::default);
 
     let update_email = use_callback(|value, state| state.set(value), email_state.clone());
-    let update_display_name = use_callback(|value, state| state.set(value), display_name_state.clone());
-    let update_discord_name = use_callback(|value, state| state.set(value), discord_name_state.clone());
+    let update_display_name =
+        use_callback(|value, state| state.set(value), display_name_state.clone());
+    let update_discord_name =
+        use_callback(|value, state| state.set(value), discord_name_state.clone());
 
     let update_is_mod = use_callback(|checked, state| state.set(checked), is_mod_state.clone());
 
@@ -119,23 +125,29 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
                         log::warn!("Failed to create user {}", err);
                         error_state.set(true);
                         if err.code == CONFLICT {
-                            error_message_state.set("Ein Benutzer mit dieser Email existiert bereits".into());
+                            error_message_state
+                                .set("Ein Benutzer mit dieser Email existiert bereits".into());
                         } else {
                             error_message_state.set("Der Benutzer konnte nicht hinzugefügt werden, bitte wende dich an Azami".into());
                         }
-                        password_state.set(rand::thread_rng()
-                            .sample_iter(&Alphanumeric)
-                            .take(8)
-                            .map(char::from)
-                            .collect::<String>()
-                            .into());
+                        password_state.set(
+                            rand::thread_rng()
+                                .sample_iter(&Alphanumeric)
+                                .take(8)
+                                .map(char::from)
+                                .collect::<String>()
+                                .into(),
+                        );
                     }
                 }
             });
         })
     };
 
-    let on_saved = use_callback(|_, (created_user_state, on_saved)| on_saved.emit((**created_user_state).clone()), (created_user_state, props.on_saved.clone()));
+    let on_saved = use_callback(
+        |_, (created_user_state, on_saved)| on_saved.emit((**created_user_state).clone()),
+        (created_user_state, props.on_saved.clone()),
+    );
 
     html!(
         <CosmoModal title="Benutzer hinzufügen" is_form={true} on_form_submit={form_submit} buttons={
@@ -180,9 +192,11 @@ fn update_profile_dialog(props: &UpdateProfileDialogProps) -> Html {
     let email_state = use_state_eq(|| props.email.clone());
     let discord_name_state = use_state_eq(|| props.discord_name.clone());
 
-    let update_display_name = use_callback(|value, state| state.set(value), display_name_state.clone());
+    let update_display_name =
+        use_callback(|value, state| state.set(value), display_name_state.clone());
     let update_email = use_callback(|value, state| state.set(value), email_state.clone());
-    let update_discord_name = use_callback(|value, state| state.set(value), discord_name_state.clone());
+    let update_discord_name =
+        use_callback(|value, state| state.set(value), discord_name_state.clone());
 
     let on_save = {
         let error_state = error_state.clone();
@@ -274,17 +288,38 @@ fn user_details(props: &UserDetailsProps) -> Html {
 
     let users_query_state = use_query_value::<Users>(().into());
 
-    let make_mod_click = use_callback(|_, state| state.set(UserConfirmActions::MakeMod), confirm_state.clone());
-    let remove_mod_click = use_callback(|_, state| state.set(UserConfirmActions::RemoveMod), confirm_state.clone());
-    let delete_click = use_callback(|_, state| state.set(UserConfirmActions::Delete), confirm_state.clone());
-    let update_profile_click = use_callback(|_, profile_edit_state| profile_edit_state.set(true), profile_edit_state.clone());
-    let change_password_click = use_callback(|_, state| state.set(UserConfirmActions::ChangePassword(
-        rand::thread_rng()
-            .sample_iter(&Alphanumeric)
-            .take(8)
-            .map(char::from)
-            .collect::<String>())), confirm_state.clone());
-    let on_decline = use_callback(|_, state| state.set(UserConfirmActions::Closed), confirm_state.clone());
+    let make_mod_click = use_callback(
+        |_, state| state.set(UserConfirmActions::MakeMod),
+        confirm_state.clone(),
+    );
+    let remove_mod_click = use_callback(
+        |_, state| state.set(UserConfirmActions::RemoveMod),
+        confirm_state.clone(),
+    );
+    let delete_click = use_callback(
+        |_, state| state.set(UserConfirmActions::Delete),
+        confirm_state.clone(),
+    );
+    let update_profile_click = use_callback(
+        |_, profile_edit_state| profile_edit_state.set(true),
+        profile_edit_state.clone(),
+    );
+    let change_password_click = use_callback(
+        |_, state| {
+            state.set(UserConfirmActions::ChangePassword(
+                rand::thread_rng()
+                    .sample_iter(&Alphanumeric)
+                    .take(8)
+                    .map(char::from)
+                    .collect::<String>(),
+            ))
+        },
+        confirm_state.clone(),
+    );
+    let on_decline = use_callback(
+        |_, state| state.set(UserConfirmActions::Closed),
+        confirm_state.clone(),
+    );
     let on_confirm = {
         let confirm_state = confirm_state.clone();
         let error_state = error_state.clone();
@@ -310,73 +345,76 @@ fn user_details(props: &UserDetailsProps) -> Html {
 
             yew::platform::spawn_local(async move {
                 let code = match confirm_state.deref() {
-                    UserConfirmActions::MakeMod => {
-                        match make_user_mod(id).await {
-                            Ok(_) => {
-                                confirm_state.set(UserConfirmActions::Closed);
-                                NO_CONTENT
-                            }
-                            Err(err) => match err.code {
-                                FORBIDDEN => {
-                                    error_message_state.set(AttrValue::from("Du musst Mod sein um Mods zu ernennen"));
-                                    FORBIDDEN
-                                }
-                                CONFLICT => {
-                                    error_message_state.set(AttrValue::from("Du kannst dich nicht selbst zum Mod machen"));
-                                    CONFLICT
-                                }
-                                _ => {
-                                    error_message_state.set(AttrValue::from("Der Benutzer konnte nicht zum Mod gemacht werden, bitte wende dich an Azami"));
-                                    INTERNAL_SERVER_ERROR
-                                }
-                            }
+                    UserConfirmActions::MakeMod => match make_user_mod(id).await {
+                        Ok(_) => {
+                            confirm_state.set(UserConfirmActions::Closed);
+                            NO_CONTENT
                         }
-                    }
-                    UserConfirmActions::RemoveMod => {
-                        match remove_user_mod(id).await {
-                            Ok(_) => {
-                                confirm_state.set(UserConfirmActions::Closed);
-                                NO_CONTENT
+                        Err(err) => match err.code {
+                            FORBIDDEN => {
+                                error_message_state
+                                    .set(AttrValue::from("Du musst Mod sein um Mods zu ernennen"));
+                                FORBIDDEN
                             }
-                            Err(err) => match err.code {
-                                FORBIDDEN => {
-                                    error_message_state.set(AttrValue::from("Du musst Mod sein um Benutzern die Modrechte zu entziehen"));
-                                    FORBIDDEN
-                                }
-                                CONFLICT => {
-                                    error_message_state.set(AttrValue::from("Du kannst dir die Modrechte nicht entziehen"));
-                                    CONFLICT
-                                }
-                                _ => {
-                                    error_message_state.set(AttrValue::from("Dem Benutzer konnten die Modrechte nicht entzogen werden, bitte wende dich an Azami"));
-                                    INTERNAL_SERVER_ERROR
-                                }
+                            CONFLICT => {
+                                error_message_state.set(AttrValue::from(
+                                    "Du kannst dich nicht selbst zum Mod machen",
+                                ));
+                                CONFLICT
                             }
+                            _ => {
+                                error_message_state.set(AttrValue::from("Der Benutzer konnte nicht zum Mod gemacht werden, bitte wende dich an Azami"));
+                                INTERNAL_SERVER_ERROR
+                            }
+                        },
+                    },
+                    UserConfirmActions::RemoveMod => match remove_user_mod(id).await {
+                        Ok(_) => {
+                            confirm_state.set(UserConfirmActions::Closed);
+                            NO_CONTENT
                         }
-                    }
-                    UserConfirmActions::Delete => {
-                        match delete_user(id).await {
-                            Ok(_) => {
-                                confirm_state.set(UserConfirmActions::Closed);
-                                on_delete.emit(());
-                                NO_CONTENT
+                        Err(err) => match err.code {
+                            FORBIDDEN => {
+                                error_message_state.set(AttrValue::from(
+                                    "Du musst Mod sein um Benutzern die Modrechte zu entziehen",
+                                ));
+                                FORBIDDEN
                             }
-                            Err(err) => match err.code {
-                                FORBIDDEN => {
-                                    error_message_state.set(AttrValue::from("Du musst Mod sein um Benutzern zu entfernen"));
-                                    FORBIDDEN
-                                }
-                                CONFLICT => {
-                                    error_message_state.set(AttrValue::from("Du kannst dich nicht selbst löschen, wenn du gehen möchtest, wende dich an einen Mod"));
-                                    CONFLICT
-                                }
-                                _ => {
-                                    error_message_state.set(AttrValue::from("Das Benutzer konnte nicht gelöscht werden, bitte wende dich an Azami"));
-                                    INTERNAL_SERVER_ERROR
-                                }
+                            CONFLICT => {
+                                error_message_state.set(AttrValue::from(
+                                    "Du kannst dir die Modrechte nicht entziehen",
+                                ));
+                                CONFLICT
                             }
+                            _ => {
+                                error_message_state.set(AttrValue::from("Dem Benutzer konnten die Modrechte nicht entzogen werden, bitte wende dich an Azami"));
+                                INTERNAL_SERVER_ERROR
+                            }
+                        },
+                    },
+                    UserConfirmActions::Delete => match delete_user(id).await {
+                        Ok(_) => {
+                            confirm_state.set(UserConfirmActions::Closed);
+                            on_delete.emit(());
+                            NO_CONTENT
                         }
-                    }
+                        Err(err) => match err.code {
+                            FORBIDDEN => {
+                                error_message_state.set(AttrValue::from(
+                                    "Du musst Mod sein um Benutzern zu entfernen",
+                                ));
+                                FORBIDDEN
+                            }
+                            CONFLICT => {
+                                error_message_state.set(AttrValue::from("Du kannst dich nicht selbst löschen, wenn du gehen möchtest, wende dich an einen Mod"));
+                                CONFLICT
+                            }
+                            _ => {
+                                error_message_state.set(AttrValue::from("Das Benutzer konnte nicht gelöscht werden, bitte wende dich an Azami"));
+                                INTERNAL_SERVER_ERROR
+                            }
+                        },
+                    },
                     UserConfirmActions::ChangePassword(new_password) => {
                         match change_user_password(id, new_password.clone()).await {
                             Ok(_) => {
@@ -385,7 +423,9 @@ fn user_details(props: &UserDetailsProps) -> Html {
                             }
                             Err(err) => match err.code {
                                 FORBIDDEN => {
-                                    error_message_state.set("Du musst Mod sein um Passwörter zurückzusetzen".into());
+                                    error_message_state.set(
+                                        "Du musst Mod sein um Passwörter zurückzusetzen".into(),
+                                    );
                                     FORBIDDEN
                                 }
                                 CONFLICT => {
@@ -396,10 +436,10 @@ fn user_details(props: &UserDetailsProps) -> Html {
                                     error_message_state.set("Das Passwort konnte nicht zurückgesetzt werden, bitte wende dich an Azami".into());
                                     INTERNAL_SERVER_ERROR
                                 }
-                            }
+                            },
                         }
                     }
-                    UserConfirmActions::Closed => unreachable!()
+                    UserConfirmActions::Closed => unreachable!(),
                 };
 
                 error_state.set(if code == NO_CONTENT {
@@ -414,10 +454,13 @@ fn user_details(props: &UserDetailsProps) -> Html {
             });
         })
     };
-    let on_alert_close = use_callback(|_, (error_state, error_message_state)| {
-        error_state.set(false);
-        error_message_state.set("".into());
-    }, (error_state.clone(), error_message_state.clone()));
+    let on_alert_close = use_callback(
+        |_, (error_state, error_message_state)| {
+            error_state.set(false);
+            error_message_state.set("".into());
+        },
+        (error_state.clone(), error_message_state.clone()),
+    );
     let on_update_profile_close = {
         let profile_edit_state = profile_edit_state.clone();
 
@@ -523,7 +566,10 @@ pub fn users_page() -> Html {
 
     let selected_user_state = use_state_eq(|| 0);
 
-    let open_create_user_modal_click = use_callback(|_, open_create_user_modal_state| open_create_user_modal_state.set(true), open_create_user_modal_state.clone());
+    let open_create_user_modal_click = use_callback(
+        |_, open_create_user_modal_state| open_create_user_modal_state.set(true),
+        open_create_user_modal_state.clone(),
+    );
     let on_user_select = use_callback(|idx, state| state.set(idx), selected_user_state.clone());
 
     let event_source_trigger = {
@@ -576,12 +622,20 @@ pub fn users_page() -> Html {
             yew::platform::spawn_local(async move {
                 open_create_user_modal_state.set(false);
                 if let Ok(res) = users_query_state.refresh().await {
-                    selected_user_state.set(res.users.iter().position(move |user| user.email.eq(&email)).unwrap_or(0));
+                    selected_user_state.set(
+                        res.users
+                            .iter()
+                            .position(move |user| user.email.eq(&email))
+                            .unwrap_or(0),
+                    );
                 }
             })
         })
     };
-    let on_create_close = use_callback(|_, state| state.set(false), open_create_user_modal_state.clone());
+    let on_create_close = use_callback(
+        |_, state| state.set(false),
+        open_create_user_modal_state.clone(),
+    );
 
     match users_query_state.result() {
         None => {

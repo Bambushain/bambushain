@@ -5,7 +5,14 @@ use serde::{Deserialize, Serialize};
 use crate::prelude::{CustomCharacterField, CustomCharacterFieldOption};
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
-#[cfg_attr(feature = "backend", derive(DeriveEntityModel), sea_orm(table_name = "custom_character_field_value", schema_name = "final_fantasy"))]
+#[cfg_attr(
+    feature = "backend",
+    derive(DeriveEntityModel),
+    sea_orm(
+        table_name = "custom_character_field_value",
+        schema_name = "final_fantasy"
+    )
+)]
 pub struct Model {
     #[cfg_attr(feature = "backend", sea_orm(primary_key))]
     pub id: i32,
@@ -21,11 +28,29 @@ pub struct Model {
 #[cfg(feature = "backend")]
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
-    #[sea_orm(belongs_to = "super::character::Entity", from = "Column::CharacterId", to = "super::character::Column::Id", on_update = "Cascade", on_delete = "Cascade")]
+    #[sea_orm(
+        belongs_to = "super::character::Entity",
+        from = "Column::CharacterId",
+        to = "super::character::Column::Id",
+        on_update = "Cascade",
+        on_delete = "Cascade"
+    )]
     Character,
-    #[sea_orm(belongs_to = "super::custom_character_field::Entity", from = "Column::CustomCharacterFieldId", to = "super::custom_character_field::Column::Id", on_update = "Cascade", on_delete = "Cascade")]
+    #[sea_orm(
+        belongs_to = "super::custom_character_field::Entity",
+        from = "Column::CustomCharacterFieldId",
+        to = "super::custom_character_field::Column::Id",
+        on_update = "Cascade",
+        on_delete = "Cascade"
+    )]
     CustomCharacterField,
-    #[sea_orm(belongs_to = "super::custom_character_field_option::Entity", from = "Column::CustomCharacterFieldOptionId", to = "super::custom_character_field_option::Column::Id", on_update = "Cascade", on_delete = "Cascade")]
+    #[sea_orm(
+        belongs_to = "super::custom_character_field_option::Entity",
+        from = "Column::CustomCharacterFieldOptionId",
+        to = "super::custom_character_field_option::Column::Id",
+        on_update = "Cascade",
+        on_delete = "Cascade"
+    )]
     CustomCharacterFieldOption,
 }
 
@@ -54,7 +79,11 @@ impl Related<super::custom_character_field_option::Entity> for Entity {
 impl ActiveModelBehavior for ActiveModel {}
 
 impl Model {
-    pub fn new(character_id: i32, custom_character_field: CustomCharacterField, custom_character_field_option: CustomCharacterFieldOption) -> Self {
+    pub fn new(
+        character_id: i32,
+        custom_character_field: CustomCharacterField,
+        custom_character_field_option: CustomCharacterFieldOption,
+    ) -> Self {
         Self {
             id: i32::default(),
             character_id,

@@ -33,8 +33,14 @@ impl MigrationTrait for Migration {
                     )
                     .foreign_key(
                         ForeignKey::create()
-                            .from((Schemas::FinalFantasy, CustomCharacterFieldOption::Table), CustomCharacterFieldOption::CustomCharacterFieldId)
-                            .to((Schemas::FinalFantasy, CustomCharacterField::Table), CustomCharacterField::Id)
+                            .from(
+                                (Schemas::FinalFantasy, CustomCharacterFieldOption::Table),
+                                CustomCharacterFieldOption::CustomCharacterFieldId,
+                            )
+                            .to(
+                                (Schemas::FinalFantasy, CustomCharacterField::Table),
+                                CustomCharacterField::Id,
+                            )
                             .on_delete(ForeignKeyAction::Cascade),
                     )
                     .index(

@@ -20,40 +20,21 @@ impl MigrationTrait for Migration {
                             .auto_increment()
                             .primary_key(),
                     )
-                    .col(
-                        ColumnDef::new(User::Email)
-                            .string()
-                            .not_null()
-                            .unique_key()
-                    )
-                    .col(
-                        ColumnDef::new(User::Password)
-                            .string()
-                            .not_null()
-                    )
+                    .col(ColumnDef::new(User::Email).string().not_null().unique_key())
+                    .col(ColumnDef::new(User::Password).string().not_null())
                     .col(
                         ColumnDef::new(User::DisplayName)
                             .string()
                             .not_null()
-                            .unique_key()
+                            .unique_key(),
                     )
-                    .col(
-                        ColumnDef
-                        ::new(User::DiscordName)
-                            .string()
-                            .not_null()
-                    )
-                    .col(
-                        ColumnDef
-                        ::new(User::TwoFactorCode)
-                            .string()
-                            .string_len(6)
-                    )
+                    .col(ColumnDef::new(User::DiscordName).string().not_null())
+                    .col(ColumnDef::new(User::TwoFactorCode).string().string_len(6))
                     .col(
                         ColumnDef::new(User::IsMod)
                             .boolean()
                             .not_null()
-                            .default(false)
+                            .default(false),
                     )
                     .to_owned(),
             )
@@ -65,7 +46,7 @@ impl MigrationTrait for Migration {
             .drop_table(
                 Table::drop()
                     .table((Schemas::Authentication, User::Table))
-                    .to_owned()
+                    .to_owned(),
             )
             .await
     }

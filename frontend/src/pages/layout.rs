@@ -1,21 +1,21 @@
-use bounce::{use_atom_setter, use_atom_value};
 use bounce::helmet::Helmet;
 use bounce::query::use_query_value;
-use stylist::{css, GlobalStyle};
+use bounce::{use_atom_setter, use_atom_value};
 use stylist::yew::use_style;
+use stylist::{css, GlobalStyle};
 use yew::prelude::*;
 use yew_cosmo::prelude::*;
 use yew_router::prelude::*;
 
 use pandaparty_entities::user::UpdateProfile;
 
-use crate::{api, storage};
 use crate::pages::final_fantasy::character::CharacterPage;
 use crate::pages::final_fantasy::settings::SettingsPage;
 use crate::pages::login::LoginPage;
 use crate::pages::pandaparty::calendar::CalendarPage;
 use crate::pages::pandaparty::user::UsersPage;
 use crate::routing::{AppRoute, FinalFantasyRoute, PandaPartyRoute};
+use crate::{api, storage};
 
 #[derive(Properties, Clone, PartialEq)]
 struct ChangePasswordDialogProps {
@@ -36,7 +36,7 @@ struct EnableTotpDialogProps {
 pub fn switch(route: AppRoute) -> Html {
     match route {
         AppRoute::Login => html!(<LoginPage />),
-        _ => html!(<Layout />)
+        _ => html!(<Layout />),
     }
 }
 
@@ -134,7 +134,11 @@ fn switch_app(route: AppRoute) -> Html {
     }
 }
 
-fn render_main_menu_entry(label: AttrValue, to: AppRoute, active: AppRoute) -> impl Fn(AppRoute) -> Html {
+fn render_main_menu_entry(
+    label: AttrValue,
+    to: AppRoute,
+    active: AppRoute,
+) -> impl Fn(AppRoute) -> Html {
     move |route| {
         let is_active = route.eq(&active);
 
@@ -144,7 +148,10 @@ fn render_main_menu_entry(label: AttrValue, to: AppRoute, active: AppRoute) -> i
     }
 }
 
-fn render_sub_menu_entry<Route: Routable + Clone + 'static>(label: AttrValue, to: Route) -> impl Fn(Route) -> Html {
+fn render_sub_menu_entry<Route: Routable + Clone + 'static>(
+    label: AttrValue,
+    to: Route,
+) -> impl Fn(Route) -> Html {
     move |route| {
         let is_active = route.eq(&to);
 
@@ -159,7 +166,7 @@ fn switch_top_bar(route: AppRoute) -> Html {
         AppRoute::Login => html!(),
         _ => html!(
             <TopBar />
-        )
+        ),
     }
 }
 
@@ -194,7 +201,9 @@ fn app_layout() -> Html {
             )
         }
         Some(Err(_)) => {
-            log::debug!("First render, so lets send the request to check if the token is valid and see");
+            log::debug!(
+                "First render, so lets send the request to check if the token is valid and see"
+            );
             html!(
                 <Redirect<AppRoute> to={AppRoute::Login} />
             )
@@ -214,8 +223,10 @@ fn change_password_dialog(props: &ChangePasswordDialogProps) -> Html {
     let old_password_state = use_state_eq(|| AttrValue::from(""));
     let new_password_state = use_state_eq(|| AttrValue::from(""));
 
-    let update_old_password = use_callback(|value, state| state.set(value), old_password_state.clone());
-    let update_new_password = use_callback(|value, state| state.set(value), new_password_state.clone());
+    let update_old_password =
+        use_callback(|value, state| state.set(value), old_password_state.clone());
+    let update_new_password =
+        use_callback(|value, state| state.set(value), new_password_state.clone());
 
     let on_close = props.on_close.clone();
     let on_save = {
@@ -310,12 +321,16 @@ fn update_my_profile_dialog(props: &UpdateMyProfileDialogProps) -> Html {
 
     let error_message_state = use_state_eq(|| AttrValue::from(""));
     let email_state = use_state_eq(|| AttrValue::from(user_atom.profile.email.clone()));
-    let display_name_state = use_state_eq(|| AttrValue::from(user_atom.profile.display_name.clone()));
-    let discord_name_state = use_state_eq(|| AttrValue::from(user_atom.profile.discord_name.clone()));
+    let display_name_state =
+        use_state_eq(|| AttrValue::from(user_atom.profile.display_name.clone()));
+    let discord_name_state =
+        use_state_eq(|| AttrValue::from(user_atom.profile.discord_name.clone()));
 
     let update_email = use_callback(|value, state| state.set(value), email_state.clone());
-    let update_display_name = use_callback(|value, state| state.set(value), display_name_state.clone());
-    let update_discord_name = use_callback(|value, state| state.set(value), discord_name_state.clone());
+    let update_display_name =
+        use_callback(|value, state| state.set(value), display_name_state.clone());
+    let update_discord_name =
+        use_callback(|value, state| state.set(value), discord_name_state.clone());
 
     let on_close = props.on_close.clone();
     let on_save = {
@@ -441,12 +456,17 @@ fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
                         qrcode_state.set(data.qr_code.clone().into());
                         secret_state.set(data.secret.clone().into());
                         log::info!("Here is the secret: {}", data.secret);
-                        let _ = profile_query.refresh().await.map(|res| profile_atom(storage::CurrentUser { profile: res.user.clone() }));
+                        let _ = profile_query.refresh().await.map(|res| {
+                            profile_atom(storage::CurrentUser {
+                                profile: res.user.clone(),
+                            })
+                        });
                     }
                     Err(err) => {
                         log::error!("Failed to enable totp: {err}");
                         error_state.set(true);
-                        error_message_state.set("Leider konnte Zwei Faktor per App nicht aktiviert werden".into());
+                        error_message_state
+                            .set("Leider konnte Zwei Faktor per App nicht aktiviert werden".into());
                     }
                 }
             })
@@ -476,18 +496,22 @@ fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
                     Err(err) => {
                         log::error!("Failed to validate token: {err}");
                         error_state.set(true);
-                        error_message_state.set("Der von dir eingegebene Code ist ungültig, versuch es nochmal".into());
+                        error_message_state.set(
+                            "Der von dir eingegebene Code ist ungültig, versuch es nochmal".into(),
+                        );
                     }
                 }
             })
         })
     };
 
-    let img_style = use_style!(r#"
+    let img_style = use_style!(
+        r#"
 width: 100%;
 height: auto;
 object-fit: scale-down;
-"#);
+"#
+    );
 
     html!(
         <>
@@ -531,12 +555,21 @@ fn top_bar() -> Html {
     let profile_open_state = use_state_eq(|| false);
     let password_open_state = use_state_eq(|| false);
 
-    let logout = use_callback(|_: (), navigator| {
-        api::authentication::logout();
-        navigator.push(&AppRoute::Login);
-    }, navigator);
-    let update_my_profile_click = use_callback(|_, profile_open_state| profile_open_state.set(true), profile_open_state.clone());
-    let enable_app_two_factor_click = use_callback(|_, app_two_factor_open_state| app_two_factor_open_state.set(true), app_two_factor_open_state.clone());
+    let logout = use_callback(
+        |_: (), navigator| {
+            api::authentication::logout();
+            navigator.push(&AppRoute::Login);
+        },
+        navigator,
+    );
+    let update_my_profile_click = use_callback(
+        |_, profile_open_state| profile_open_state.set(true),
+        profile_open_state.clone(),
+    );
+    let enable_app_two_factor_click = use_callback(
+        |_, app_two_factor_open_state| app_two_factor_open_state.set(true),
+        app_two_factor_open_state.clone(),
+    );
     let change_password_click = {
         let password_open_state = password_open_state.clone();
 
@@ -549,14 +582,18 @@ fn top_bar() -> Html {
 
             yew::platform::spawn_local(async move {
                 if let Ok(users) = api::get_users().await {
-                    mods_state.set(users
-                        .into_iter()
-                        .filter_map(|user| if user.is_mod {
-                            Some(AttrValue::from(user.display_name))
-                        } else {
-                            None
-                        })
-                        .collect::<Vec<AttrValue>>());
+                    mods_state.set(
+                        users
+                            .into_iter()
+                            .filter_map(|user| {
+                                if user.is_mod {
+                                    Some(AttrValue::from(user.display_name))
+                                } else {
+                                    None
+                                }
+                            })
+                            .collect::<Vec<AttrValue>>(),
+                    );
                 }
 
                 password_open_state.set(true);
@@ -589,7 +626,8 @@ fn top_bar() -> Html {
 #[function_component(Layout)]
 fn layout() -> Html {
     log::info!("Run layout");
-    let global_style = GlobalStyle::new(css!(r#"
+    let global_style = GlobalStyle::new(css!(
+        r#"
 body {
     height: 100vh;
     width: 100vw;
@@ -604,7 +642,9 @@ body {
     body {
         --background: url("/static/background-dark.webp");
     }
-}"#)).expect("Should create global style");
+}"#
+    ))
+    .expect("Should create global style");
 
     html!(
         <>

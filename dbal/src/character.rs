@@ -1,14 +1,21 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use sea_orm::{Condition, IntoActiveModel, NotSet, QueryOrder, QuerySelect};
-use sea_orm::ActiveValue::Set;
 use sea_orm::prelude::*;
 use sea_orm::sea_query::Expr;
+use sea_orm::ActiveValue::Set;
+use sea_orm::{Condition, IntoActiveModel, NotSet, QueryOrder, QuerySelect};
 
-use pandaparty_entities::{character, custom_character_field, custom_character_field_option, custom_character_field_value, pandaparty_db_error};
 use pandaparty_entities::prelude::*;
+use pandaparty_entities::{
+    character, custom_character_field, custom_character_field_option, custom_character_field_value,
+    pandaparty_db_error,
+};
 
-async fn map_character(character: Character, user_id: i32, db: &DatabaseConnection) -> PandaPartyResult<Character> {
+async fn map_character(
+    character: Character,
+    user_id: i32,
+    db: &DatabaseConnection,
+) -> PandaPartyResult<Character> {
     Ok(Character {
         id: character.id,
         race: character.race,
@@ -19,7 +26,10 @@ async fn map_character(character: Character, user_id: i32, db: &DatabaseConnecti
     })
 }
 
-pub async fn get_characters(user_id: i32, db: &DatabaseConnection) -> PandaPartyResult<Vec<Character>> {
+pub async fn get_characters(
+    user_id: i32,
+    db: &DatabaseConnection,
+) -> PandaPartyResult<Vec<Character>> {
     let characters = character::Entity::find()
         .filter(character::Column::UserId.eq(user_id))
         .order_by_asc(character::Column::Name)
@@ -38,7 +48,11 @@ pub async fn get_characters(user_id: i32, db: &DatabaseConnection) -> PandaParty
     Ok(result)
 }
 
-pub async fn get_character(id: i32, user_id: i32, db: &DatabaseConnection) -> PandaPartyResult<Character> {
+pub async fn get_character(
+    id: i32,
+    user_id: i32,
+    db: &DatabaseConnection,
+) -> PandaPartyResult<Character> {
     let character = character::Entity::find_by_id(id)
         .filter(character::Column::UserId.eq(user_id))
         .one(db)
@@ -51,11 +65,18 @@ pub async fn get_character(id: i32, user_id: i32, db: &DatabaseConnection) -> Pa
     if let Some(character) = character.into_iter().next() {
         map_character(character, user_id, db).await
     } else {
-        Err(pandaparty_not_found_error!("character", "The character was not found"))
+        Err(pandaparty_not_found_error!(
+            "character",
+            "The character was not found"
+        ))
     }
 }
 
-async fn fill_custom_fields(user_id: i32, character_id: i32, db: &DatabaseConnection) -> PandaPartyResult<Vec<CustomField>> {
+async fn fill_custom_fields(
+    user_id: i32,
+    character_id: i32,
+    db: &DatabaseConnection,
+) -> PandaPartyResult<Vec<CustomField>> {
     let data = custom_character_field_value::Entity::find()
         .select_only()
         .inner_join(custom_character_field_option::Entity)
@@ -84,7 +105,10 @@ async fn fill_custom_fields(user_id: i32, character_id: i32, db: &DatabaseConnec
         custom_fields.insert(label.clone(), values.clone());
     }
 
-    Ok(custom_fields.into_iter().map(|(label, values)| CustomField { label, values }).collect::<Vec<CustomField>>())
+    Ok(custom_fields
+        .into_iter()
+        .map(|(label, values)| CustomField { label, values })
+        .collect::<Vec<CustomField>>())
 }
 
 pub async fn character_exists(user_id: i32, id: i32, db: &DatabaseConnection) -> bool {
@@ -110,31 +134,43 @@ pub async fn character_exists_by_name(name: String, user_id: i32, db: &DatabaseC
         .unwrap_or(false)
 }
 
-pub async fn create_character(user_id: i32, character: Character, db: &DatabaseConnection) -> PandaPartyResult<Character> {
+pub async fn create_character(
+    user_id: i32,
+    character: Character,
+    db: &DatabaseConnection,
+) -> PandaPartyResult<Character> {
     let mut model = character.clone().into_active_model();
     model.user_id = Set(user_id);
     model.id = NotSet;
 
-    let model = model
-        .insert(db)
-        .await
-        .map_err(|err| {
-            log::error!("{err}");
-            pandaparty_db_error!("character", "Failed to create character")
-        })?;
+    let model = model.insert(db).await.map_err(|err| {
+        log::error!("{err}");
+        pandaparty_db_error!("character", "Failed to create character")
+    })?;
 
     create_custom_field_values(user_id, model.id, character.custom_fields, db).await?;
 
     Ok(model)
 }
 
-pub async fn update_character(id: i32, user_id: i32, character: Character, db: &DatabaseConnection) -> PandaPartyErrorResult {
+pub async fn update_character(
+    id: i32,
+    user_id: i32,
+    character: Character,
+    db: &DatabaseConnection,
+) -> PandaPartyErrorResult {
     character::Entity::update_many()
         .filter(character::Column::Id.eq(id))
         .filter(character::Column::UserId.eq(user_id))
         .col_expr(character::Column::Name, Expr::value(character.name.clone()))
-        .col_expr(character::Column::World, Expr::value(character.world.clone()))
-        .col_expr(character::Column::Race, Expr::val(character.race).as_enum(pandaparty_entities::character::CharacterRaceEnum))
+        .col_expr(
+            character::Column::World,
+            Expr::value(character.world.clone()),
+        )
+        .col_expr(
+            character::Column::Race,
+            Expr::val(character.race).as_enum(pandaparty_entities::character::CharacterRaceEnum),
+        )
         .exec(db)
         .await
         .map_err(|err| {
@@ -145,7 +181,12 @@ pub async fn update_character(id: i32, user_id: i32, character: Character, db: &
     create_custom_field_values(user_id, id, character.custom_fields, db).await
 }
 
-async fn create_custom_field_values(user_id: i32, character_id: i32, custom_fields: Vec<CustomField>, db: &DatabaseConnection) -> PandaPartyErrorResult {
+async fn create_custom_field_values(
+    user_id: i32,
+    character_id: i32,
+    custom_fields: Vec<CustomField>,
+    db: &DatabaseConnection,
+) -> PandaPartyErrorResult {
     if custom_fields.is_empty() {
         return Ok(());
     }
@@ -197,7 +238,11 @@ async fn create_custom_field_values(user_id: i32, character_id: i32, custom_fiel
         .map(|_| ())
 }
 
-pub async fn delete_character(id: i32, user_id: i32, db: &DatabaseConnection) -> PandaPartyErrorResult {
+pub async fn delete_character(
+    id: i32,
+    user_id: i32,
+    db: &DatabaseConnection,
+) -> PandaPartyErrorResult {
     character::Entity::delete_many()
         .filter(character::Column::Id.eq(id))
         .filter(character::Column::UserId.eq(user_id))

@@ -7,7 +7,15 @@ use serde::{Deserialize, Serialize};
 use strum_macros::EnumIter;
 
 #[derive(Serialize, Deserialize, EnumIter, Debug, Eq, PartialEq, Clone, Default, Copy)]
-#[cfg_attr(feature = "backend", derive(DeriveActiveEnum), sea_orm(rs_type = "String", db_type = "Enum", enum_name = "final_fantasy.fighter_job"))]
+#[cfg_attr(
+    feature = "backend",
+    derive(DeriveActiveEnum),
+    sea_orm(
+        rs_type = "String",
+        db_type = "Enum",
+        enum_name = "final_fantasy.fighter_job"
+    )
+)]
 pub enum FighterJob {
     #[default]
     #[cfg_attr(feature = "backend", sea_orm(string_value = "paladin"))]
@@ -75,7 +83,8 @@ impl FighterJob {
             FighterJob::Summoner => "summoner.webp",
             FighterJob::RedMage => "redmage.webp",
             FighterJob::BlueMage => "bluemage.webp",
-        }.to_string()
+        }
+        .to_string()
     }
 
     pub fn get_job_name(self) -> String {
@@ -100,7 +109,8 @@ impl FighterJob {
             FighterJob::Summoner => "Summoner",
             FighterJob::RedMage => "RedMage",
             FighterJob::BlueMage => "BlueMage",
-        }.to_string()
+        }
+        .to_string()
     }
 }
 
@@ -139,7 +149,8 @@ impl ToString for FighterJob {
             FighterJob::Summoner => "Beschwörer",
             FighterJob::RedMage => "Rotmagier",
             FighterJob::BlueMage => "Blaumagier",
-        }.to_string()
+        }
+        .to_string()
     }
 }
 
@@ -166,13 +177,17 @@ impl From<String> for FighterJob {
             "Summoner" => FighterJob::Summoner,
             "RedMage" => FighterJob::RedMage,
             "BlueMage" => FighterJob::BlueMage,
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 }
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Default)]
-#[cfg_attr(feature = "backend", derive(DeriveEntityModel), sea_orm(table_name = "fighter", schema_name = "final_fantasy"))]
+#[cfg_attr(
+    feature = "backend",
+    derive(DeriveEntityModel),
+    sea_orm(table_name = "fighter", schema_name = "final_fantasy")
+)]
 pub struct Model {
     #[cfg_attr(feature = "backend", sea_orm(primary_key))]
     pub id: i32,
@@ -198,13 +213,13 @@ impl Ord for Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-    belongs_to = "super::character::Entity",
-    from = "Column::CharacterId",
-    to = "super::character::Column::Id",
-    on_update = "Cascade",
-    on_delete = "Cascade"
+        belongs_to = "super::character::Entity",
+        from = "Column::CharacterId",
+        to = "super::character::Column::Id",
+        on_update = "Cascade",
+        on_delete = "Cascade"
     )]
-    Character
+    Character,
 }
 
 #[cfg(feature = "backend")]

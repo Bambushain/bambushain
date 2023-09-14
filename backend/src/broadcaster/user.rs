@@ -60,7 +60,9 @@ impl UserBroadcaster {
         log::info!("Starting creation of user broadcaster");
         let (tx, rx) = actix_web_lab::sse::channel(10);
 
-        tx.send(actix_web_lab::sse::Data::new("connected")).await.unwrap();
+        tx.send(actix_web_lab::sse::Data::new("connected"))
+            .await
+            .unwrap();
         log::info!("Creating new clients success {:?}", tx);
         self.inner.lock().clients.push(tx);
         rx

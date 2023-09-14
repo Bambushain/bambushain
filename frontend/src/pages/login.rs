@@ -21,14 +21,24 @@ fn login_content() -> Html {
     let email_state = use_state_eq(|| AttrValue::from(""));
     let password_state = use_state_eq(|| AttrValue::from(""));
     let two_factor_code_state = use_state_eq(|| AttrValue::from(""));
-    let error_message_state = use_state_eq(|| AttrValue::from("Melde dich an und komm zur Pandaparty"));
+    let error_message_state =
+        use_state_eq(|| AttrValue::from("Melde dich an und komm zur Pandaparty"));
 
     let two_factor_code_requested_state = use_state_eq(|| false);
     let error_state = use_state_eq(|| false);
 
-    let on_email_update = use_callback(|value: AttrValue, state| state.set(value), email_state.clone());
-    let on_password_update = use_callback(|value: AttrValue, state| state.set(value), password_state.clone());
-    let on_two_factor_code_update = use_callback(|value: AttrValue, state| state.set(value), two_factor_code_state.clone());
+    let on_email_update = use_callback(
+        |value: AttrValue, state| state.set(value),
+        email_state.clone(),
+    );
+    let on_password_update = use_callback(
+        |value: AttrValue, state| state.set(value),
+        password_state.clone(),
+    );
+    let on_two_factor_code_update = use_callback(
+        |value: AttrValue, state| state.set(value),
+        two_factor_code_state.clone(),
+    );
 
     let login_submit = {
         let email_state = email_state.clone();
@@ -59,7 +69,13 @@ fn login_content() -> Html {
             };
 
             yew::platform::spawn_local(async move {
-                match api::login(Login::new((*email_state).to_string(), (*password_state).to_string(), two_factor_code)).await {
+                match api::login(Login::new(
+                    (*email_state).to_string(),
+                    (*password_state).to_string(),
+                    two_factor_code,
+                ))
+                .await
+                {
                     Ok(result) => {
                         if two_factor_requested {
                             storage::set_token(result.left().unwrap().token);
@@ -75,7 +91,8 @@ fn login_content() -> Html {
                         if two_factor_requested {
                             error_message_state.set("Der Zwei Faktor Code ist ungültig".into());
                         } else {
-                            error_message_state.set("Die Email und das Passwort passen nicht zusammen".into());
+                            error_message_state
+                                .set("Die Email und das Passwort passen nicht zusammen".into());
                         }
                         error_state.set(true);
                     }
@@ -84,7 +101,8 @@ fn login_content() -> Html {
         })
     };
 
-    let login_around_style = use_style!(r#"
+    let login_around_style = use_style!(
+        r#"
 position: fixed;
 left: 0;
 right: 0;
@@ -125,17 +143,21 @@ input {
 button:hover {
     color: #ffffff !important;
 }
-    "#);
+    "#
+    );
 
-    let login_container_style = use_style!(r#"
+    let login_container_style = use_style!(
+        r#"
 background: rgba(255, 255, 255, 0.25);
 padding: 32px 64px;
 backdrop-filter: blur(24px) saturate(90%);
 box-sizing: border-box;
 margin-top: -20px;
 min-width: 570px;
-"#);
-    let login_message_style = use_style!(r#"
+"#
+    );
+    let login_message_style = use_style!(
+        r#"
 font-size: 24px;
 color: #fff;
 font-weight: var(--font-weight-light);
@@ -143,7 +165,8 @@ font-family: var(--font-family);
 display: flex;
 gap: 8px;
 align-items: center;
-    "#);
+    "#
+    );
 
     html!(
         <div class={login_around_style}>

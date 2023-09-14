@@ -1,5 +1,5 @@
-use sea_orm_migration::prelude::*;
 use sea_orm_migration::prelude::extension::postgres::Type;
+use sea_orm_migration::prelude::*;
 use sea_orm_migration::sea_orm::{EnumIter, Iterable};
 
 use crate::m20220101_000001_create_schemas::Schemas;
@@ -16,7 +16,7 @@ impl MigrationTrait for Migration {
                 Type::create()
                     .as_enum((Schemas::FinalFantasy, Alias::new("character_race")))
                     .values(Race::iter().collect::<Vec<Race>>())
-                    .to_owned()
+                    .to_owned(),
             )
             .await?;
         manager
@@ -31,31 +31,19 @@ impl MigrationTrait for Migration {
                             .auto_increment()
                             .primary_key(),
                     )
-                    .col(
-                        ColumnDef::new(Character::Name)
-                            .string()
-                            .not_null()
-                    )
+                    .col(ColumnDef::new(Character::Name).string().not_null())
                     .col(
                         ColumnDef::new(Character::Race)
                             .custom(Alias::new("final_fantasy.character_race"))
-                            .not_null()
+                            .not_null(),
                     )
-                    .col(
-                        ColumnDef::new(Character::World)
-                            .string()
-                            .not_null()
-                    )
-                    .col(
-                        ColumnDef::new(Character::UserId)
-                            .integer()
-                            .not_null()
-                    )
+                    .col(ColumnDef::new(Character::World).string().not_null())
+                    .col(ColumnDef::new(Character::UserId).integer().not_null())
                     .foreign_key(
                         ForeignKey::create()
                             .from((Schemas::FinalFantasy, Character::Table), Character::UserId)
                             .to((Schemas::Authentication, User::Table), User::Id)
-                            .on_delete(ForeignKeyAction::Cascade)
+                            .on_delete(ForeignKeyAction::Cascade),
                     )
                     .to_owned(),
             )
@@ -69,14 +57,14 @@ impl MigrationTrait for Migration {
             .drop_table(
                 Table::drop()
                     .table((Schemas::FinalFantasy, Character::Table))
-                    .to_owned()
+                    .to_owned(),
             )
             .await?;
         manager
             .drop_type(
                 Type::drop()
                     .name((Schemas::FinalFantasy, Alias::new("character_race")))
-                    .to_owned()
+                    .to_owned(),
             )
             .await?;
 

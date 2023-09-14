@@ -1,12 +1,14 @@
 use std::rc::Rc;
 
 use async_trait::async_trait;
-use bounce::BounceStates;
 use bounce::query::{Query, QueryResult};
+use bounce::BounceStates;
 
 use pandaparty_entities::prelude::*;
 
-use crate::api::{ApiError, delete, get, post, put_no_content, put_no_body_no_content, PandapartyApiResult};
+use crate::api::{
+    delete, get, post, put_no_body_no_content, put_no_content, ApiError, PandapartyApiResult,
+};
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
 pub struct Users {
@@ -15,9 +17,7 @@ pub struct Users {
 
 impl From<Vec<WebUser>> for Users {
     fn from(value: Vec<WebUser>) -> Self {
-        Self {
-            users: value
-        }
+        Self { users: value }
     }
 }
 
@@ -58,10 +58,17 @@ pub async fn delete_user(id: i32) -> PandapartyApiResult<()> {
 
 pub async fn change_user_password(id: i32, new_password: String) -> PandapartyApiResult<()> {
     log::debug!("Change user {id} password");
-    put_no_content(format!("/api/user/{id}/password"), &ChangePassword { new_password }).await
+    put_no_content(
+        format!("/api/user/{id}/password"),
+        &ChangePassword { new_password },
+    )
+    .await
 }
 
 pub async fn update_profile(id: i32, profile: UpdateProfile) -> PandapartyApiResult<()> {
-    log::debug!("Update profile of user {id} to the following data {:?}", profile);
+    log::debug!(
+        "Update profile of user {id} to the following data {:?}",
+        profile
+    );
     put_no_content(format!("/api/user/{id}/profile"), &profile).await
 }

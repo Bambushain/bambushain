@@ -6,7 +6,11 @@ use yew::prelude::*;
 use yew_hooks::{use_mount, use_unmount};
 
 #[hook]
-pub fn use_event_source<E, F>(url: E, callback: F) where E: Into<Cow<'static, str>>, F: Fn(()) + 'static {
+pub fn use_event_source<E, F>(url: E, callback: F)
+where
+    E: Into<Cow<'static, str>>,
+    F: Fn(()) + 'static,
+{
     #[derive(PartialEq, Clone)]
     struct EventSourceDeps {
         url: Cow<'static, str>,

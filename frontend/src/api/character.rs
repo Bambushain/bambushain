@@ -1,12 +1,12 @@
 use std::rc::Rc;
 
 use async_trait::async_trait;
-use bounce::BounceStates;
 use bounce::query::{Query, QueryResult};
+use bounce::BounceStates;
 
 use pandaparty_entities::prelude::*;
 
-use crate::api::{ApiError, delete, get, PandapartyApiResult, post, put_no_content};
+use crate::api::{delete, get, post, put_no_content, ApiError, PandapartyApiResult};
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
 pub struct MyCharacters {
@@ -15,9 +15,7 @@ pub struct MyCharacters {
 
 impl From<Vec<Character>> for MyCharacters {
     fn from(value: Vec<Character>) -> Self {
-        Self {
-            character: value,
-        }
+        Self { character: value }
     }
 }
 
@@ -32,7 +30,9 @@ impl Query for MyCharacters {
     type Error = ApiError;
 
     async fn query(_states: &BounceStates, _input: Rc<Self::Input>) -> QueryResult<Self> {
-        get_character().await.map(|character| Rc::new(character.into()))
+        get_character()
+            .await
+            .map(|character| Rc::new(character.into()))
     }
 }
 

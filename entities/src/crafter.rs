@@ -7,7 +7,15 @@ use serde::{Deserialize, Serialize};
 use strum_macros::EnumIter;
 
 #[derive(Serialize, Deserialize, EnumIter, Debug, Eq, PartialEq, Clone, Default, Copy)]
-#[cfg_attr(feature = "backend", derive(DeriveActiveEnum), sea_orm(rs_type = "String", db_type = "Enum", enum_name = "final_fantasy.crafter_job"))]
+#[cfg_attr(
+    feature = "backend",
+    derive(DeriveActiveEnum),
+    sea_orm(
+        rs_type = "String",
+        db_type = "Enum",
+        enum_name = "final_fantasy.crafter_job"
+    )
+)]
 pub enum CrafterJob {
     #[default]
     #[cfg_attr(feature = "backend", sea_orm(string_value = "carpenter"))]
@@ -48,7 +56,8 @@ impl CrafterJob {
             CrafterJob::Miner => "miner.webp",
             CrafterJob::Botanist => "botanist.webp",
             CrafterJob::Fisher => "fisher.webp",
-        }.to_string()
+        }
+        .to_string()
     }
 
     pub fn get_job_name(self) -> String {
@@ -64,7 +73,8 @@ impl CrafterJob {
             CrafterJob::Miner => "miner",
             CrafterJob::Botanist => "botanist",
             CrafterJob::Fisher => "fisher",
-        }.to_string()
+        }
+        .to_string()
     }
 }
 
@@ -94,7 +104,8 @@ impl ToString for CrafterJob {
             CrafterJob::Miner => "Minenarbeiter",
             CrafterJob::Botanist => "Gärtner",
             CrafterJob::Fisher => "Fischer",
-        }.to_string()
+        }
+        .to_string()
     }
 }
 
@@ -112,13 +123,17 @@ impl From<String> for CrafterJob {
             "miner" => CrafterJob::Miner,
             "botanist" => CrafterJob::Botanist,
             "fisher" => CrafterJob::Fisher,
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 }
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Default)]
-#[cfg_attr(feature = "backend", derive(DeriveEntityModel), sea_orm(table_name = "crafter", schema_name = "final_fantasy"))]
+#[cfg_attr(
+    feature = "backend",
+    derive(DeriveEntityModel),
+    sea_orm(table_name = "crafter", schema_name = "final_fantasy")
+)]
 pub struct Model {
     #[cfg_attr(feature = "backend", sea_orm(primary_key))]
     pub id: i32,
@@ -143,13 +158,13 @@ impl Ord for Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-    belongs_to = "super::character::Entity",
-    from = "Column::CharacterId",
-    to = "super::character::Column::Id",
-    on_update = "Cascade",
-    on_delete = "Cascade"
+        belongs_to = "super::character::Entity",
+        from = "Column::CharacterId",
+        to = "super::character::Column::Id",
+        on_update = "Cascade",
+        on_delete = "Cascade"
     )]
-    Character
+    Character,
 }
 
 #[cfg(feature = "backend")]

@@ -1,13 +1,17 @@
 use std::str::FromStr;
 
 use chrono::NaiveDate;
-use color_art::{Color, color};
+use color_art::{color, Color};
 #[cfg(feature = "backend")]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
-#[cfg_attr(feature = "backend", derive(DeriveEntityModel), sea_orm(table_name = "event", schema_name = "panda_party"))]
+#[cfg_attr(
+    feature = "backend",
+    derive(DeriveEntityModel),
+    sea_orm(table_name = "event", schema_name = "panda_party")
+)]
 pub struct Model {
     #[cfg_attr(feature = "backend", sea_orm(primary_key))]
     pub id: i32,
@@ -26,7 +30,13 @@ pub enum Relation {}
 impl ActiveModelBehavior for ActiveModel {}
 
 impl Model {
-    pub fn new(title: String, description: String, start_date: NaiveDate, end_date: NaiveDate, color: Color) -> Self {
+    pub fn new(
+        title: String,
+        description: String,
+        start_date: NaiveDate,
+        end_date: NaiveDate,
+        color: Color,
+    ) -> Self {
         Self {
             id: i32::default(),
             title,

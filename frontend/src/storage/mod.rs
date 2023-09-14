@@ -29,8 +29,6 @@ pub struct CurrentUser {
 
 impl From<WebUser> for CurrentUser {
     fn from(value: WebUser) -> Self {
-        Self {
-            profile: value
-        }
+        Self { profile: value }
     }
 }

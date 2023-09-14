@@ -1,17 +1,27 @@
 use rand::distributions::Uniform;
 use rand::Rng;
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel, NotSet, QueryFilter};
-use sea_orm::ActiveValue::Set;
 use sea_orm::prelude::Expr;
+use sea_orm::ActiveValue::Set;
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel, NotSet,
+    QueryFilter,
+};
 
-use pandaparty_entities::{pandaparty_db_error, pandaparty_validation_error};
 use pandaparty_entities::prelude::*;
+use pandaparty_entities::{pandaparty_db_error, pandaparty_validation_error};
 
-pub async fn validate_auth_and_create_token(username: String, password: String, two_factor_code: String, db: &DatabaseConnection) -> PandaPartyResult<LoginResult> {
-    let user = crate::user::get_user_by_email_or_username(username.clone(), db).await.map_err(|err| {
-        log::error!("Failed to load user {}: {err}", username);
-        pandaparty_not_found_error!("user", "User not found")
-    })?;
+pub async fn validate_auth_and_create_token(
+    username: String,
+    password: String,
+    two_factor_code: String,
+    db: &DatabaseConnection,
+) -> PandaPartyResult<LoginResult> {
+    let user = crate::user::get_user_by_email_or_username(username.clone(), db)
+        .await
+        .map_err(|err| {
+            log::error!("Failed to load user {}: {err}", username);
+            pandaparty_not_found_error!("user", "User not found")
+        })?;
 
     let password_valid = user.validate_password(password);
     if !password_valid {
@@ -25,7 +35,10 @@ pub async fn validate_auth_and_create_token(username: String, password: String, 
     };
 
     if !two_factor_code_valid {
-        return Err(pandaparty_validation_error!("token", "Two factor code is invalid"));
+        return Err(pandaparty_validation_error!(
+            "token",
+            "Two factor code is invalid"
+        ));
     }
 
     let mut active = user.clone().into_active_model();
@@ -36,23 +49,29 @@ pub async fn validate_auth_and_create_token(username: String, password: String, 
         token: Set(uuid::Uuid::new_v4().to_string()),
         user_id: Set(user.id),
     }
-        .insert(db)
-        .await
-        .map(|token| LoginResult {
-            token: token.token,
-            user: user.to_web_user(),
-        })
-        .map_err(|err| {
-            log::error!("{err}");
-            pandaparty_db_error!("token", "Failed to create token")
-        })
+    .insert(db)
+    .await
+    .map(|token| LoginResult {
+        token: token.token,
+        user: user.to_web_user(),
+    })
+    .map_err(|err| {
+        log::error!("{err}");
+        pandaparty_db_error!("token", "Failed to create token")
+    })
 }
 
-pub async fn validate_auth_and_set_two_factor_code(username: String, password: String, db: &DatabaseConnection) -> PandaPartyResult<TwoFactorResult> {
-    let user = crate::user::get_user_by_email_or_username(username.clone(), db).await.map_err(|err| {
-        log::error!("Failed to load user {}: {err}", username);
-        pandaparty_not_found_error!("user", "User not found")
-    })?;
+pub async fn validate_auth_and_set_two_factor_code(
+    username: String,
+    password: String,
+    db: &DatabaseConnection,
+) -> PandaPartyResult<TwoFactorResult> {
+    let user = crate::user::get_user_by_email_or_username(username.clone(), db)
+        .await
+        .map_err(|err| {
+            log::error!("Failed to load user {}: {err}", username);
+            pandaparty_not_found_error!("user", "User not found")
+        })?;
 
     let password_valid = user.validate_password(password);
     if !password_valid {
@@ -74,7 +93,10 @@ pub async fn validate_auth_and_set_two_factor_code(username: String, password: S
         .join("");
 
     pandaparty_entities::user::Entity::update_many()
-        .col_expr(pandaparty_entities::user::Column::TwoFactorCode, Expr::value(two_factor_code.clone()))
+        .col_expr(
+            pandaparty_entities::user::Column::TwoFactorCode,
+            Expr::value(two_factor_code.clone()),
+        )
         .filter(pandaparty_entities::user::Column::Id.eq(user.id))
         .exec(db)
         .await

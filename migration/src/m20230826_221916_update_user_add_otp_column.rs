@@ -1,5 +1,5 @@
-use sea_orm_migration::prelude::*;
 use crate::m20220101_000001_create_schemas::Schemas;
+use sea_orm_migration::prelude::*;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -11,17 +11,9 @@ impl MigrationTrait for Migration {
             .alter_table(
                 Table::alter()
                     .table((Schemas::Authentication, User::Table))
-                    .add_column(
-                        ColumnDef::new(User::TotpSecret)
-                            .binary()
-                            .null()
-                    )
-                    .add_column(
-                        ColumnDef::new(User::TotpValidated)
-                            .boolean()
-                            .null()
-                    )
-                    .to_owned()
+                    .add_column(ColumnDef::new(User::TotpSecret).binary().null())
+                    .add_column(ColumnDef::new(User::TotpValidated).boolean().null())
+                    .to_owned(),
             )
             .await
     }
@@ -33,7 +25,7 @@ impl MigrationTrait for Migration {
                     .table(User::Table)
                     .drop_column(User::TotpSecret)
                     .drop_column(User::TotpValidated)
-                    .to_owned()
+                    .to_owned(),
             )
             .await
     }

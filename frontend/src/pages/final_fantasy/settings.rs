@@ -7,7 +7,10 @@ use yew_icons::Icon;
 
 use pandaparty_entities::prelude::*;
 
-use crate::api::{add_custom_field_option, create_custom_field, CustomCharacterFields, delete_custom_field, delete_custom_field_option, update_custom_field, update_custom_field_option};
+use crate::api::{
+    add_custom_field_option, create_custom_field, delete_custom_field, delete_custom_field_option,
+    update_custom_field, update_custom_field_option, CustomCharacterFields,
+};
 
 #[derive(PartialEq, Clone, Properties)]
 struct FieldsTabItemProps {
@@ -34,10 +37,13 @@ fn fields_tab_item(props: &FieldsTabItemProps) -> Html {
     let on_error_close = use_callback(|_, state| state.set(false), error_state.clone());
 
     let on_rename_open = use_callback(|_, state| state.set(true), rename_open_state.clone());
-    let on_rename_close = use_callback(|_, (open_state, error_state)| {
-        open_state.set(false);
-        error_state.set(false);
-    }, (rename_open_state.clone(), error_state.clone()));
+    let on_rename_close = use_callback(
+        |_, (open_state, error_state)| {
+            open_state.set(false);
+            error_state.set(false);
+        },
+        (rename_open_state.clone(), error_state.clone()),
+    );
     let on_rename_save = {
         let id = props.field.id;
 
@@ -75,11 +81,15 @@ fn fields_tab_item(props: &FieldsTabItemProps) -> Html {
         })
     };
 
-    let on_add_option_open = use_callback(|_, state| state.set(true), add_option_open_state.clone());
-    let on_add_option_close = use_callback(|_, (open_state, error_state)| {
-        open_state.set(false);
-        error_state.set(false);
-    }, (add_option_open_state.clone(), error_state.clone()));
+    let on_add_option_open =
+        use_callback(|_, state| state.set(true), add_option_open_state.clone());
+    let on_add_option_close = use_callback(
+        |_, (open_state, error_state)| {
+            open_state.set(false);
+            error_state.set(false);
+        },
+        (add_option_open_state.clone(), error_state.clone()),
+    );
     let on_add_option_save = {
         let id = props.field.id;
 
@@ -118,16 +128,28 @@ fn fields_tab_item(props: &FieldsTabItemProps) -> Html {
         })
     };
 
-    let on_edit_option_open = use_callback(|(id, label): (i32, AttrValue), (selected_id_state, selected_label_state, open_state, option_label_state)| {
-        selected_id_state.set(id);
-        selected_label_state.set(label.clone());
-        option_label_state.set(label);
-        open_state.set(true);
-    }, (selected_option_id_state.clone(), selected_option_label_state.clone(), edit_option_open_state.clone(), option_label_state.clone()));
-    let on_edit_option_close = use_callback(|_, (open_state, error_state)| {
-        open_state.set(false);
-        error_state.set(false);
-    }, (edit_option_open_state.clone(), error_state.clone()));
+    let on_edit_option_open = use_callback(
+        |(id, label): (i32, AttrValue),
+         (selected_id_state, selected_label_state, open_state, option_label_state)| {
+            selected_id_state.set(id);
+            selected_label_state.set(label.clone());
+            option_label_state.set(label);
+            open_state.set(true);
+        },
+        (
+            selected_option_id_state.clone(),
+            selected_option_label_state.clone(),
+            edit_option_open_state.clone(),
+            option_label_state.clone(),
+        ),
+    );
+    let on_edit_option_close = use_callback(
+        |_, (open_state, error_state)| {
+            open_state.set(false);
+            error_state.set(false);
+        },
+        (edit_option_open_state.clone(), error_state.clone()),
+    );
     let on_edit_option_save = {
         let id = props.field.id;
 
@@ -197,7 +219,10 @@ fn fields_tab_item(props: &FieldsTabItemProps) -> Html {
                     }
                     Err(err) => {
                         log::error!("Delete failed: {err}");
-                        error_message_state.set("Das Feld konnte nicht gelöscht werden, bitte wende dich an Azami".into());
+                        error_message_state.set(
+                            "Das Feld konnte nicht gelöscht werden, bitte wende dich an Azami"
+                                .into(),
+                        );
                         true
                     }
                 });
@@ -205,12 +230,22 @@ fn fields_tab_item(props: &FieldsTabItemProps) -> Html {
         })
     };
 
-    let on_delete_option_open = use_callback(|(id, label), (selected_id_state, selected_label_state, open_state)| {
-        selected_id_state.set(id);
-        selected_label_state.set(label);
-        open_state.set(true);
-    }, (selected_option_id_state.clone(), selected_option_label_state.clone(), delete_option_open_state.clone()));
-    let on_delete_option_close = use_callback(|_, state| state.set(false), delete_option_open_state.clone());
+    let on_delete_option_open = use_callback(
+        |(id, label), (selected_id_state, selected_label_state, open_state)| {
+            selected_id_state.set(id);
+            selected_label_state.set(label);
+            open_state.set(true);
+        },
+        (
+            selected_option_id_state.clone(),
+            selected_option_label_state.clone(),
+            delete_option_open_state.clone(),
+        ),
+    );
+    let on_delete_option_close = use_callback(
+        |_, state| state.set(false),
+        delete_option_open_state.clone(),
+    );
     let on_delete_option = {
         let field_id = props.field.id;
 
@@ -253,18 +288,22 @@ fn fields_tab_item(props: &FieldsTabItemProps) -> Html {
     let update_rename_name = use_callback(|val, state| state.set(val), rename_name_state.clone());
     let update_option_label = use_callback(|val, state| state.set(val), option_label_state.clone());
 
-    let list_style = use_style!(r#"
+    let list_style = use_style!(
+        r#"
 display: flex;
 flex-flow: row wrap;
 gap: 2px;
-    "#);
-    let item_style = use_style!(r#"
+    "#
+    );
+    let item_style = use_style!(
+        r#"
 display: flex;
 gap: 4px;
 flex: 0 0 100%;
 min-width: 100%;
 align-items: center;
-    "#);
+    "#
+    );
 
     let mut options = props.field.options.clone();
     options.sort();
@@ -420,10 +459,13 @@ fn custom_field_page() -> Html {
             })
         })
     };
-    let on_add_close = use_callback(|_, (open_state, error_state)| {
-        open_state.set(false);
-        error_state.set(false);
-    }, (add_open_state.clone(), error_state.clone()));
+    let on_add_close = use_callback(
+        |_, (open_state, error_state)| {
+            open_state.set(false);
+            error_state.set(false);
+        },
+        (add_open_state.clone(), error_state.clone()),
+    );
 
     let update_add_name = use_callback(|val, state| state.set(val), add_name_state.clone());
 

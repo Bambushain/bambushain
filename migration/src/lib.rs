@@ -1,8 +1,8 @@
 pub use sea_orm_migration::prelude::*;
 
 mod m20220101_000001_create_schemas;
-mod m20230724_121111_create_table_character;
 mod m20230724_121011_create_table_user;
+mod m20230724_121111_create_table_character;
 mod m20230724_165124_create_table_token;
 mod m20230724_165521_create_table_crafter;
 mod m20230724_165656_create_table_fighter;

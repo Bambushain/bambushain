@@ -1,6 +1,6 @@
 use bounce::query::use_query_value;
-use chrono::{Days, Months};
 use chrono::prelude::*;
+use chrono::{Days, Months};
 use date_range::DateRange;
 use stylist::yew::use_style;
 use yew::prelude::*;
@@ -57,12 +57,15 @@ impl ToString for ColorYiqResult {
         match self {
             ColorYiqResult::Light => "#ffffff",
             ColorYiqResult::Dark => "#333333",
-        }.to_string()
+        }
+        .to_string()
     }
 }
 
 fn color_yiq(color: Color) -> ColorYiqResult {
-    let yiq = ((color.red() as u32 * 299) + (color.green() as u32 * 587) + (color.blue() as u32 * 114)) / 1000;
+    let yiq =
+        ((color.red() as u32 * 299) + (color.green() as u32 * 587) + (color.blue() as u32 * 114))
+            / 1000;
 
     if yiq >= 128 {
         ColorYiqResult::Dark
@@ -83,7 +86,8 @@ fn add_event_dialog(props: &AddEventDialogProps) -> Html {
     let error_state = use_state_eq(|| false);
 
     let title_input = use_callback(|value, state| state.set(value), title_state.clone());
-    let description_input = use_callback(|value, state| state.set(value), description_state.clone());
+    let description_input =
+        use_callback(|value, state| state.set(value), description_state.clone());
     let end_date_input = use_callback(|value, state| state.set(value), end_date_state.clone());
     let color_input = use_callback(|value, state| state.set(value), color_state.clone());
 
@@ -116,7 +120,15 @@ fn add_event_dialog(props: &AddEventDialogProps) -> Html {
             let on_added = on_added.clone();
 
             yew::platform::spawn_local(async move {
-                match api::create_event(Event::new((*title_state).to_string(), (*description_state).to_string(), start_date, *end_date_state, *color_state)).await {
+                match api::create_event(Event::new(
+                    (*title_state).to_string(),
+                    (*description_state).to_string(),
+                    start_date,
+                    *end_date_state,
+                    *color_state,
+                ))
+                .await
+                {
                     Ok(_) => on_added.emit(()),
                     Err(err) => {
                         log::error!("Failed to create event {err}");
@@ -162,7 +174,8 @@ fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
     let delete_error_state = use_state_eq(|| false);
 
     let title_input = use_callback(|value, state| state.set(value), title_state.clone());
-    let description_input = use_callback(|value, state| state.set(value), description_state.clone());
+    let description_input =
+        use_callback(|value, state| state.set(value), description_state.clone());
     let color_input = use_callback(|value, state| state.set(value), color_state.clone());
 
     let on_form_submit = {
@@ -190,7 +203,18 @@ fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
             let on_saved = on_saved.clone();
 
             yew::platform::spawn_local(async move {
-                match api::update_event(event.id, Event::new((*title_state).to_string(), (*description_state).to_string(), event.start_date, event.end_date, *color_state)).await {
+                match api::update_event(
+                    event.id,
+                    Event::new(
+                        (*title_state).to_string(),
+                        (*description_state).to_string(),
+                        event.start_date,
+                        event.end_date,
+                        *color_state,
+                    ),
+                )
+                .await
+                {
                     Ok(_) => on_saved.emit(()),
                     Err(err) => {
                         log::error!("Failed to update event {} {err}", event.id);
@@ -260,7 +284,8 @@ fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
 
 #[function_component(EventEntry)]
 fn event_entry(props: &EventEntryProps) -> Html {
-    let event_style = use_style!(r#"
+    let event_style = use_style!(
+        r#"
 background-color: ${event_color};
 flex: 0 0 100%;
 height: auto;
@@ -281,7 +306,8 @@ align-items: center;
         event_color = props.event.color().hex(),
         color = color_yiq(props.event.color()).to_string(),
     );
-    let hover_style = use_style!(r#"
+    let hover_style = use_style!(
+        r#"
 &:hover::before {
     content: attr(data-description);
     position: absolute;
@@ -309,7 +335,8 @@ align-items: center;
         event_color = props.event.color().hex(),
         color = color_yiq(props.event.color()).to_string(),
     );
-    let edit_style = use_style!(r#"
+    let edit_style = use_style!(
+        r#"
 opacity: 0;
 transition: all 0.1s;
 text-decoration: none;
@@ -325,10 +352,13 @@ cursor: pointer;"#,
     };
 
     let edit_open_state = use_state_eq(|| false);
-    let on_saved = use_callback(|_, (state, on_saved)| {
-        state.set(false);
-        on_saved.emit(());
-    }, (edit_open_state.clone(), props.on_reload.clone()));
+    let on_saved = use_callback(
+        |_, (state, on_saved)| {
+            state.set(false);
+            on_saved.emit(());
+        },
+        (edit_open_state.clone(), props.on_reload.clone()),
+    );
 
     html!(
         <>
@@ -354,13 +384,15 @@ fn day(props: &DayProps) -> Html {
         "var(--day-background-past-month)"
     };
     let today = Local::now().date_naive();
-    let (day_number_color, day_number_weight) = if today.month() == props.month && today.day() == props.day && today.year() == props.year {
-        ("var(--primary-color)", "var(--font-weight-bold)")
-    } else {
-        ("var(--menu-text-color)", "var(--font-weight-light)")
-    };
+    let (day_number_color, day_number_weight) =
+        if today.month() == props.month && today.day() == props.day && today.year() == props.year {
+            ("var(--primary-color)", "var(--font-weight-bold)")
+        } else {
+            ("var(--menu-text-color)", "var(--font-weight-light)")
+        };
 
-    let style = use_style!(r#"
+    let style = use_style!(
+        r#"
 border-top: 1px solid var(--primary-color);
 border-left: 1px solid var(--primary-color);
 background: ${background_color};
@@ -412,7 +444,8 @@ flex-flow: row wrap;
         day_number_color = day_number_color,
         day_number_weight = day_number_weight,
     );
-    let add_style = use_style!(r#"
+    let add_style = use_style!(
+        r#"
 opacity: 0;
 transition: all 0.1s;
 text-decoration: none;
@@ -421,12 +454,16 @@ top: 2px;
 left: 2px;
 stroke: var(--primary-color);
 cursor: pointer;
-    "#);
+    "#
+    );
 
-    let on_added = use_callback(|_, (state, callback)| {
-        state.set(false);
-        callback.emit(());
-    }, (add_event_open_state.clone(), props.on_reload.clone()));
+    let on_added = use_callback(
+        |_, (state, callback)| {
+            state.set(false);
+            callback.emit(());
+        },
+        (add_event_open_state.clone(), props.on_reload.clone()),
+    );
 
     html!(
         <>
@@ -447,16 +484,26 @@ fn calendar_data(props: &CalendarProps) -> Html {
     let first_day_of_month = props.date;
     let first_day_offset = first_day_of_month.weekday() as u64 - 1;
 
-    let last_day_of_month = first_day_of_month.checked_add_months(Months::new(1)).unwrap().checked_sub_days(Days::new(1)).unwrap();
+    let last_day_of_month = first_day_of_month
+        .checked_add_months(Months::new(1))
+        .unwrap()
+        .checked_sub_days(Days::new(1))
+        .unwrap();
 
     let last_day_of_prev_month = first_day_of_month.checked_sub_days(Days::new(1)).unwrap();
-    let calendar_start_date = last_day_of_prev_month.checked_sub_days(Days::new(first_day_offset)).unwrap();
+    let calendar_start_date = last_day_of_prev_month
+        .checked_sub_days(Days::new(first_day_offset))
+        .unwrap();
 
     let total_days = first_day_offset + last_day_of_month.day() as u64;
     let days_of_next_month = 40 - total_days;
 
-    let first_day_of_next_month = first_day_of_month.checked_add_months(Months::new(1)).unwrap();
-    let calendar_end_date = first_day_of_next_month.checked_add_days(Days::new(days_of_next_month)).unwrap();
+    let first_day_of_next_month = first_day_of_month
+        .checked_add_months(Months::new(1))
+        .unwrap();
+    let calendar_end_date = first_day_of_next_month
+        .checked_add_days(Days::new(days_of_next_month))
+        .unwrap();
 
     let selected_month = first_day_of_month.month();
 
@@ -472,7 +519,10 @@ fn calendar_data(props: &CalendarProps) -> Html {
     let events_state = use_state_eq(|| vec![] as Vec<Event>);
 
     let props_date_memo = use_memo(|date| *date, props.date);
-    let range_memo = use_memo(|(start, end)| DateRange::new(*start, *end).unwrap(), (calendar_start_date, calendar_end_date));
+    let range_memo = use_memo(
+        |(start, end)| DateRange::new(*start, *end).unwrap(),
+        (calendar_start_date, calendar_end_date),
+    );
 
     let event_query_state = use_query_value::<EventRange>(range_memo);
 
@@ -491,14 +541,18 @@ fn calendar_data(props: &CalendarProps) -> Html {
 
     use_event_source("/sse/event".to_string(), event_source_trigger);
 
-    let error_message_style = use_style!(r#"
+    let error_message_style = use_style!(
+        r#"
 grid-column: span 7;
 grid-row: 3/4;
-    "#);
-    let progress_ring_style = use_style!(r#"
+    "#
+    );
+    let progress_ring_style = use_style!(
+        r#"
 grid-column: span 7;
 grid-row: 3/4;
-    "#);
+    "#
+    );
 
     {
         let event_query_state = event_query_state.clone();
@@ -592,13 +646,16 @@ pub fn calendar_page() -> Html {
     let prev_month = *date_state - Months::new(1);
     let next_month = *date_state + Months::new(1);
 
-    let calendar_container_style = use_style!(r#"
+    let calendar_container_style = use_style!(
+        r#"
 display: grid;
 grid-template-columns: repeat(7, 1fr);
 grid-template-rows: auto repeat(6, 1fr);
 height: calc(100vh - 64px - 32px - 80px - 28px - 68px - 44px - 16px - 34px - 16px);
-    "#);
-    let calendar_header_style = use_style!(r#"
+    "#
+    );
+    let calendar_header_style = use_style!(
+        r#"
 display: flex;
 justify-content: space-between;
 align-items: baseline;
@@ -611,8 +668,10 @@ h2 {
     min-width: calc(100% / 3);
     text-align: center;
 }
-    "#);
-    let calendar_action_style = use_style!(r#"
+    "#
+    );
+    let calendar_action_style = use_style!(
+        r#"
 font-size: 24px;
 font-weight: var(--font-weight-light);
 color: var(--primary-color);
@@ -620,29 +679,40 @@ text-decoration: none;
 cursor: pointer;
 flex: 0 0 calc(100% / 3);
 min-width: calc(100% / 3);
-    "#);
-    let calendar_action_prev_style = use_style!(r#"
+    "#
+    );
+    let calendar_action_prev_style = use_style!(
+        r#"
 text-align: left;
-    "#);
-    let calendar_action_next_style = use_style!(r#"
+    "#
+    );
+    let calendar_action_next_style = use_style!(
+        r#"
 text-align: right;
-    "#);
-    let calendar_weekday_style = use_style!(r#"
+    "#
+    );
+    let calendar_weekday_style = use_style!(
+        r#"
 font-size: 20px;
 font-weight: var(--font-weight-light);
 color: var(--primary-color);
 grid-row: 1/2;
 text-align: center;
-    "#);
+    "#
+    );
 
-    let move_prev = use_callback(|_: MouseEvent, date_state| date_state
-        .set((*date_state)
-            .checked_sub_months(Months::new(1))
-            .unwrap()), date_state.clone());
-    let move_next = use_callback(|_: MouseEvent, date_state| date_state
-        .set((*date_state)
-            .checked_add_months(Months::new(1))
-            .unwrap()), date_state.clone());
+    let move_prev = use_callback(
+        |_: MouseEvent, date_state| {
+            date_state.set((*date_state).checked_sub_months(Months::new(1)).unwrap())
+        },
+        date_state.clone(),
+    );
+    let move_next = use_callback(
+        |_: MouseEvent, date_state| {
+            date_state.set((*date_state).checked_add_months(Months::new(1)).unwrap())
+        },
+        date_state.clone(),
+    );
 
     html!(
         <>
