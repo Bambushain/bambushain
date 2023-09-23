@@ -136,6 +136,7 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
                         .iter()
                         .map(|val| val.to_string())
                         .collect::<BTreeSet<String>>(),
+                    position: 0,
                 })
             }
 

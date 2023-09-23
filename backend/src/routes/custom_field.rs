@@ -17,6 +17,12 @@ pub struct CustomFieldOptionPath {
     pub field_id: i32,
 }
 
+#[derive(Deserialize)]
+pub struct CustomFieldOptionPositionPath {
+    pub field_id: i32,
+    pub position: i32,
+}
+
 pub async fn get_custom_fields(authentication: Authentication, db: DbConnection) -> HttpResponse {
     ok_or_error!(
         pandaparty_dbal::custom_field::get_custom_fields(authentication.user.id, &db).await
@@ -49,7 +55,7 @@ pub async fn create_custom_field(
         authentication.user.id,
         &db,
     )
-    .await
+        .await
     {
         return conflict!(pandaparty_exists_already_error!(
             "custom_field",
@@ -168,7 +174,7 @@ pub async fn update_custom_field_option(
         path.field_id,
         &db,
     )
-    .await
+        .await
     {
         return not_found!(pandaparty_not_found_error!(
             "custom_field",
@@ -197,7 +203,7 @@ pub async fn delete_custom_field_option(
         path.field_id,
         &db,
     )
-    .await
+        .await
     {
         return not_found!(pandaparty_not_found_error!(
             "custom_field",
@@ -207,6 +213,30 @@ pub async fn delete_custom_field_option(
 
     no_content_or_error!(
         pandaparty_dbal::custom_field::delete_custom_field_option(path.id, path.field_id, &db)
+            .await
+    )
+}
+
+pub async fn move_custom_field(
+    path: web::Path<CustomFieldOptionPositionPath>,
+    authentication: Authentication,
+    db: DbConnection,
+) -> HttpResponse {
+    if !pandaparty_dbal::custom_field::custom_field_exists(
+        authentication.user.id,
+        path.field_id,
+        &db,
+    )
+        .await
+    {
+        return not_found!(pandaparty_not_found_error!(
+            "custom_field",
+            "The custom field was not found"
+        ));
+    }
+
+    no_content_or_error!(
+        pandaparty_dbal::custom_field::move_custom_field(authentication.user.id, path.field_id, path.position, &db)
             .await
     )
 }

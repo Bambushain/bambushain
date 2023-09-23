@@ -7,15 +7,16 @@ use yew_icons::Icon;
 
 use pandaparty_entities::prelude::*;
 
-use crate::api::{
-    add_custom_field_option, create_custom_field, delete_custom_field, delete_custom_field_option,
-    update_custom_field, update_custom_field_option, CustomCharacterFields,
-};
+use crate::api::{add_custom_field_option, create_custom_field, delete_custom_field, delete_custom_field_option, update_custom_field, update_custom_field_option, CustomCharacterFields, move_custom_field};
 
 #[derive(PartialEq, Clone, Properties)]
 struct FieldsTabItemProps {
     field: CustomCharacterField,
     on_change: Callback<()>,
+    on_move: Callback<usize>,
+    is_last: bool,
+    is_first: bool,
+    position: i32,
 }
 
 #[function_component(FieldsTabItem)]
@@ -65,7 +66,7 @@ fn fields_tab_item(props: &FieldsTabItemProps) -> Html {
             let on_change = on_change.clone();
 
             yew::platform::spawn_local(async move {
-                error_state.set(match update_custom_field(id, (*rename_name_state).clone().to_string()).await {
+                error_state.set(match update_custom_field(id, (*rename_name_state).clone().to_string(), 0).await {
                     Ok(_) => {
                         on_change.emit(());
                         rename_open_state.set(false);
@@ -288,6 +289,43 @@ fn fields_tab_item(props: &FieldsTabItemProps) -> Html {
     let update_rename_name = use_callback(|val, state| state.set(val), rename_name_state.clone());
     let update_option_label = use_callback(|val, state| state.set(val), option_label_state.clone());
 
+    let on_move_right = {
+        let id = props.field.id;
+
+        let on_move = props.on_move.clone();
+
+        let position = props.position;
+
+        Callback::from(move |_| {
+            let on_move = on_move.clone();
+
+            yew::platform::spawn_local(async move {
+                match move_custom_field(id, position as usize + 1).await {
+                    Ok(_) => on_move.emit(position as usize + 1),
+                    Err(err) => log::error!("Move failed: {err}"),
+                }
+            })
+        })
+    };
+    let on_move_left = {
+        let id = props.field.id;
+
+        let on_move = props.on_move.clone();
+
+        let position = props.position;
+
+        Callback::from(move |_| {
+            let on_move = on_move.clone();
+
+            yew::platform::spawn_local(async move {
+                match move_custom_field(id, position as usize - 1).await {
+                    Ok(_) => on_move.emit(position as usize - 1),
+                    Err(err) => log::error!("Move failed: {err}"),
+                }
+            })
+        })
+    };
+
     let list_style = use_style!(
         r#"
 display: flex;
@@ -317,6 +355,10 @@ align-items: center;
                 </CosmoToolbarGroup>
                 <CosmoToolbarGroup>
                     <CosmoButton label="Option hinzufügen" on_click={on_add_option_open} />
+                </CosmoToolbarGroup>
+                <CosmoToolbarGroup>
+                    <CosmoButton label="Nach links verschieben" enabled={!props.is_first} on_click={on_move_left} />
+                    <CosmoButton label="Nach rechts verschieben" enabled={!props.is_last} on_click={on_move_right} />
                 </CosmoToolbarGroup>
             </CosmoToolbar>
             <CosmoHeader level={CosmoHeaderLevel::H3} header="Optionen" />
@@ -413,6 +455,8 @@ fn custom_field_page() -> Html {
 
     let fields_state = use_state_eq(|| vec![] as Vec<CustomCharacterField>);
 
+    let selected_item_state = use_state(|| Some(0usize));
+
     let on_add_open = use_callback(|_, state| state.set(true), add_open_state.clone());
     let on_change = {
         let fields_query_state = fields_query_state.clone();
@@ -422,6 +466,22 @@ fn custom_field_page() -> Html {
 
             yew::platform::spawn_local(async move {
                 let _ = fields_query_state.refresh().await;
+            })
+        })
+    };
+    let on_move = {
+        let fields_query_state = fields_query_state.clone();
+
+        let selected_item_state = selected_item_state.clone();
+
+        Callback::from(move |idx| {
+            let fields_query_state = fields_query_state.clone();
+
+            let selected_item_state = selected_item_state.clone();
+
+            yew::platform::spawn_local(async move {
+                let _ = fields_query_state.refresh().await;
+                selected_item_state.set(Some(idx));
             })
         })
     };
@@ -444,7 +504,7 @@ fn custom_field_page() -> Html {
             let fields_query_state = fields_query_state.clone();
 
             yew::platform::spawn_local(async move {
-                error_state.set(match create_custom_field((*add_name_state).clone().to_string()).await {
+                error_state.set(match create_custom_field((*add_name_state).clone().to_string(), 0).await {
                     Ok(_) => {
                         let _ = fields_query_state.refresh().await;
                         add_open_state.set(false);
@@ -469,6 +529,8 @@ fn custom_field_page() -> Html {
 
     let update_add_name = use_callback(|val, state| state.set(val), add_name_state.clone());
 
+    let on_select_item = use_callback(|idx, state| state.set(Some(idx)), selected_item_state.clone());
+
     match fields_query_state.result() {
         None => {
             log::debug!("Still loading");
@@ -481,7 +543,8 @@ fn custom_field_page() -> Html {
         Some(Ok(res)) => {
             log::debug!("Loaded custom fields");
             initial_loaded_state.set(true);
-            let fields = res.fields.clone();
+            let mut fields = res.fields.clone();
+            fields.sort();
             fields_state.set(fields);
         }
         Some(Err(err)) => {
@@ -492,6 +555,12 @@ fn custom_field_page() -> Html {
         }
     }
 
+    let last_item = if (*fields_state).clone().is_empty() {
+        0
+    } else {
+        (*fields_state).clone().len() - 1
+    };
+
     html!(
         <>
             <CosmoTitle title="Eigene Felder für Charaktere" />
@@ -500,9 +569,9 @@ fn custom_field_page() -> Html {
                     <CosmoButton label="Neues Feld" on_click={on_add_open} />
                 </CosmoToolbarGroup>
             </CosmoToolbar>
-            <CosmoTabControl>
-                {for (*fields_state).clone().iter().map(|field| CosmoTabItem::from_label_and_children(field.label.clone().into(), html!(
-                    <FieldsTabItem field={field.clone()} on_change={on_change.clone()} />
+            <CosmoTabControl selected_index={*selected_item_state} on_select_item={on_select_item}>
+                {for (*fields_state).clone().iter().enumerate().map(|(idx, field)| CosmoTabItem::from_label_and_children(field.label.clone().into(), html!(
+                    <FieldsTabItem on_move={on_move.clone()} position={field.position} field={field.clone()} on_change={on_change.clone()} is_first={idx == 0} is_last={idx == last_item} />
                 )))}
             </CosmoTabControl>
             if *add_open_state {

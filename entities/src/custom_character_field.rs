@@ -10,6 +10,7 @@ use crate::prelude::CustomCharacterFieldOption;
 pub struct CustomField {
     pub values: BTreeSet<String>,
     pub label: String,
+    pub position: usize,
 }
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Default)]
@@ -25,19 +26,20 @@ pub struct Model {
     #[cfg(feature = "backend")]
     #[serde(skip)]
     pub user_id: i32,
+    pub position: i32,
     #[cfg_attr(feature = "backend", sea_orm(ignore))]
     pub options: Vec<CustomCharacterFieldOption>,
 }
 
 impl PartialOrd for Model {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.label.partial_cmp(&other.label)
+        self.position.partial_cmp(&other.position)
     }
 }
 
 impl Ord for Model {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.label.cmp(&other.label)
+        self.position.cmp(&other.position)
     }
 }
 
@@ -90,7 +92,7 @@ impl Model {
             #[cfg(feature = "backend")]
             user_id: i32::default(),
             options,
-            // values: vec![],
+            position: 0,
         }
     }
 }

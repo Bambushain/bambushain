@@ -1,7 +1,7 @@
 use sea_orm::prelude::*;
-use sea_orm::sea_query::Expr;
+use sea_orm::sea_query::{Expr};
 use sea_orm::ActiveValue::Set;
-use sea_orm::{NotSet, QuerySelect};
+use sea_orm::{NotSet, QueryOrder, QuerySelect};
 
 use pandaparty_entities::prelude::*;
 use pandaparty_entities::{
@@ -15,6 +15,8 @@ pub async fn get_custom_fields(
     let fields = custom_character_field::Entity::find()
         .find_with_related(custom_character_field_option::Entity)
         .filter(custom_character_field::Column::UserId.eq(user_id))
+        .order_by_asc(custom_character_field::Column::Position)
+        .order_by_asc(custom_character_field::Column::Label)
         .all(db)
         .await
         .map_err(|err| {
@@ -29,6 +31,7 @@ pub async fn get_custom_fields(
             label: field.label.clone(),
             id: field.id,
             user_id: field.user_id,
+            position: field.position,
         })
         .collect::<Vec<CustomCharacterField>>())
 }
@@ -74,13 +77,14 @@ pub async fn create_custom_field(
         id: NotSet,
         label: Set(custom_field.label),
         user_id: Set(user_id),
+        position: Set(custom_field.position as i32),
     }
-    .insert(db)
-    .await
-    .map_err(|err| {
-        log::error!("{err}");
-        pandaparty_db_error!("character", "Failed to create custom field")
-    })?;
+        .insert(db)
+        .await
+        .map_err(|err| {
+            log::error!("{err}");
+            pandaparty_db_error!("character", "Failed to create custom field")
+        })?;
 
     let models = custom_field
         .values
@@ -170,12 +174,12 @@ pub async fn create_custom_field_option(
         custom_character_field_id: Set(custom_field_id),
         label: Set(label),
     }
-    .insert(db)
-    .await
-    .map_err(|err| {
-        log::error!("{err}");
-        pandaparty_db_error!("character", "Failed to create custom field option")
-    })
+        .insert(db)
+        .await
+        .map_err(|err| {
+            log::error!("{err}");
+            pandaparty_db_error!("character", "Failed to create custom field option")
+        })
 }
 
 pub async fn update_custom_field_option(
@@ -242,4 +246,90 @@ pub async fn custom_field_exists_by_label(
         .await
         .map(|count| count > 0)
         .unwrap_or(false)
+}
+
+pub async fn move_custom_field(user_id: i32, field_id: i32, position: i32, db: &DatabaseConnection) -> PandaPartyErrorResult {
+    let current_field = custom_character_field::Entity::find_by_id(field_id)
+        .filter(custom_character_field::Column::UserId.eq(user_id))
+        .one(db)
+        .await
+        .map_err(|err| {
+            log::error!("{err}");
+            pandaparty_db_error!("character", "Failed to move custom field")
+        })?;
+
+    if let Some(field) = current_field {
+        custom_character_field::Entity::update_many()
+            .filter(custom_character_field::Column::Position.eq(position))
+            .col_expr(custom_character_field::Column::Position, Expr::value(field.position))
+            .exec(db)
+            .await
+            .map_err(|err| {
+                log::error!("{err}");
+                pandaparty_db_error!("character", "Failed to move custom field")
+            })?;
+        custom_character_field::Entity::update_many()
+            .filter(custom_character_field::Column::Id.eq(field.id))
+            .col_expr(custom_character_field::Column::Position, Expr::value(position))
+            .exec(db)
+            .await
+            .map_err(|err| {
+                log::error!("{err}");
+                pandaparty_db_error!("character", "Failed to move custom field")
+            })?;
+    } else {
+        return Err(pandaparty_not_found_error!("character", "Field not found"));
+    };
+    //
+    // let mut prev_position = position;
+    // for old_field in old_fields {
+    //     prev_position += 1;
+    //     custom_character_field::Entity::update_many()
+    //         .col_expr(custom_character_field::Column::Position, Expr::value(prev_position))
+    //         .filter(custom_character_field::Column::Id.eq(old_field))
+    //         .exec(db)
+    //         .await
+    //         .map_err(|err| {
+    //             log::error!("{err}");
+    //             pandaparty_db_error!("character", "Failed to move custom field")
+    //         })?;
+    // }
+    //
+    // custom_character_field::Entity::update_many()
+    //     .filter(custom_character_field::Column::UserId.eq(user_id))
+    //     .filter(custom_character_field::Column::Id.eq(field_id))
+    //     .col_expr(custom_character_field::Column::Position, Expr::value(position))
+    //     .exec(db)
+    //     .await
+    //     .map_err(|err| {
+    //         log::error!("{err}");
+    //         pandaparty_db_error!("character", "Failed to move custom field")
+    //     })?;
+    //
+    // let fields = custom_character_field::Entity::find()
+    //     .select_only()
+    //     .column(custom_character_field::Column::Id)
+    //     .filter(custom_character_field::Column::UserId.eq(user_id))
+    //     .order_by_asc(custom_character_field::Column::Position)
+    //     .into_tuple::<i32>()
+    //     .all(db)
+    //     .await
+    //     .map_err(|err| {
+    //         log::error!("{err}");
+    //         pandaparty_db_error!("character", "Failed to move custom field")
+    //     })?;
+    //
+    // for (idx, id) in fields.iter().enumerate() {
+    //     custom_character_field::Entity::update_many()
+    //         .col_expr(custom_character_field::Column::Position, Expr::value(idx as i32))
+    //         .filter(custom_character_field::Column::Id.eq(*id))
+    //         .exec(db)
+    //         .await
+    //         .map_err(|err| {
+    //             log::error!("{err}");
+    //             pandaparty_db_error!("character", "Failed to move custom field")
+    //         })?;
+    // }
+
+    Ok(())
 }

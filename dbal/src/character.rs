@@ -1,5 +1,4 @@
 use std::collections::{BTreeMap, BTreeSet};
-
 use sea_orm::prelude::*;
 use sea_orm::sea_query::Expr;
 use sea_orm::ActiveValue::Set;
@@ -85,6 +84,8 @@ async fn fill_custom_fields(
         .column_as(custom_character_field_option::Column::Label, "value")
         .filter(custom_character_field::Column::UserId.eq(user_id))
         .filter(custom_character_field_value::Column::CharacterId.eq(character_id))
+        .order_by_asc(custom_character_field::Column::Position)
+        .order_by_asc(custom_character_field::Column::Label)
         .into_tuple::<(String, String)>()
         .all(db)
         .await
@@ -93,21 +94,44 @@ async fn fill_custom_fields(
             pandaparty_db_error!("character", "Failed to load custom fields")
         })?;
 
-    let mut custom_fields: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    let positions_from_db = custom_character_field_value::Entity::find()
+        .select_only()
+        .inner_join(custom_character_field::Entity)
+        .column_as(custom_character_field::Column::Label, "label")
+        .filter(custom_character_field::Column::UserId.eq(user_id))
+        .filter(custom_character_field_value::Column::CharacterId.eq(character_id))
+        .order_by_asc(custom_character_field::Column::Position)
+        .order_by_asc(custom_character_field::Column::Label)
+        .distinct_on(vec![custom_character_field::Column::Label, custom_character_field::Column::Position])
+        .into_tuple::<String>()
+        .all(db)
+        .await
+        .map_err(|err| {
+            log::error!("{err}");
+            pandaparty_db_error!("character", "Failed to load custom fields")
+        })?;
+
+    let mut positions = BTreeMap::new();
+    for (idx, label) in positions_from_db.iter().enumerate() {
+        positions.insert(label.clone(), idx);
+    }
+
+    let mut custom_fields: BTreeMap<usize, (String, BTreeSet<String>)> = BTreeMap::new();
     for (label, value) in data {
-        let values = if custom_fields.contains_key(&label) {
-            let mut values = custom_fields[&label].clone();
-            values.insert(value);
+        let position = positions[&label];
+        let values = if custom_fields.contains_key(&position) {
+            let (_, mut values) = custom_fields[&position].clone();
+            values.insert(value.clone());
             values
         } else {
-            vec![value].into_iter().collect::<BTreeSet<String>>()
+            vec![value.clone()].into_iter().collect::<BTreeSet<String>>()
         };
-        custom_fields.insert(label.clone(), values.clone());
+        custom_fields.insert(position, (label.clone(), values.clone()));
     }
 
     Ok(custom_fields
         .into_iter()
-        .map(|(label, values)| CustomField { label, values })
+        .map(|(position, (label, values))| CustomField { label, values, position })
         .collect::<Vec<CustomField>>())
 }
 

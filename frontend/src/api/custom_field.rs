@@ -7,9 +7,7 @@ use bounce::BounceStates;
 
 use pandaparty_entities::prelude::{CustomCharacterField, CustomField};
 
-use crate::api::{
-    delete, get, post, post_no_content, put_no_content, ApiError, PandapartyApiResult,
-};
+use crate::api::{delete, get, post, post_no_content, put_no_content, ApiError, PandapartyApiResult, put_no_body_no_content};
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
 pub struct CustomCharacterFields {
@@ -39,28 +37,30 @@ impl Query for CustomCharacterFields {
     }
 }
 
-pub async fn create_custom_field(label: String) -> PandapartyApiResult<CustomCharacterField> {
+pub async fn create_custom_field(label: String, position: usize) -> PandapartyApiResult<CustomCharacterField> {
     log::debug!("Create new field: {label}");
     post(
         "/api/final-fantasy/character/custom-field",
         &CustomField {
             label,
             values: BTreeSet::new(),
+            position,
         },
     )
-    .await
+        .await
 }
 
-pub async fn update_custom_field(id: i32, label: String) -> PandapartyApiResult<()> {
+pub async fn update_custom_field(id: i32, label: String, position: usize) -> PandapartyApiResult<()> {
     log::debug!("Update field: {id} {label}");
     put_no_content(
         format!("/api/final-fantasy/character/custom-field/{id}"),
         &CustomField {
             label,
             values: BTreeSet::new(),
+            position,
         },
     )
-    .await
+        .await
 }
 
 pub async fn delete_custom_field(id: i32) -> PandapartyApiResult<()> {
@@ -74,7 +74,7 @@ pub async fn add_custom_field_option(field_id: i32, label: String) -> Pandaparty
         format!("/api/final-fantasy/character/custom-field/{field_id}/option"),
         &label,
     )
-    .await
+        .await
 }
 
 pub async fn update_custom_field_option(
@@ -87,7 +87,7 @@ pub async fn update_custom_field_option(
         format!("/api/final-fantasy/character/custom-field/{field_id}/option/{id}"),
         &label,
     )
-    .await
+        .await
 }
 
 pub async fn delete_custom_field_option(field_id: i32, id: i32) -> PandapartyApiResult<()> {
@@ -95,5 +95,11 @@ pub async fn delete_custom_field_option(field_id: i32, id: i32) -> PandapartyApi
     delete(format!(
         "/api/final-fantasy/character/custom-field/{field_id}/option/{id}"
     ))
-    .await
+        .await
+}
+
+pub async fn move_custom_field(id: i32, position: usize) -> PandapartyApiResult<()> {
+    log::debug!("Move field: {id} {position}");
+    put_no_body_no_content(format!("/api/final-fantasy/character/custom-field/{id}/{position}"))
+        .await
 }
