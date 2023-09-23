@@ -55,7 +55,7 @@ pub async fn create_custom_field(
         authentication.user.id,
         &db,
     )
-        .await
+    .await
     {
         return conflict!(pandaparty_exists_already_error!(
             "custom_field",
@@ -174,7 +174,7 @@ pub async fn update_custom_field_option(
         path.field_id,
         &db,
     )
-        .await
+    .await
     {
         return not_found!(pandaparty_not_found_error!(
             "custom_field",
@@ -203,7 +203,7 @@ pub async fn delete_custom_field_option(
         path.field_id,
         &db,
     )
-        .await
+    .await
     {
         return not_found!(pandaparty_not_found_error!(
             "custom_field",
@@ -227,7 +227,7 @@ pub async fn move_custom_field(
         path.field_id,
         &db,
     )
-        .await
+    .await
     {
         return not_found!(pandaparty_not_found_error!(
             "custom_field",
@@ -236,7 +236,12 @@ pub async fn move_custom_field(
     }
 
     no_content_or_error!(
-        pandaparty_dbal::custom_field::move_custom_field(authentication.user.id, path.field_id, path.position, &db)
-            .await
+        pandaparty_dbal::custom_field::move_custom_field(
+            authentication.user.id,
+            path.field_id,
+            path.position,
+            &db
+        )
+        .await
     )
 }

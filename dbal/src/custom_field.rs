@@ -1,5 +1,5 @@
 use sea_orm::prelude::*;
-use sea_orm::sea_query::{Expr};
+use sea_orm::sea_query::Expr;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{NotSet, QueryOrder, QuerySelect};
 
@@ -79,12 +79,12 @@ pub async fn create_custom_field(
         user_id: Set(user_id),
         position: Set(custom_field.position as i32),
     }
-        .insert(db)
-        .await
-        .map_err(|err| {
-            log::error!("{err}");
-            pandaparty_db_error!("character", "Failed to create custom field")
-        })?;
+    .insert(db)
+    .await
+    .map_err(|err| {
+        log::error!("{err}");
+        pandaparty_db_error!("character", "Failed to create custom field")
+    })?;
 
     let models = custom_field
         .values
@@ -174,12 +174,12 @@ pub async fn create_custom_field_option(
         custom_character_field_id: Set(custom_field_id),
         label: Set(label),
     }
-        .insert(db)
-        .await
-        .map_err(|err| {
-            log::error!("{err}");
-            pandaparty_db_error!("character", "Failed to create custom field option")
-        })
+    .insert(db)
+    .await
+    .map_err(|err| {
+        log::error!("{err}");
+        pandaparty_db_error!("character", "Failed to create custom field option")
+    })
 }
 
 pub async fn update_custom_field_option(
@@ -248,7 +248,12 @@ pub async fn custom_field_exists_by_label(
         .unwrap_or(false)
 }
 
-pub async fn move_custom_field(user_id: i32, field_id: i32, position: i32, db: &DatabaseConnection) -> PandaPartyErrorResult {
+pub async fn move_custom_field(
+    user_id: i32,
+    field_id: i32,
+    position: i32,
+    db: &DatabaseConnection,
+) -> PandaPartyErrorResult {
     let current_field = custom_character_field::Entity::find_by_id(field_id)
         .filter(custom_character_field::Column::UserId.eq(user_id))
         .one(db)
@@ -261,7 +266,10 @@ pub async fn move_custom_field(user_id: i32, field_id: i32, position: i32, db: &
     if let Some(field) = current_field {
         custom_character_field::Entity::update_many()
             .filter(custom_character_field::Column::Position.eq(position))
-            .col_expr(custom_character_field::Column::Position, Expr::value(field.position))
+            .col_expr(
+                custom_character_field::Column::Position,
+                Expr::value(field.position),
+            )
             .exec(db)
             .await
             .map_err(|err| {
@@ -270,7 +278,10 @@ pub async fn move_custom_field(user_id: i32, field_id: i32, position: i32, db: &
             })?;
         custom_character_field::Entity::update_many()
             .filter(custom_character_field::Column::Id.eq(field.id))
-            .col_expr(custom_character_field::Column::Position, Expr::value(position))
+            .col_expr(
+                custom_character_field::Column::Position,
+                Expr::value(position),
+            )
             .exec(db)
             .await
             .map_err(|err| {

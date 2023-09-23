@@ -7,7 +7,10 @@ use yew_icons::Icon;
 
 use pandaparty_entities::prelude::*;
 
-use crate::api::{add_custom_field_option, create_custom_field, delete_custom_field, delete_custom_field_option, update_custom_field, update_custom_field_option, CustomCharacterFields, move_custom_field};
+use crate::api::{
+    add_custom_field_option, create_custom_field, delete_custom_field, delete_custom_field_option,
+    move_custom_field, update_custom_field, update_custom_field_option, CustomCharacterFields,
+};
 
 #[derive(PartialEq, Clone, Properties)]
 struct FieldsTabItemProps {
@@ -529,7 +532,10 @@ fn custom_field_page() -> Html {
 
     let update_add_name = use_callback(|val, state| state.set(val), add_name_state.clone());
 
-    let on_select_item = use_callback(|idx, state| state.set(Some(idx)), selected_item_state.clone());
+    let on_select_item = use_callback(
+        |idx, state| state.set(Some(idx)),
+        selected_item_state.clone(),
+    );
 
     match fields_query_state.result() {
         None => {

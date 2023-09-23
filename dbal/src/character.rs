@@ -1,8 +1,8 @@
-use std::collections::{BTreeMap, BTreeSet};
 use sea_orm::prelude::*;
 use sea_orm::sea_query::Expr;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{Condition, IntoActiveModel, NotSet, QueryOrder, QuerySelect};
+use std::collections::{BTreeMap, BTreeSet};
 
 use pandaparty_entities::prelude::*;
 use pandaparty_entities::{
@@ -102,7 +102,10 @@ async fn fill_custom_fields(
         .filter(custom_character_field_value::Column::CharacterId.eq(character_id))
         .order_by_asc(custom_character_field::Column::Position)
         .order_by_asc(custom_character_field::Column::Label)
-        .distinct_on(vec![custom_character_field::Column::Label, custom_character_field::Column::Position])
+        .distinct_on(vec![
+            custom_character_field::Column::Label,
+            custom_character_field::Column::Position,
+        ])
         .into_tuple::<String>()
         .all(db)
         .await
@@ -124,14 +127,20 @@ async fn fill_custom_fields(
             values.insert(value.clone());
             values
         } else {
-            vec![value.clone()].into_iter().collect::<BTreeSet<String>>()
+            vec![value.clone()]
+                .into_iter()
+                .collect::<BTreeSet<String>>()
         };
         custom_fields.insert(position, (label.clone(), values.clone()));
     }
 
     Ok(custom_fields
         .into_iter()
-        .map(|(position, (label, values))| CustomField { label, values, position })
+        .map(|(position, (label, values))| CustomField {
+            label,
+            values,
+            position,
+        })
         .collect::<Vec<CustomField>>())
 }
 

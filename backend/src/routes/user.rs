@@ -252,7 +252,7 @@ pub async fn enable_totp(authentication: Authentication, db: DbConnection) -> Ht
         Ok(_) => {
             totp.account_name = authentication.user.display_name.clone();
             totp.issuer = Some("Pandaparty".to_string());
-            let qr = match totp.get_qr() {
+            let qr = match totp.get_qr_base64() {
                 Ok(qr) => qr,
                 Err(err) => {
                     log::error!("Failed to enable totp {err}");

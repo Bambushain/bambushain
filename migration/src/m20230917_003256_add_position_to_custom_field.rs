@@ -1,5 +1,5 @@
-use sea_orm_migration::prelude::*;
 use crate::m20220101_000001_create_schemas::Schemas;
+use sea_orm_migration::prelude::*;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -15,9 +15,9 @@ impl MigrationTrait for Migration {
                         ColumnDef::new(CustomCharacterField::Position)
                             .integer()
                             .null()
-                            .default(0)
+                            .default(0),
                     )
-                    .to_owned()
+                    .to_owned(),
             )
             .await
     }
@@ -28,7 +28,7 @@ impl MigrationTrait for Migration {
                 Table::alter()
                     .table((Schemas::FinalFantasy, CustomCharacterField::Table))
                     .drop_column(CustomCharacterField::Position)
-                    .to_owned()
+                    .to_owned(),
             )
             .await
     }

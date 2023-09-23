@@ -17,7 +17,11 @@ use pandaparty_backend::routes::character::{
 use pandaparty_backend::routes::crafter::{
     create_crafter, delete_crafter, get_crafter, get_crafters, update_crafter,
 };
-use pandaparty_backend::routes::custom_field::{create_custom_field, create_custom_field_option, delete_custom_field, delete_custom_field_option, get_custom_field, get_custom_field_options, get_custom_fields, move_custom_field, update_custom_field, update_custom_field_option};
+use pandaparty_backend::routes::custom_field::{
+    create_custom_field, create_custom_field_option, delete_custom_field,
+    delete_custom_field_option, get_custom_field, get_custom_field_options, get_custom_fields,
+    move_custom_field, update_custom_field, update_custom_field_option,
+};
 use pandaparty_backend::routes::event::{create_event, delete_event, get_events, update_event};
 use pandaparty_backend::routes::fighter::{
     create_fighter, delete_fighter, get_fighter, get_fighters, update_fighter,
