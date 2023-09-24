@@ -12,6 +12,7 @@ use yew_hooks::use_mount;
 use pandaparty_entities::prelude::*;
 
 use crate::api::character::MyCharacters;
+use crate::api::free_company::get_free_companies;
 use crate::api::*;
 
 #[derive(Properties, PartialEq, Clone)]
@@ -26,6 +27,7 @@ struct ModifyCharacterModalProps {
     on_save: Callback<Character>,
     on_error_close: Callback<()>,
     custom_fields: Vec<CustomCharacterField>,
+    free_companies: Vec<FreeCompany>,
 }
 
 #[derive(Properties, PartialEq, Clone)]
@@ -33,6 +35,7 @@ struct CharacterDetailsProps {
     character: Character,
     on_delete: Callback<()>,
     custom_fields: Vec<CustomCharacterField>,
+    free_companies: Vec<FreeCompany>,
 }
 
 #[derive(Properties, PartialEq, Clone)]
@@ -124,10 +127,26 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
 
         custom_fields
     });
+    let free_company_state = use_state_eq(|| {
+        if let Some(free_company) = props.character.free_company.clone() {
+            Some(AttrValue::from(free_company.id.to_string()))
+        } else {
+            None
+        }
+    });
 
     let on_close = props.on_close.clone();
     let on_save = use_callback(
-        |_, (race_state, world_state, name_state, custom_fields_state, on_save)| {
+        |_,
+         (
+            race_state,
+            world_state,
+            name_state,
+            custom_fields_state,
+            free_company_state,
+            free_companies,
+            on_save,
+        )| {
             let mut custom_fields = vec![];
             for (label, values) in (**custom_fields_state).clone() {
                 custom_fields.push(CustomField {
@@ -140,11 +159,24 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
                 })
             }
 
+            let free_company = if let Some(id) = (**free_company_state).clone() {
+                free_companies.iter().find_map(|company| {
+                    if id == company.id.to_string() {
+                        Some(company.clone())
+                    } else {
+                        None
+                    }
+                })
+            } else {
+                None
+            };
+
             let character = Character::new(
                 CharacterRace::from((**race_state).clone().unwrap().to_string()),
                 (**name_state).to_string(),
                 (**world_state).to_string(),
                 custom_fields,
+                free_company,
             );
             on_save.emit(character);
         },
@@ -153,6 +185,8 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
             world_state.clone(),
             name_state.clone(),
             custom_fields_state.clone(),
+            free_company_state.clone(),
+            props.free_companies.clone(),
             props.on_save.clone(),
         ),
     );
@@ -199,6 +233,10 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
         },
         custom_fields_state.clone(),
     );
+    let update_free_company = use_callback(
+        |value: Option<AttrValue>, state| state.set(value),
+        free_company_state.clone(),
+    );
 
     let mut all_races = CharacterRace::iter().collect::<Vec<CharacterRace>>();
     all_races.sort();
@@ -212,6 +250,23 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
             )
         })
         .collect::<Vec<(Option<AttrValue>, AttrValue)>>();
+
+    let mut all_free_companies = props.free_companies.clone();
+    all_free_companies.sort();
+
+    let mut free_companies = vec![(None, AttrValue::from("Keine Freie Gesellschaft"))];
+    free_companies.append(
+        all_free_companies
+            .iter()
+            .map(|free_company| {
+                (
+                    Some(AttrValue::from(free_company.id.to_string())),
+                    AttrValue::from(free_company.name.clone()),
+                )
+            })
+            .collect::<Vec<(Option<AttrValue>, AttrValue)>>()
+            .as_mut(),
+    );
 
     let mut custom_field_inputs = vec![];
     for field in props.custom_fields.clone() {
@@ -275,6 +330,7 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
                 <CosmoTextBox label="Name" on_input={update_name} value={(*name_state).clone()} required={true} />
                 <CosmoDropdown label="Rasse" on_select={update_race} value={(*race_state).clone()} required={true} items={races} />
                 <CosmoTextBox label="Welt" on_input={update_world} value={(*world_state).clone()} required={true} />
+                <CosmoDropdown label="Freie Gesellschaft" on_select={update_free_company} value={(*free_company_state).clone()} required={true} items={free_companies} />
                 {for custom_field_inputs}
             </CosmoInputGroup>
         </CosmoModal>
@@ -586,6 +642,9 @@ fn character_details(props: &CharacterDetailsProps) -> Html {
                 <CosmoKeyValueListItem title="Name">{props.character.name.clone()}</CosmoKeyValueListItem>
                 <CosmoKeyValueListItem title="Rasse">{props.character.race.to_string()}</CosmoKeyValueListItem>
                 <CosmoKeyValueListItem title="Welt">{props.character.world.clone()}</CosmoKeyValueListItem>
+                if let Some(free_company) = props.character.free_company.clone() {
+                    <CosmoKeyValueListItem title="Freie Gesellschaft">{free_company.name.clone()}</CosmoKeyValueListItem>
+                }
                 {for props.character.custom_fields.clone().iter().map(|field| {
                     html!(
                         <CosmoKeyValueListItem title={field.label.clone()}>{field.values.clone().into_iter().collect::<Vec<String>>().join(", ")}</CosmoKeyValueListItem>
@@ -594,7 +653,7 @@ fn character_details(props: &CharacterDetailsProps) -> Html {
             </CosmoKeyValueList>
             {match (*action_state).clone() {
                 CharacterActions::Edit => html!(
-                    <ModifyCharacterModal on_error_close={on_error_close.clone()} title={format!("Charakter {} bearbeiten", props.character.name.clone())} save_label="Character speichern" on_save={on_modal_save} on_close={on_modal_close} character={props.character.clone()} custom_fields={props.custom_fields.clone()} error_message={(*error_message_state).clone()} has_error={*error_state == ErrorState::Edit} />
+                    <ModifyCharacterModal free_companies={props.free_companies.clone()} on_error_close={on_error_close.clone()} title={format!("Charakter {} bearbeiten", props.character.name.clone())} save_label="Character speichern" on_save={on_modal_save} on_close={on_modal_close} character={props.character.clone()} custom_fields={props.custom_fields.clone()} error_message={(*error_message_state).clone()} has_error={*error_state == ErrorState::Edit} />
                 ),
                 CharacterActions::Delete => {
                     let character = props.character.clone();
@@ -1160,6 +1219,8 @@ pub fn character_page() -> Html {
 
     let character_state = use_state_eq(|| vec![] as Vec<Character>);
 
+    let free_companies_state = use_state_eq(|| vec![] as Vec<FreeCompany>);
+
     let custom_fields_state = use_state_eq(|| vec![] as Vec<CustomCharacterField>);
 
     let selected_character_state = use_state_eq(|| 0);
@@ -1241,12 +1302,19 @@ pub fn character_page() -> Html {
     {
         let custom_fields_state = custom_fields_state.clone();
 
+        let free_companies_state = free_companies_state.clone();
+
         use_mount(move || {
             let custom_fields_state = custom_fields_state;
+
+            let free_companies_state = free_companies_state;
 
             yew::platform::spawn_local(async move {
                 if let Ok(custom_fields) = get_custom_fields().await {
                     custom_fields_state.set(custom_fields);
+                }
+                if let Ok(free_companies) = get_free_companies().await {
+                    free_companies_state.set(free_companies);
                 }
             });
         });
@@ -1286,7 +1354,7 @@ pub fn character_page() -> Html {
                             <CosmoTitle title={character.name.clone()} />
                             <CosmoTabControl>
                                 <CosmoTabItem label="Details">
-                                    <CharacterDetails custom_fields={(*custom_fields_state).clone()} on_delete={on_delete.clone()} character={character.clone()} />
+                                    <CharacterDetails free_companies={(*free_companies_state).clone()} custom_fields={(*custom_fields_state).clone()} on_delete={on_delete.clone()} character={character.clone()} />
                                 </CosmoTabItem>
                                 <CosmoTabItem label="Kämpfer">
                                     <FighterDetails character={character.clone()} />
@@ -1300,7 +1368,7 @@ pub fn character_page() -> Html {
                 })}
             </CosmoSideList>
             if *open_create_character_modal_state {
-                <ModifyCharacterModal on_error_close={on_error_close} error_message={(*error_message_state).clone()} has_error={*error_state} on_close={on_modal_close} title="Charakter hinzufügen" save_label="Charakter hinzufügen" on_save={on_modal_save} custom_fields={(*custom_fields_state).clone()} />
+                <ModifyCharacterModal free_companies={(*free_companies_state).clone()} on_error_close={on_error_close} error_message={(*error_message_state).clone()} has_error={*error_state} on_close={on_modal_close} title="Charakter hinzufügen" save_label="Charakter hinzufügen" on_save={on_modal_save} custom_fields={(*custom_fields_state).clone()} />
             }
         </>
     )

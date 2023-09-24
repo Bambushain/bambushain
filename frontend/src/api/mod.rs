@@ -24,6 +24,7 @@ pub mod event;
 pub mod fighter;
 pub mod my;
 pub mod user;
+pub mod free_company;
 
 macro_rules! error_code {
     ($name:tt,$code:literal) => {
