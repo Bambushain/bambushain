@@ -26,6 +26,9 @@ use pandaparty_backend::routes::event::{create_event, delete_event, get_events, 
 use pandaparty_backend::routes::fighter::{
     create_fighter, delete_fighter, get_fighter, get_fighters, update_fighter,
 };
+use pandaparty_backend::routes::free_company::{
+    create_free_company, delete_free_company, get_free_company, update_free_company,
+};
 use pandaparty_backend::routes::user::{
     add_mod_user, change_my_password, change_password, create_user, delete_user, enable_totp,
     get_profile, get_user, get_users, remove_mod_user, update_profile, update_user_profile,
@@ -281,6 +284,22 @@ async fn main() -> std::io::Result<()> {
             .route(
                 "/api/final-fantasy/character/{id}",
                 web::delete().to(delete_character).wrap(AuthenticateUser),
+            )
+            .route(
+                "/api/final-fantasy/free-company",
+                web::post().to(create_free_company).wrap(AuthenticateUser),
+            )
+            .route(
+                "/api/final-fantasy/free-company/{id}",
+                web::get().to(get_free_company).wrap(AuthenticateUser),
+            )
+            .route(
+                "/api/final-fantasy/free-company/{id}",
+                web::put().to(update_free_company).wrap(AuthenticateUser),
+            )
+            .route(
+                "/api/final-fantasy/free-company/{id}",
+                web::delete().to(delete_free_company).wrap(AuthenticateUser),
             )
             .route(
                 "/api/final-fantasy/character/{character_id}/crafter",

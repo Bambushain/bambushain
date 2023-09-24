@@ -4,6 +4,7 @@ use sea_orm::ActiveValue::Set;
 use sea_orm::{Condition, IntoActiveModel, NotSet, QueryOrder, QuerySelect};
 use std::collections::{BTreeMap, BTreeSet};
 
+use crate::free_company::get_free_company;
 use pandaparty_entities::prelude::*;
 use pandaparty_entities::{
     character, custom_character_field, custom_character_field_option, custom_character_field_value,
@@ -22,6 +23,8 @@ async fn map_character(
         world: character.world.clone(),
         user_id,
         custom_fields: fill_custom_fields(user_id, character.id, db).await?,
+        free_company_id: character.free_company_id,
+        free_company: get_free_company(character.free_company_id, user_id, db).await?,
     })
 }
 

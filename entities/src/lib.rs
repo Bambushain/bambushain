@@ -7,6 +7,7 @@ pub mod custom_character_field_value;
 pub mod error;
 pub mod event;
 pub mod fighter;
+pub mod free_company;
 pub mod result;
 pub mod token;
 pub mod user;
@@ -25,6 +26,7 @@ pub mod prelude {
     pub use crate::event::Model as Event;
     pub use crate::fighter::FighterJob;
     pub use crate::fighter::Model as Fighter;
+    pub use crate::free_company::Model as FreeCompany;
     pub use crate::result::*;
     pub use crate::token::Model as Token;
     pub use crate::user::Model as User;

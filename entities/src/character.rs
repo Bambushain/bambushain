@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 
-use crate::prelude::CustomField;
+use crate::prelude::{CustomField, FreeCompany};
 #[cfg(feature = "backend")]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -112,8 +112,13 @@ pub struct Model {
     #[cfg(feature = "backend")]
     #[serde(skip)]
     pub user_id: i32,
+    #[cfg(feature = "backend")]
+    #[serde(skip)]
+    pub free_company_id: Option<i32>,
     #[cfg_attr(feature = "backend", sea_orm(ignore))]
     pub custom_fields: Vec<CustomField>,
+    #[cfg_attr(feature = "backend", sea_orm(ignore))]
+    pub free_company: Option<FreeCompany>,
 }
 
 #[cfg(feature = "backend")]
@@ -127,6 +132,14 @@ pub enum Relation {
         on_delete = "Cascade"
     )]
     User,
+    #[sea_orm(
+        belongs_to = "super::free_company::Entity",
+        from = "Column::FreeCompanyId",
+        to = "super::free_company::Column::Id",
+        on_update = "Cascade",
+        on_delete = "Cascade"
+    )]
+    FreeCompany,
     #[sea_orm(has_many = "super::custom_character_field_value::Entity")]
     CustomFieldValue,
 }
@@ -135,6 +148,13 @@ pub enum Relation {
 impl Related<super::user::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::User.def()
+    }
+}
+
+#[cfg(feature = "backend")]
+impl Related<super::free_company::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::FreeCompany.def()
     }
 }
 
@@ -154,6 +174,7 @@ impl Model {
         name: String,
         world: String,
         custom_fields: Vec<CustomField>,
+        free_company: Option<FreeCompany>,
     ) -> Self {
         Self {
             id: i32::default(),
@@ -162,7 +183,10 @@ impl Model {
             world,
             #[cfg(feature = "backend")]
             user_id: i32::default(),
+            #[cfg(feature = "backend")]
+            free_company_id: None,
             custom_fields,
+            free_company,
         }
     }
 }
