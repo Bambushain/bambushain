@@ -39,3 +39,14 @@ impl Related<super::user::Entity> for Entity {
 
 #[cfg(feature = "backend")]
 impl ActiveModelBehavior for ActiveModel {}
+
+impl Model {
+    pub fn new(name: String) -> Self {
+        Self {
+            id: i32::default(),
+            name,
+            #[cfg(feature = "backend")]
+            user_id: i32::default(),
+        }
+    }
+}

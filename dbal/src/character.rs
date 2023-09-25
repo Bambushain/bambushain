@@ -176,6 +176,9 @@ pub async fn create_character(
     db: &DatabaseConnection,
 ) -> PandaPartyResult<Character> {
     let mut model = character.clone().into_active_model();
+    if let Some(free_company) = character.free_company {
+        model.free_company_id = Set(Some(free_company.id));
+    }
     model.user_id = Set(user_id);
     model.id = NotSet;
 
@@ -199,6 +202,10 @@ pub async fn update_character(
         .filter(character::Column::Id.eq(id))
         .filter(character::Column::UserId.eq(user_id))
         .col_expr(character::Column::Name, Expr::value(character.name.clone()))
+        .col_expr(
+            character::Column::FreeCompanyId,
+            Expr::value(character.free_company.map(|free_company| free_company.id)),
+        )
         .col_expr(
             character::Column::World,
             Expr::value(character.world.clone()),

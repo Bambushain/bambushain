@@ -23,7 +23,7 @@ impl Query for FreeCompanies {
     type Input = ();
     type Error = ApiError;
 
-    async fn query(states: &BounceStates, input: Rc<Self::Input>) -> QueryResult<Self> {
+    async fn query(_states: &BounceStates, _input: Rc<Self::Input>) -> QueryResult<Self> {
         get_free_companies().await.map(|data| Rc::new(data.into()))
     }
 }

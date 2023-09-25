@@ -22,9 +22,9 @@ pub mod crafter;
 pub mod custom_field;
 pub mod event;
 pub mod fighter;
+pub mod free_company;
 pub mod my;
 pub mod user;
-pub mod free_company;
 
 macro_rules! error_code {
     ($name:tt,$code:literal) => {

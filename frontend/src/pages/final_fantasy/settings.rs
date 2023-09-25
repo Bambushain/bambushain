@@ -7,6 +7,7 @@ use yew_icons::Icon;
 
 use pandaparty_entities::prelude::*;
 
+use crate::api::free_company::{create_free_company, delete_free_company, update_free_company};
 use crate::api::{
     add_custom_field_option, create_custom_field, delete_custom_field, delete_custom_field_option,
     move_custom_field, update_custom_field, update_custom_field_option, CustomCharacterFields,
@@ -599,6 +600,294 @@ fn custom_field_page() -> Html {
     )
 }
 
+#[function_component(FreeCompaniesPage)]
+fn free_companies() -> Html {
+    log::debug!("Render free companies page");
+    log::debug!("Initialize state and callbacks");
+    let free_companies_query_state =
+        use_query_value::<crate::api::free_company::FreeCompanies>(().into());
+
+    let initial_loaded_state = use_state_eq(|| false);
+    let add_open_state = use_state_eq(|| false);
+    let edit_open_state = use_state_eq(|| false);
+    let delete_open_state = use_state_eq(|| false);
+    let error_state = use_state_eq(|| false);
+
+    let selected_id_state = use_state_eq(|| -1);
+
+    let name_state = use_state_eq(|| AttrValue::from(""));
+    let error_message_state = use_state_eq(|| AttrValue::from(""));
+    let selected_name_state = use_state_eq(|| AttrValue::from(""));
+
+    let free_companies_state = use_state_eq(Vec::<FreeCompany>::default);
+
+    let on_error_close = use_callback(|_, state| state.set(false), error_state.clone());
+
+    let on_add_open = use_callback(
+        |_, (open_state, name_state)| {
+            open_state.set(true);
+            name_state.set("".into());
+        },
+        (add_open_state.clone(), name_state.clone()),
+    );
+    let on_add_close = use_callback(
+        |_, (open_state, error_state)| {
+            open_state.set(false);
+            error_state.set(false);
+        },
+        (add_open_state.clone(), error_state.clone()),
+    );
+    let on_add_save = {
+        let name_state = name_state.clone();
+        let error_message_state = error_message_state.clone();
+
+        let add_open_state = add_open_state.clone();
+        let error_state = error_state.clone();
+
+        let free_companies_query_state = free_companies_query_state.clone();
+
+        Callback::from(move |_| {
+            let name_state = name_state.clone();
+            let error_message_state = error_message_state.clone();
+
+            let add_open_state = add_open_state.clone();
+            let error_state = error_state.clone();
+
+            let free_companies_query_state = free_companies_query_state.clone();
+
+            yew::platform::spawn_local(async move {
+                error_state.set(match create_free_company(FreeCompany::new((*name_state).clone().to_string())).await {
+                    Ok(_) => {
+                        let _ = free_companies_query_state.refresh().await;
+                        add_open_state.set(false);
+                        name_state.set("".into());
+                        false
+                    }
+                    Err(err) => {
+                        log::error!("Failed to add free company {err}");
+                        error_message_state.set("Die Freie Gesellschaft konnte nicht hinzugefügt werden, bitte wende dich an Azami".into());
+                        true
+                    }
+                });
+            })
+        })
+    };
+
+    let on_edit_open = use_callback(
+        |(id, name): (i32, AttrValue), (selected_id_state, name_state, open_state)| {
+            selected_id_state.set(id);
+            name_state.set(name);
+            open_state.set(true);
+        },
+        (
+            selected_id_state.clone(),
+            name_state.clone(),
+            edit_open_state.clone(),
+        ),
+    );
+    let on_edit_close = use_callback(
+        |_, (open_state, error_state)| {
+            open_state.set(false);
+            error_state.set(false);
+        },
+        (edit_open_state.clone(), error_state.clone()),
+    );
+    let on_edit_save = {
+        let name_state = name_state.clone();
+        let error_message_state = error_message_state.clone();
+
+        let selected_id_state = selected_id_state.clone();
+        let edit_open_state = edit_open_state.clone();
+        let error_state = error_state.clone();
+
+        let free_companies_query_state = free_companies_query_state.clone();
+
+        Callback::from(move |_| {
+            let name_state = name_state.clone();
+            let error_message_state = error_message_state.clone();
+
+            let selected_id_state = selected_id_state.clone();
+            let edit_open_state = edit_open_state.clone();
+            let error_state = error_state.clone();
+
+            let free_companies_query_state = free_companies_query_state.clone();
+
+            yew::platform::spawn_local(async move {
+                error_state.set(match update_free_company(*selected_id_state,FreeCompany::new((*name_state).clone().to_string())).await {
+                    Ok(_) => {
+                        let _ = free_companies_query_state.refresh().await;
+                        edit_open_state.set(false);
+                        name_state.set("".into());
+                        false
+                    }
+                    Err(err) => {
+                        log::error!("Failed to edit free company option {err}");
+                        error_message_state.set("Die Freie Gesellschaft konnte nicht umbenannt werden, bitte wende dich an Azami".into());
+                        true
+                    }
+                });
+            })
+        })
+    };
+
+    let on_delete_open = use_callback(
+        |(id, name), (selected_id_state, selected_name_state, open_state)| {
+            selected_id_state.set(id);
+            selected_name_state.set(name);
+            open_state.set(true);
+        },
+        (
+            selected_id_state.clone(),
+            selected_name_state.clone(),
+            delete_open_state.clone(),
+        ),
+    );
+    let on_delete_close = use_callback(|_, state| state.set(false), delete_open_state.clone());
+    let on_delete = {
+        let error_state = error_state.clone();
+        let delete_option_open_state = delete_open_state.clone();
+
+        let error_message_state = error_message_state.clone();
+
+        let selected_option_id_state = selected_id_state;
+
+        let free_companies_query_state = free_companies_query_state.clone();
+
+        Callback::from(move |_| {
+            let error_state = error_state.clone();
+            let delete_option_open_state = delete_option_open_state.clone();
+
+            let error_message_state = error_message_state.clone();
+
+            let selected_option_id_state = selected_option_id_state.clone();
+
+            let free_companies_query_state = free_companies_query_state.clone();
+
+            yew::platform::spawn_local(async move {
+                error_state.set(match delete_free_company(*selected_option_id_state).await {
+                    Ok(_) => {
+                        delete_option_open_state.set(false);
+                        let _ = free_companies_query_state.refresh().await;
+                        false
+                    }
+                    Err(err) => {
+                        log::error!("Delete failed: {err}");
+                        error_message_state.set("Die Freie Gesellschaft konnte nicht gelöscht werden, bitte wende dich an Azami".into());
+                        true
+                    }
+                });
+            })
+        })
+    };
+
+    let update_name = use_callback(|val, state| state.set(val), name_state.clone());
+
+    let list_style = use_style!(
+        r#"
+display: flex;
+flex-flow: row wrap;
+gap: 2px;
+    "#
+    );
+    let item_style = use_style!(
+        r#"
+display: flex;
+gap: 4px;
+flex: 0 0 100%;
+min-width: 100%;
+align-items: center;
+    "#
+    );
+
+    match free_companies_query_state.result() {
+        None => {
+            log::debug!("Still loading");
+            if !*initial_loaded_state {
+                return html!(
+                    <CosmoProgressRing />
+                );
+            }
+        }
+        Some(Ok(res)) => {
+            log::debug!("Loaded custom fields");
+            initial_loaded_state.set(true);
+            let mut free_companies = res.free_companies.clone();
+            free_companies.sort();
+            free_companies_state.set(free_companies);
+        }
+        Some(Err(err)) => {
+            log::warn!("Failed to load {err}");
+            return html!(
+                <CosmoMessage header="Fehler beim Laden" message="Deine Freien Gesellschaften konnten nicht geladen werden, bitte wende dich an Azami" message_type={CosmoMessageType::Negative} />
+            );
+        }
+    }
+
+    html!(
+        <>
+            <CosmoTitle title="Freie Gesellschaften" />
+            <CosmoToolbar>
+                <CosmoToolbarGroup>
+                    <CosmoButton label="Freie Gesellschaft hinzufügen" on_click={on_add_open} />
+                </CosmoToolbarGroup>
+            </CosmoToolbar>
+            <div class={list_style}>
+                {for (*free_companies_state).iter().map(|free_company| {
+                    let delete_free_company = free_company.clone();
+                    let edit_free_company = free_company.clone();
+
+                    let on_delete_open = on_delete_open.clone();
+                    let on_edit_open = on_edit_open.clone();
+
+                    html!(
+                        <div class={item_style.clone()}>
+                            {free_company.name.clone()}
+                            <Icon width="16px" height="16px" icon_id={IconId::LucideEdit} onclick={move |_| on_edit_open.emit((edit_free_company.id, edit_free_company.name.clone().into()))} />
+                            <Icon width="16px" height="16px" icon_id={IconId::LucideTrash} onclick={move |_| on_delete_open.emit((delete_free_company.id, delete_free_company.name.clone().into()))} />
+                        </div>
+                    )
+                })}
+            </div>
+            if *edit_open_state {
+                <CosmoModal title="Freie Gesellschaft bearbeiten" is_form={true} on_form_submit={on_edit_save} buttons={html!(
+                    <>
+                        <CosmoButton on_click={on_edit_close} label="Abbrechen" />
+                        <CosmoButton label="Freie Gesellschaft speichern" is_submit={true} />
+                    </>
+                )}>
+                    if *error_state {
+                        <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} />
+                    }
+                    <CosmoInputGroup>
+                        <CosmoTextBox label="Name" on_input={update_name.clone()} value={(*name_state).clone()} required={true} />
+                    </CosmoInputGroup>
+                </CosmoModal>
+            }
+            if *add_open_state {
+                <CosmoModal title="Freie Gesellschaft hinzufügen" is_form={true} on_form_submit={on_add_save} buttons={html!(
+                    <>
+                        <CosmoButton on_click={on_add_close} label="Abbrechen" />
+                        <CosmoButton label="Freie Gesellschaft hinzufügen" is_submit={true} />
+                    </>
+                )}>
+                    if *error_state {
+                        <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} />
+                    }
+                    <CosmoInputGroup>
+                        <CosmoTextBox label="Name" on_input={update_name.clone()} value={(*name_state).clone()} required={true} />
+                    </CosmoInputGroup>
+                </CosmoModal>
+            }
+            if *delete_open_state {
+                <CosmoConfirm title="Freie Gesellschaft löschen" message={format!("Soll die Freie Gesellschaft {} wirklich gelöscht werden?", (*selected_name_state).clone())} confirm_label="Freie Gesellschaft Löschen" decline_label="Nicht löschen"  on_decline={on_delete_close} on_confirm={on_delete} />
+                if *error_state {
+                    <CosmoAlert title="Fehler beim Löschen" message={(*error_message_state).clone()} close_label="Schließen" on_close={on_error_close.clone()} />
+                }
+            }
+        </>
+    )
+}
+
 #[function_component(SettingsPage)]
 pub fn settings_page() -> Html {
     html!(
@@ -609,6 +898,9 @@ pub fn settings_page() -> Html {
             <CosmoSideList>
                 <CosmoSideListItem label="Eigene Felder">
                     <CustomFieldPage />
+                </CosmoSideListItem>
+                <CosmoSideListItem label="Freie Gesellschaften">
+                    <FreeCompaniesPage />
                 </CosmoSideListItem>
             </CosmoSideList>
         </>
