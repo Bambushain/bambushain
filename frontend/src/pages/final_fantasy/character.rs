@@ -108,7 +108,7 @@ enum ErrorState {
 
 #[function_component(ModifyCharacterModal)]
 fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
-    let race_state = use_state_eq(|| Some(AttrValue::from(props.character.race.get_race_name())));
+    let race_state = use_state_eq(|| AttrValue::from(props.character.race.get_race_name()));
     let world_state = use_state_eq(|| AttrValue::from(props.character.world.clone()));
     let name_state = use_state_eq(|| AttrValue::from(props.character.name.clone()));
     let custom_fields_state = use_state_eq(|| {
@@ -172,7 +172,7 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
             };
 
             let character = Character::new(
-                CharacterRace::from((**race_state).clone().unwrap().to_string()),
+                CharacterRace::from((**race_state).clone().to_string()),
                 (**name_state).to_string(),
                 (**world_state).to_string(),
                 custom_fields,
@@ -192,7 +192,7 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
     );
 
     let update_race = use_callback(
-        |value: Option<AttrValue>, state| state.set(value),
+        |value: AttrValue, state| state.set(value),
         race_state.clone(),
     );
     let update_world = use_callback(
@@ -234,7 +234,7 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
         custom_fields_state.clone(),
     );
     let update_free_company = use_callback(
-        |value: Option<AttrValue>, state| state.set(value),
+        |value: AttrValue, state| state.set(if !value.is_empty() { Some(value) } else { None }),
         free_company_state.clone(),
     );
 
@@ -244,27 +244,39 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
     let races = all_races
         .iter()
         .map(|race| {
-            (
-                Some(AttrValue::from(race.get_race_name())),
+            CosmoModernSelectItem::new(
                 AttrValue::from(race.to_string()),
+                AttrValue::from(race.get_race_name()),
+                (*race_state).clone().eq(&race.get_race_name()),
             )
         })
-        .collect::<Vec<(Option<AttrValue>, AttrValue)>>();
+        .collect::<Vec<CosmoModernSelectItem>>();
 
     let mut all_free_companies = props.free_companies.clone();
     all_free_companies.sort();
 
-    let mut free_companies = vec![(None, AttrValue::from("Keine Freie Gesellschaft"))];
+    let mut free_companies = vec![CosmoModernSelectItem::new(
+        "Keine Freie Gesellschaft",
+        "",
+        (*free_company_state).clone().is_none(),
+    )];
     free_companies.append(
         all_free_companies
             .iter()
             .map(|free_company| {
-                (
-                    Some(AttrValue::from(free_company.id.to_string())),
-                    AttrValue::from(free_company.name.clone()),
+                let selected = if let Some(value) = (*free_company_state).clone() {
+                    value.eq(&free_company.name.clone())
+                } else {
+                    false
+                };
+
+                CosmoModernSelectItem::new(
+                    free_company.name.clone(),
+                    free_company.id.to_string(),
+                    selected,
                 )
             })
-            .collect::<Vec<(Option<AttrValue>, AttrValue)>>()
+            .collect::<Vec<CosmoModernSelectItem>>()
             .as_mut(),
     );
 
@@ -328,9 +340,9 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
             }
             <CosmoInputGroup>
                 <CosmoTextBox label="Name" on_input={update_name} value={(*name_state).clone()} required={true} />
-                <CosmoDropdown label="Rasse" on_select={update_race} value={(*race_state).clone()} required={true} items={races} />
+                <CosmoModernSelect label="Rasse" on_select={update_race} required={true} items={races} />
                 <CosmoTextBox label="Welt" on_input={update_world} value={(*world_state).clone()} required={true} />
-                <CosmoDropdown label="Freie Gesellschaft" on_select={update_free_company} value={(*free_company_state).clone()} required={true} items={free_companies} />
+                <CosmoModernSelect label="Freie Gesellschaft" on_select={update_free_company} required={true} items={free_companies} />
                 {for custom_field_inputs}
             </CosmoInputGroup>
         </CosmoModal>
@@ -339,7 +351,13 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
 
 #[function_component(ModifyCrafterModal)]
 fn modify_crafter_modal(props: &ModifyCrafterModalProps) -> Html {
-    let job_state = use_state_eq(|| Some(AttrValue::from(props.crafter.job.get_job_name())));
+    let job_state = use_state_eq(|| {
+        AttrValue::from(if props.is_edit {
+            props.crafter.job.get_job_name()
+        } else {
+            props.jobs.first().unwrap().get_job_name()
+        })
+    });
     let level_state =
         use_state_eq(|| AttrValue::from(props.crafter.level.clone().unwrap_or_default()));
 
@@ -348,7 +366,7 @@ fn modify_crafter_modal(props: &ModifyCrafterModalProps) -> Html {
         |_, (job_state, level_state, on_save, character_id)| {
             on_save.emit(Crafter::new(
                 *character_id,
-                CrafterJob::from((**job_state).clone().unwrap().to_string()),
+                CrafterJob::from((**job_state).clone().to_string()),
                 (*level_state).to_string(),
             ))
         },
@@ -360,7 +378,7 @@ fn modify_crafter_modal(props: &ModifyCrafterModalProps) -> Html {
         ),
     );
     let update_job = use_callback(
-        |value: Option<AttrValue>, state| state.set(value),
+        |value: AttrValue, state| state.set(value),
         job_state.clone(),
     );
     let update_level = use_callback(
@@ -369,21 +387,23 @@ fn modify_crafter_modal(props: &ModifyCrafterModalProps) -> Html {
     );
 
     let jobs = if props.is_edit {
-        vec![(
-            Some(AttrValue::from(props.crafter.job.get_job_name())),
-            AttrValue::from(props.crafter.job.to_string()),
+        vec![CosmoModernSelectItem::new(
+            props.crafter.job.to_string(),
+            props.crafter.job.get_job_name(),
+            true,
         )]
     } else {
         props
             .jobs
             .iter()
             .map(|job| {
-                (
-                    Some(AttrValue::from(job.get_job_name())),
-                    AttrValue::from(job.to_string()),
+                CosmoModernSelectItem::new(
+                    job.to_string(),
+                    job.get_job_name(),
+                    (*job_state).clone().eq(&job.get_job_name()),
                 )
             })
-            .collect::<Vec<(Option<AttrValue>, AttrValue)>>()
+            .collect::<Vec<CosmoModernSelectItem>>()
     };
 
     html!(
@@ -398,7 +418,7 @@ fn modify_crafter_modal(props: &ModifyCrafterModalProps) -> Html {
                     <CosmoMessage message_type={CosmoMessageType::Negative} message={props.error_message.clone()} />
                 }
                 <CosmoInputGroup>
-                    <CosmoDropdown readonly={props.is_edit} label="Job" on_select={update_job} value={(*job_state).clone()} required={true} items={jobs} />
+                    <CosmoModernSelect readonly={props.is_edit} label="Job" on_select={update_job} required={true} items={jobs} />
                     <CosmoTextBox label="Level (optional)" on_input={update_level} value={(*level_state).clone()} />
                 </CosmoInputGroup>
             </CosmoModal>
@@ -408,7 +428,13 @@ fn modify_crafter_modal(props: &ModifyCrafterModalProps) -> Html {
 
 #[function_component(ModifyFighterModal)]
 fn modify_fighter_modal(props: &ModifyFighterModalProps) -> Html {
-    let job_state = use_state_eq(|| Some(AttrValue::from(props.fighter.job.get_job_name())));
+    let job_state = use_state_eq(|| {
+        AttrValue::from(if props.is_edit {
+            props.fighter.job.get_job_name()
+        } else {
+            props.jobs.first().unwrap().get_job_name()
+        })
+    });
     let level_state =
         use_state_eq(|| AttrValue::from(props.fighter.level.clone().unwrap_or_default()));
     let gear_score_state =
@@ -419,7 +445,7 @@ fn modify_fighter_modal(props: &ModifyFighterModalProps) -> Html {
         |_, (job_state, level_state, gear_score_state, on_save, character_id)| {
             on_save.emit(Fighter::new(
                 *character_id,
-                FighterJob::from((**job_state).clone().unwrap().to_string()),
+                FighterJob::from((**job_state).clone().to_string()),
                 (*level_state).to_string(),
                 (*gear_score_state).to_string(),
             ))
@@ -433,7 +459,7 @@ fn modify_fighter_modal(props: &ModifyFighterModalProps) -> Html {
         ),
     );
     let update_job = use_callback(
-        |value: Option<AttrValue>, state| state.set(value),
+        |value: AttrValue, state| state.set(value),
         job_state.clone(),
     );
     let update_level = use_callback(
@@ -446,21 +472,24 @@ fn modify_fighter_modal(props: &ModifyFighterModalProps) -> Html {
     );
 
     let jobs = if props.is_edit {
-        vec![(
-            Some(AttrValue::from(props.fighter.job.get_job_name())),
-            AttrValue::from(props.fighter.job.to_string()),
+        vec![CosmoModernSelectItem::new(
+            props.fighter.job.to_string(),
+            props.fighter.job.get_job_name(),
+            true,
         )]
     } else {
         props
             .jobs
             .iter()
             .map(|job| {
-                (
-                    Some(AttrValue::from(job.get_job_name())),
-                    AttrValue::from(job.to_string()),
+                log::debug!("Current job state: {}", (*job_state).clone());
+                CosmoModernSelectItem::new(
+                    job.to_string(),
+                    job.get_job_name(),
+                    (*job_state).clone().eq(&job.get_job_name()),
                 )
             })
-            .collect::<Vec<(Option<AttrValue>, AttrValue)>>()
+            .collect::<Vec<CosmoModernSelectItem>>()
     };
 
     html!(
@@ -475,7 +504,7 @@ fn modify_fighter_modal(props: &ModifyFighterModalProps) -> Html {
                     <CosmoMessage message_type={CosmoMessageType::Negative} message={props.error_message.clone()} />
                 }
                 <CosmoInputGroup>
-                    <CosmoDropdown readonly={props.is_edit} label="Job" on_select={update_job} value={(*job_state).clone()} required={true} items={jobs} />
+                    <CosmoModernSelect readonly={props.is_edit} label="Job" on_select={update_job} required={true} items={jobs} />
                     <CosmoTextBox label="Level (optional)" on_input={update_level} value={(*level_state).clone()} />
                     <CosmoTextBox label="Gear Score (optional)" on_input={update_gear_score} value={(*gear_score_state).clone()} />
                 </CosmoInputGroup>

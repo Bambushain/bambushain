@@ -11,6 +11,7 @@ use crate::api::free_company::{create_free_company, delete_free_company, update_
 use crate::api::{
     add_custom_field_option, create_custom_field, delete_custom_field, delete_custom_field_option,
     move_custom_field, update_custom_field, update_custom_field_option, CustomCharacterFields,
+    CONFLICT,
 };
 
 #[derive(PartialEq, Clone, Properties)]
@@ -665,7 +666,11 @@ fn free_companies() -> Html {
                     }
                     Err(err) => {
                         log::error!("Failed to add free company {err}");
-                        error_message_state.set("Die Freie Gesellschaft konnte nicht hinzugefügt werden, bitte wende dich an Azami".into());
+                        error_message_state.set(if err.code == CONFLICT {
+                            "Die Freie Gesellschaft existiert bereits"
+                        } else {
+                            "Die Freie Gesellschaft konnte nicht hinzugefügt werden, bitte wende dich an Azami"
+                        }.into());
                         true
                     }
                 });

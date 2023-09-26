@@ -24,9 +24,19 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(FreeCompany::UserId).integer().not_null())
                     .foreign_key(
                         ForeignKey::create()
-                            .from((Schemas::Authentication, User::Table), FreeCompany::UserId)
-                            .to((Schemas::FinalFantasy, FreeCompany::Table), FreeCompany::Id)
+                            .from(
+                                (Schemas::FinalFantasy, FreeCompany::Table),
+                                FreeCompany::UserId,
+                            )
+                            .to((Schemas::Authentication, User::Table), User::Id)
                             .on_delete(ForeignKeyAction::Cascade),
+                    )
+                    .index(
+                        Index::create()
+                            .table((Schemas::FinalFantasy, FreeCompany::Table))
+                            .col(FreeCompany::UserId)
+                            .col(FreeCompany::Name)
+                            .unique(),
                     )
                     .to_owned(),
             )
