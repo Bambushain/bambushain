@@ -40,16 +40,13 @@ fn fields_tab_item(props: &FieldsTabItemProps) -> Html {
     let error_message_state = use_state_eq(|| AttrValue::from(""));
     let selected_option_label_state = use_state_eq(|| AttrValue::from(""));
 
-    let on_error_close = use_callback(|_, state| state.set(false), error_state.clone());
+    let on_error_close = use_callback(error_state.clone(), |_, state| state.set(false));
 
-    let on_rename_open = use_callback(|_, state| state.set(true), rename_open_state.clone());
-    let on_rename_close = use_callback(
-        |_, (open_state, error_state)| {
-            open_state.set(false);
-            error_state.set(false);
-        },
-        (rename_open_state.clone(), error_state.clone()),
-    );
+    let on_rename_open = use_callback(rename_open_state.clone(), |_, state| state.set(true));
+    let on_rename_close = use_callback((rename_open_state.clone(), error_state.clone()),|_, (open_state, error_state)| {
+        open_state.set(false);
+        error_state.set(false);
+    });
     let on_rename_save = {
         let id = props.field.id;
 
@@ -88,14 +85,11 @@ fn fields_tab_item(props: &FieldsTabItemProps) -> Html {
     };
 
     let on_add_option_open =
-        use_callback(|_, state| state.set(true), add_option_open_state.clone());
-    let on_add_option_close = use_callback(
-        |_, (open_state, error_state)| {
-            open_state.set(false);
-            error_state.set(false);
-        },
-        (add_option_open_state.clone(), error_state.clone()),
-    );
+        use_callback(add_option_open_state.clone(), |_, state| state.set(true));
+    let on_add_option_close = use_callback((add_option_open_state.clone(), error_state.clone()),|_, (open_state, error_state)| {
+        open_state.set(false);
+        error_state.set(false);
+    });
     let on_add_option_save = {
         let id = props.field.id;
 
@@ -134,28 +128,22 @@ fn fields_tab_item(props: &FieldsTabItemProps) -> Html {
         })
     };
 
-    let on_edit_option_open = use_callback(
-        |(id, label): (i32, AttrValue),
-         (selected_id_state, selected_label_state, open_state, option_label_state)| {
-            selected_id_state.set(id);
-            selected_label_state.set(label.clone());
-            option_label_state.set(label);
-            open_state.set(true);
-        },
-        (
-            selected_option_id_state.clone(),
-            selected_option_label_state.clone(),
-            edit_option_open_state.clone(),
-            option_label_state.clone(),
-        ),
-    );
-    let on_edit_option_close = use_callback(
-        |_, (open_state, error_state)| {
-            open_state.set(false);
-            error_state.set(false);
-        },
-        (edit_option_open_state.clone(), error_state.clone()),
-    );
+    let on_edit_option_open = use_callback((
+        selected_option_id_state.clone(),
+        selected_option_label_state.clone(),
+        edit_option_open_state.clone(),
+        option_label_state.clone(),
+    ),|(id, label): (i32, AttrValue),
+     (selected_id_state, selected_label_state, open_state, option_label_state)| {
+        selected_id_state.set(id);
+        selected_label_state.set(label.clone());
+        option_label_state.set(label);
+        open_state.set(true);
+    });
+    let on_edit_option_close = use_callback((edit_option_open_state.clone(), error_state.clone()),|_, (open_state, error_state)| {
+        open_state.set(false);
+        error_state.set(false);
+    });
     let on_edit_option_save = {
         let id = props.field.id;
 
@@ -196,8 +184,8 @@ fn fields_tab_item(props: &FieldsTabItemProps) -> Html {
         })
     };
 
-    let on_delete_open = use_callback(|_, state| state.set(true), delete_open_state.clone());
-    let on_delete_close = use_callback(|_, state| state.set(false), delete_open_state.clone());
+    let on_delete_open = use_callback(delete_open_state.clone(), |_, state| state.set(true));
+    let on_delete_close = use_callback(delete_open_state.clone(), |_, state| state.set(false));
     let on_delete = {
         let id = props.field.id;
 
@@ -236,22 +224,16 @@ fn fields_tab_item(props: &FieldsTabItemProps) -> Html {
         })
     };
 
-    let on_delete_option_open = use_callback(
-        |(id, label), (selected_id_state, selected_label_state, open_state)| {
-            selected_id_state.set(id);
-            selected_label_state.set(label);
-            open_state.set(true);
-        },
-        (
-            selected_option_id_state.clone(),
-            selected_option_label_state.clone(),
-            delete_option_open_state.clone(),
-        ),
-    );
-    let on_delete_option_close = use_callback(
-        |_, state| state.set(false),
+    let on_delete_option_open = use_callback((
+        selected_option_id_state.clone(),
+        selected_option_label_state.clone(),
         delete_option_open_state.clone(),
-    );
+    ),|(id, label), (selected_id_state, selected_label_state, open_state)| {
+        selected_id_state.set(id);
+        selected_label_state.set(label);
+        open_state.set(true);
+    });
+    let on_delete_option_close = use_callback(delete_option_open_state.clone(),|_, state| state.set(false));
     let on_delete_option = {
         let field_id = props.field.id;
 
@@ -291,8 +273,8 @@ fn fields_tab_item(props: &FieldsTabItemProps) -> Html {
         })
     };
 
-    let update_rename_name = use_callback(|val, state| state.set(val), rename_name_state.clone());
-    let update_option_label = use_callback(|val, state| state.set(val), option_label_state.clone());
+    let update_rename_name = use_callback(rename_name_state.clone(), |val, state| state.set(val));
+    let update_option_label = use_callback(option_label_state.clone(), |val, state| state.set(val));
 
     let on_move_right = {
         let id = props.field.id;
@@ -462,7 +444,7 @@ fn custom_field_page() -> Html {
 
     let selected_item_state = use_state(|| Some(0usize));
 
-    let on_add_open = use_callback(|_, state| state.set(true), add_open_state.clone());
+    let on_add_open = use_callback(add_open_state.clone(), |_, state| state.set(true));
     let on_change = {
         let fields_query_state = fields_query_state.clone();
 
@@ -524,20 +506,14 @@ fn custom_field_page() -> Html {
             })
         })
     };
-    let on_add_close = use_callback(
-        |_, (open_state, error_state)| {
-            open_state.set(false);
-            error_state.set(false);
-        },
-        (add_open_state.clone(), error_state.clone()),
-    );
+    let on_add_close = use_callback((add_open_state.clone(), error_state.clone()),|_, (open_state, error_state)| {
+        open_state.set(false);
+        error_state.set(false);
+    });
 
-    let update_add_name = use_callback(|val, state| state.set(val), add_name_state.clone());
+    let update_add_name = use_callback(add_name_state.clone(), |val, state| state.set(val));
 
-    let on_select_item = use_callback(
-        |idx, state| state.set(Some(idx)),
-        selected_item_state.clone(),
-    );
+    let on_select_item = use_callback(selected_item_state.clone(),|idx, state| state.set(Some(idx)));
 
     match fields_query_state.result() {
         None => {
@@ -622,22 +598,16 @@ fn free_companies() -> Html {
 
     let free_companies_state = use_state_eq(Vec::<FreeCompany>::default);
 
-    let on_error_close = use_callback(|_, state| state.set(false), error_state.clone());
+    let on_error_close = use_callback(error_state.clone(), |_, state| state.set(false));
 
-    let on_add_open = use_callback(
-        |_, (open_state, name_state)| {
-            open_state.set(true);
-            name_state.set("".into());
-        },
-        (add_open_state.clone(), name_state.clone()),
-    );
-    let on_add_close = use_callback(
-        |_, (open_state, error_state)| {
-            open_state.set(false);
-            error_state.set(false);
-        },
-        (add_open_state.clone(), error_state.clone()),
-    );
+    let on_add_open = use_callback((add_open_state.clone(), name_state.clone()),|_, (open_state, name_state)| {
+        open_state.set(true);
+        name_state.set("".into());
+    });
+    let on_add_close = use_callback((add_open_state.clone(), error_state.clone()),|_, (open_state, error_state)| {
+        open_state.set(false);
+        error_state.set(false);
+    });
     let on_add_save = {
         let name_state = name_state.clone();
         let error_message_state = error_message_state.clone();
@@ -678,25 +648,19 @@ fn free_companies() -> Html {
         })
     };
 
-    let on_edit_open = use_callback(
-        |(id, name): (i32, AttrValue), (selected_id_state, name_state, open_state)| {
-            selected_id_state.set(id);
-            name_state.set(name);
-            open_state.set(true);
-        },
-        (
-            selected_id_state.clone(),
-            name_state.clone(),
-            edit_open_state.clone(),
-        ),
-    );
-    let on_edit_close = use_callback(
-        |_, (open_state, error_state)| {
-            open_state.set(false);
-            error_state.set(false);
-        },
-        (edit_open_state.clone(), error_state.clone()),
-    );
+    let on_edit_open = use_callback((
+        selected_id_state.clone(),
+        name_state.clone(),
+        edit_open_state.clone(),
+    ),|(id, name): (i32, AttrValue), (selected_id_state, name_state, open_state)| {
+        selected_id_state.set(id);
+        name_state.set(name);
+        open_state.set(true);
+    });
+    let on_edit_close = use_callback((edit_open_state.clone(), error_state.clone()),|_, (open_state, error_state)| {
+        open_state.set(false);
+        error_state.set(false);
+    });
     let on_edit_save = {
         let name_state = name_state.clone();
         let error_message_state = error_message_state.clone();
@@ -735,19 +699,16 @@ fn free_companies() -> Html {
         })
     };
 
-    let on_delete_open = use_callback(
-        |(id, name), (selected_id_state, selected_name_state, open_state)| {
-            selected_id_state.set(id);
-            selected_name_state.set(name);
-            open_state.set(true);
-        },
-        (
-            selected_id_state.clone(),
-            selected_name_state.clone(),
-            delete_open_state.clone(),
-        ),
-    );
-    let on_delete_close = use_callback(|_, state| state.set(false), delete_open_state.clone());
+    let on_delete_open = use_callback((
+        selected_id_state.clone(),
+        selected_name_state.clone(),
+        delete_open_state.clone(),
+    ),|(id, name), (selected_id_state, selected_name_state, open_state)| {
+        selected_id_state.set(id);
+        selected_name_state.set(name);
+        open_state.set(true);
+    });
+    let on_delete_close = use_callback(delete_open_state.clone(), |_, state| state.set(false));
     let on_delete = {
         let error_state = error_state.clone();
         let delete_option_open_state = delete_open_state.clone();
@@ -785,7 +746,7 @@ fn free_companies() -> Html {
         })
     };
 
-    let update_name = use_callback(|val, state| state.set(val), name_state.clone());
+    let update_name = use_callback(name_state.clone(), |val, state| state.set(val));
 
     let list_style = use_style!(
         r#"

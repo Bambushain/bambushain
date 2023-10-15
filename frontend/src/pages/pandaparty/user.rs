@@ -68,13 +68,13 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
 
     let created_user_state = use_state_eq(WebUser::default);
 
-    let update_email = use_callback(|value, state| state.set(value), email_state.clone());
+    let update_email = use_callback(email_state.clone(), |value, state| state.set(value));
     let update_display_name =
-        use_callback(|value, state| state.set(value), display_name_state.clone());
+        use_callback(display_name_state.clone(), |value, state| state.set(value));
     let update_discord_name =
-        use_callback(|value, state| state.set(value), discord_name_state.clone());
+        use_callback(discord_name_state.clone(), |value, state| state.set(value));
 
-    let update_is_mod = use_callback(|checked, state| state.set(checked), is_mod_state.clone());
+    let update_is_mod = use_callback(is_mod_state.clone(), |checked, state| state.set(checked));
 
     let form_submit = {
         let email_state = email_state.clone();
@@ -144,10 +144,7 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
         })
     };
 
-    let on_saved = use_callback(
-        |_, (created_user_state, on_saved)| on_saved.emit((**created_user_state).clone()),
-        (created_user_state, props.on_saved.clone()),
-    );
+    let on_saved = use_callback((created_user_state, props.on_saved.clone()),|_, (created_user_state, on_saved)| on_saved.emit((**created_user_state).clone()));
 
     html!(
         <CosmoModal title="Benutzer hinzufügen" is_form={true} on_form_submit={form_submit} buttons={
@@ -193,10 +190,10 @@ fn update_profile_dialog(props: &UpdateProfileDialogProps) -> Html {
     let discord_name_state = use_state_eq(|| props.discord_name.clone());
 
     let update_display_name =
-        use_callback(|value, state| state.set(value), display_name_state.clone());
-    let update_email = use_callback(|value, state| state.set(value), email_state.clone());
+        use_callback(display_name_state.clone(), |value, state| state.set(value));
+    let update_email = use_callback(email_state.clone(), |value, state| state.set(value));
     let update_discord_name =
-        use_callback(|value, state| state.set(value), discord_name_state.clone());
+        use_callback(discord_name_state.clone(), |value, state| state.set(value));
 
     let on_save = {
         let error_state = error_state.clone();
@@ -251,7 +248,7 @@ fn update_profile_dialog(props: &UpdateProfileDialogProps) -> Html {
             });
         })
     };
-    let close_error = use_callback(|_, state| state.set(false), error_state.clone());
+    let close_error = use_callback(error_state.clone(), |_, state| state.set(false));
 
     html!(
         <>
@@ -288,38 +285,20 @@ fn user_details(props: &UserDetailsProps) -> Html {
 
     let users_query_state = use_query_value::<Users>(().into());
 
-    let make_mod_click = use_callback(
-        |_, state| state.set(UserConfirmActions::MakeMod),
-        confirm_state.clone(),
-    );
-    let remove_mod_click = use_callback(
-        |_, state| state.set(UserConfirmActions::RemoveMod),
-        confirm_state.clone(),
-    );
-    let delete_click = use_callback(
-        |_, state| state.set(UserConfirmActions::Delete),
-        confirm_state.clone(),
-    );
-    let update_profile_click = use_callback(
-        |_, profile_edit_state| profile_edit_state.set(true),
-        profile_edit_state.clone(),
-    );
-    let change_password_click = use_callback(
-        |_, state| {
-            state.set(UserConfirmActions::ChangePassword(
-                rand::thread_rng()
-                    .sample_iter(&Alphanumeric)
-                    .take(8)
-                    .map(char::from)
-                    .collect::<String>(),
-            ))
-        },
-        confirm_state.clone(),
-    );
-    let on_decline = use_callback(
-        |_, state| state.set(UserConfirmActions::Closed),
-        confirm_state.clone(),
-    );
+    let make_mod_click = use_callback(confirm_state.clone(),|_, state| state.set(UserConfirmActions::MakeMod));
+    let remove_mod_click = use_callback(confirm_state.clone(),|_, state| state.set(UserConfirmActions::RemoveMod));
+    let delete_click = use_callback(confirm_state.clone(),|_, state| state.set(UserConfirmActions::Delete));
+    let update_profile_click = use_callback(profile_edit_state.clone(),|_, profile_edit_state| profile_edit_state.set(true));
+    let change_password_click = use_callback(confirm_state.clone(),|_, state| {
+        state.set(UserConfirmActions::ChangePassword(
+            rand::thread_rng()
+                .sample_iter(&Alphanumeric)
+                .take(8)
+                .map(char::from)
+                .collect::<String>(),
+        ))
+    });
+    let on_decline = use_callback(confirm_state.clone(),|_, state| state.set(UserConfirmActions::Closed));
     let on_confirm = {
         let confirm_state = confirm_state.clone();
         let error_state = error_state.clone();
@@ -454,13 +433,10 @@ fn user_details(props: &UserDetailsProps) -> Html {
             });
         })
     };
-    let on_alert_close = use_callback(
-        |_, (error_state, error_message_state)| {
-            error_state.set(false);
-            error_message_state.set("".into());
-        },
-        (error_state.clone(), error_message_state.clone()),
-    );
+    let on_alert_close = use_callback((error_state.clone(), error_message_state.clone()),|_, (error_state, error_message_state)| {
+        error_state.set(false);
+        error_message_state.set("".into());
+    });
     let on_update_profile_close = {
         let profile_edit_state = profile_edit_state.clone();
 
@@ -566,11 +542,8 @@ pub fn users_page() -> Html {
 
     let selected_user_state = use_state_eq(|| 0);
 
-    let open_create_user_modal_click = use_callback(
-        |_, open_create_user_modal_state| open_create_user_modal_state.set(true),
-        open_create_user_modal_state.clone(),
-    );
-    let on_user_select = use_callback(|idx, state| state.set(idx), selected_user_state.clone());
+    let open_create_user_modal_click = use_callback(open_create_user_modal_state.clone(),|_, open_create_user_modal_state| open_create_user_modal_state.set(true));
+    let on_user_select = use_callback(selected_user_state.clone(), |idx, state| state.set(idx));
 
     let event_source_trigger = {
         let users_query_state = users_query_state.clone();
@@ -632,10 +605,7 @@ pub fn users_page() -> Html {
             })
         })
     };
-    let on_create_close = use_callback(
-        |_, state| state.set(false),
-        open_create_user_modal_state.clone(),
-    );
+    let on_create_close = use_callback(open_create_user_modal_state.clone(),|_, state| state.set(false));
 
     match users_query_state.result() {
         None => {

@@ -85,11 +85,11 @@ fn add_event_dialog(props: &AddEventDialogProps) -> Html {
 
     let error_state = use_state_eq(|| false);
 
-    let title_input = use_callback(|value, state| state.set(value), title_state.clone());
+    let title_input = use_callback(title_state.clone(), |value, state| state.set(value));
     let description_input =
-        use_callback(|value, state| state.set(value), description_state.clone());
-    let end_date_input = use_callback(|value, state| state.set(value), end_date_state.clone());
-    let color_input = use_callback(|value, state| state.set(value), color_state.clone());
+        use_callback(description_state.clone(), |value, state| state.set(value));
+    let end_date_input = use_callback(end_date_state.clone(), |value, state| state.set(value));
+    let color_input = use_callback(color_state.clone(), |value, state| state.set(value));
 
     let on_form_submit = {
         let title_state = title_state.clone();
@@ -173,10 +173,10 @@ fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
     let error_state = use_state_eq(|| false);
     let delete_error_state = use_state_eq(|| false);
 
-    let title_input = use_callback(|value, state| state.set(value), title_state.clone());
+    let title_input = use_callback(title_state.clone(), |value, state| state.set(value));
     let description_input =
-        use_callback(|value, state| state.set(value), description_state.clone());
-    let color_input = use_callback(|value, state| state.set(value), color_state.clone());
+        use_callback(description_state.clone(), |value, state| state.set(value));
+    let color_input = use_callback(color_state.clone(), |value, state| state.set(value));
 
     let on_form_submit = {
         let title_state = title_state.clone();
@@ -248,8 +248,8 @@ fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
         })
     };
 
-    let on_open_delete = use_callback(|_, state| state.set(true), delete_event_open.clone());
-    let on_delete_decline = use_callback(|_, state| state.set(false), delete_event_open.clone());
+    let on_open_delete = use_callback(delete_event_open.clone(), |_, state| state.set(true));
+    let on_delete_decline = use_callback(delete_event_open.clone(), |_, state| state.set(false));
 
     log::debug!("Color {}", props.event.color().hex());
     log::debug!("Color string {}", props.event.color.clone());
@@ -353,11 +353,11 @@ cursor: pointer;"#,
 
     let edit_open_state = use_state_eq(|| false);
     let on_saved = use_callback(
+        (edit_open_state.clone(), props.on_reload.clone()),
         |_, (state, on_saved)| {
             state.set(false);
             on_saved.emit(());
         },
-        (edit_open_state.clone(), props.on_reload.clone()),
     );
 
     html!(
@@ -458,11 +458,11 @@ cursor: pointer;
     );
 
     let on_added = use_callback(
+        (add_event_open_state.clone(), props.on_reload.clone()),
         |_, (state, callback)| {
             state.set(false);
             callback.emit(());
         },
-        (add_event_open_state.clone(), props.on_reload.clone()),
     );
 
     html!(
@@ -518,11 +518,10 @@ fn calendar_data(props: &CalendarProps) -> Html {
 
     let events_state = use_state_eq(|| vec![] as Vec<Event>);
 
-    let props_date_memo = use_memo(|date| *date, props.date);
-    let range_memo = use_memo(
-        |(start, end)| DateRange::new(*start, *end).unwrap(),
-        (calendar_start_date, calendar_end_date),
-    );
+    let props_date_memo = use_memo(props.date, |date| *date);
+    let range_memo = use_memo((calendar_start_date, calendar_end_date), |(start, end)| {
+        DateRange::new(*start, *end).unwrap()
+    });
 
     let event_query_state = use_query_value::<EventRange>(range_memo);
 
@@ -701,29 +700,23 @@ text-align: center;
     "#
     );
 
-    let move_prev = use_callback(
-        |_: MouseEvent, date_state| {
-            date_state.set((*date_state).checked_sub_months(Months::new(1)).unwrap())
-        },
-        date_state.clone(),
-    );
-    let move_next = use_callback(
-        |_: MouseEvent, date_state| {
-            date_state.set((*date_state).checked_add_months(Months::new(1)).unwrap())
-        },
-        date_state.clone(),
-    );
+    let move_prev = use_callback(date_state.clone(), |_: MouseEvent, date_state| {
+        date_state.set((*date_state).checked_sub_months(Months::new(1)).unwrap())
+    });
+    let move_next = use_callback(date_state.clone(), |_: MouseEvent, date_state| {
+        date_state.set((*date_state).checked_add_months(Months::new(1)).unwrap())
+    });
 
     html!(
         <>
             <CosmoTitle title="Event Kalender" />
             <div class={calendar_header_style}>
                 <span class={classes!(calendar_action_style.clone(), calendar_action_prev_style)}>
-                    <a onclick={move_prev}>{prev_month.format_localized("%B %Y", Locale::de_DE)}</a>
+                    <a onclick={move_prev}>{prev_month.format_localized("%B %Y", Locale::de_DE).to_string()}</a>
                 </span>
                 <CosmoHeader level={CosmoHeaderLevel::H2} header={(*date_state).format_localized("%B %Y", Locale::de_DE).to_string()} />
                 <span class={classes!(calendar_action_style.clone(), calendar_action_next_style)}>
-                    <a onclick={move_next}>{next_month.format_localized("%B %Y", Locale::de_DE)}</a>
+                    <a onclick={move_next}>{next_month.format_localized("%B %Y", Locale::de_DE).to_string()}</a>
                 </span>
             </div>
             <div class={calendar_container_style}>

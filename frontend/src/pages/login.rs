@@ -27,18 +27,9 @@ fn login_content() -> Html {
     let two_factor_code_requested_state = use_state_eq(|| false);
     let error_state = use_state_eq(|| false);
 
-    let on_email_update = use_callback(
-        |value: AttrValue, state| state.set(value),
-        email_state.clone(),
-    );
-    let on_password_update = use_callback(
-        |value: AttrValue, state| state.set(value),
-        password_state.clone(),
-    );
-    let on_two_factor_code_update = use_callback(
-        |value: AttrValue, state| state.set(value),
-        two_factor_code_state.clone(),
-    );
+    let on_email_update = use_callback(email_state.clone(),|value: AttrValue, state| state.set(value));
+    let on_password_update = use_callback(password_state.clone(),|value: AttrValue, state| state.set(value));
+    let on_two_factor_code_update = use_callback(two_factor_code_state.clone(),|value: AttrValue, state| state.set(value));
 
     let login_submit = {
         let email_state = email_state.clone();

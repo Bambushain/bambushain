@@ -224,9 +224,9 @@ fn change_password_dialog(props: &ChangePasswordDialogProps) -> Html {
     let new_password_state = use_state_eq(|| AttrValue::from(""));
 
     let update_old_password =
-        use_callback(|value, state| state.set(value), old_password_state.clone());
+        use_callback(old_password_state.clone(), |value, state| state.set(value));
     let update_new_password =
-        use_callback(|value, state| state.set(value), new_password_state.clone());
+        use_callback(new_password_state.clone(), |value, state| state.set(value));
 
     let on_close = props.on_close.clone();
     let on_save = {
@@ -326,11 +326,11 @@ fn update_my_profile_dialog(props: &UpdateMyProfileDialogProps) -> Html {
     let discord_name_state =
         use_state_eq(|| AttrValue::from(user_atom.profile.discord_name.clone()));
 
-    let update_email = use_callback(|value, state| state.set(value), email_state.clone());
+    let update_email = use_callback(email_state.clone(), |value, state| state.set(value));
     let update_display_name =
-        use_callback(|value, state| state.set(value), display_name_state.clone());
+        use_callback(display_name_state.clone(), |value, state| state.set(value));
     let update_discord_name =
-        use_callback(|value, state| state.set(value), discord_name_state.clone());
+        use_callback(discord_name_state.clone(), |value, state| state.set(value));
 
     let on_close = props.on_close.clone();
     let on_save = {
@@ -425,7 +425,7 @@ fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
     let qrcode_state = use_state_eq(|| AttrValue::from(""));
     let secret_state = use_state_eq(|| AttrValue::from(""));
 
-    let update_code = use_callback(|value, state| state.set(value), code_state.clone());
+    let update_code = use_callback(code_state.clone(), |value, state| state.set(value));
 
     let enable_totp = {
         let enable_start_state = enable_start_state.clone();
@@ -555,21 +555,12 @@ fn top_bar() -> Html {
     let profile_open_state = use_state_eq(|| false);
     let password_open_state = use_state_eq(|| false);
 
-    let logout = use_callback(
-        |_: (), navigator| {
-            api::authentication::logout();
-            navigator.push(&AppRoute::Login);
-        },
-        navigator,
-    );
-    let update_my_profile_click = use_callback(
-        |_, profile_open_state| profile_open_state.set(true),
-        profile_open_state.clone(),
-    );
-    let enable_app_two_factor_click = use_callback(
-        |_, app_two_factor_open_state| app_two_factor_open_state.set(true),
-        app_two_factor_open_state.clone(),
-    );
+    let logout = use_callback(navigator,|_: (), navigator| {
+        api::authentication::logout();
+        navigator.push(&AppRoute::Login);
+    });
+    let update_my_profile_click = use_callback(profile_open_state.clone(),|_, profile_open_state| profile_open_state.set(true));
+    let enable_app_two_factor_click = use_callback(app_two_factor_open_state.clone(),|_, app_two_factor_open_state| app_two_factor_open_state.set(true));
     let change_password_click = {
         let password_open_state = password_open_state.clone();
 
@@ -603,7 +594,7 @@ fn top_bar() -> Html {
 
     html!(
         <>
-            <CosmoTopBar profile_picture="/static/panda.webp" has_right_item={true} right_item_on_click={logout} right_item_label="Abmelden">
+            <CosmoTopBar has_right_item={true} right_item_on_click={logout} right_item_label="Abmelden">
                 <CosmoTopBarItem label="Mein Profil" on_click={update_my_profile_click} />
                 <CosmoTopBarItem label="Passwort ändern" on_click={change_password_click} />
                 if !profile_atom.profile.app_totp_enabled {
