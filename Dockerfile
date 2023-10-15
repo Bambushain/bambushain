@@ -6,7 +6,7 @@ COPY . .
 RUN trunk build --release
 RUN cargo install --path .
 
-FROM harbor.ulbricht.casa/library/alpine:3.18
+FROM harbor.ulbricht.casa/proxy/library/alpine:3.18
 
 ENV FRONTEND_DIR=/usr/local/share/pandaparty/web/
 
