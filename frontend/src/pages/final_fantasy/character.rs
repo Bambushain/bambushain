@@ -821,6 +821,8 @@ fn crafter_details(props: &CrafterDetailsProps) -> Html {
 
         let error_state = error_state.clone();
 
+        let action_state = action_state.clone();
+
         let character_id = props.character.id;
 
         Callback::from(move |id: i32| {
@@ -830,10 +832,13 @@ fn crafter_details(props: &CrafterDetailsProps) -> Html {
 
             let error_state = error_state.clone();
 
+            let action_state = action_state.clone();
+
             yew::platform::spawn_local(async move {
                 error_state.set(match delete_crafter(character_id, id).await {
                     Ok(_) => {
                         let _ = crafter_query_state.refresh().await;
+                        action_state.set(CrafterActions::Closed);
                         false
                     }
                     Err(err) => {
@@ -1088,6 +1093,8 @@ fn fighter_details(props: &FighterDetailsProps) -> Html {
 
         let error_state = error_state.clone();
 
+        let action_state = action_state.clone();
+
         let character_id = props.character.id;
 
         Callback::from(move |id: i32| {
@@ -1097,10 +1104,13 @@ fn fighter_details(props: &FighterDetailsProps) -> Html {
 
             let error_state = error_state.clone();
 
+            let action_state = action_state.clone();
+
             yew::platform::spawn_local(async move {
                 error_state.set(match delete_fighter(character_id, id).await {
                     Ok(_) => {
                         let _ = fighter_query_state.refresh().await;
+                        action_state.set(FighterActions::Closed);
                         false
                     }
                     Err(err) => {
