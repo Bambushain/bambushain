@@ -327,6 +327,7 @@ align-items: center;
     transform: translate(-50%);
     padding: 0.125rem 0.25rem;
     box-sizing: border-box;
+    z-index: 2;
 }
 
 &:hover::after {
@@ -337,6 +338,7 @@ align-items: center;
     bottom: 1.25rem;
     left: 50%;
     transform: translate(-50%);
+    z-index: 2;
 }"#,
         event_color = props.event.color().hex(),
         color = color_yiq(props.event.color()).to_string(),
