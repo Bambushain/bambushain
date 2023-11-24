@@ -167,11 +167,14 @@ fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
 
     let color_state = use_state_eq(|| props.event.color());
 
-    let delete_event_open = use_state_eq(|| false);
+    let end_date_state = use_state_eq(|| props.event.end_date);
+
+    let delete_event_open_state = use_state_eq(|| false);
     let error_state = use_state_eq(|| false);
     let delete_error_state = use_state_eq(|| false);
 
     let title_input = use_callback(title_state.clone(), |value, state| state.set(value));
+    let end_date_input = use_callback(end_date_state.clone(), |value, state| state.set(value));
     let description_input =
         use_callback(description_state.clone(), |value, state| state.set(value));
     let color_input = use_callback(color_state.clone(), |value, state| state.set(value));
@@ -181,6 +184,8 @@ fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
         let description_state = description_state.clone();
 
         let color_state = color_state.clone();
+
+        let end_date_state = end_date_state.clone();
 
         let error_state = error_state.clone();
 
@@ -193,6 +198,8 @@ fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
             let description_state = description_state.clone();
 
             let color_state = color_state.clone();
+
+            let end_date_state = end_date_state.clone();
 
             let error_state = error_state.clone();
 
@@ -207,7 +214,7 @@ fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
                         (*title_state).to_string(),
                         (*description_state).to_string(),
                         event.start_date,
-                        event.end_date,
+                        *end_date_state,
                         *color_state,
                     ),
                 )
@@ -245,8 +252,9 @@ fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
         })
     };
 
-    let on_open_delete = use_callback(delete_event_open.clone(), |_, state| state.set(true));
-    let on_delete_decline = use_callback(delete_event_open.clone(), |_, state| state.set(false));
+    let on_open_delete = use_callback(delete_event_open_state.clone(), |_, state| state.set(true));
+    let on_delete_decline =
+        use_callback(delete_event_open_state.clone(), |_, state| state.set(false));
 
     log::debug!("Color {}", props.event.color().hex());
     log::debug!("Color string {}", props.event.color.clone());
@@ -264,9 +272,11 @@ fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
                     <CosmoTextBox width={CosmoInputWidth::Medium} label="Titel" value={(*title_state).clone()} on_input={title_input} />
                     <CosmoTextArea width={CosmoInputWidth::Medium} label="Beschreibung" value={(*description_state).clone()} on_input={description_input} />
                     <CosmoColorPicker width={CosmoInputWidth::Medium} label="Farbe" value={*color_state} on_input={color_input} />
+                    <CosmoDatePicker width={CosmoInputWidth::Medium} label="Von" value={props.event.start_date} readonly={true} on_input={|_| {}} />
+                    <CosmoDatePicker width={CosmoInputWidth::Medium} label="Bis" min={props.event.start_date} value={*end_date_state} on_input={end_date_input} />
                 </CosmoInputGroup>
             </CosmoModal>
-            if *delete_event_open {
+            if *delete_event_open_state {
                 <CosmoConfirm confirm_type={CosmoModalType::Warning} title="Event löschen" message={format!("Soll das Event {} wirklich gelöscht werden?", props.event.title.clone())} confirm_label="Event löschen" decline_label="Nicht löschen" on_confirm={on_delete_confirm} on_decline={on_delete_decline} />
             }
             if *error_state {
