@@ -284,7 +284,9 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
     log::debug!("Found {} free companies", free_companies.len());
 
     let mut custom_field_inputs = vec![];
-    for field in props.custom_fields.clone() {
+    let mut fields = props.custom_fields.clone();
+    fields.sort();
+    for field in fields {
         let state = (*custom_fields_state).clone();
         let values = if let Some(values) = state.get(&AttrValue::from(field.label.clone())) {
             values.clone()
