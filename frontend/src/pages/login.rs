@@ -27,9 +27,16 @@ fn login_content() -> Html {
     let two_factor_code_requested_state = use_state_eq(|| false);
     let error_state = use_state_eq(|| false);
 
-    let on_email_update = use_callback(email_state.clone(),|value: AttrValue, state| state.set(value));
-    let on_password_update = use_callback(password_state.clone(),|value: AttrValue, state| state.set(value));
-    let on_two_factor_code_update = use_callback(two_factor_code_state.clone(),|value: AttrValue, state| state.set(value));
+    let on_email_update = use_callback(email_state.clone(), |value: AttrValue, state| {
+        state.set(value)
+    });
+    let on_password_update = use_callback(password_state.clone(), |value: AttrValue, state| {
+        state.set(value)
+    });
+    let on_two_factor_code_update =
+        use_callback(two_factor_code_state.clone(), |value: AttrValue, state| {
+            state.set(value)
+        });
 
     let login_submit = {
         let email_state = email_state.clone();
@@ -113,14 +120,6 @@ color: var(--black);
 
 --black: #ffffff;
 --white: transparent;
---primary-color: #9F2637;
---control-border-color: var(--black);
---negative-color: var(--primary-color);
-
---font-weight-bold: bold;
---font-weight-normal: normal;
---font-weight-light: 300;
---font-family: Lato, sans-serif;
 
 button {
     --control-border-color: var(--primary-color);
@@ -133,6 +132,7 @@ input {
 
 button:hover {
     color: #ffffff !important;
+    background: var(--primary-color);
 }
     "#
     );
@@ -140,21 +140,21 @@ button:hover {
     let login_container_style = use_style!(
         r#"
 background: rgba(255, 255, 255, 0.25);
-padding: 32px 64px;
+padding: 2rem 4rem;
 backdrop-filter: blur(24px) saturate(90%);
 box-sizing: border-box;
-margin-top: -20px;
-min-width: 570px;
+margin-top: 1.25rem;
+min-width: 35.625rem;
 "#
     );
     let login_message_style = use_style!(
         r#"
-font-size: 24px;
+font-size: 1.5rem;
 color: #fff;
 font-weight: var(--font-weight-light);
 font-family: var(--font-family);
 display: flex;
-gap: 8px;
+gap: 0.5rem;
 align-items: center;
     "#
     );

@@ -43,10 +43,13 @@ fn fields_tab_item(props: &FieldsTabItemProps) -> Html {
     let on_error_close = use_callback(error_state.clone(), |_, state| state.set(false));
 
     let on_rename_open = use_callback(rename_open_state.clone(), |_, state| state.set(true));
-    let on_rename_close = use_callback((rename_open_state.clone(), error_state.clone()),|_, (open_state, error_state)| {
-        open_state.set(false);
-        error_state.set(false);
-    });
+    let on_rename_close = use_callback(
+        (rename_open_state.clone(), error_state.clone()),
+        |_, (open_state, error_state)| {
+            open_state.set(false);
+            error_state.set(false);
+        },
+    );
     let on_rename_save = {
         let id = props.field.id;
 
@@ -86,10 +89,13 @@ fn fields_tab_item(props: &FieldsTabItemProps) -> Html {
 
     let on_add_option_open =
         use_callback(add_option_open_state.clone(), |_, state| state.set(true));
-    let on_add_option_close = use_callback((add_option_open_state.clone(), error_state.clone()),|_, (open_state, error_state)| {
-        open_state.set(false);
-        error_state.set(false);
-    });
+    let on_add_option_close = use_callback(
+        (add_option_open_state.clone(), error_state.clone()),
+        |_, (open_state, error_state)| {
+            open_state.set(false);
+            error_state.set(false);
+        },
+    );
     let on_add_option_save = {
         let id = props.field.id;
 
@@ -128,22 +134,28 @@ fn fields_tab_item(props: &FieldsTabItemProps) -> Html {
         })
     };
 
-    let on_edit_option_open = use_callback((
-        selected_option_id_state.clone(),
-        selected_option_label_state.clone(),
-        edit_option_open_state.clone(),
-        option_label_state.clone(),
-    ),|(id, label): (i32, AttrValue),
-     (selected_id_state, selected_label_state, open_state, option_label_state)| {
-        selected_id_state.set(id);
-        selected_label_state.set(label.clone());
-        option_label_state.set(label);
-        open_state.set(true);
-    });
-    let on_edit_option_close = use_callback((edit_option_open_state.clone(), error_state.clone()),|_, (open_state, error_state)| {
-        open_state.set(false);
-        error_state.set(false);
-    });
+    let on_edit_option_open = use_callback(
+        (
+            selected_option_id_state.clone(),
+            selected_option_label_state.clone(),
+            edit_option_open_state.clone(),
+            option_label_state.clone(),
+        ),
+        |(id, label): (i32, AttrValue),
+         (selected_id_state, selected_label_state, open_state, option_label_state)| {
+            selected_id_state.set(id);
+            selected_label_state.set(label.clone());
+            option_label_state.set(label);
+            open_state.set(true);
+        },
+    );
+    let on_edit_option_close = use_callback(
+        (edit_option_open_state.clone(), error_state.clone()),
+        |_, (open_state, error_state)| {
+            open_state.set(false);
+            error_state.set(false);
+        },
+    );
     let on_edit_option_save = {
         let id = props.field.id;
 
@@ -224,16 +236,21 @@ fn fields_tab_item(props: &FieldsTabItemProps) -> Html {
         })
     };
 
-    let on_delete_option_open = use_callback((
-        selected_option_id_state.clone(),
-        selected_option_label_state.clone(),
-        delete_option_open_state.clone(),
-    ),|(id, label), (selected_id_state, selected_label_state, open_state)| {
-        selected_id_state.set(id);
-        selected_label_state.set(label);
-        open_state.set(true);
+    let on_delete_option_open = use_callback(
+        (
+            selected_option_id_state.clone(),
+            selected_option_label_state.clone(),
+            delete_option_open_state.clone(),
+        ),
+        |(id, label), (selected_id_state, selected_label_state, open_state)| {
+            selected_id_state.set(id);
+            selected_label_state.set(label);
+            open_state.set(true);
+        },
+    );
+    let on_delete_option_close = use_callback(delete_option_open_state.clone(), |_, state| {
+        state.set(false)
     });
-    let on_delete_option_close = use_callback(delete_option_open_state.clone(),|_, state| state.set(false));
     let on_delete_option = {
         let field_id = props.field.id;
 
@@ -317,13 +334,13 @@ fn fields_tab_item(props: &FieldsTabItemProps) -> Html {
         r#"
 display: flex;
 flex-flow: row wrap;
-gap: 2px;
+gap: 0.125rem;
     "#
     );
     let item_style = use_style!(
         r#"
 display: flex;
-gap: 4px;
+gap: 0.25rem;
 flex: 0 0 100%;
 min-width: 100%;
 align-items: center;
@@ -360,8 +377,8 @@ align-items: center;
                     html!(
                         <div class={item_style.clone()}>
                             {option.label.clone()}
-                            <Icon width="16px" height="16px" icon_id={IconId::LucideEdit} onclick={move |_| on_edit_option_open.emit((edit_option.id, edit_option.label.clone().into()))} />
-                            <Icon width="16px" height="16px" icon_id={IconId::LucideTrash} onclick={move |_| on_delete_option_open.emit((delete_option.id, delete_option.label.clone().into()))} />
+                            <Icon style="cursor: pointer;" width="1rem" height="1rem" icon_id={IconId::LucideEdit} onclick={move |_| on_edit_option_open.emit((edit_option.id, edit_option.label.clone().into()))} />
+                            <Icon style="cursor: pointer;" width="1rem" height="1rem" icon_id={IconId::LucideTrash} onclick={move |_| on_delete_option_open.emit((delete_option.id, delete_option.label.clone().into()))} />
                         </div>
                     )
                 })}
@@ -412,15 +429,15 @@ align-items: center;
                 </CosmoModal>
             }
             if *delete_open_state {
-                <CosmoConfirm title="Feld löschen" message={format!("Soll das Feld {} wirklich gelöscht werden?", props.field.label.clone())} confirm_label="Feld Löschen" decline_label="Nicht löschen"  on_decline={on_delete_close} on_confirm={on_delete} />
+                <CosmoConfirm confirm_type={CosmoModalType::Warning} title="Feld löschen" message={format!("Soll das Feld {} wirklich gelöscht werden?", props.field.label.clone())} confirm_label="Feld Löschen" decline_label="Nicht löschen"  on_decline={on_delete_close} on_confirm={on_delete} />
                 if *error_state {
-                    <CosmoAlert title="Fehler beim Löschen" message={(*error_message_state).clone()} close_label="Schließen" on_close={on_error_close.clone()} />
+                    <CosmoAlert alert_type={CosmoModalType::Negative} title="Fehler beim Löschen" message={(*error_message_state).clone()} close_label="Schließen" on_close={on_error_close.clone()} />
                 }
             }
             if *delete_option_open_state {
-                <CosmoConfirm title="Option löschen" message={format!("Soll die Option {} wirklich gelöscht werden?", (*selected_option_label_state).clone())} confirm_label="Option Löschen" decline_label="Nicht löschen"  on_decline={on_delete_option_close} on_confirm={on_delete_option} />
+                <CosmoConfirm confirm_type={CosmoModalType::Warning} title="Option löschen" message={format!("Soll die Option {} wirklich gelöscht werden?", (*selected_option_label_state).clone())} confirm_label="Option Löschen" decline_label="Nicht löschen"  on_decline={on_delete_option_close} on_confirm={on_delete_option} />
                 if *error_state {
-                    <CosmoAlert title="Fehler beim Löschen" message={(*error_message_state).clone()} close_label="Schließen" on_close={on_error_close} />
+                    <CosmoAlert alert_type={CosmoModalType::Negative} title="Fehler beim Löschen" message={(*error_message_state).clone()} close_label="Schließen" on_close={on_error_close} />
                 }
             }
         </>
@@ -506,14 +523,19 @@ fn custom_field_page() -> Html {
             })
         })
     };
-    let on_add_close = use_callback((add_open_state.clone(), error_state.clone()),|_, (open_state, error_state)| {
-        open_state.set(false);
-        error_state.set(false);
-    });
+    let on_add_close = use_callback(
+        (add_open_state.clone(), error_state.clone()),
+        |_, (open_state, error_state)| {
+            open_state.set(false);
+            error_state.set(false);
+        },
+    );
 
     let update_add_name = use_callback(add_name_state.clone(), |val, state| state.set(val));
 
-    let on_select_item = use_callback(selected_item_state.clone(),|idx, state| state.set(Some(idx)));
+    let on_select_item = use_callback(selected_item_state.clone(), |idx, state| {
+        state.set(Some(idx))
+    });
 
     match fields_query_state.result() {
         None => {
@@ -600,14 +622,20 @@ fn free_companies() -> Html {
 
     let on_error_close = use_callback(error_state.clone(), |_, state| state.set(false));
 
-    let on_add_open = use_callback((add_open_state.clone(), name_state.clone()),|_, (open_state, name_state)| {
-        open_state.set(true);
-        name_state.set("".into());
-    });
-    let on_add_close = use_callback((add_open_state.clone(), error_state.clone()),|_, (open_state, error_state)| {
-        open_state.set(false);
-        error_state.set(false);
-    });
+    let on_add_open = use_callback(
+        (add_open_state.clone(), name_state.clone()),
+        |_, (open_state, name_state)| {
+            open_state.set(true);
+            name_state.set("".into());
+        },
+    );
+    let on_add_close = use_callback(
+        (add_open_state.clone(), error_state.clone()),
+        |_, (open_state, error_state)| {
+            open_state.set(false);
+            error_state.set(false);
+        },
+    );
     let on_add_save = {
         let name_state = name_state.clone();
         let error_message_state = error_message_state.clone();
@@ -648,19 +676,25 @@ fn free_companies() -> Html {
         })
     };
 
-    let on_edit_open = use_callback((
-        selected_id_state.clone(),
-        name_state.clone(),
-        edit_open_state.clone(),
-    ),|(id, name): (i32, AttrValue), (selected_id_state, name_state, open_state)| {
-        selected_id_state.set(id);
-        name_state.set(name);
-        open_state.set(true);
-    });
-    let on_edit_close = use_callback((edit_open_state.clone(), error_state.clone()),|_, (open_state, error_state)| {
-        open_state.set(false);
-        error_state.set(false);
-    });
+    let on_edit_open = use_callback(
+        (
+            selected_id_state.clone(),
+            name_state.clone(),
+            edit_open_state.clone(),
+        ),
+        |(id, name): (i32, AttrValue), (selected_id_state, name_state, open_state)| {
+            selected_id_state.set(id);
+            name_state.set(name);
+            open_state.set(true);
+        },
+    );
+    let on_edit_close = use_callback(
+        (edit_open_state.clone(), error_state.clone()),
+        |_, (open_state, error_state)| {
+            open_state.set(false);
+            error_state.set(false);
+        },
+    );
     let on_edit_save = {
         let name_state = name_state.clone();
         let error_message_state = error_message_state.clone();
@@ -699,15 +733,18 @@ fn free_companies() -> Html {
         })
     };
 
-    let on_delete_open = use_callback((
-        selected_id_state.clone(),
-        selected_name_state.clone(),
-        delete_open_state.clone(),
-    ),|(id, name), (selected_id_state, selected_name_state, open_state)| {
-        selected_id_state.set(id);
-        selected_name_state.set(name);
-        open_state.set(true);
-    });
+    let on_delete_open = use_callback(
+        (
+            selected_id_state.clone(),
+            selected_name_state.clone(),
+            delete_open_state.clone(),
+        ),
+        |(id, name), (selected_id_state, selected_name_state, open_state)| {
+            selected_id_state.set(id);
+            selected_name_state.set(name);
+            open_state.set(true);
+        },
+    );
     let on_delete_close = use_callback(delete_open_state.clone(), |_, state| state.set(false));
     let on_delete = {
         let error_state = error_state.clone();
@@ -752,13 +789,13 @@ fn free_companies() -> Html {
         r#"
 display: flex;
 flex-flow: row wrap;
-gap: 2px;
+gap: 0.125rem;
     "#
     );
     let item_style = use_style!(
         r#"
 display: flex;
-gap: 4px;
+gap: 0.25rem;
 flex: 0 0 100%;
 min-width: 100%;
 align-items: center;
@@ -808,8 +845,8 @@ align-items: center;
                     html!(
                         <div class={item_style.clone()}>
                             {free_company.name.clone()}
-                            <Icon width="16px" height="16px" icon_id={IconId::LucideEdit} onclick={move |_| on_edit_open.emit((edit_free_company.id, edit_free_company.name.clone().into()))} />
-                            <Icon width="16px" height="16px" icon_id={IconId::LucideTrash} onclick={move |_| on_delete_open.emit((delete_free_company.id, delete_free_company.name.clone().into()))} />
+                            <Icon style="cursor: pointer;" width="1rem" height="1rem" icon_id={IconId::LucideEdit} onclick={move |_| on_edit_open.emit((edit_free_company.id, edit_free_company.name.clone().into()))} />
+                            <Icon style="cursor: pointer;" width="1rem" height="1rem" icon_id={IconId::LucideTrash} onclick={move |_| on_delete_open.emit((delete_free_company.id, delete_free_company.name.clone().into()))} />
                         </div>
                     )
                 })}
@@ -845,9 +882,9 @@ align-items: center;
                 </CosmoModal>
             }
             if *delete_open_state {
-                <CosmoConfirm title="Freie Gesellschaft löschen" message={format!("Soll die Freie Gesellschaft {} wirklich gelöscht werden?", (*selected_name_state).clone())} confirm_label="Freie Gesellschaft Löschen" decline_label="Nicht löschen"  on_decline={on_delete_close} on_confirm={on_delete} />
+                <CosmoConfirm confirm_type={CosmoModalType::Warning} title="Freie Gesellschaft löschen" message={format!("Soll die Freie Gesellschaft {} wirklich gelöscht werden?", (*selected_name_state).clone())} confirm_label="Freie Gesellschaft Löschen" decline_label="Nicht löschen"  on_decline={on_delete_close} on_confirm={on_delete} />
                 if *error_state {
-                    <CosmoAlert title="Fehler beim Löschen" message={(*error_message_state).clone()} close_label="Schließen" on_close={on_error_close.clone()} />
+                    <CosmoAlert alert_type={CosmoAlertType::Negative} title="Fehler beim Löschen" message={(*error_message_state).clone()} close_label="Schließen" on_close={on_error_close.clone()} />
                 }
             }
         </>

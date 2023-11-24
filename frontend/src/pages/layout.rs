@@ -537,7 +537,7 @@ Um eine App einzurichten, musst du unten auf App einrichten klicken.
 Anschließend kommt ein QR Code, den musst du scannen und danach einen Code aus deiner App eingeben."#} confirm_label="App einrichten" decline_label="Abbrechen" on_confirm={enable_totp} on_decline={props.on_close.clone()} />
             }
             if *error_state {
-                <CosmoAlert title="Fehler beim Aktivieren" message={(*error_message_state).clone()} close_label="Schließen" on_close={move |_| error_state.set(false)} />
+                <CosmoAlert alert_type={CosmoModalType::Negative} title="Fehler beim Aktivieren" message={(*error_message_state).clone()} close_label="Schließen" on_close={move |_| error_state.set(false)} />
             }
         </>
     )
@@ -555,12 +555,18 @@ fn top_bar() -> Html {
     let profile_open_state = use_state_eq(|| false);
     let password_open_state = use_state_eq(|| false);
 
-    let logout = use_callback(navigator,|_: (), navigator| {
+    let logout = use_callback(navigator, |_: (), navigator| {
         api::authentication::logout();
         navigator.push(&AppRoute::Login);
     });
-    let update_my_profile_click = use_callback(profile_open_state.clone(),|_, profile_open_state| profile_open_state.set(true));
-    let enable_app_two_factor_click = use_callback(app_two_factor_open_state.clone(),|_, app_two_factor_open_state| app_two_factor_open_state.set(true));
+    let update_my_profile_click =
+        use_callback(profile_open_state.clone(), |_, profile_open_state| {
+            profile_open_state.set(true)
+        });
+    let enable_app_two_factor_click = use_callback(
+        app_two_factor_open_state.clone(),
+        |_, app_two_factor_open_state| app_two_factor_open_state.set(true),
+    );
     let change_password_click = {
         let password_open_state = password_open_state.clone();
 

@@ -144,7 +144,10 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
         })
     };
 
-    let on_saved = use_callback((created_user_state, props.on_saved.clone()),|_, (created_user_state, on_saved)| on_saved.emit((**created_user_state).clone()));
+    let on_saved = use_callback(
+        (created_user_state, props.on_saved.clone()),
+        |_, (created_user_state, on_saved)| on_saved.emit((**created_user_state).clone()),
+    );
 
     html!(
         <CosmoModal title="Benutzer hinzufügen" is_form={true} on_form_submit={form_submit} buttons={
@@ -265,7 +268,7 @@ fn update_profile_dialog(props: &UpdateProfileDialogProps) -> Html {
                 </CosmoInputGroup>
             </CosmoModal>
             if *error_state {
-                <CosmoAlert title="Fehler" message={(*error_message_state).clone()} close_label="Schließen" on_close={close_error} />
+                <CosmoAlert alert_type={CosmoModalType::Negative} title="Fehler" message={(*error_message_state).clone()} close_label="Schließen" on_close={close_error} />
             }
         </>
     )
@@ -285,11 +288,19 @@ fn user_details(props: &UserDetailsProps) -> Html {
 
     let users_query_state = use_query_value::<Users>(().into());
 
-    let make_mod_click = use_callback(confirm_state.clone(),|_, state| state.set(UserConfirmActions::MakeMod));
-    let remove_mod_click = use_callback(confirm_state.clone(),|_, state| state.set(UserConfirmActions::RemoveMod));
-    let delete_click = use_callback(confirm_state.clone(),|_, state| state.set(UserConfirmActions::Delete));
-    let update_profile_click = use_callback(profile_edit_state.clone(),|_, profile_edit_state| profile_edit_state.set(true));
-    let change_password_click = use_callback(confirm_state.clone(),|_, state| {
+    let make_mod_click = use_callback(confirm_state.clone(), |_, state| {
+        state.set(UserConfirmActions::MakeMod)
+    });
+    let remove_mod_click = use_callback(confirm_state.clone(), |_, state| {
+        state.set(UserConfirmActions::RemoveMod)
+    });
+    let delete_click = use_callback(confirm_state.clone(), |_, state| {
+        state.set(UserConfirmActions::Delete)
+    });
+    let update_profile_click = use_callback(profile_edit_state.clone(), |_, profile_edit_state| {
+        profile_edit_state.set(true)
+    });
+    let change_password_click = use_callback(confirm_state.clone(), |_, state| {
         state.set(UserConfirmActions::ChangePassword(
             rand::thread_rng()
                 .sample_iter(&Alphanumeric)
@@ -298,7 +309,9 @@ fn user_details(props: &UserDetailsProps) -> Html {
                 .collect::<String>(),
         ))
     });
-    let on_decline = use_callback(confirm_state.clone(),|_, state| state.set(UserConfirmActions::Closed));
+    let on_decline = use_callback(confirm_state.clone(), |_, state| {
+        state.set(UserConfirmActions::Closed)
+    });
     let on_confirm = {
         let confirm_state = confirm_state.clone();
         let error_state = error_state.clone();
@@ -433,10 +446,13 @@ fn user_details(props: &UserDetailsProps) -> Html {
             });
         })
     };
-    let on_alert_close = use_callback((error_state.clone(), error_message_state.clone()),|_, (error_state, error_message_state)| {
-        error_state.set(false);
-        error_message_state.set("".into());
-    });
+    let on_alert_close = use_callback(
+        (error_state.clone(), error_message_state.clone()),
+        |_, (error_state, error_message_state)| {
+            error_state.set(false);
+            error_message_state.set("".into());
+        },
+    );
     let on_update_profile_close = {
         let profile_edit_state = profile_edit_state.clone();
 
@@ -501,7 +517,7 @@ fn user_details(props: &UserDetailsProps) -> Html {
                     <CosmoConfirm message={format!("Sollen dem Benutzer {} wirklich die Modrechte entzogen werden?", props.user.email.clone())} title="Modrechte entziehen" on_decline={on_decline} on_confirm={on_confirm} confirm_label="Modrechte entziehen" decline_label="Abbrechen" />
                 ),
                 UserConfirmActions::Delete => html!(
-                    <CosmoConfirm message={format!("Soll der Benutzer {} wirklich gelöscht werden?", props.user.email.clone())} title="Benutzer löschen" on_decline={on_decline} on_confirm={on_confirm} confirm_label="Benutzer löschen" decline_label="Benutzer behalten" />
+                    <CosmoConfirm confirm_type={CosmoModalType::Warning} message={format!("Soll der Benutzer {} wirklich gelöscht werden?", props.user.email.clone())} title="Benutzer löschen" on_decline={on_decline} on_confirm={on_confirm} confirm_label="Benutzer löschen" decline_label="Benutzer behalten" />
                 ),
                 UserConfirmActions::ChangePassword(password) => {
                     html!(
@@ -518,7 +534,7 @@ fn user_details(props: &UserDetailsProps) -> Html {
                 UserConfirmActions::Closed => html!(),
             }}
             if *error_state {
-                <CosmoAlert title="Ein Fehler ist aufgetreten" message={(*error_message_state).clone()} on_close={on_alert_close} close_label="Schließen" />
+                <CosmoAlert alert_type={CosmoModalType::Negative} title="Ein Fehler ist aufgetreten" message={(*error_message_state).clone()} on_close={on_alert_close} close_label="Schließen" />
             }
             if *profile_edit_state {
                 <UpdateProfileDialog on_close={on_update_profile_close} id={props.user.id} email={props.user.email.clone()} display_name={props.user.display_name.clone()} discord_name={props.user.discord_name.clone()} />
@@ -542,7 +558,10 @@ pub fn users_page() -> Html {
 
     let selected_user_state = use_state_eq(|| 0);
 
-    let open_create_user_modal_click = use_callback(open_create_user_modal_state.clone(),|_, open_create_user_modal_state| open_create_user_modal_state.set(true));
+    let open_create_user_modal_click = use_callback(
+        open_create_user_modal_state.clone(),
+        |_, open_create_user_modal_state| open_create_user_modal_state.set(true),
+    );
     let on_user_select = use_callback(selected_user_state.clone(), |idx, state| state.set(idx));
 
     let event_source_trigger = {
@@ -605,7 +624,9 @@ pub fn users_page() -> Html {
             })
         })
     };
-    let on_create_close = use_callback(open_create_user_modal_state.clone(),|_, state| state.set(false));
+    let on_create_close = use_callback(open_create_user_modal_state.clone(), |_, state| {
+        state.set(false)
+    });
 
     match users_query_state.result() {
         None => {

@@ -156,7 +156,7 @@ fn add_event_dialog(props: &AddEventDialogProps) -> Html {
                 </CosmoInputGroup>
             </CosmoModal>
             if *error_state {
-                <CosmoAlert title="Fehler beim Speichern" message="Das Event konnte leider nicht erstellt werden, bitte wende dich an Azami" close_label="Schließen" on_close={move |_| error_state.set(false)} alert_type={CosmoAlertType::Negative} />
+                <CosmoAlert alert_type={CosmoModalType::Negative} title="Fehler beim Speichern" message="Das Event konnte leider nicht erstellt werden, bitte wende dich an Azami" close_label="Schließen" on_close={move |_| error_state.set(false)} alert_type={CosmoAlertType::Negative} />
             }
         </>
     )
@@ -258,7 +258,7 @@ fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
         <>
             <CosmoModal title="Event bearbeiten" on_form_submit={on_form_submit} is_form={true} buttons={html!(
                 <>
-                    <CosmoButton label="Event löschen" on_click={on_open_delete} />
+                    <CosmoButton state={CosmoButtonType::Negative} label="Event löschen" on_click={on_open_delete} />
                     <CosmoButton label="Abbrechen" on_click={props.on_saved.clone()} />
                     <CosmoButton label="Event speichern" is_submit={true} />
                 </>
@@ -270,13 +270,13 @@ fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
                 </CosmoInputGroup>
             </CosmoModal>
             if *delete_event_open {
-                <CosmoConfirm title="Event löschen" message={format!("Soll das Event {} wirklich gelöscht werden?", props.event.title.clone())} confirm_label="Event löschen" decline_label="Nicht löschen" on_confirm={on_delete_confirm} on_decline={on_delete_decline} />
+                <CosmoConfirm confirm_type={CosmoModalType::Warning} title="Event löschen" message={format!("Soll das Event {} wirklich gelöscht werden?", props.event.title.clone())} confirm_label="Event löschen" decline_label="Nicht löschen" on_confirm={on_delete_confirm} on_decline={on_delete_decline} />
             }
             if *error_state {
-                <CosmoAlert title="Fehler beim Speichern" message="Das Event konnte leider nicht geändert werden, bitte wende dich an Azami" close_label="Schließen" on_close={move |_| error_state.set(false)} alert_type={CosmoAlertType::Negative} />
+                <CosmoAlert alert_type={CosmoModalType::Negative} title="Fehler beim Speichern" message="Das Event konnte leider nicht geändert werden, bitte wende dich an Azami" close_label="Schließen" on_close={move |_| error_state.set(false)} alert_type={CosmoAlertType::Negative} />
             }
             if *delete_error_state {
-                <CosmoAlert title="Fehler beim Löschen" message="Das Event konnte leider nicht gelöscht werden, bitte wende dich an Azami" close_label="Schließen" on_close={move |_| delete_error_state.set(false)} alert_type={CosmoAlertType::Negative} />
+                <CosmoAlert alert_type={CosmoModalType::Negative} title="Fehler beim Löschen" message="Das Event konnte leider nicht gelöscht werden, bitte wende dich an Azami" close_label="Schließen" on_close={move |_| delete_error_state.set(false)} alert_type={CosmoAlertType::Negative} />
             }
         </>
     )
@@ -287,13 +287,11 @@ fn event_entry(props: &EventEntryProps) -> Html {
     let event_style = use_style!(
         r#"
 background-color: ${event_color};
-flex: 0 0 100%;
-height: auto;
-padding: 2px 4px;
+padding: 0.125rem 0.25rem;
 box-sizing: border-box;
 color: ${color};
-font-size: 18px;
-font-weight: var(--font-weight-light);
+font-size: 1rem;
+font-weight: var(--font-weight-normal);
 cursor: pointer;
 position: relative;
 display: flex;
@@ -312,23 +310,24 @@ align-items: center;
     content: attr(data-description);
     position: absolute;
     background-color: ${event_color};
-    font-weight: var(--font-weight-light);
     color: ${color};
-    font-size: 16px;
-    bottom: 36px;
+    font-weight: var(--font-weight-normal);
+    white-space: pre-wrap;
+    font-size: 1rem;
+    bottom: 2rem;
     left: 50%;
-    width: 300px;
+    width: 18.75rem;
     transform: translate(-50%);
-    padding: 4px 8px;
+    padding: 0.125rem 0.25rem;
     box-sizing: border-box;
 }
 
 &:hover::after {
     content: "";
     position: absolute;
-    border: 8px solid transparent;
+    border: 0.5rem solid transparent;
     border-top-color: ${event_color};
-    bottom: 20px;
+    bottom: 1.25rem;
     left: 50%;
     transform: translate(-50%);
 }"#,
@@ -384,27 +383,25 @@ fn day(props: &DayProps) -> Html {
         "var(--day-background-past-month)"
     };
     let today = Local::now().date_naive();
-    let (day_number_color, day_number_weight) =
+    let day_number_color =
         if today.month() == props.month && today.day() == props.day && today.year() == props.year {
-            ("var(--primary-color)", "var(--font-weight-bold)")
+            "var(--primary-color)"
         } else {
-            ("var(--menu-text-color)", "var(--font-weight-light)")
+            "var(--menu-text-color)"
         };
 
     let style = use_style!(
         r#"
-border-top: 1px solid var(--primary-color);
-border-left: 1px solid var(--primary-color);
+border-top: 0.0625rem solid var(--primary-color);
+border-left: 0.0625rem solid var(--primary-color);
 background: ${background_color};
 position: relative;
 box-sizing: border-box;
-display: flex;
-justify-content: stretch;
-padding: 2px;
-align-items: flex-end;
-gap: 2px;
-position: relative;
-flex-flow: row wrap;
+padding: 0.125rem;
+gap: 0.125rem;
+display: grid;
+grid-template-rows: auto;
+align-content: end;
 
 --day-background-past-month: #0000000F;
 
@@ -413,7 +410,7 @@ flex-flow: row wrap;
 }
 
 &:nth-child(7n) {
-    border-right: 1px solid var(--primary-color);
+    border-right: 0.0625rem solid var(--primary-color);
 }
 
 &:nth-child(43),
@@ -423,17 +420,18 @@ flex-flow: row wrap;
 &:nth-child(47),
 &:nth-child(48),
 &:nth-child(49) {
-    border-bottom: 1px solid var(--primary-color);
+    border-bottom: 0.0625rem solid var(--primary-color);
 }
 
 &::before {
     content: "${day}";
     position: absolute;
-    top: 4px;
-    right: 4px;
-    font-size: 28px;
+    top: 0.25rem;
+    right: 0.25rem;
+    font-size: 1.75rem;
     color: ${day_number_color};
-    font-weight: ${day_number_weight};
+    font-weight: var(--font-weight-bold);
+    z-index: 1;
 }
 
 &:hover .panda-calendar-add {
@@ -442,7 +440,6 @@ flex-flow: row wrap;
         background_color = background_color,
         day = props.day,
         day_number_color = day_number_color,
-        day_number_weight = day_number_weight,
     );
     let add_style = use_style!(
         r#"
@@ -450,10 +447,11 @@ opacity: 0;
 transition: all 0.1s;
 text-decoration: none;
 position: absolute;
-top: 2px;
-left: 2px;
+top: 0.125rem;
+left: 0.125rem;
 stroke: var(--primary-color);
 cursor: pointer;
+z-index: 1;
     "#
     );
 
@@ -650,7 +648,7 @@ pub fn calendar_page() -> Html {
 display: grid;
 grid-template-columns: repeat(7, 1fr);
 grid-template-rows: auto repeat(6, 1fr);
-height: calc(100vh - 64px - 32px - 80px - 28px - 68px - 44px - 16px - 34px - 16px);
+height: calc(var(--page-height) - var(--title-font-size) - 4.5rem);
     "#
     );
     let calendar_header_style = use_style!(
@@ -658,8 +656,8 @@ height: calc(100vh - 64px - 32px - 80px - 28px - 68px - 44px - 16px - 34px - 16p
 display: flex;
 justify-content: space-between;
 align-items: baseline;
-margin-top: 16px;
-margin-bottom: 16px;
+margin-top: 1rem;
+margin-bottom: 1rem;
 
 h2 {
     margin: 0;
@@ -671,7 +669,7 @@ h2 {
     );
     let calendar_action_style = use_style!(
         r#"
-font-size: 24px;
+font-size: 1.5rem;
 font-weight: var(--font-weight-light);
 color: var(--primary-color);
 text-decoration: none;
@@ -692,7 +690,7 @@ text-align: right;
     );
     let calendar_weekday_style = use_style!(
         r#"
-font-size: 20px;
+font-size: 1.25rem;
 font-weight: var(--font-weight-light);
 color: var(--primary-color);
 grid-row: 1/2;

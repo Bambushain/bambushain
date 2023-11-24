@@ -91,7 +91,14 @@ impl Model {
 
     #[cfg(feature = "backend")]
     pub fn validate_password(&self, password: String) -> bool {
-        bcrypt::verify(password, self.password.as_str()).unwrap_or(false)
+        let result = bcrypt::verify(password, self.password.as_str());
+        match result {
+            Ok(res) => res,
+            Err(err) => {
+                log::error!("Failed to validate password {err}");
+                false
+            }
+        }
     }
 
     #[cfg(feature = "backend")]
