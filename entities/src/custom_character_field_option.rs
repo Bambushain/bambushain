@@ -22,7 +22,7 @@ pub struct Model {
 
 impl PartialOrd for Model {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.label.partial_cmp(&other.label)
+        Some(self.cmp(other))
     }
 }
 

@@ -115,8 +115,6 @@ fn add_event_dialog(props: &AddEventDialogProps) -> Html {
 
             let error_state = error_state.clone();
 
-            let start_date = start_date;
-
             let on_added = on_added.clone();
 
             yew::platform::spawn_local(async move {
@@ -231,7 +229,6 @@ fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
         let delete_error_state = delete_error_state.clone();
 
         Callback::from(move |_| {
-            let id = id;
             let on_saved = on_saved.clone();
 
             let delete_error_state = delete_error_state.clone();

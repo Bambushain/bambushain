@@ -55,7 +55,7 @@ impl CharacterRace {
 
 impl PartialOrd for CharacterRace {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.to_string().partial_cmp(&other.to_string())
+        Some(self.cmp(other))
     }
 }
 

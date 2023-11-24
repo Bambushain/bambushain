@@ -116,7 +116,7 @@ impl FighterJob {
 
 impl PartialOrd for FighterJob {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.get_job_name().partial_cmp(&other.get_job_name())
+        Some(self.cmp(other))
     }
 }
 
@@ -199,7 +199,7 @@ pub struct Model {
 
 impl PartialOrd for Model {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.job.partial_cmp(&other.job)
+        Some(self.cmp(other))
     }
 }
 
