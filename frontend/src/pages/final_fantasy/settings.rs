@@ -512,6 +512,7 @@ fn custom_field_page() -> Html {
                     Ok(_) => {
                         let _ = fields_query_state.refresh().await;
                         add_open_state.set(false);
+                        add_name_state.set("".into());
                         false
                     }
                     Err(err) => {

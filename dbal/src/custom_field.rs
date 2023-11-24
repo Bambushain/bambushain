@@ -1,7 +1,8 @@
 use sea_orm::prelude::*;
 use sea_orm::sea_query::Expr;
 use sea_orm::ActiveValue::Set;
-use sea_orm::{NotSet, QueryOrder, QuerySelect};
+use sea_orm::{IntoSimpleExpr, NotSet, QueryOrder, QuerySelect};
+use std::cmp::Ordering;
 
 use pandaparty_entities::prelude::*;
 use pandaparty_entities::{
@@ -73,6 +74,19 @@ pub async fn create_custom_field(
     custom_field: CustomField,
     db: &DatabaseConnection,
 ) -> PandaPartyResult<CustomCharacterField> {
+    custom_character_field::Entity::update_many()
+        .filter(custom_character_field::Column::UserId.eq(user_id))
+        .col_expr(
+            custom_character_field::Column::Position,
+            Expr::col(custom_character_field::Column::Position).add(1),
+        )
+        .exec(db)
+        .await
+        .map_err(|err| {
+            log::error!("{err}");
+            pandaparty_db_error!("character", "Failed to move custom field")
+        })?;
+
     let result = custom_character_field::ActiveModel {
         id: NotSet,
         label: Set(custom_field.label),
@@ -254,93 +268,96 @@ pub async fn move_custom_field(
     position: i32,
     db: &DatabaseConnection,
 ) -> PandaPartyErrorResult {
-    let current_field = custom_character_field::Entity::find_by_id(field_id)
-        .filter(custom_character_field::Column::UserId.eq(user_id))
+    let old_position = if let Some(old_position) = custom_character_field::Entity::find()
+        .select_only()
+        .column(custom_character_field::Column::Position)
+        .filter(custom_character_field::Column::Id.eq(field_id))
+        .into_tuple::<i32>()
         .one(db)
+        .await
+        .map_err(|err| {
+            log::error!("{err}");
+            pandaparty_db_error!("character", "Failed to move custom field")
+        })? {
+        Ok(old_position)
+    } else {
+        Err(pandaparty_db_error!(
+            "character",
+            "Failed to move custom field"
+        ))
+    }?;
+
+    let (position_expr, new_position) = match old_position.cmp(&position) {
+        Ordering::Less => (
+            Expr::col(custom_character_field::Column::Position).sub(1),
+            position,
+        ),
+        Ordering::Greater => (
+            Expr::col(custom_character_field::Column::Position).add(1),
+            position,
+        ),
+        _ => (
+            Expr::col(custom_character_field::Column::Position).into_simple_expr(),
+            position,
+        ),
+    };
+
+    custom_character_field::Entity::update_many()
+        .filter(
+            custom_character_field::Column::UserId
+                .eq(user_id)
+                .and(custom_character_field::Column::Position.lt(old_position))
+                .and(custom_character_field::Column::Position.gte(position)),
+        )
+        .col_expr(custom_character_field::Column::Position, position_expr)
+        .exec(db)
         .await
         .map_err(|err| {
             log::error!("{err}");
             pandaparty_db_error!("character", "Failed to move custom field")
         })?;
 
-    if let Some(field) = current_field {
+    custom_character_field::Entity::update_many()
+        .filter(custom_character_field::Column::UserId.eq(user_id))
+        .filter(custom_character_field::Column::Id.eq(field_id))
+        .col_expr(
+            custom_character_field::Column::Position,
+            Expr::value(new_position),
+        )
+        .exec(db)
+        .await
+        .map_err(|err| {
+            log::error!("{err}");
+            pandaparty_db_error!("character", "Failed to move custom field")
+        })?;
+
+    let fields = custom_character_field::Entity::find()
+        .select_only()
+        .column(custom_character_field::Column::Id)
+        .filter(custom_character_field::Column::UserId.eq(user_id))
+        .order_by_asc(custom_character_field::Column::Position)
+        .into_tuple::<i32>()
+        .all(db)
+        .await
+        .map_err(|err| {
+            log::error!("{err}");
+            pandaparty_db_error!("character", "Failed to move custom field")
+        })?;
+
+    for (idx, id) in fields.iter().enumerate() {
         custom_character_field::Entity::update_many()
-            .filter(custom_character_field::Column::Position.eq(position))
             .col_expr(
                 custom_character_field::Column::Position,
-                Expr::value(field.position),
+                Expr::value(idx as i32),
             )
+            .filter(custom_character_field::Column::Id.eq(*id))
             .exec(db)
             .await
             .map_err(|err| {
                 log::error!("{err}");
                 pandaparty_db_error!("character", "Failed to move custom field")
             })?;
-        custom_character_field::Entity::update_many()
-            .filter(custom_character_field::Column::Id.eq(field.id))
-            .col_expr(
-                custom_character_field::Column::Position,
-                Expr::value(position),
-            )
-            .exec(db)
-            .await
-            .map_err(|err| {
-                log::error!("{err}");
-                pandaparty_db_error!("character", "Failed to move custom field")
-            })?;
-    } else {
-        return Err(pandaparty_not_found_error!("character", "Field not found"));
-    };
-    //
-    // let mut prev_position = position;
-    // for old_field in old_fields {
-    //     prev_position += 1;
-    //     custom_character_field::Entity::update_many()
-    //         .col_expr(custom_character_field::Column::Position, Expr::value(prev_position))
-    //         .filter(custom_character_field::Column::Id.eq(old_field))
-    //         .exec(db)
-    //         .await
-    //         .map_err(|err| {
-    //             log::error!("{err}");
-    //             pandaparty_db_error!("character", "Failed to move custom field")
-    //         })?;
-    // }
-    //
-    // custom_character_field::Entity::update_many()
-    //     .filter(custom_character_field::Column::UserId.eq(user_id))
-    //     .filter(custom_character_field::Column::Id.eq(field_id))
-    //     .col_expr(custom_character_field::Column::Position, Expr::value(position))
-    //     .exec(db)
-    //     .await
-    //     .map_err(|err| {
-    //         log::error!("{err}");
-    //         pandaparty_db_error!("character", "Failed to move custom field")
-    //     })?;
-    //
-    // let fields = custom_character_field::Entity::find()
-    //     .select_only()
-    //     .column(custom_character_field::Column::Id)
-    //     .filter(custom_character_field::Column::UserId.eq(user_id))
-    //     .order_by_asc(custom_character_field::Column::Position)
-    //     .into_tuple::<i32>()
-    //     .all(db)
-    //     .await
-    //     .map_err(|err| {
-    //         log::error!("{err}");
-    //         pandaparty_db_error!("character", "Failed to move custom field")
-    //     })?;
-    //
-    // for (idx, id) in fields.iter().enumerate() {
-    //     custom_character_field::Entity::update_many()
-    //         .col_expr(custom_character_field::Column::Position, Expr::value(idx as i32))
-    //         .filter(custom_character_field::Column::Id.eq(*id))
-    //         .exec(db)
-    //         .await
-    //         .map_err(|err| {
-    //             log::error!("{err}");
-    //             pandaparty_db_error!("character", "Failed to move custom field")
-    //         })?;
-    // }
+    }
 
     Ok(())
 }
