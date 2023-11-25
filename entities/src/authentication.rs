@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::user::WebUser;
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct Login {
     pub email: String,
     pub password: String,
@@ -20,6 +21,7 @@ impl Login {
 }
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct RequestTwoFactor {
     pub email: String,
     pub password: String,
@@ -32,17 +34,20 @@ pub struct LoginResult {
 }
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct TwoFactorResult {
     pub user: WebUser,
     pub two_factor_code: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct ChangePassword {
     pub new_password: String,
 }
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct ChangeMyPassword {
     pub old_password: String,
     pub new_password: String,
