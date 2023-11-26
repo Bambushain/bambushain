@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
     derive(DeriveEntityModel),
     sea_orm(table_name = "token", schema_name = "authentication")
 )]
+#[serde(rename_all = "camelCase")]
 pub struct Model {
     #[cfg_attr(feature = "backend", sea_orm(primary_key))]
     #[serde(skip)]

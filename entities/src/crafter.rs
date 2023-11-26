@@ -134,6 +134,7 @@ impl From<String> for CrafterJob {
     derive(DeriveEntityModel),
     sea_orm(table_name = "crafter", schema_name = "final_fantasy")
 )]
+#[serde(rename_all = "camelCase")]
 pub struct Model {
     #[cfg_attr(feature = "backend", sea_orm(primary_key))]
     pub id: i32,

@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
     derive(DeriveEntityModel),
     sea_orm(table_name = "event", schema_name = "panda_party")
 )]
+#[serde(rename_all = "camelCase")]
 pub struct Model {
     #[cfg_attr(feature = "backend", sea_orm(primary_key))]
     pub id: i32,

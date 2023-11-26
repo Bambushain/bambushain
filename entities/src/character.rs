@@ -103,6 +103,7 @@ impl From<String> for CharacterRace {
     derive(DeriveEntityModel),
     sea_orm(table_name = "character", schema_name = "final_fantasy")
 )]
+#[serde(rename_all = "camelCase")]
 pub struct Model {
     #[cfg_attr(feature = "backend", sea_orm(primary_key))]
     pub id: i32,
