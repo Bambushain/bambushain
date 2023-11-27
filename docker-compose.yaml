@@ -1,7 +1,7 @@
 version: "3"
 services:
   pandaparty-postgres:
-    image: harbor.ulbricht.casa/proxy/library/postgres:15-alpine
+    image: library/postgres:15-alpine
     environment:
       POSTGRES_DB: pandaparty
       POSTGRES_PASSWORD: pandaparty
@@ -10,7 +10,7 @@ services:
     ports:
       - "5434:5432"
   pandaparty-mailpit:
-    image: harbor.ulbricht.casa/proxy/axllent/mailpit:latest
+    image: axllent/mailpit:latest
     environment:
       MP_SMTP_AUTH_ACCEPT_ANY: "true"
       MP_SMTP_AUTH_ALLOW_INSECURE: "true"

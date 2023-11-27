@@ -287,28 +287,31 @@ pub async fn move_custom_field(
         ))
     }?;
 
-    let (position_expr, new_position) = match old_position.cmp(&position) {
+    let (position_expr, filter_expr, new_position) = match old_position.cmp(&position) {
         Ordering::Less => (
             Expr::col(custom_character_field::Column::Position).sub(1),
+            custom_character_field::Column::UserId
+                .eq(user_id)
+                .and(custom_character_field::Column::Position.lte(position)),
             position,
         ),
         Ordering::Greater => (
             Expr::col(custom_character_field::Column::Position).add(1),
+            custom_character_field::Column::UserId
+                .eq(user_id)
+                .and(custom_character_field::Column::Position.lt(old_position))
+                .and(custom_character_field::Column::Position.gte(position)),
             position,
         ),
         _ => (
             Expr::col(custom_character_field::Column::Position).into_simple_expr(),
+            custom_character_field::Column::Id.eq(field_id),
             position,
         ),
     };
 
     custom_character_field::Entity::update_many()
-        .filter(
-            custom_character_field::Column::UserId
-                .eq(user_id)
-                .and(custom_character_field::Column::Position.lt(old_position))
-                .and(custom_character_field::Column::Position.gte(position)),
-        )
+        .filter(filter_expr)
         .col_expr(custom_character_field::Column::Position, position_expr)
         .exec(db)
         .await
