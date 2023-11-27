@@ -16,7 +16,7 @@ fn format_title(s: AttrValue) -> AttrValue {
 #[function_component(App)]
 pub fn app() -> Html {
     html!(
-        <CosmoPageLayout primary_color="#9F2637" primary_color_dark="#9F2637" default_title="Pandaparty" format_title={format_title}>
+        <CosmoPageLayout primary_color="#598C79" primary_color_dark="#598C79" default_title="Pandaparty" format_title={format_title}>
             <BrowserRouter>
                 <Switch<AppRoute> render={switch}/>
             </BrowserRouter>
