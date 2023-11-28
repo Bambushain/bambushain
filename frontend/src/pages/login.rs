@@ -22,7 +22,7 @@ fn login_content() -> Html {
     let password_state = use_state_eq(|| AttrValue::from(""));
     let two_factor_code_state = use_state_eq(|| AttrValue::from(""));
     let error_message_state =
-        use_state_eq(|| AttrValue::from("Melde dich an und komm zur Pandaparty"));
+        use_state_eq(|| AttrValue::from("Melde dich an und betrete den Bambushain"));
 
     let two_factor_code_requested_state = use_state_eq(|| false);
     let error_state = use_state_eq(|| false);
@@ -80,7 +80,8 @@ fn login_content() -> Html {
                             let _ = profile_query.refresh().await;
                             navigator.push(&AppRoute::PandaPartyRoot);
                         } else {
-                            error_message_state.set("Melde dich an und komm zur Pandaparty".into());
+                            error_message_state
+                                .set("Melde dich an und betrete den Bambushain".into());
                             two_factor_code_requested_state.set(true);
                         }
                         error_state.set(false);
@@ -123,16 +124,11 @@ color: var(--black);
 
 button {
     --control-border-color: var(--primary-color);
-    --black: var(--primary-color);
+    --white: #ffffff;
 }
 
 input {
     --primary-color: var(--control-border-color);
-}
-
-button:hover {
-    color: #ffffff !important;
-    background: var(--primary-color);
 }
     "#
     );
@@ -173,12 +169,12 @@ align-items: center;
                     {(*error_message_state).clone()}
                 </p>
                 if !*two_factor_code_requested_state {
-                    <CosmoForm on_submit={login_submit} buttons={html!(<CosmoButton label="Anmelden" is_submit={true} />)}>
+                    <CosmoForm on_submit={login_submit} buttons={html!(<CosmoButton state={CosmoButtonType::Primary} label="Anmelden" is_submit={true} />)}>
                         <CosmoTextBox id="email" required={true} value={(*email_state).clone()} on_input={on_email_update} label="Email oder Name" />
                         <CosmoTextBox id="password" input_type={CosmoTextBoxType::Password} required={true} value={(*password_state).clone()} on_input={on_password_update} label="Passwort" />
                     </CosmoForm>
                 } else {
-                    <CosmoForm on_submit={login_submit} buttons={html!(<CosmoButton label="Anmelden" is_submit={true} />)}>
+                    <CosmoForm on_submit={login_submit} buttons={html!(<CosmoButton state={CosmoButtonType::Primary} label="Anmelden" is_submit={true} />)}>
                         <CosmoTextBox readonly={true} id="email" required={true} value={(*email_state).clone()} on_input={on_email_update} label="Email" />
                         <CosmoTextBox readonly={true} id="password" input_type={CosmoTextBoxType::Password} required={true} value={(*password_state).clone()} on_input={on_password_update} label="Passwort" />
                         <CosmoTextBox id="twofactor" required={true} value={(*two_factor_code_state).clone()} on_input={on_two_factor_code_update} label="Zwei Faktor Code" />

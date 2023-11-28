@@ -1,0 +1,15 @@
+body {
+    height: 100vh;
+    width: 100vw;
+    background: url("/static/background.webp") !important;
+    background-size: cover !important;
+    background-position-y: bottom !important;
+    background-position-x: left !important;
+
+    --gradient-bottom-color: transparent !important;
+    --menu-text-selected-color: rgb(204, 204, 204);
+}
+
+body > div {
+    background: rgba(var(--white-base) var(--white-base) var(--white-base) / 80%);
+}

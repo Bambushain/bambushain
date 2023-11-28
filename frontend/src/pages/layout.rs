@@ -2,7 +2,6 @@ use bounce::helmet::Helmet;
 use bounce::query::use_query_value;
 use bounce::{use_atom_setter, use_atom_value};
 use stylist::yew::use_style;
-use stylist::{css, GlobalStyle};
 use yew::prelude::*;
 use yew_cosmo::prelude::*;
 use yew_router::prelude::*;
@@ -45,7 +44,7 @@ fn switch_sub_menu(route: AppRoute) -> Html {
         AppRoute::PandaPartyRoot | AppRoute::PandaParty => html!(
             <CosmoSubMenuBar>
                 <Switch<PandaPartyRoute> render={render_sub_menu_entry("Event Kalender".into(), PandaPartyRoute::Calendar)} />
-                <Switch<PandaPartyRoute> render={render_sub_menu_entry("Party People".into(), PandaPartyRoute::User)} />
+                <Switch<PandaPartyRoute> render={render_sub_menu_entry("Pandas".into(), PandaPartyRoute::User)} />
             </CosmoSubMenuBar>
         ),
         AppRoute::FinalFantasyRoot | AppRoute::FinalFantasy => html!(
@@ -95,7 +94,7 @@ fn switch_panda_party(route: PandaPartyRoute) -> Html {
         PandaPartyRoute::User => html!(
             <>
                 <Helmet>
-                    <title>{"Party People"}</title>
+                    <title>{"Pandas"}</title>
                 </Helmet>
                 <UsersPage />
             </>
@@ -114,7 +113,7 @@ fn switch_app(route: AppRoute) -> Html {
         AppRoute::PandaParty => html!(
             <>
                 <Helmet>
-                    <title>{"Pandaparty"}</title>
+                    <title>{"Bambushain"}</title>
                 </Helmet>
                 <Switch<PandaPartyRoute> render={switch_panda_party} />
             </>
@@ -189,7 +188,7 @@ fn app_layout() -> Html {
                     <Switch<AppRoute> render={switch_top_bar}/>
                     <CosmoMenuBar>
                         <CosmoMainMenu>
-                            <Switch<AppRoute> render={render_main_menu_entry("Pandaparty".into(), AppRoute::PandaPartyRoot, AppRoute::PandaParty)} />
+                            <Switch<AppRoute> render={render_main_menu_entry("Pandas".into(), AppRoute::PandaPartyRoot, AppRoute::PandaParty)} />
                             <Switch<AppRoute> render={render_main_menu_entry("Final Fantasy".into(), AppRoute::FinalFantasyRoot, AppRoute::FinalFantasy)} />
                         </CosmoMainMenu>
                         <Switch<AppRoute> render={switch_sub_menu} />
@@ -623,32 +622,7 @@ fn top_bar() -> Html {
 #[function_component(Layout)]
 fn layout() -> Html {
     log::info!("Run layout");
-    let global_style = GlobalStyle::new(css!(
-        r#"
-body {
-    height: 100vh;
-    width: 100vw;
-    background: url("/static/background.webp") !important;
-    background-size: cover !important;
-    background-position-y: bottom !important;
-    background-position-x: left !important;
-    --gradient-bottom-color: transparent !important;
-}
-
-body > div {
-    background: rgba(var(--white-base) var(--white-base) var(--white-base) / 80%);
-}"#
-    ))
-    .expect("Should create global style");
-
     html!(
-        <>
-            <Helmet>
-                <style>
-                    {global_style.get_style_str()}
-                </style>
-            </Helmet>
-            <AppLayout />
-        </>
+        <AppLayout />
     )
 }
