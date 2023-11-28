@@ -1,4 +1,4 @@
-use pandaparty_entities::prelude::*;
+use bamboo_entities::prelude::*;
 
 use crate::api;
 use crate::storage;

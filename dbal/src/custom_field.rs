@@ -4,10 +4,8 @@ use sea_orm::ActiveValue::Set;
 use sea_orm::{IntoSimpleExpr, NotSet, QueryOrder, QuerySelect};
 use std::cmp::Ordering;
 
-use pandaparty_entities::prelude::*;
-use pandaparty_entities::{
-    custom_character_field, custom_character_field_option, pandaparty_db_error,
-};
+use bamboo_entities::prelude::*;
+use bamboo_entities::{bamboo_db_error, custom_character_field, custom_character_field_option};
 
 pub async fn get_custom_fields(
     user_id: i32,
@@ -22,7 +20,7 @@ pub async fn get_custom_fields(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("character", "Failed to load character custom fields")
+            bamboo_db_error!("character", "Failed to load character custom fields")
         })?;
 
     Ok(fields
@@ -49,7 +47,7 @@ pub async fn get_custom_field(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("character", "Failed to load character custom fields")
+            bamboo_db_error!("character", "Failed to load character custom fields")
         })?;
 
     let mut result = None;
@@ -62,7 +60,7 @@ pub async fn get_custom_field(
     if let Some(result) = result {
         Ok(result)
     } else {
-        Err(pandaparty_not_found_error!(
+        Err(bamboo_not_found_error!(
             "character",
             "Custom field not found"
         ))
@@ -84,7 +82,7 @@ pub async fn create_custom_field(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("character", "Failed to move custom field")
+            bamboo_db_error!("character", "Failed to move custom field")
         })?;
 
     let result = custom_character_field::ActiveModel {
@@ -97,7 +95,7 @@ pub async fn create_custom_field(
     .await
     .map_err(|err| {
         log::error!("{err}");
-        pandaparty_db_error!("character", "Failed to create custom field")
+        bamboo_db_error!("character", "Failed to create custom field")
     })?;
 
     let models = custom_field
@@ -116,7 +114,7 @@ pub async fn create_custom_field(
             .await
             .map_err(|err| {
                 log::error!("{err}");
-                pandaparty_db_error!("character", "Failed to create custom field option")
+                bamboo_db_error!("character", "Failed to create custom field option")
             })?;
     }
 
@@ -140,7 +138,7 @@ pub async fn update_custom_field(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("character", "Failed to update custom field")
+            bamboo_db_error!("character", "Failed to update custom field")
         })
         .map(|_| ())
 }
@@ -157,7 +155,7 @@ pub async fn delete_custom_field(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("character", "Failed to delete custom field")
+            bamboo_db_error!("character", "Failed to delete custom field")
         })
         .map(|_| ())
 }
@@ -174,7 +172,7 @@ pub async fn get_custom_field_options(
         .await
         .map_err(|err| {
             log::error!("Failed to load custom field options: {err}");
-            pandaparty_db_error!("character", "Failed to load custom field options")
+            bamboo_db_error!("character", "Failed to load custom field options")
         })
 }
 
@@ -192,7 +190,7 @@ pub async fn create_custom_field_option(
     .await
     .map_err(|err| {
         log::error!("{err}");
-        pandaparty_db_error!("character", "Failed to create custom field option")
+        bamboo_db_error!("character", "Failed to create custom field option")
     })
 }
 
@@ -213,7 +211,7 @@ pub async fn update_custom_field_option(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("character", "Failed to update custom field")
+            bamboo_db_error!("character", "Failed to update custom field")
         })
         .map(|_| ())
 }
@@ -230,7 +228,7 @@ pub async fn delete_custom_field_option(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("character", "Failed to delete custom field")
+            bamboo_db_error!("character", "Failed to delete custom field")
         })
         .map(|_| ())
 }
@@ -277,14 +275,11 @@ pub async fn move_custom_field(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("character", "Failed to move custom field")
+            bamboo_db_error!("character", "Failed to move custom field")
         })? {
         Ok(old_position)
     } else {
-        Err(pandaparty_db_error!(
-            "character",
-            "Failed to move custom field"
-        ))
+        Err(bamboo_db_error!("character", "Failed to move custom field"))
     }?;
 
     let (position_expr, filter_expr, new_position) = match old_position.cmp(&position) {
@@ -317,7 +312,7 @@ pub async fn move_custom_field(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("character", "Failed to move custom field")
+            bamboo_db_error!("character", "Failed to move custom field")
         })?;
 
     custom_character_field::Entity::update_many()
@@ -331,7 +326,7 @@ pub async fn move_custom_field(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("character", "Failed to move custom field")
+            bamboo_db_error!("character", "Failed to move custom field")
         })?;
 
     let fields = custom_character_field::Entity::find()
@@ -344,7 +339,7 @@ pub async fn move_custom_field(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("character", "Failed to move custom field")
+            bamboo_db_error!("character", "Failed to move custom field")
         })?;
 
     for (idx, id) in fields.iter().enumerate() {
@@ -358,7 +353,7 @@ pub async fn move_custom_field(
             .await
             .map_err(|err| {
                 log::error!("{err}");
-                pandaparty_db_error!("character", "Failed to move custom field")
+                bamboo_db_error!("character", "Failed to move custom field")
             })?;
     }
 

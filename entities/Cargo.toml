@@ -1,5 +1,5 @@
 [package]
-name = "pandaparty-entities"
+name = "bamboo-entities"
 version.workspace = true
 edition.workspace = true
 

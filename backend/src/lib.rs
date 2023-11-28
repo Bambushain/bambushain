@@ -1,4 +1,4 @@
-use pandaparty_services::prelude::*;
+use bamboo_services::prelude::*;
 use sea_orm::DatabaseConnection;
 use std::sync::Arc;
 
@@ -65,24 +65,24 @@ macro_rules! internal_server_error {
 macro_rules! error_response {
     ($err:expr) => {
         match $err.error_type {
-            pandaparty_entities::prelude::PandaPartyErrorCode::NotFoundError => not_found!($err),
-            pandaparty_entities::prelude::PandaPartyErrorCode::ExistsAlreadyError => {
+            bamboo_entities::prelude::BambooErrorCode::NotFoundError => not_found!($err),
+            bamboo_entities::prelude::BambooErrorCode::ExistsAlreadyError => {
                 conflict!($err)
             }
-            pandaparty_entities::prelude::PandaPartyErrorCode::InsufficientRightsError => {
+            bamboo_entities::prelude::BambooErrorCode::InsufficientRightsError => {
                 forbidden!($err)
             }
-            pandaparty_entities::prelude::PandaPartyErrorCode::UnauthorizedError => {
+            bamboo_entities::prelude::BambooErrorCode::UnauthorizedError => {
                 unauthorized!($err)
             }
-            pandaparty_entities::prelude::PandaPartyErrorCode::InvalidDataError
-            | pandaparty_entities::prelude::PandaPartyErrorCode::ValidationError => {
+            bamboo_entities::prelude::BambooErrorCode::InvalidDataError
+            | bamboo_entities::prelude::BambooErrorCode::ValidationError => {
                 bad_request!($err)
             }
-            pandaparty_entities::prelude::PandaPartyErrorCode::DbError
-            | pandaparty_entities::prelude::PandaPartyErrorCode::IoError
-            | pandaparty_entities::prelude::PandaPartyErrorCode::SerializationError
-            | pandaparty_entities::prelude::PandaPartyErrorCode::UnknownError => {
+            bamboo_entities::prelude::BambooErrorCode::DbError
+            | bamboo_entities::prelude::BambooErrorCode::IoError
+            | bamboo_entities::prelude::BambooErrorCode::SerializationError
+            | bamboo_entities::prelude::BambooErrorCode::UnknownError => {
                 internal_server_error!($err)
             }
         }

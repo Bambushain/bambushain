@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 #[cfg_attr(
     feature = "backend",
     derive(DeriveEntityModel),
-    sea_orm(table_name = "event", schema_name = "panda_party")
+    sea_orm(table_name = "event", schema_name = "bamboo")
 )]
 #[serde(rename_all = "camelCase")]
 pub struct Model {

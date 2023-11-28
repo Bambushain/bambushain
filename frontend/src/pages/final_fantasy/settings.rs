@@ -5,7 +5,7 @@ use yew::prelude::*;
 use yew_cosmo::prelude::*;
 use yew_icons::Icon;
 
-use pandaparty_entities::prelude::*;
+use bamboo_entities::prelude::*;
 
 use crate::api::free_company::{create_free_company, delete_free_company, update_free_company};
 use crate::api::{

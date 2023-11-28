@@ -1,6 +1,6 @@
+use bamboo_entities::user::WebUser;
 use bounce::Atom;
 use gloo::storage::{LocalStorage, Storage};
-use pandaparty_entities::user::WebUser;
 
 pub fn get_token() -> Option<String> {
     LocalStorage::get("/pandaparty/token").ok()

@@ -1,7 +1,7 @@
 use actix_web::{web, HttpResponse};
 use serde::Deserialize;
 
-use pandaparty_entities::prelude::*;
+use bamboo_entities::prelude::*;
 
 use crate::middleware::authenticate_user::Authentication;
 use crate::DbConnection;
@@ -12,7 +12,7 @@ pub struct CharacterPathInfo {
 }
 
 pub async fn get_characters(authentication: Authentication, db: DbConnection) -> HttpResponse {
-    ok_or_error!(pandaparty_dbal::character::get_characters(authentication.user.id, &db).await)
+    ok_or_error!(bamboo_dbal::character::get_characters(authentication.user.id, &db).await)
 }
 
 pub async fn get_character(
@@ -20,9 +20,9 @@ pub async fn get_character(
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
-    match pandaparty_dbal::character::get_character(path.id, authentication.user.id, &db).await {
+    match bamboo_dbal::character::get_character(path.id, authentication.user.id, &db).await {
         Ok(character) => ok_json!(character),
-        Err(_) => not_found!(pandaparty_not_found_error!(
+        Err(_) => not_found!(bamboo_not_found_error!(
             "character",
             "The character was not found"
         )),
@@ -34,26 +34,22 @@ pub async fn create_character(
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
-    if pandaparty_dbal::character::character_exists_by_name(
+    if bamboo_dbal::character::character_exists_by_name(
         body.name.clone(),
         authentication.user.id,
         &db,
     )
     .await
     {
-        return conflict!(pandaparty_exists_already_error!(
+        return conflict!(bamboo_exists_already_error!(
             "character",
             "The character already exists"
         ));
     }
 
     created_or_error!(
-        pandaparty_dbal::character::create_character(
-            authentication.user.id,
-            body.into_inner(),
-            &db
-        )
-        .await
+        bamboo_dbal::character::create_character(authentication.user.id, body.into_inner(), &db)
+            .await
     )
 }
 
@@ -63,9 +59,9 @@ pub async fn update_character(
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
-    match pandaparty_dbal::character::get_character(path.id, authentication.user.id, &db).await {
+    match bamboo_dbal::character::get_character(path.id, authentication.user.id, &db).await {
         Ok(_) => no_content_or_error!(
-            pandaparty_dbal::character::update_character(
+            bamboo_dbal::character::update_character(
                 path.id,
                 authentication.user.id,
                 body.into_inner(),
@@ -73,7 +69,7 @@ pub async fn update_character(
             )
             .await
         ),
-        Err(_) => not_found!(pandaparty_not_found_error!(
+        Err(_) => not_found!(bamboo_not_found_error!(
             "character",
             "The character was not found"
         )),
@@ -85,14 +81,14 @@ pub async fn delete_character(
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
-    if !pandaparty_dbal::character::character_exists(authentication.user.id, path.id, &db).await {
-        return not_found!(pandaparty_not_found_error!(
+    if !bamboo_dbal::character::character_exists(authentication.user.id, path.id, &db).await {
+        return not_found!(bamboo_not_found_error!(
             "character",
             "The character was not found"
         ));
     }
 
     no_content_or_error!(
-        pandaparty_dbal::character::delete_character(path.id, authentication.user.id, &db).await
+        bamboo_dbal::character::delete_character(path.id, authentication.user.id, &db).await
     )
 }

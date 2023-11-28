@@ -1,7 +1,7 @@
 use actix_web::{web, HttpResponse};
 use serde::Deserialize;
 
-use pandaparty_entities::prelude::*;
+use bamboo_entities::prelude::*;
 
 use crate::middleware::authenticate_user::Authentication;
 use crate::DbConnection;
@@ -23,8 +23,7 @@ pub async fn get_fighters(
     db: DbConnection,
 ) -> HttpResponse {
     ok_or_error!(
-        pandaparty_dbal::fighter::get_fighters(authentication.user.id, path.character_id, &db)
-            .await
+        bamboo_dbal::fighter::get_fighters(authentication.user.id, path.character_id, &db).await
     )
 }
 
@@ -33,16 +32,11 @@ pub async fn get_fighter(
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
-    match pandaparty_dbal::fighter::get_fighter(
-        path.id,
-        authentication.user.id,
-        path.character_id,
-        &db,
-    )
-    .await
+    match bamboo_dbal::fighter::get_fighter(path.id, authentication.user.id, path.character_id, &db)
+        .await
     {
         Ok(fighter) => ok_json!(fighter),
-        Err(_) => not_found!(pandaparty_not_found_error!(
+        Err(_) => not_found!(bamboo_not_found_error!(
             "fighter",
             "The fighter was not found"
         )),
@@ -55,7 +49,7 @@ pub async fn create_fighter(
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
-    if pandaparty_dbal::fighter::fighter_exists_by_job(
+    if bamboo_dbal::fighter::fighter_exists_by_job(
         authentication.user.id,
         path.character_id,
         body.job,
@@ -63,14 +57,14 @@ pub async fn create_fighter(
     )
     .await
     {
-        return conflict!(pandaparty_exists_already_error!(
+        return conflict!(bamboo_exists_already_error!(
             "fighter",
             "The fighter already exists"
         ));
     }
 
     created_or_error!(
-        pandaparty_dbal::fighter::create_fighter(
+        bamboo_dbal::fighter::create_fighter(
             authentication.user.id,
             path.character_id,
             body.into_inner(),
@@ -86,18 +80,13 @@ pub async fn update_fighter(
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
-    match pandaparty_dbal::fighter::get_fighter(
-        path.id,
-        authentication.user.id,
-        path.character_id,
-        &db,
-    )
-    .await
+    match bamboo_dbal::fighter::get_fighter(path.id, authentication.user.id, path.character_id, &db)
+        .await
     {
         Ok(_) => no_content_or_error!(
-            pandaparty_dbal::fighter::update_fighter(path.id, body.into_inner(), &db).await
+            bamboo_dbal::fighter::update_fighter(path.id, body.into_inner(), &db).await
         ),
-        Err(_) => not_found!(pandaparty_not_found_error!(
+        Err(_) => not_found!(bamboo_not_found_error!(
             "fighter",
             "The fighter was not found"
         )),
@@ -109,7 +98,7 @@ pub async fn delete_fighter(
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
-    if !pandaparty_dbal::fighter::fighter_exists(
+    if !bamboo_dbal::fighter::fighter_exists(
         path.id,
         authentication.user.id,
         path.character_id,
@@ -117,11 +106,11 @@ pub async fn delete_fighter(
     )
     .await
     {
-        return not_found!(pandaparty_not_found_error!(
+        return not_found!(bamboo_not_found_error!(
             "fighter",
             "The fighter was not found"
         ));
     }
 
-    no_content_or_error!(pandaparty_dbal::fighter::delete_fighter(path.id, &db).await)
+    no_content_or_error!(bamboo_dbal::fighter::delete_fighter(path.id, &db).await)
 }

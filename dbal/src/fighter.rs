@@ -3,8 +3,8 @@ use sea_orm::sea_query::Expr;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{IntoActiveModel, NotSet, QueryOrder, QuerySelect};
 
-use pandaparty_entities::prelude::*;
-use pandaparty_entities::{character, fighter};
+use bamboo_entities::prelude::*;
+use bamboo_entities::{character, fighter};
 
 use crate::prelude::character_exists;
 
@@ -22,7 +22,7 @@ pub async fn get_fighters(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("fighter", "Failed to load fighters")
+            bamboo_db_error!("fighter", "Failed to load fighters")
         })
 }
 
@@ -41,13 +41,13 @@ pub async fn get_fighter(
         .await
     {
         Ok(Some(res)) => Ok(res),
-        Ok(None) => Err(pandaparty_not_found_error!(
+        Ok(None) => Err(bamboo_not_found_error!(
             "fighter",
             "The fighter was not found"
         )),
         Err(err) => {
             log::error!("{err}");
-            Err(pandaparty_db_error!(
+            Err(bamboo_db_error!(
                 "fighter",
                 "Failed to execute database query"
             ))
@@ -99,7 +99,7 @@ pub async fn create_fighter(
     db: &DatabaseConnection,
 ) -> PandaPartyResult<Fighter> {
     if !character_exists(user_id, character_id, db).await {
-        return Err(pandaparty_not_found_error!(
+        return Err(bamboo_not_found_error!(
             "fighter",
             "The character does not exist"
         ));
@@ -111,7 +111,7 @@ pub async fn create_fighter(
 
     model.insert(db).await.map_err(|err| {
         log::error!("{err}");
-        pandaparty_db_error!("fighter", "Failed to create fighter")
+        bamboo_db_error!("fighter", "Failed to create fighter")
     })
 }
 
@@ -128,7 +128,7 @@ pub async fn update_fighter(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("fighter", "Failed to update fighter")
+            bamboo_db_error!("fighter", "Failed to update fighter")
         })
         .map(|_| ())
 }
@@ -140,7 +140,7 @@ pub async fn delete_fighter(id: i32, db: &DatabaseConnection) -> PandaPartyError
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("fighter", "Failed to delete fighter")
+            bamboo_db_error!("fighter", "Failed to delete fighter")
         })
         .map(|_| ())
 }

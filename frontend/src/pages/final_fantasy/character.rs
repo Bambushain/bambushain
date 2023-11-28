@@ -9,7 +9,7 @@ use yew::virtual_dom::{Key, VChild};
 use yew_cosmo::prelude::*;
 use yew_hooks::use_mount;
 
-use pandaparty_entities::prelude::*;
+use bamboo_entities::prelude::*;
 
 use crate::api::character::MyCharacters;
 use crate::api::free_company::get_free_companies;

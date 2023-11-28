@@ -1,7 +1,7 @@
 use actix_web::{web, HttpResponse};
 use serde::Deserialize;
 
-use pandaparty_entities::prelude::*;
+use bamboo_entities::prelude::*;
 
 use crate::middleware::authenticate_user::Authentication;
 use crate::DbConnection;
@@ -24,9 +24,7 @@ pub struct CustomFieldOptionPositionPath {
 }
 
 pub async fn get_custom_fields(authentication: Authentication, db: DbConnection) -> HttpResponse {
-    ok_or_error!(
-        pandaparty_dbal::custom_field::get_custom_fields(authentication.user.id, &db).await
-    )
+    ok_or_error!(bamboo_dbal::custom_field::get_custom_fields(authentication.user.id, &db).await)
 }
 
 pub async fn get_custom_field(
@@ -34,11 +32,9 @@ pub async fn get_custom_field(
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
-    match pandaparty_dbal::custom_field::get_custom_field(path.id, authentication.user.id, &db)
-        .await
-    {
+    match bamboo_dbal::custom_field::get_custom_field(path.id, authentication.user.id, &db).await {
         Ok(custom_field) => ok_json!(custom_field),
-        Err(_) => not_found!(pandaparty_not_found_error!(
+        Err(_) => not_found!(bamboo_not_found_error!(
             "custom_field",
             "The custom field was not found"
         )),
@@ -50,21 +46,21 @@ pub async fn create_custom_field(
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
-    if pandaparty_dbal::custom_field::custom_field_exists_by_label(
+    if bamboo_dbal::custom_field::custom_field_exists_by_label(
         body.label.clone(),
         authentication.user.id,
         &db,
     )
     .await
     {
-        return conflict!(pandaparty_exists_already_error!(
+        return conflict!(bamboo_exists_already_error!(
             "custom_field",
             "The custom field already exists"
         ));
     }
 
     created_or_error!(
-        pandaparty_dbal::custom_field::create_custom_field(
+        bamboo_dbal::custom_field::create_custom_field(
             authentication.user.id,
             body.into_inner(),
             &db
@@ -79,11 +75,9 @@ pub async fn update_custom_field(
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
-    match pandaparty_dbal::custom_field::get_custom_field(path.id, authentication.user.id, &db)
-        .await
-    {
+    match bamboo_dbal::custom_field::get_custom_field(path.id, authentication.user.id, &db).await {
         Ok(_) => no_content_or_error!(
-            pandaparty_dbal::custom_field::update_custom_field(
+            bamboo_dbal::custom_field::update_custom_field(
                 path.id,
                 authentication.user.id,
                 body.into_inner(),
@@ -91,7 +85,7 @@ pub async fn update_custom_field(
             )
             .await
         ),
-        Err(_) => not_found!(pandaparty_not_found_error!(
+        Err(_) => not_found!(bamboo_not_found_error!(
             "custom_field",
             "The custom field was not found"
         )),
@@ -103,18 +97,15 @@ pub async fn delete_custom_field(
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
-    if !pandaparty_dbal::custom_field::custom_field_exists(authentication.user.id, path.id, &db)
-        .await
-    {
-        return not_found!(pandaparty_not_found_error!(
+    if !bamboo_dbal::custom_field::custom_field_exists(authentication.user.id, path.id, &db).await {
+        return not_found!(bamboo_not_found_error!(
             "custom_field",
             "The custom field was not found"
         ));
     }
 
     no_content_or_error!(
-        pandaparty_dbal::custom_field::delete_custom_field(path.id, authentication.user.id, &db)
-            .await
+        bamboo_dbal::custom_field::delete_custom_field(path.id, authentication.user.id, &db).await
     )
 }
 
@@ -124,17 +115,15 @@ pub async fn create_custom_field_option(
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
-    if !pandaparty_dbal::custom_field::custom_field_exists(authentication.user.id, path.id, &db)
-        .await
-    {
-        return not_found!(pandaparty_not_found_error!(
+    if !bamboo_dbal::custom_field::custom_field_exists(authentication.user.id, path.id, &db).await {
+        return not_found!(bamboo_not_found_error!(
             "custom_field",
             "The custom field was not found"
         ));
     }
 
     no_content_or_error!(
-        pandaparty_dbal::custom_field::create_custom_field_option(path.id, body.into_inner(), &db)
+        bamboo_dbal::custom_field::create_custom_field_option(path.id, body.into_inner(), &db)
             .await
     )
 }
@@ -144,22 +133,16 @@ pub async fn get_custom_field_options(
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
-    if !pandaparty_dbal::custom_field::custom_field_exists(authentication.user.id, path.id, &db)
-        .await
-    {
-        return not_found!(pandaparty_not_found_error!(
+    if !bamboo_dbal::custom_field::custom_field_exists(authentication.user.id, path.id, &db).await {
+        return not_found!(bamboo_not_found_error!(
             "custom_field",
             "The custom field was not found"
         ));
     }
 
     ok_or_error!(
-        pandaparty_dbal::custom_field::get_custom_field_options(
-            path.id,
-            authentication.user.id,
-            &db
-        )
-        .await
+        bamboo_dbal::custom_field::get_custom_field_options(path.id, authentication.user.id, &db)
+            .await
     )
 }
 
@@ -169,21 +152,17 @@ pub async fn update_custom_field_option(
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
-    if !pandaparty_dbal::custom_field::custom_field_exists(
-        authentication.user.id,
-        path.field_id,
-        &db,
-    )
-    .await
+    if !bamboo_dbal::custom_field::custom_field_exists(authentication.user.id, path.field_id, &db)
+        .await
     {
-        return not_found!(pandaparty_not_found_error!(
+        return not_found!(bamboo_not_found_error!(
             "custom_field",
             "The custom field was not found"
         ));
     }
 
     no_content_or_error!(
-        pandaparty_dbal::custom_field::update_custom_field_option(
+        bamboo_dbal::custom_field::update_custom_field_option(
             path.id,
             path.field_id,
             body.into_inner(),
@@ -198,22 +177,17 @@ pub async fn delete_custom_field_option(
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
-    if !pandaparty_dbal::custom_field::custom_field_exists(
-        authentication.user.id,
-        path.field_id,
-        &db,
-    )
-    .await
+    if !bamboo_dbal::custom_field::custom_field_exists(authentication.user.id, path.field_id, &db)
+        .await
     {
-        return not_found!(pandaparty_not_found_error!(
+        return not_found!(bamboo_not_found_error!(
             "custom_field",
             "The custom field was not found"
         ));
     }
 
     no_content_or_error!(
-        pandaparty_dbal::custom_field::delete_custom_field_option(path.id, path.field_id, &db)
-            .await
+        bamboo_dbal::custom_field::delete_custom_field_option(path.id, path.field_id, &db).await
     )
 }
 
@@ -222,21 +196,17 @@ pub async fn move_custom_field(
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
-    if !pandaparty_dbal::custom_field::custom_field_exists(
-        authentication.user.id,
-        path.field_id,
-        &db,
-    )
-    .await
+    if !bamboo_dbal::custom_field::custom_field_exists(authentication.user.id, path.field_id, &db)
+        .await
     {
-        return not_found!(pandaparty_not_found_error!(
+        return not_found!(bamboo_not_found_error!(
             "custom_field",
             "The custom field was not found"
         ));
     }
 
     no_content_or_error!(
-        pandaparty_dbal::custom_field::move_custom_field(
+        bamboo_dbal::custom_field::move_custom_field(
             authentication.user.id,
             path.field_id,
             path.position,

@@ -8,7 +8,7 @@ use rand::Rng;
 use yew::prelude::*;
 use yew_cosmo::prelude::*;
 
-use pandaparty_entities::prelude::*;
+use bamboo_entities::prelude::*;
 
 use crate::api::*;
 use crate::hooks::event_source::use_event_source;
@@ -126,9 +126,9 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
                         error_state.set(true);
                         if err.code == CONFLICT {
                             error_message_state
-                                .set("Ein Benutzer mit dieser Email existiert bereits".into());
+                                .set("Ein Panda mit dieser Email ist bereits im Hain".into());
                         } else {
-                            error_message_state.set("Der Benutzer konnte nicht hinzugefügt werden, bitte wende dich an Azami".into());
+                            error_message_state.set("Der Panda konnte nicht hinzugefügt werden, bitte wende dich an Azami".into());
                         }
                         password_state.set(
                             rand::thread_rng()
@@ -150,14 +150,14 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
     );
 
     html!(
-        <CosmoModal title="Benutzer hinzufügen" is_form={true} on_form_submit={form_submit} buttons={
+        <CosmoModal title="Panda hinzufügen" is_form={true} on_form_submit={form_submit} buttons={
             html!(
                 if *created_state {
                     <CosmoButton on_click={on_saved} label="Alles klar" />
                 } else {
                     <>
                         <CosmoButton on_click={props.on_close.clone()} label="Abbrechen" />
-                        <CosmoButton is_submit={true} label="Benutzer erstellen" />
+                        <CosmoButton is_submit={true} label="Panda hinzufügen" />
                     </>
                 }
             )}>
@@ -168,7 +168,7 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
                     if *error_state {
                         <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim hinzufügen" message={(*error_message_state).clone()} />
                     } else {
-                        <CosmoMessage message_type={CosmoMessageType::Information} header="Füge einen neuen Benutzer hinzu" message="Das Passwort wird angezeigt wenn der Benutzer erfolgreich hinzugefügt wurde" />
+                        <CosmoMessage message_type={CosmoMessageType::Information} header="Füge einen neuen Panda hinzu" message="Das Passwort wird angezeigt wenn der Panda erfolgreich hinzugefügt wurde" />
                     }
                     <CosmoInputGroup>
                         <CosmoTextBox label="Email" value={(*email_state).clone()} on_input={update_email} required={true} />
@@ -231,18 +231,18 @@ fn update_profile_dialog(props: &UpdateProfileDialogProps) -> Html {
                     }
                     Err(err) => match err.code {
                         FORBIDDEN => {
-                            error_message_state.set("Du musst Mod sein um fremde Profile zu bearbeiten".into());
+                            error_message_state.set("Du musst Mod sein um andere Pandas zu bearbeiten".into());
                             true
                         }
                         NOT_FOUND => {
                             log::warn!("The user was not found");
-                            error_message_state.set("Der Benutzer wurde nicht gefunden".into());
+                            error_message_state.set("Der Panda wurde nicht gefunden".into());
 
                             true
                         }
                         _ => {
                             log::warn!("Failed to change the profile {err}");
-                            error_message_state.set("Das Profil konnte leider nicht geändert werden, bitte wende dich an Azami".into());
+                            error_message_state.set("Der Panda konnte leider nicht geändert werden, bitte wende dich an Azami".into());
 
                             true
                         }
@@ -255,10 +255,10 @@ fn update_profile_dialog(props: &UpdateProfileDialogProps) -> Html {
 
     html!(
         <>
-            <CosmoModal title="Profil bearbeiten" is_form={true} on_form_submit={on_save} buttons={html!(
+            <CosmoModal title="Panda bearbeiten" is_form={true} on_form_submit={on_save} buttons={html!(
                 <>
                     <CosmoButton on_click={props.on_close.clone()} label="Abbrechen" />
-                    <CosmoButton is_submit={true} label="Profil speichern" />
+                    <CosmoButton is_submit={true} label="Panda speichern" />
                 </>
             )}>
                 <CosmoInputGroup>
@@ -355,7 +355,7 @@ fn user_details(props: &UserDetailsProps) -> Html {
                                 CONFLICT
                             }
                             _ => {
-                                error_message_state.set(AttrValue::from("Der Benutzer konnte nicht zum Mod gemacht werden, bitte wende dich an Azami"));
+                                error_message_state.set(AttrValue::from("Der Panda konnte nicht zum Mod gemacht werden, bitte wende dich an Azami"));
                                 INTERNAL_SERVER_ERROR
                             }
                         },
@@ -368,7 +368,7 @@ fn user_details(props: &UserDetailsProps) -> Html {
                         Err(err) => match err.code {
                             FORBIDDEN => {
                                 error_message_state.set(AttrValue::from(
-                                    "Du musst Mod sein um Benutzern die Modrechte zu entziehen",
+                                    "Du musst Mod sein um Pandas die Modrechte zu entziehen",
                                 ));
                                 FORBIDDEN
                             }
@@ -379,7 +379,7 @@ fn user_details(props: &UserDetailsProps) -> Html {
                                 CONFLICT
                             }
                             _ => {
-                                error_message_state.set(AttrValue::from("Dem Benutzer konnten die Modrechte nicht entzogen werden, bitte wende dich an Azami"));
+                                error_message_state.set(AttrValue::from("Dem Panda konnten die Modrechte nicht entzogen werden, bitte wende dich an Azami"));
                                 INTERNAL_SERVER_ERROR
                             }
                         },
@@ -393,16 +393,16 @@ fn user_details(props: &UserDetailsProps) -> Html {
                         Err(err) => match err.code {
                             FORBIDDEN => {
                                 error_message_state.set(AttrValue::from(
-                                    "Du musst Mod sein um Benutzern zu entfernen",
+                                    "Du musst Mod sein um Pandas aus dem Hain zu werfen",
                                 ));
                                 FORBIDDEN
                             }
                             CONFLICT => {
-                                error_message_state.set(AttrValue::from("Du kannst dich nicht selbst löschen, wenn du gehen möchtest, wende dich an einen Mod"));
+                                error_message_state.set(AttrValue::from("Du kannst dich nicht selbst aus dem Hain werfen, wenn du gehen möchtest, wende dich an einen Mod"));
                                 CONFLICT
                             }
                             _ => {
-                                error_message_state.set(AttrValue::from("Das Benutzer konnte nicht gelöscht werden, bitte wende dich an Azami"));
+                                error_message_state.set(AttrValue::from("Der Panda konnte nicht aus dem Hain geworfen werden, bitte wende dich an Azami"));
                                 INTERNAL_SERVER_ERROR
                             }
                         },
@@ -421,7 +421,7 @@ fn user_details(props: &UserDetailsProps) -> Html {
                                     FORBIDDEN
                                 }
                                 CONFLICT => {
-                                    error_message_state.set("Wenn du dein passwort ändern willst, mach das bitte über Mein Sheef".into());
+                                    error_message_state.set("Wenn du dein Passwort ändern willst, mach das bitte über Passwort ändern".into());
                                     CONFLICT
                                 }
                                 _ => {
@@ -479,11 +479,11 @@ fn user_details(props: &UserDetailsProps) -> Html {
                         } else {
                             <CosmoButton enabled={props.user.id != current_user.profile.id} on_click={make_mod_click} label="Zum Mod machen" />
                         }
-                        <CosmoButton enabled={props.user.id != current_user.profile.id} on_click={update_profile_click} label="Profil bearbeiten" />
+                        <CosmoButton enabled={props.user.id != current_user.profile.id} on_click={update_profile_click} label="Panda bearbeiten" />
                         <CosmoButton enabled={props.user.id != current_user.profile.id} on_click={change_password_click} label="Passwort ändern" />
                     </CosmoToolbarGroup>
                     <CosmoToolbarGroup>
-                        <CosmoButton enabled={props.user.id != current_user.profile.id} on_click={delete_click} label="Löschen" />
+                        <CosmoButton enabled={props.user.id != current_user.profile.id} on_click={delete_click} label="Aus dem Hain werfen" />
                     </CosmoToolbarGroup>
                 </CosmoToolbar>
             }
@@ -511,13 +511,13 @@ fn user_details(props: &UserDetailsProps) -> Html {
             </CosmoKeyValueList>
             {match (*confirm_state).clone() {
                 UserConfirmActions::MakeMod => html!(
-                    <CosmoConfirm message={format!("Soll der Benutzer {} zum Mod gemacht werden?", props.user.email.clone())} title="Zum Mod machen" on_decline={on_decline} on_confirm={on_confirm} decline_label="Abbrechen" confirm_label="Zum Mod machen" />
+                    <CosmoConfirm message={format!("Soll der Panda {} zum Mod gemacht werden?", props.user.email.clone())} title="Zum Mod machen" on_decline={on_decline} on_confirm={on_confirm} decline_label="Abbrechen" confirm_label="Zum Mod machen" />
                 ),
                 UserConfirmActions::RemoveMod => html!(
-                    <CosmoConfirm message={format!("Sollen dem Benutzer {} wirklich die Modrechte entzogen werden?", props.user.email.clone())} title="Modrechte entziehen" on_decline={on_decline} on_confirm={on_confirm} confirm_label="Modrechte entziehen" decline_label="Abbrechen" />
+                    <CosmoConfirm message={format!("Sollen dem Panda {} wirklich die Modrechte entzogen werden?", props.user.email.clone())} title="Modrechte entziehen" on_decline={on_decline} on_confirm={on_confirm} confirm_label="Modrechte entziehen" decline_label="Abbrechen" />
                 ),
                 UserConfirmActions::Delete => html!(
-                    <CosmoConfirm confirm_type={CosmoModalType::Warning} message={format!("Soll der Benutzer {} wirklich gelöscht werden?", props.user.email.clone())} title="Benutzer löschen" on_decline={on_decline} on_confirm={on_confirm} confirm_label="Benutzer löschen" decline_label="Benutzer behalten" />
+                    <CosmoConfirm confirm_type={CosmoModalType::Warning} message={format!("Soll der Panda {} wirklich aus dem Hain geworfen werden?", props.user.email.clone())} title="Panda rauswerfen" on_decline={on_decline} on_confirm={on_confirm} confirm_label="Panda rauswerfen" decline_label="Panda behalten" />
                 ),
                 UserConfirmActions::ChangePassword(password) => {
                     html!(
@@ -527,7 +527,7 @@ fn user_details(props: &UserDetailsProps) -> Html {
                                 <CosmoButton on_click={on_confirm} label="Passwort zurücksetzen" />
                             </>
                         )}>
-                            <CosmoParagraph>{format!("Das neue Passwort für {} wird auf ", props.user.email)}<CosmoCode>{password}</CosmoCode>{" gesetzt."}</CosmoParagraph>
+                            <CosmoParagraph>{format!("Das neue Passwort für {} wird auf ", props.user.display_name)}<CosmoCode>{password}</CosmoCode>{" gesetzt."}</CosmoParagraph>
                         </CosmoModal>
                     )
                 },
@@ -645,7 +645,7 @@ pub fn users_page() -> Html {
         Some(Err(err)) => {
             log::warn!("Failed to load {err}");
             return html!(
-                <CosmoMessage header="Fehler beim Laden" message="Die Benutzer konnten nicht geladen werden, bitte wende dich an Azami" message_type={CosmoMessageType::Negative} />
+                <CosmoMessage header="Fehler beim Laden" message="Die Pandas konnten nicht geladen werden, bitte wende dich an Azami" message_type={CosmoMessageType::Negative} />
             );
         }
     }
@@ -653,9 +653,9 @@ pub fn users_page() -> Html {
     html!(
         <>
             <Helmet>
-                <title>{"Party People"}</title>
+                <title>{"Pandas"}</title>
             </Helmet>
-            <CosmoSideList on_select_item={on_user_select} selected_index={*selected_user_state} has_add_button={current_user.profile.is_mod} add_button_on_click={open_create_user_modal_click} add_button_label="Benutzer hinzufügen">
+            <CosmoSideList on_select_item={on_user_select} selected_index={*selected_user_state} has_add_button={current_user.profile.is_mod} add_button_on_click={open_create_user_modal_click} add_button_label="Panda hinzufügen">
                 {for (*users_state).clone().into_iter().map(|user| {
                     CosmoSideListItem::from_label_and_children(user.display_name.clone().into(), html!(
                         <UserDetails on_delete={on_delete.clone()} user={user} />

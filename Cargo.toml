@@ -1,15 +1,15 @@
 [package]
-name = "pandaparty"
+name = "bamboo"
 version.workspace = true
 edition.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-pandaparty-backend = { path = "backend" }
-pandaparty-dbal = { path = "dbal" }
-pandaparty-entities = { path = "entities" }
-pandaparty-migration = { path = "migration" }
-pandaparty-services = { path = "services" }
+bamboo-backend = { path = "backend" }
+bamboo-dbal = { path = "dbal" }
+bamboo-entities = { path = "entities" }
+bamboo-migration = { path = "migration" }
+bamboo-services = { path = "services" }
 
 actix-web = { workspace = true }
 actix-web-lab = { workspace = true, features = ["spa"] }

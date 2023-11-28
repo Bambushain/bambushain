@@ -5,7 +5,7 @@ use bounce::prelude::*;
 use bounce::query::{Query, QueryResult};
 use serde::{Deserialize, Serialize};
 
-use pandaparty_entities::prelude::*;
+use bamboo_entities::prelude::*;
 
 use crate::api;
 use crate::storage;

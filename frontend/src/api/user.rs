@@ -4,7 +4,7 @@ use async_trait::async_trait;
 use bounce::query::{Query, QueryResult};
 use bounce::BounceStates;
 
-use pandaparty_entities::prelude::*;
+use bamboo_entities::prelude::*;
 
 use crate::api::{
     delete, get, post, put_no_body_no_content, put_no_content, ApiError, PandapartyApiResult,
