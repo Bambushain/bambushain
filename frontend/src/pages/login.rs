@@ -6,7 +6,7 @@ use yew_cosmo::prelude::*;
 use yew_icons::Icon;
 use yew_router::hooks::use_navigator;
 
-use pandaparty_entities::prelude::Login;
+use bamboo_entities::prelude::Login;
 
 use crate::api;
 use crate::routing::AppRoute;

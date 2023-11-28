@@ -6,48 +6,48 @@ use rand::distributions::Alphanumeric;
 use rand::prelude::*;
 use sea_orm::prelude::*;
 
-use pandaparty_backend::broadcaster::event::EventBroadcaster;
-use pandaparty_backend::broadcaster::user::UserBroadcaster;
-use pandaparty_backend::middleware::authenticate_user::AuthenticateUser;
-use pandaparty_backend::middleware::check_mod::CheckMod;
-use pandaparty_backend::routes::authentication::{login, logout};
-use pandaparty_backend::routes::character::{
+use bamboo_backend::broadcaster::event::EventBroadcaster;
+use bamboo_backend::broadcaster::user::UserBroadcaster;
+use bamboo_backend::middleware::authenticate_user::AuthenticateUser;
+use bamboo_backend::middleware::check_mod::CheckMod;
+use bamboo_backend::routes::authentication::{login, logout};
+use bamboo_backend::routes::character::{
     create_character, delete_character, get_character, get_characters, update_character,
 };
-use pandaparty_backend::routes::crafter::{
+use bamboo_backend::routes::crafter::{
     create_crafter, delete_crafter, get_crafter, get_crafters, update_crafter,
 };
-use pandaparty_backend::routes::custom_field::{
+use bamboo_backend::routes::custom_field::{
     create_custom_field, create_custom_field_option, delete_custom_field,
     delete_custom_field_option, get_custom_field, get_custom_field_options, get_custom_fields,
     move_custom_field, update_custom_field, update_custom_field_option,
 };
-use pandaparty_backend::routes::event::{create_event, delete_event, get_events, update_event};
-use pandaparty_backend::routes::fighter::{
+use bamboo_backend::routes::event::{create_event, delete_event, get_events, update_event};
+use bamboo_backend::routes::fighter::{
     create_fighter, delete_fighter, get_fighter, get_fighters, update_fighter,
 };
-use pandaparty_backend::routes::free_company::{
+use bamboo_backend::routes::free_company::{
     create_free_company, delete_free_company, get_free_companies, get_free_company,
     update_free_company,
 };
-use pandaparty_backend::routes::user::{
+use bamboo_backend::routes::user::{
     add_mod_user, change_my_password, change_password, create_user, delete_user, enable_totp,
     get_profile, get_user, get_users, remove_mod_user, update_profile, update_user_profile,
     validate_totp,
 };
-use pandaparty_backend::sse::event::event_sse_client;
-use pandaparty_backend::sse::user::user_sse_client;
-use pandaparty_backend::sse::{Notification, NotificationState};
-use pandaparty_backend::{DbConnection, Services, ServicesState};
-use pandaparty_entities::user;
-use pandaparty_migration::{IntoSchemaManagerConnection, Migrator, MigratorTrait};
-use pandaparty_services::prelude::EnvironmentService;
+use bamboo_backend::sse::event::event_sse_client;
+use bamboo_backend::sse::user::user_sse_client;
+use bamboo_backend::sse::{Notification, NotificationState};
+use bamboo_backend::{DbConnection, Services, ServicesState};
+use bamboo_entities::user;
+use bamboo_migration::{IntoSchemaManagerConnection, Migrator, MigratorTrait};
+use bamboo_services::prelude::EnvironmentService;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     stderrlog::new().verbosity(log::Level::Info).init().unwrap();
 
-    log::info!("Start the Pandaparty");
+    log::info!("Open the bamboo grove");
 
     let mut opts =
         sea_orm::ConnectOptions::new(std::env::var("DATABASE_URL").expect("Needs DATABASE_URL"));
@@ -88,7 +88,7 @@ async fn main() -> std::io::Result<()> {
             .expect("INITIAL_USER_DISPLAY_NAME must be set");
         let email = std::env::var("INITIAL_USER_EMAIL").expect("INITIAL_USER_EMAIL must be set");
 
-        match pandaparty_dbal::user::create_user(
+        match bamboo_dbal::user::create_user(
             user::Model::new(
                 email.clone(),
                 password.clone(),
@@ -196,6 +196,22 @@ async fn main() -> std::io::Result<()> {
             )
             .route(
                 "/api/pandaparty/event/{id}",
+                web::delete().to(delete_event).wrap(AuthenticateUser),
+            )
+            .route(
+                "/api/bamboo-grove/event",
+                web::get().to(get_events).wrap(AuthenticateUser),
+            )
+            .route(
+                "/api/bamboo-grove/event",
+                web::post().to(create_event).wrap(AuthenticateUser),
+            )
+            .route(
+                "/api/bamboo-grove/event/{id}",
+                web::put().to(update_event).wrap(AuthenticateUser),
+            )
+            .route(
+                "/api/bamboo-grove/event/{id}",
                 web::delete().to(delete_event).wrap(AuthenticateUser),
             )
             .route(

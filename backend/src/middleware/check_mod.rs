@@ -50,10 +50,9 @@ where
 
         Box::pin(async move {
             let needs_to_be_mod = HttpResponse::Forbidden()
-                .json(pandaparty_entities::error::PandaPartyError {
+                .json(bamboo_entities::error::BambooError {
                     entity_type: "".to_string(),
-                    error_type:
-                        pandaparty_entities::error::PandaPartyErrorCode::InsufficientRightsError,
+                    error_type: bamboo_entities::error::BambooErrorCode::InsufficientRightsError,
                     message: "You need to be a mod".to_string(),
                 })
                 .map_into_right_body();

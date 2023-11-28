@@ -2,8 +2,8 @@ use date_range::DateRange;
 use sea_orm::prelude::*;
 use sea_orm::{Condition, IntoActiveModel, NotSet, QueryOrder};
 
-use pandaparty_entities::event;
-use pandaparty_entities::prelude::*;
+use bamboo_entities::event;
+use bamboo_entities::prelude::*;
 
 pub async fn get_events(range: DateRange, db: &DatabaseConnection) -> PandaPartyResult<Vec<Event>> {
     event::Entity::find()
@@ -25,7 +25,7 @@ pub async fn get_events(range: DateRange, db: &DatabaseConnection) -> PandaParty
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("event", "Failed to load events")
+            bamboo_db_error!("event", "Failed to load events")
         })
 }
 
@@ -35,7 +35,7 @@ pub async fn create_event(event: Event, db: &DatabaseConnection) -> PandaPartyRe
 
     model.insert(db).await.map_err(|err| {
         log::error!("{err}");
-        pandaparty_db_error!("event", "Failed to create event")
+        bamboo_db_error!("event", "Failed to create event")
     })
 }
 
@@ -51,7 +51,7 @@ pub async fn update_event(id: i32, event: Event, db: &DatabaseConnection) -> Pan
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("event", "Failed to update event")
+            bamboo_db_error!("event", "Failed to update event")
         })
         .map(|_| ())
 }
@@ -63,7 +63,7 @@ pub async fn delete_event(id: i32, db: &DatabaseConnection) -> PandaPartyErrorRe
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("event", "Failed to delete event")
+            bamboo_db_error!("event", "Failed to delete event")
         })
         .map(|_| ())
 }

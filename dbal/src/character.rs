@@ -5,10 +5,10 @@ use sea_orm::{Condition, IntoActiveModel, NotSet, QueryOrder, QuerySelect};
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::free_company::get_free_company;
-use pandaparty_entities::prelude::*;
-use pandaparty_entities::{
-    character, custom_character_field, custom_character_field_option, custom_character_field_value,
-    pandaparty_db_error,
+use bamboo_entities::prelude::*;
+use bamboo_entities::{
+    bamboo_db_error, character, custom_character_field, custom_character_field_option,
+    custom_character_field_value,
 };
 
 async fn map_character(
@@ -39,7 +39,7 @@ pub async fn get_characters(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("character", "Failed to load characters")
+            bamboo_db_error!("character", "Failed to load characters")
         })?;
 
     let mut result = vec![];
@@ -61,13 +61,13 @@ pub async fn get_character(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("character", "Failed to execute database query")
+            bamboo_db_error!("character", "Failed to execute database query")
         })?;
 
     if let Some(character) = character.into_iter().next() {
         map_character(character, user_id, db).await
     } else {
-        Err(pandaparty_not_found_error!(
+        Err(bamboo_not_found_error!(
             "character",
             "The character was not found"
         ))
@@ -94,7 +94,7 @@ async fn fill_custom_fields(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("character", "Failed to load custom fields")
+            bamboo_db_error!("character", "Failed to load custom fields")
         })?;
 
     let positions_from_db = custom_character_field_value::Entity::find()
@@ -114,7 +114,7 @@ async fn fill_custom_fields(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("character", "Failed to load custom fields")
+            bamboo_db_error!("character", "Failed to load custom fields")
         })?;
 
     let mut positions = BTreeMap::new();
@@ -184,7 +184,7 @@ pub async fn create_character(
 
     let model = model.insert(db).await.map_err(|err| {
         log::error!("{err}");
-        pandaparty_db_error!("character", "Failed to create character")
+        bamboo_db_error!("character", "Failed to create character")
     })?;
 
     create_custom_field_values(user_id, model.id, character.custom_fields, db).await?;
@@ -212,13 +212,13 @@ pub async fn update_character(
         )
         .col_expr(
             character::Column::Race,
-            Expr::val(character.race).as_enum(pandaparty_entities::character::CharacterRaceEnum),
+            Expr::val(character.race).as_enum(bamboo_entities::character::CharacterRaceEnum),
         )
         .exec(db)
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("character", "Failed to update character")
+            bamboo_db_error!("character", "Failed to update character")
         })?;
 
     create_custom_field_values(user_id, id, character.custom_fields, db).await
@@ -245,7 +245,7 @@ async fn create_custom_field_values(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("character", "Failed to set custom fields")
+            bamboo_db_error!("character", "Failed to set custom fields")
         })?;
 
     let custom_fields = custom_character_field::Entity::find()
@@ -256,7 +256,7 @@ async fn create_custom_field_values(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("character", "Failed to set custom fields")
+            bamboo_db_error!("character", "Failed to set custom fields")
         })?;
 
     let mut values = vec![];
@@ -276,7 +276,7 @@ async fn create_custom_field_values(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("character", "Failed to set custom fields")
+            bamboo_db_error!("character", "Failed to set custom fields")
         })
         .map(|_| ())
 }
@@ -293,7 +293,7 @@ pub async fn delete_character(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("character", "Failed to delete character")
+            bamboo_db_error!("character", "Failed to delete character")
         })
         .map(|_| ())
 }

@@ -8,7 +8,7 @@ use yew_cosmo::prelude::*;
 use yew_hooks::use_effect_update;
 use yew_icons::Icon;
 
-use pandaparty_entities::prelude::Event;
+use bamboo_entities::prelude::Event;
 
 use crate::api;
 use crate::api::event::EventRange;

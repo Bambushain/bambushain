@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use bounce::query::{Query, QueryResult};
 use bounce::BounceStates;
 
-use pandaparty_entities::prelude::{CustomCharacterField, CustomField};
+use bamboo_entities::prelude::{CustomCharacterField, CustomField};
 
 use crate::api::{
     delete, get, post, post_no_content, put_no_body_no_content, put_no_content, ApiError,

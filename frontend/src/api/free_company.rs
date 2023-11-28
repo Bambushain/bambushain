@@ -1,8 +1,8 @@
 use crate::api::{delete, get, post, put_no_content, ApiError, PandapartyApiResult};
 use async_trait::async_trait;
+use bamboo_entities::prelude::FreeCompany;
 use bounce::query::{Query, QueryResult};
 use bounce::BounceStates;
-use pandaparty_entities::prelude::FreeCompany;
 use std::rc::Rc;
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]

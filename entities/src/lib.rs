@@ -35,8 +35,8 @@ pub mod prelude {
     pub use crate::user::ValidateTotp;
     pub use crate::user::WebUser;
     pub use crate::{
-        pandaparty_db_error, pandaparty_exists_already_error, pandaparty_insufficient_rights_error,
-        pandaparty_invalid_data_error, pandaparty_not_found_error, pandaparty_unknown_error,
-        pandaparty_validation_error,
+        bamboo_db_error, bamboo_exists_already_error, bamboo_insufficient_rights_error,
+        bamboo_invalid_data_error, bamboo_not_found_error, bamboo_unknown_error,
+        bamboo_validation_error,
     };
 }

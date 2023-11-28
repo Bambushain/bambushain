@@ -1,8 +1,8 @@
 use actix_web::{web, HttpResponse};
 use serde::Deserialize;
 
-use pandaparty_dbal::prelude::*;
-use pandaparty_entities::prelude::*;
+use bamboo_dbal::prelude::*;
+use bamboo_entities::prelude::*;
 
 use crate::middleware::authenticate_user::Authentication;
 use crate::sse::Notification;
@@ -16,22 +16,20 @@ pub struct UserPathInfo {
 macro_rules! prevent_me {
     ($me:expr, $passed_user:expr, $error_message:expr) => {{
         if $me == $passed_user {
-            return conflict!(pandaparty_validation_error!("user", $error_message));
+            return conflict!(bamboo_validation_error!("user", $error_message));
         };
     }};
 }
 
 pub async fn get_users(db: DbConnection) -> HttpResponse {
-    ok_or_error!(pandaparty_dbal::user::get_users(&db)
-        .await
-        .map(|users| users
-            .into_iter()
-            .map(|u| u.to_web_user())
-            .collect::<Vec<WebUser>>()))
+    ok_or_error!(bamboo_dbal::user::get_users(&db).await.map(|users| users
+        .into_iter()
+        .map(|u| u.to_web_user())
+        .collect::<Vec<WebUser>>()))
 }
 
 pub async fn get_user(info: web::Path<UserPathInfo>, db: DbConnection) -> HttpResponse {
-    ok_or_error!(pandaparty_dbal::user::get_user(info.id, &db)
+    ok_or_error!(bamboo_dbal::user::get_user(info.id, &db)
         .await
         .map(|u| u.to_web_user()))
 }
@@ -42,13 +40,13 @@ pub async fn create_user(
     db: DbConnection,
 ) -> HttpResponse {
     if user_exists(user.id, &db).await {
-        return conflict!(pandaparty_exists_already_error!(
+        return conflict!(bamboo_exists_already_error!(
             "user",
             "A user with the name already exists"
         ));
     }
 
-    let data = pandaparty_dbal::user::create_user(user.into_inner(), &db)
+    let data = bamboo_dbal::user::create_user(user.into_inner(), &db)
         .await
         .map(|u| u.to_web_user());
     if data.is_ok() {
@@ -72,13 +70,10 @@ pub async fn delete_user(
         "You cannot delete yourself"
     );
     if !user_exists(info.id, &db).await {
-        return not_found!(pandaparty_not_found_error!(
-            "user",
-            "The user was not found"
-        ));
+        return not_found!(bamboo_not_found_error!("user", "The user was not found"));
     }
 
-    let data = pandaparty_dbal::user::delete_user(info.id, &db).await;
+    let data = bamboo_dbal::user::delete_user(info.id, &db).await;
     if data.is_ok() {
         actix_web::rt::spawn(async move {
             notification.user_broadcaster.notify_change().await;
@@ -100,10 +95,7 @@ pub async fn add_mod_user(
         "You cannot make yourself mod"
     );
     if !user_exists(info.id, &db).await {
-        return not_found!(pandaparty_not_found_error!(
-            "user",
-            "The user was not found"
-        ));
+        return not_found!(bamboo_not_found_error!("user", "The user was not found"));
     }
 
     let data = change_mod_status(info.id, true, &db).await;
@@ -128,10 +120,7 @@ pub async fn remove_mod_user(
         "You cannot revoke your own mod rights"
     );
     if !user_exists(info.id, &db).await {
-        return not_found!(pandaparty_not_found_error!(
-            "user",
-            "The user was not found"
-        ));
+        return not_found!(bamboo_not_found_error!("user", "The user was not found"));
     }
 
     let data = change_mod_status(info.id, false, &db).await;
@@ -154,14 +143,11 @@ pub async fn change_password(
         "You cannot change your own password using this endpoint"
     );
     if !user_exists(info.id, &db).await {
-        return not_found!(pandaparty_not_found_error!(
-            "user",
-            "The user was not found"
-        ));
+        return not_found!(bamboo_not_found_error!("user", "The user was not found"));
     }
 
     no_content_or_error!(
-        pandaparty_dbal::user::change_password(info.id, body.new_password.clone(), &db).await
+        bamboo_dbal::user::change_password(info.id, body.new_password.clone(), &db).await
     )
 }
 
@@ -170,7 +156,7 @@ pub async fn change_my_password(
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
-    match pandaparty_dbal::user::change_my_password(
+    match bamboo_dbal::user::change_my_password(
         authentication.user.id,
         body.old_password.clone(),
         body.new_password.clone(),
@@ -179,18 +165,16 @@ pub async fn change_my_password(
     .await
     {
         Ok(_) => no_content!(),
-        Err(PasswordError::WrongPassword) => forbidden!(pandaparty_insufficient_rights_error!(
+        Err(PasswordError::WrongPassword) => forbidden!(bamboo_insufficient_rights_error!(
             "user",
             "The current password is wrong"
         )),
-        Err(PasswordError::UserNotFound) => not_found!(pandaparty_not_found_error!(
-            "user",
-            "The user was not found"
-        )),
-        Err(PasswordError::UnknownError) => internal_server_error!(pandaparty_unknown_error!(
-            "user",
-            "An unknown error occurred"
-        )),
+        Err(PasswordError::UserNotFound) => {
+            not_found!(bamboo_not_found_error!("user", "The user was not found"))
+        }
+        Err(PasswordError::UnknownError) => {
+            internal_server_error!(bamboo_unknown_error!("user", "An unknown error occurred"))
+        }
     }
 }
 
@@ -247,7 +231,7 @@ pub async fn get_profile(authentication: Authentication) -> HttpResponse {
 pub async fn enable_totp(authentication: Authentication, db: DbConnection) -> HttpResponse {
     let mut totp = totp_rs::TOTP::default();
     let secret = totp.secret.clone();
-    let data = pandaparty_dbal::user::enable_totp(authentication.user.id, secret, &db).await;
+    let data = bamboo_dbal::user::enable_totp(authentication.user.id, secret, &db).await;
     match data {
         Ok(_) => {
             totp.account_name = authentication.user.display_name.clone();
@@ -282,8 +266,7 @@ pub async fn validate_totp(
         bad_request!("Already validated")
     } else {
         let result =
-            pandaparty_dbal::user::validate_totp(authentication.user.id, body.code.clone(), &db)
-                .await;
+            bamboo_dbal::user::validate_totp(authentication.user.id, body.code.clone(), &db).await;
         match result {
             Ok(true) => no_content!(),
             Ok(false) => forbidden!(),

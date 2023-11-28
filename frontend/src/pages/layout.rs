@@ -6,13 +6,13 @@ use yew::prelude::*;
 use yew_cosmo::prelude::*;
 use yew_router::prelude::*;
 
-use pandaparty_entities::user::UpdateProfile;
+use bamboo_entities::user::UpdateProfile;
 
+use crate::pages::bamboo::calendar::CalendarPage;
+use crate::pages::bamboo::user::UsersPage;
 use crate::pages::final_fantasy::character::CharacterPage;
 use crate::pages::final_fantasy::settings::SettingsPage;
 use crate::pages::login::LoginPage;
-use crate::pages::pandaparty::calendar::CalendarPage;
-use crate::pages::pandaparty::user::UsersPage;
 use crate::routing::{AppRoute, FinalFantasyRoute, PandaPartyRoute};
 use crate::{api, storage};
 

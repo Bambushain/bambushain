@@ -1,7 +1,7 @@
 use actix_web::{web, HttpResponse};
 use serde::Deserialize;
 
-use pandaparty_entities::prelude::*;
+use bamboo_entities::prelude::*;
 
 use crate::middleware::authenticate_user::Authentication;
 use crate::DbConnection;
@@ -23,8 +23,7 @@ pub async fn get_crafters(
     db: DbConnection,
 ) -> HttpResponse {
     ok_or_error!(
-        pandaparty_dbal::crafter::get_crafters(authentication.user.id, path.character_id, &db)
-            .await
+        bamboo_dbal::crafter::get_crafters(authentication.user.id, path.character_id, &db).await
     )
 }
 
@@ -33,16 +32,11 @@ pub async fn get_crafter(
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
-    match pandaparty_dbal::crafter::get_crafter(
-        path.id,
-        authentication.user.id,
-        path.character_id,
-        &db,
-    )
-    .await
+    match bamboo_dbal::crafter::get_crafter(path.id, authentication.user.id, path.character_id, &db)
+        .await
     {
         Ok(crafter) => ok_json!(crafter),
-        Err(_) => not_found!(pandaparty_not_found_error!(
+        Err(_) => not_found!(bamboo_not_found_error!(
             "crafter",
             "The crafter was not found"
         )),
@@ -55,7 +49,7 @@ pub async fn create_crafter(
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
-    if pandaparty_dbal::crafter::crafter_exists_by_job(
+    if bamboo_dbal::crafter::crafter_exists_by_job(
         authentication.user.id,
         path.character_id,
         body.job,
@@ -63,14 +57,14 @@ pub async fn create_crafter(
     )
     .await
     {
-        return conflict!(pandaparty_exists_already_error!(
+        return conflict!(bamboo_exists_already_error!(
             "crafter",
             "The crafter already exists"
         ));
     }
 
     created_or_error!(
-        pandaparty_dbal::crafter::create_crafter(
+        bamboo_dbal::crafter::create_crafter(
             authentication.user.id,
             path.character_id,
             body.into_inner(),
@@ -86,18 +80,13 @@ pub async fn update_crafter(
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
-    match pandaparty_dbal::crafter::get_crafter(
-        path.id,
-        authentication.user.id,
-        path.character_id,
-        &db,
-    )
-    .await
+    match bamboo_dbal::crafter::get_crafter(path.id, authentication.user.id, path.character_id, &db)
+        .await
     {
         Ok(_) => no_content_or_error!(
-            pandaparty_dbal::crafter::update_crafter(path.id, body.into_inner(), &db).await
+            bamboo_dbal::crafter::update_crafter(path.id, body.into_inner(), &db).await
         ),
-        Err(_) => not_found!(pandaparty_not_found_error!(
+        Err(_) => not_found!(bamboo_not_found_error!(
             "crafter",
             "The crafter was not found"
         )),
@@ -109,7 +98,7 @@ pub async fn delete_crafter(
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
-    if !pandaparty_dbal::crafter::crafter_exists(
+    if !bamboo_dbal::crafter::crafter_exists(
         path.id,
         authentication.user.id,
         path.character_id,
@@ -117,11 +106,11 @@ pub async fn delete_crafter(
     )
     .await
     {
-        return not_found!(pandaparty_not_found_error!(
+        return not_found!(bamboo_not_found_error!(
             "crafter",
             "The crafter was not found"
         ));
     }
 
-    no_content_or_error!(pandaparty_dbal::crafter::delete_crafter(path.id, &db).await)
+    no_content_or_error!(bamboo_dbal::crafter::delete_crafter(path.id, &db).await)
 }

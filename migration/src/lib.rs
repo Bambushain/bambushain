@@ -13,6 +13,7 @@ mod m20230829_194055_create_table_custom_character_field_option;
 mod m20230829_194101_create_table_custom_character_field_value;
 mod m20230917_003256_add_position_to_custom_field;
 mod m20230923_090306_add_field_free_company;
+mod m20231128_215928_rename_schema_panda_party;
 
 pub struct Migrator;
 
@@ -33,6 +34,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20230829_194101_create_table_custom_character_field_value::Migration),
             Box::new(m20230917_003256_add_position_to_custom_field::Migration),
             Box::new(m20230923_090306_add_field_free_company::Migration),
+            Box::new(m20231128_215928_rename_schema_panda_party::Migration),
         ]
     }
 }

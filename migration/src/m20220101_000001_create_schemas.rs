@@ -8,7 +8,7 @@ pub struct Migration;
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         let db = manager.get_connection();
-        let pandaparty_stmt =
+        let bamboo_stmt =
             Statement::from_string(manager.get_database_backend(), "CREATE SCHEMA panda_party");
         let finalfantasy_stmt = Statement::from_string(
             manager.get_database_backend(),
@@ -19,7 +19,7 @@ impl MigrationTrait for Migration {
             "CREATE SCHEMA authentication",
         );
 
-        db.execute(pandaparty_stmt).await?;
+        db.execute(bamboo_stmt).await?;
         db.execute(finalfantasy_stmt).await?;
         db.execute(authentication_stmt).await?;
 

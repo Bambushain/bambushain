@@ -6,24 +6,18 @@ use sea_orm::{
     JoinType, NotSet, QueryFilter, QueryOrder, QuerySelect, RelationTrait,
 };
 
-use pandaparty_entities::prelude::*;
-use pandaparty_entities::{
-    pandaparty_db_error, pandaparty_not_found_error, pandaparty_unauthorized_error, token, user,
+use bamboo_entities::prelude::*;
+use bamboo_entities::{
+    bamboo_db_error, bamboo_not_found_error, bamboo_unauthorized_error, token, user,
 };
 
 pub async fn get_user(id: i32, db: &DatabaseConnection) -> PandaPartyResult<User> {
     match user::Entity::find_by_id(id).one(db).await {
         Ok(Some(res)) => Ok(res),
-        Ok(None) => Err(pandaparty_not_found_error!(
-            "user",
-            "The user was not found"
-        )),
+        Ok(None) => Err(bamboo_not_found_error!("user", "The user was not found")),
         Err(err) => {
             log::error!("{err}");
-            Err(pandaparty_db_error!(
-                "user",
-                "Failed to execute database query"
-            ))
+            Err(bamboo_db_error!("user", "Failed to execute database query"))
         }
     }
 }
@@ -42,16 +36,10 @@ pub async fn get_user_by_email_or_username(
         .await
     {
         Ok(Some(res)) => Ok(res),
-        Ok(None) => Err(pandaparty_not_found_error!(
-            "user",
-            "The user was not found"
-        )),
+        Ok(None) => Err(bamboo_not_found_error!("user", "The user was not found")),
         Err(err) => {
             log::error!("{err}");
-            Err(pandaparty_db_error!(
-                "user",
-                "Failed to execute database query"
-            ))
+            Err(bamboo_db_error!("user", "Failed to execute database query"))
         }
     }
 }
@@ -63,7 +51,7 @@ pub async fn get_users(db: &DatabaseConnection) -> PandaPartyResult<Vec<User>> {
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("user", "Failed to load users")
+            bamboo_db_error!("user", "Failed to load users")
         })
 }
 
@@ -84,12 +72,12 @@ pub async fn create_user(user: User, db: &DatabaseConnection) -> PandaPartyResul
         .set_password(model.clone().password.as_ref())
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("user", "Failed to hash password user")
+            bamboo_db_error!("user", "Failed to hash password user")
         })?;
 
     model.insert(db).await.map_err(|err| {
         log::error!("{err}");
-        pandaparty_db_error!("user", "Failed to create user")
+        bamboo_db_error!("user", "Failed to create user")
     })
 }
 
@@ -99,7 +87,7 @@ pub async fn delete_user(id: i32, db: &DatabaseConnection) -> PandaPartyErrorRes
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("user", "Failed to delete user")
+            bamboo_db_error!("user", "Failed to delete user")
         })
         .map(|_| ())
 }
@@ -116,7 +104,7 @@ pub async fn change_mod_status(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("user", "Failed to update user")
+            bamboo_db_error!("user", "Failed to update user")
         })
         .map(|_| ())
 }
@@ -128,7 +116,7 @@ pub async fn change_password(
 ) -> PandaPartyErrorResult {
     let hashed_password = bcrypt::hash(password, 12).map_err(|err| {
         log::error!("{err}");
-        pandaparty_unknown_error!("user", "Failed to hash the password")
+        bamboo_unknown_error!("user", "Failed to hash the password")
     })?;
 
     user::Entity::update_many()
@@ -138,7 +126,7 @@ pub async fn change_password(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("user", "Failed to update user")
+            bamboo_db_error!("user", "Failed to update user")
         })
         .map(|_| ())
 }
@@ -159,7 +147,7 @@ pub async fn update_me(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("user", "Failed to update user")
+            bamboo_db_error!("user", "Failed to update user")
         })
         .map(|_| ())
 }
@@ -204,13 +192,13 @@ pub async fn get_user_by_token(token: String, db: &DatabaseConnection) -> PandaP
         .await
     {
         Ok(Some(user)) => Ok(user),
-        Ok(None) => Err(pandaparty_unauthorized_error!(
+        Ok(None) => Err(bamboo_unauthorized_error!(
             "authentication",
             "Token or user not found"
         )),
         Err(err) => {
             log::error!("Failed to get user by token {err}");
-            Err(pandaparty_unauthorized_error!(
+            Err(bamboo_unauthorized_error!(
                 "authentication",
                 "Token or user not found"
             ))
@@ -228,7 +216,7 @@ pub async fn enable_totp(
         .filter(user::Column::Id.eq(id))
         .exec(db)
         .await
-        .map_err(|_| pandaparty_db_error!("user", "The secret could not be saved"))
+        .map_err(|_| bamboo_db_error!("user", "The secret could not be saved"))
         .map(|_| ())
 }
 
@@ -241,7 +229,7 @@ pub async fn disable_totp(id: i32, db: &DatabaseConnection) -> PandaPartyErrorRe
             model
                 .update(db)
                 .await
-                .map_err(|_| pandaparty_db_error!("user", "Failed to disable totp"))
+                .map_err(|_| bamboo_db_error!("user", "Failed to disable totp"))
                 .map(|_| ())
         }
         Err(err) => Err(err),
@@ -260,6 +248,6 @@ pub async fn validate_totp(
         .filter(user::Column::Id.eq(id))
         .exec(db)
         .await
-        .map_err(|_| pandaparty_db_error!("user", "Totp could not be validated"))
+        .map_err(|_| bamboo_db_error!("user", "Totp could not be validated"))
         .map(|_| valid)
 }

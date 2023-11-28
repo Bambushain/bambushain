@@ -4,8 +4,8 @@ use lettre::transport::smtp;
 use lettre::transport::smtp::client::TlsParameters;
 use lettre::AsyncTransport;
 
-use pandaparty_dbal::prelude::*;
-use pandaparty_entities::prelude::*;
+use bamboo_dbal::prelude::*;
+use bamboo_entities::prelude::*;
 
 use crate::middleware::authenticate_user::AuthenticationState;
 use crate::{DbConnection, Services};
@@ -57,10 +57,10 @@ Alles Gute vom 🐼"#
         Ok(email) => email,
         Err(err) => {
             log::error!("Failed to construct the email message {err}");
-            return HttpResponse::Unauthorized().json(PandaPartyError {
+            return HttpResponse::Unauthorized().json(BambooError {
                 entity_type: "user".to_string(),
                 message: "Email or Password is invalid".to_string(),
-                error_type: PandaPartyErrorCode::InvalidDataError,
+                error_type: BambooErrorCode::InvalidDataError,
             });
         }
     };
@@ -80,10 +80,10 @@ Alles Gute vom 🐼"#
         Ok(builder) => builder,
         Err(err) => {
             log::error!("Failed to create the email builder {err}");
-            return HttpResponse::Unauthorized().json(PandaPartyError {
+            return HttpResponse::Unauthorized().json(BambooError {
                 entity_type: "user".to_string(),
                 message: "Email or Password is invalid".to_string(),
-                error_type: PandaPartyErrorCode::InvalidDataError,
+                error_type: BambooErrorCode::InvalidDataError,
             });
         }
     };
@@ -113,10 +113,10 @@ Alles Gute vom 🐼"#
         Err(err) => {
             log::error!("Failed to send email {err}");
             log::error!("{err:#?}");
-            HttpResponse::Unauthorized().json(PandaPartyError {
+            HttpResponse::Unauthorized().json(BambooError {
                 entity_type: "user".to_string(),
                 message: "Email or Password is invalid".to_string(),
-                error_type: PandaPartyErrorCode::InvalidDataError,
+                error_type: BambooErrorCode::InvalidDataError,
             })
         }
     }
@@ -135,10 +135,10 @@ pub async fn login(body: web::Json<Login>, db: DbConnection, services: Services)
             Ok(result) => ok_json!(result),
             Err(err) => {
                 log::error!("Failed to login {err}");
-                HttpResponse::Unauthorized().json(PandaPartyError {
+                HttpResponse::Unauthorized().json(BambooError {
                     entity_type: "user".to_string(),
                     message: "Email or Password is invalid".to_string(),
-                    error_type: PandaPartyErrorCode::InvalidDataError,
+                    error_type: BambooErrorCode::InvalidDataError,
                 })
             }
         }
@@ -162,10 +162,10 @@ pub async fn login(body: web::Json<Login>, db: DbConnection, services: Services)
             }
             Err(err) => {
                 log::error!("Failed to login {err}");
-                HttpResponse::Unauthorized().json(PandaPartyError {
+                HttpResponse::Unauthorized().json(BambooError {
                     entity_type: "user".to_string(),
                     message: "Email or Password is invalid".to_string(),
-                    error_type: PandaPartyErrorCode::InvalidDataError,
+                    error_type: BambooErrorCode::InvalidDataError,
                 })
             }
         }

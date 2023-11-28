@@ -3,8 +3,8 @@ use chrono::NaiveDate;
 use date_range::DateRange;
 use serde::Deserialize;
 
-use pandaparty_entities::pandaparty_invalid_data_error;
-use pandaparty_entities::prelude::Event;
+use bamboo_entities::bamboo_invalid_data_error;
+use bamboo_entities::prelude::Event;
 
 use crate::sse::Notification;
 use crate::DbConnection;
@@ -24,14 +24,14 @@ pub async fn get_events(query: web::Query<GetEventsQuery>, db: DbConnection) -> 
     let range = match DateRange::new(query.start, query.end) {
         Ok(range) => range,
         Err(_) => {
-            return bad_request!(pandaparty_invalid_data_error!(
+            return bad_request!(bamboo_invalid_data_error!(
                 "event",
                 "The start date cannot be after the end date"
             ))
         }
     };
 
-    ok_or_error!(pandaparty_dbal::event::get_events(range, &db).await)
+    ok_or_error!(bamboo_dbal::event::get_events(range, &db).await)
 }
 
 pub async fn create_event(
@@ -39,7 +39,7 @@ pub async fn create_event(
     notification: Notification,
     db: DbConnection,
 ) -> HttpResponse {
-    let data = pandaparty_dbal::event::create_event(body.into_inner(), &db).await;
+    let data = bamboo_dbal::event::create_event(body.into_inner(), &db).await;
     if data.is_ok() {
         actix_web::rt::spawn(async move {
             notification.event_broadcaster.notify_change().await;
@@ -55,7 +55,7 @@ pub async fn update_event(
     notification: Notification,
     db: DbConnection,
 ) -> HttpResponse {
-    let data = pandaparty_dbal::event::update_event(path.id, body.into_inner(), &db).await;
+    let data = bamboo_dbal::event::update_event(path.id, body.into_inner(), &db).await;
     if data.is_ok() {
         actix_web::rt::spawn(async move {
             notification.event_broadcaster.notify_change().await;
@@ -66,5 +66,5 @@ pub async fn update_event(
 }
 
 pub async fn delete_event(path: web::Path<EventPath>, db: DbConnection) -> HttpResponse {
-    no_content_or_error!(pandaparty_dbal::event::delete_event(path.id, &db).await)
+    no_content_or_error!(bamboo_dbal::event::delete_event(path.id, &db).await)
 }

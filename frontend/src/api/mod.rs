@@ -5,13 +5,13 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
 pub use authentication::*;
+use bamboo_entities::prelude::*;
 pub use character::*;
 pub use crafter::*;
 pub use custom_field::*;
 pub use event::*;
 pub use fighter::*;
 pub use my::*;
-use pandaparty_entities::prelude::*;
 pub use user::*;
 
 use crate::storage::get_token;
@@ -58,7 +58,7 @@ impl From<i32> for ErrorCode {
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone, Serialize, Deserialize, Debug)]
 pub struct ApiError {
     pub code: ErrorCode,
-    pub pandaparty_error: PandaPartyError,
+    pub bamboo_error: BambooError,
 }
 
 impl std::error::Error for ApiError {}
@@ -100,7 +100,7 @@ macro_rules! handle_response {
 
                     return Err(crate::api::ApiError {
                         code: crate::api::ErrorCode::from(response.status() as i32),
-                        pandaparty_error: error,
+                        bamboo_error: error,
                     });
                 }
             }
@@ -108,7 +108,7 @@ macro_rules! handle_response {
                 log::warn!("Request failed to execute {}", err);
                 return Err(crate::api::ApiError {
                     code: SEND_ERROR,
-                    pandaparty_error: pandaparty_entities::prelude::PandaPartyError::default(),
+                    bamboo_error: bamboo_entities::prelude::BambooError::default(),
                 });
             }
         };
@@ -122,7 +122,7 @@ macro_rules! handle_response {
                 log::warn!("Json deserialize failed {}", err);
                 Err(crate::api::ApiError {
                     code: JSON_DESERIALIZE_ERROR,
-                    pandaparty_error: pandaparty_entities::prelude::PandaPartyError::default(),
+                    bamboo_error: bamboo_entities::prelude::BambooError::default(),
                 })
             }
         }
@@ -149,7 +149,7 @@ macro_rules! handle_response_code {
 
                     return Err(crate::api::ApiError {
                         code: crate::api::ErrorCode::from(response.status() as i32),
-                        pandaparty_error: error,
+                        bamboo_error: error,
                     });
                 }
             }
@@ -157,7 +157,7 @@ macro_rules! handle_response_code {
                 log::warn!("Request failed to execute {}", err);
                 Err(ApiError {
                     code: SEND_ERROR,
-                    pandaparty_error: pandaparty_entities::prelude::PandaPartyError::default(),
+                    bamboo_error: bamboo_entities::prelude::BambooError::default(),
                 })
             }
         }
@@ -236,7 +236,7 @@ pub async fn put_no_content<IN: Serialize>(
         Err(err) => {
             log::warn!("Serialize failed {}", err);
             Err(ApiError {
-                pandaparty_error: PandaPartyError::default(),
+                bamboo_error: BambooError::default(),
                 code: JSON_SERIALIZE_ERROR,
             })
         }
@@ -261,7 +261,7 @@ pub async fn post<IN: Serialize, OUT: DeserializeOwned>(
         Err(err) => {
             log::warn!("Serialize failed {}", err);
             Err(ApiError {
-                pandaparty_error: PandaPartyError::default(),
+                bamboo_error: BambooError::default(),
                 code: JSON_SERIALIZE_ERROR,
             })
         }
@@ -286,7 +286,7 @@ pub async fn post_no_content<IN: Serialize>(
         Err(err) => {
             log::warn!("Serialize failed {}", err);
             Err(ApiError {
-                pandaparty_error: PandaPartyError::default(),
+                bamboo_error: BambooError::default(),
                 code: JSON_SERIALIZE_ERROR,
             })
         }

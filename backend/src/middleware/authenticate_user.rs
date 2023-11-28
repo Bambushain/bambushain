@@ -5,9 +5,9 @@ use actix_web::{body, dev, web, Error, HttpMessage};
 use futures_util::future::LocalBoxFuture;
 
 use crate::DbConnection;
-use pandaparty_dbal::prelude::*;
-use pandaparty_entities::pandaparty_unauthorized_error;
-use pandaparty_entities::prelude::*;
+use bamboo_dbal::prelude::*;
+use bamboo_entities::bamboo_unauthorized_error;
+use bamboo_entities::prelude::*;
 
 #[derive(Clone)]
 pub struct AuthenticationState {
@@ -59,7 +59,7 @@ where
         let svc = self.service.clone();
 
         Box::pin(async move {
-            let unauthorized = unauthorized!(pandaparty_unauthorized_error!("", "No auth present"))
+            let unauthorized = unauthorized!(bamboo_unauthorized_error!("", "No auth present"))
                 .map_into_right_body();
             let request = req.request();
 

@@ -7,9 +7,9 @@ pub enum AppRoute {
     #[at("/")]
     #[not_found]
     Home,
-    #[at("/pandaparty")]
+    #[at("/bamboo")]
     PandaPartyRoot,
-    #[at("/pandaparty/*")]
+    #[at("/bamboo/*")]
     PandaParty,
     #[at("/final-fantasy")]
     FinalFantasyRoot,
@@ -35,9 +35,9 @@ pub enum FinalFantasyRoute {
 
 #[derive(Clone, Routable, PartialEq)]
 pub enum PandaPartyRoute {
-    #[at("/pandaparty/calendar")]
+    #[at("/bamboo/calendar")]
     Calendar,
-    #[at("/pandaparty/user")]
+    #[at("/bamboo/user")]
     User,
 }
 

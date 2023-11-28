@@ -8,7 +8,7 @@ use rand::Rng;
 use yew::prelude::*;
 use yew_cosmo::prelude::*;
 
-use pandaparty_entities::prelude::*;
+use bamboo_entities::prelude::*;
 
 use crate::api::*;
 use crate::hooks::event_source::use_event_source;

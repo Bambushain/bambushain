@@ -1,5 +1,5 @@
-use crate::error::PandaPartyError;
+use crate::error::BambooError;
 
-pub type PandaPartyErrorResult = Result<(), PandaPartyError>;
+pub type PandaPartyErrorResult = Result<(), BambooError>;
 
-pub type PandaPartyResult<T> = Result<T, PandaPartyError>;
+pub type PandaPartyResult<T> = Result<T, BambooError>;

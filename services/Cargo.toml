@@ -1,5 +1,5 @@
 [package]
-name = "pandaparty-services"
+name = "bamboo-services"
 version.workspace = true
 edition.workspace = true
 

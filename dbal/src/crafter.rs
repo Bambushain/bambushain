@@ -3,8 +3,8 @@ use sea_orm::sea_query::Expr;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{IntoActiveModel, NotSet, QueryOrder, QuerySelect};
 
-use pandaparty_entities::prelude::*;
-use pandaparty_entities::{character, crafter};
+use bamboo_entities::prelude::*;
+use bamboo_entities::{character, crafter};
 
 use crate::prelude::character_exists;
 
@@ -22,7 +22,7 @@ pub async fn get_crafters(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("crafter", "Failed to load crafters")
+            bamboo_db_error!("crafter", "Failed to load crafters")
         })
 }
 
@@ -40,13 +40,13 @@ pub async fn get_crafter(
         .await
     {
         Ok(Some(res)) => Ok(res),
-        Ok(None) => Err(pandaparty_not_found_error!(
+        Ok(None) => Err(bamboo_not_found_error!(
             "crafter",
             "The crafter was not found"
         )),
         Err(err) => {
             log::error!("{err}");
-            Err(pandaparty_db_error!(
+            Err(bamboo_db_error!(
                 "crafter",
                 "Failed to execute database query"
             ))
@@ -98,7 +98,7 @@ pub async fn create_crafter(
     db: &DatabaseConnection,
 ) -> PandaPartyResult<Crafter> {
     if !character_exists(user_id, character_id, db).await {
-        return Err(pandaparty_not_found_error!(
+        return Err(bamboo_not_found_error!(
             "crafter",
             "The character does not exist"
         ));
@@ -110,7 +110,7 @@ pub async fn create_crafter(
 
     model.insert(db).await.map_err(|err| {
         log::error!("{err}");
-        pandaparty_db_error!("crafter", "Failed to create crafter")
+        bamboo_db_error!("crafter", "Failed to create crafter")
     })
 }
 
@@ -126,7 +126,7 @@ pub async fn update_crafter(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("crafter", "Failed to update crafter")
+            bamboo_db_error!("crafter", "Failed to update crafter")
         })
         .map(|_| ())
 }
@@ -138,7 +138,7 @@ pub async fn delete_crafter(id: i32, db: &DatabaseConnection) -> PandaPartyError
         .await
         .map_err(|err| {
             log::error!("{err}");
-            pandaparty_db_error!("crafter", "Failed to delete crafter")
+            bamboo_db_error!("crafter", "Failed to delete crafter")
         })
         .map(|_| ())
 }
