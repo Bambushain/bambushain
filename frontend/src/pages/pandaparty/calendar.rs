@@ -394,7 +394,7 @@ fn day(props: &DayProps) -> Html {
     let today = Local::now().date_naive();
     let day_number_color =
         if today.month() == props.month && today.day() == props.day && today.year() == props.year {
-            "var(--primary-color)"
+            "var(--black)"
         } else {
             "var(--menu-text-color)"
         };
@@ -458,7 +458,7 @@ text-decoration: none;
 position: absolute;
 top: 0.125rem;
 left: 0.125rem;
-stroke: var(--primary-color);
+stroke: var(--black);
 cursor: pointer;
 z-index: 1;
     "#

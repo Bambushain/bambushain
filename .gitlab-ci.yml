@@ -1,49 +1,58 @@
+.base-cache:
+  cache:
+    key: $CI_COMMIT_REF_SLUG
+    paths:
+      - target/
+      - /usr/local/cargo/registry
+
+.base-trunk:
+  extends:
+    - .base-cache
+  image:
+    name: harbor.ulbricht.casa/imanuel/trunk-docker-base-image:latest
+    pull_policy: always
+
+.base-kaniko:
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    pull_policy: always
+    entrypoint: [""]
+  before_script:
+    - echo $KANIKO_DOCKERHUB_AND_HARBOR > /kaniko/.docker/config.json
+
 stages:
   - lint
   - build
   - deploy
 
 lint:
-  image: harbor.ulbricht.casa/imanuel/trunk-docker-base-image:latest
   stage: lint
+  extends:
+    - .base-trunk
   script:
     - cargo clippy -p pandaparty
     - cargo clippy -p pandaparty-frontend
     - cargo check -p pandaparty
     - cargo check -p pandaparty-frontend
-  cache:
-    key: $CI_COMMIT_REF_SLUG
-    paths:
-      - target/
 
 test-build-backend:
-  image: harbor.ulbricht.casa/imanuel/trunk-docker-base-image:latest
   stage: build
+  extends:
+    - .base-trunk
   script:
     - cargo build --release
-  cache:
-    key: $CI_COMMIT_REF_SLUG
-    paths:
-      - target/
 
 test-build-frontend:
-  image: harbor.ulbricht.casa/imanuel/trunk-docker-base-image:latest
   stage: build
+  extends:
+    - .base-trunk
   script:
     - trunk build --release
-  cache:
-    key: $CI_COMMIT_REF_SLUG
-    paths:
-      - target/
 
 docker-build:
   stage: deploy
-  image:
-    name: gcr.io/kaniko-project/executor:debug
-    pull_policy: always
-    entrypoint: [""]
-  before_script:
-    - echo $KANIKO_HARBOR_ONLY > /kaniko/.docker/config.json
+  extends:
+    - .base-kaniko
   script:
     - /kaniko/executor
       --context "${CI_PROJECT_DIR}"
@@ -54,29 +63,17 @@ docker-build:
     - if: $CI_COMMIT_TAG
       exists:
         - Dockerfile
-  cache:
-    key: $CI_COMMIT_REF_SLUG
-    paths:
-      - target/
 
 docker-build-testing:
   stage: deploy
-  image:
-    name: gcr.io/kaniko-project/executor:debug
-    pull_policy: always
-    entrypoint: [""]
-  before_script:
-    - echo $KANIKO_HARBOR_ONLY > /kaniko/.docker/config.json
+  extends:
+    - .base-kaniko
   script:
     - /kaniko/executor
       --context "${CI_PROJECT_DIR}"
       --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
-      --destination "harbor.ulbricht.casa/creastina/pandaparty:1.4.3-test-$CI_PIPELINE_IID"
+      --destination "harbor.ulbricht.casa/creastina/pandaparty:1.5.3-test-$CI_PIPELINE_IID"
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       exists:
         - Dockerfile
-  cache:
-    key: $CI_COMMIT_REF_SLUG
-    paths:
-      - target/

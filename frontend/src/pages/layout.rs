@@ -600,7 +600,7 @@ fn top_bar() -> Html {
 
     html!(
         <>
-            <CosmoTopBar has_right_item={true} right_item_on_click={logout} right_item_label="Abmelden">
+            <CosmoTopBar profile_picture="/static/favicon.png" has_right_item={true} right_item_on_click={logout} right_item_label="Abmelden">
                 <CosmoTopBarItem label="Mein Profil" on_click={update_my_profile_click} />
                 <CosmoTopBarItem label="Passwort ändern" on_click={change_password_click} />
                 if !profile_atom.profile.app_totp_enabled {
@@ -628,17 +628,15 @@ fn layout() -> Html {
 body {
     height: 100vh;
     width: 100vw;
-    background: var(--background) !important;
+    background: url("/static/background.webp") !important;
     background-size: cover !important;
     background-position-y: bottom !important;
-    background-position-x: right !important;
-    --background: url("/static/background.webp");
+    background-position-x: left !important;
+    --gradient-bottom-color: transparent !important;
 }
 
-@media screen and (prefers-color-scheme: dark) {
-    body {
-        --background: url("/static/background-dark.webp");
-    }
+body > div {
+    background: rgba(var(--white-base) var(--white-base) var(--white-base) / 80%);
 }"#
     ))
     .expect("Should create global style");

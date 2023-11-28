@@ -145,6 +145,7 @@ backdrop-filter: blur(24px) saturate(90%);
 box-sizing: border-box;
 margin-top: 1.25rem;
 min-width: 35.625rem;
+border-radius: var(--border-radius);
 "#
     );
     let login_message_style = use_style!(
