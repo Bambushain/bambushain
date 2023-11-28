@@ -1,9 +1,11 @@
+use actix_web::Responder;
 use std::sync::Arc;
 use std::time::Duration;
 
 use actix_web::rt::time::interval;
-use actix_web_lab::sse::{ChannelStream, Sse};
+use actix_web_lab::sse::{Data, Event, Sse};
 use parking_lot::Mutex;
+use tokio::sync::mpsc::Sender;
 
 pub struct EventBroadcaster {
     inner: Mutex<EventBroadcasterInner>,
@@ -11,7 +13,7 @@ pub struct EventBroadcaster {
 
 #[derive(Debug, Clone, Default)]
 struct EventBroadcasterInner {
-    clients: Vec<actix_web_lab::sse::Sender>,
+    clients: Vec<Sender<Event>>,
 }
 
 impl EventBroadcaster {
@@ -42,11 +44,7 @@ impl EventBroadcaster {
         let mut ok_clients = Vec::new();
 
         for client in clients {
-            if client
-                .send(actix_web_lab::sse::Event::Comment("ping".into()))
-                .await
-                .is_ok()
-            {
+            if client.send(Event::Comment("ping".into())).await.is_ok() {
                 ok_clients.push(client.clone());
             }
         }
@@ -56,16 +54,15 @@ impl EventBroadcaster {
         self.inner.lock().clients = ok_clients;
     }
 
-    pub async fn new_client(&self) -> Sse<ChannelStream> {
+    pub async fn new_client(&self) -> impl Responder {
         log::info!("Starting creation of event broadcaster");
-        let (tx, rx) = actix_web_lab::sse::channel(10);
+        let (tx, rx) = tokio::sync::mpsc::channel::<Event>(10);
 
-        tx.send(actix_web_lab::sse::Data::new("connected"))
-            .await
-            .unwrap();
-        log::info!("Creating new clients success {:?}", tx);
+        tx.send(Event::Data(Data::new("connected"))).await.unwrap();
+        log::info!("Creating new clients success {tx:?}");
         self.inner.lock().clients.push(tx);
-        rx
+
+        Sse::from_infallible_receiver(rx).with_keep_alive(Duration::from_secs(60))
     }
 
     pub async fn notify_change(&self) {
@@ -73,7 +70,7 @@ impl EventBroadcaster {
 
         let send_futures = clients
             .iter()
-            .map(|client| client.send(actix_web_lab::sse::Data::new("new data")));
+            .map(|client| client.send(Event::Data(Data::new("new data"))));
 
         let _ = futures_util::future::join_all(send_futures).await;
     }

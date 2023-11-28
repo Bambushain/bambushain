@@ -7,7 +7,6 @@ use rand::prelude::*;
 use sea_orm::prelude::*;
 
 use bamboo_backend::broadcaster::event::EventBroadcaster;
-use bamboo_backend::broadcaster::user::UserBroadcaster;
 use bamboo_backend::middleware::authenticate_user::AuthenticateUser;
 use bamboo_backend::middleware::check_mod::CheckMod;
 use bamboo_backend::routes::authentication::{login, logout};
@@ -36,7 +35,6 @@ use bamboo_backend::routes::user::{
     validate_totp,
 };
 use bamboo_backend::sse::event::event_sse_client;
-use bamboo_backend::sse::user::user_sse_client;
 use bamboo_backend::sse::{Notification, NotificationState};
 use bamboo_backend::{DbConnection, Services, ServicesState};
 use bamboo_entities::user;
@@ -105,7 +103,6 @@ async fn main() -> std::io::Result<()> {
         }
     }
 
-    let user_broadcaster = UserBroadcaster::create();
     let event_broadcaster = EventBroadcaster::create();
 
     let environment_service = EnvironmentService::new();
@@ -117,7 +114,6 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(Notification::new(NotificationState {
-                user_broadcaster: Arc::clone(&user_broadcaster),
                 event_broadcaster: Arc::clone(&event_broadcaster),
             }))
             .app_data(Services::new(ServicesState {
@@ -362,7 +358,6 @@ async fn main() -> std::io::Result<()> {
                 "/api/final-fantasy/character/{character_id}/fighter/{id}",
                 web::delete().to(delete_fighter).wrap(AuthenticateUser),
             )
-            .route("/sse/user", web::get().to(user_sse_client))
             .route("/sse/event", web::get().to(event_sse_client))
             .service(
                 actix_web_lab::web::spa()

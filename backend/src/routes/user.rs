@@ -5,7 +5,6 @@ use bamboo_dbal::prelude::*;
 use bamboo_entities::prelude::*;
 
 use crate::middleware::authenticate_user::Authentication;
-use crate::sse::Notification;
 use crate::DbConnection;
 
 #[derive(Deserialize)]
@@ -34,11 +33,7 @@ pub async fn get_user(info: web::Path<UserPathInfo>, db: DbConnection) -> HttpRe
         .map(|u| u.to_web_user()))
 }
 
-pub async fn create_user(
-    user: web::Json<User>,
-    notification: Notification,
-    db: DbConnection,
-) -> HttpResponse {
+pub async fn create_user(user: web::Json<User>, db: DbConnection) -> HttpResponse {
     if user_exists(user.id, &db).await {
         return conflict!(bamboo_exists_already_error!(
             "user",
@@ -46,21 +41,13 @@ pub async fn create_user(
         ));
     }
 
-    let data = bamboo_dbal::user::create_user(user.into_inner(), &db)
+    created_or_error!(bamboo_dbal::user::create_user(user.into_inner(), &db)
         .await
-        .map(|u| u.to_web_user());
-    if data.is_ok() {
-        actix_web::rt::spawn(async move {
-            notification.user_broadcaster.notify_change().await;
-        });
-    }
-
-    created_or_error!(data)
+        .map(|u| u.to_web_user()))
 }
 
 pub async fn delete_user(
     info: web::Path<UserPathInfo>,
-    notification: Notification,
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
@@ -73,19 +60,11 @@ pub async fn delete_user(
         return not_found!(bamboo_not_found_error!("user", "The user was not found"));
     }
 
-    let data = bamboo_dbal::user::delete_user(info.id, &db).await;
-    if data.is_ok() {
-        actix_web::rt::spawn(async move {
-            notification.user_broadcaster.notify_change().await;
-        });
-    }
-
-    no_content_or_error!(data)
+    no_content_or_error!(bamboo_dbal::user::delete_user(info.id, &db).await)
 }
 
 pub async fn add_mod_user(
     info: web::Path<UserPathInfo>,
-    notification: Notification,
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
@@ -98,19 +77,11 @@ pub async fn add_mod_user(
         return not_found!(bamboo_not_found_error!("user", "The user was not found"));
     }
 
-    let data = change_mod_status(info.id, true, &db).await;
-    if data.is_ok() {
-        actix_web::rt::spawn(async move {
-            notification.user_broadcaster.notify_change().await;
-        });
-    }
-
-    no_content_or_error!(data)
+    no_content_or_error!(change_mod_status(info.id, true, &db).await)
 }
 
 pub async fn remove_mod_user(
     info: web::Path<UserPathInfo>,
-    notification: Notification,
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
@@ -123,12 +94,7 @@ pub async fn remove_mod_user(
         return not_found!(bamboo_not_found_error!("user", "The user was not found"));
     }
 
-    let data = change_mod_status(info.id, false, &db).await;
-    actix_web::rt::spawn(async move {
-        notification.user_broadcaster.notify_change().await;
-    });
-
-    no_content_or_error!(data)
+    no_content_or_error!(change_mod_status(info.id, false, &db).await)
 }
 
 pub async fn change_password(
@@ -180,48 +146,36 @@ pub async fn change_my_password(
 
 pub async fn update_profile(
     body: web::Json<UpdateProfile>,
-    notification: Notification,
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
-    let data = update_me(
-        authentication.user.id,
-        body.email.clone(),
-        body.display_name.clone(),
-        body.discord_name.clone(),
-        &db,
+    no_content_or_error!(
+        update_me(
+            authentication.user.id,
+            body.email.clone(),
+            body.display_name.clone(),
+            body.discord_name.clone(),
+            &db,
+        )
+        .await
     )
-    .await;
-    if data.is_ok() {
-        actix_web::rt::spawn(async move {
-            notification.user_broadcaster.notify_change().await;
-        });
-    }
-
-    no_content_or_error!(data)
 }
 
 pub async fn update_user_profile(
     info: web::Path<UserPathInfo>,
     body: web::Json<UpdateProfile>,
-    notification: Notification,
     db: DbConnection,
 ) -> HttpResponse {
-    let data = update_me(
-        info.id,
-        body.email.clone(),
-        body.display_name.clone(),
-        body.discord_name.clone(),
-        &db,
+    no_content_or_error!(
+        update_me(
+            info.id,
+            body.email.clone(),
+            body.display_name.clone(),
+            body.discord_name.clone(),
+            &db,
+        )
+        .await
     )
-    .await;
-    if data.is_ok() {
-        actix_web::rt::spawn(async move {
-            notification.user_broadcaster.notify_change().await;
-        });
-    }
-
-    no_content_or_error!(data)
 }
 
 pub async fn get_profile(authentication: Authentication) -> HttpResponse {
