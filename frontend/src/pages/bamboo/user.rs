@@ -11,7 +11,6 @@ use yew_cosmo::prelude::*;
 use bamboo_entities::prelude::*;
 
 use crate::api::*;
-use crate::hooks::event_source::use_event_source;
 use crate::storage::CurrentUser;
 
 #[derive(Properties, PartialEq, Clone)]
@@ -563,21 +562,6 @@ pub fn users_page() -> Html {
         |_, open_create_user_modal_state| open_create_user_modal_state.set(true),
     );
     let on_user_select = use_callback(selected_user_state.clone(), |idx, state| state.set(idx));
-
-    let event_source_trigger = {
-        let users_query_state = users_query_state.clone();
-
-        move |_| {
-            log::debug!("Someone changed data on the server, trigger a refresh");
-            let users_query_state = users_query_state.clone();
-
-            yew::platform::spawn_local(async move {
-                let _ = users_query_state.refresh().await;
-            });
-        }
-    };
-
-    use_event_source("/sse/user".to_string(), event_source_trigger);
 
     let on_delete = {
         let users_query_state = users_query_state.clone();

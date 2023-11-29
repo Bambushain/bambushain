@@ -627,19 +627,17 @@ grid-row: 3/4;
         }
     };
 
+    let render_day = |day| {
+        html!(
+            <Day on_reload={on_reload.clone()} events={events_for_day(day)} key={day.format("%F").to_string()} day={day.day()} month={day.month()} year={day.year()} selected_month={selected_month} />
+        )
+    };
+
     html!(
         <>
-            {for DateRange::new(calendar_start_date, last_day_of_prev_month).unwrap().into_iter().map(|day| html!(
-                <Day on_reload={on_reload.clone()} events={events_for_day(day)} key={day.format("%F").to_string()} day={day.day()} month={day.month()} year={day.year()} selected_month={selected_month} />
-            ))}
-
-            {for DateRange::new(first_day_of_month, last_day_of_month).unwrap().into_iter().map(|day| html!(
-                <Day on_reload={on_reload.clone()} events={events_for_day(day)} key={day.format("%F").to_string()} day={day.day()} month={day.month()} year={day.year()} selected_month={selected_month} />
-            ))}
-
-            {for DateRange::new(first_day_of_next_month, calendar_end_date).unwrap().into_iter().map(|day| html!(
-                <Day on_reload={on_reload.clone()} events={events_for_day(day)} key={day.format("%F").to_string()} day={day.day()} month={day.month()} year={day.year()} selected_month={selected_month} />
-            ))}
+            {for DateRange::new(calendar_start_date, last_day_of_prev_month).unwrap().into_iter().map(render_day)}
+            {for DateRange::new(first_day_of_month, last_day_of_month).unwrap().into_iter().map(render_day)}
+            {for DateRange::new(first_day_of_next_month, calendar_end_date).unwrap().into_iter().map(render_day)}
         </>
     )
 }

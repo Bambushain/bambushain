@@ -20,4 +20,5 @@ log = { workspace = true }
 parking_lot = { workspace = true }
 sea-orm = { workspace = true }
 serde = { workspace = true }
+tokio = { workspace = true }
 totp-rs = { workspace = true }
