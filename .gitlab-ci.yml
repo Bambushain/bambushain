@@ -1,9 +1,12 @@
 .base-cache:
+  variables:
+    CARGO_HOME: $CI_PROJECT_DIR/.cargo
   cache:
-    key: $CI_COMMIT_REF_SLUG
+    key: $CI_PROJECT_NAME
     paths:
-      - target/
-      - /usr/local/cargo/registry
+      - $CI_PROJECT_DIR/target/
+      - $CI_PROJECT_DIR/.cargo/
+      - $CI_PROJECT_DIR/Cargo.lock
 
 .base-trunk:
   extends:
