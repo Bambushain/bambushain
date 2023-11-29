@@ -78,7 +78,7 @@ fn login_content() -> Html {
                         if two_factor_requested {
                             storage::set_token(result.left().unwrap().token);
                             let _ = profile_query.refresh().await;
-                            navigator.push(&AppRoute::PandaPartyRoot);
+                            navigator.push(&AppRoute::BambooGroveRoot);
                         } else {
                             error_message_state
                                 .set("Melde dich an und betrete den Bambushain".into());
