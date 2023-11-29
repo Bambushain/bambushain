@@ -13,7 +13,7 @@ use crate::pages::bamboo::user::UsersPage;
 use crate::pages::final_fantasy::character::CharacterPage;
 use crate::pages::final_fantasy::settings::SettingsPage;
 use crate::pages::login::LoginPage;
-use crate::routing::{AppRoute, FinalFantasyRoute, PandaPartyRoute};
+use crate::routing::{AppRoute, FinalFantasyRoute, BambooGroveRoute};
 use crate::{api, storage};
 
 #[derive(Properties, Clone, PartialEq)]
@@ -41,10 +41,10 @@ pub fn switch(route: AppRoute) -> Html {
 
 fn switch_sub_menu(route: AppRoute) -> Html {
     match route {
-        AppRoute::PandaPartyRoot | AppRoute::PandaParty => html!(
+        AppRoute::BambooGroveRoot | AppRoute::BambooGrove => html!(
             <CosmoSubMenuBar>
-                <Switch<PandaPartyRoute> render={render_sub_menu_entry("Event Kalender".into(), PandaPartyRoute::Calendar)} />
-                <Switch<PandaPartyRoute> render={render_sub_menu_entry("Pandas".into(), PandaPartyRoute::User)} />
+                <Switch<BambooGroveRoute> render={render_sub_menu_entry("Event Kalender".into(), BambooGroveRoute::Calendar)} />
+                <Switch<BambooGroveRoute> render={render_sub_menu_entry("Pandas".into(), BambooGroveRoute::User)} />
             </CosmoSubMenuBar>
         ),
         AppRoute::FinalFantasyRoot | AppRoute::FinalFantasy => html!(
@@ -81,9 +81,9 @@ fn switch_final_fantasy(route: FinalFantasyRoute) -> Html {
     }
 }
 
-fn switch_panda_party(route: PandaPartyRoute) -> Html {
+fn switch_panda_party(route: BambooGroveRoute) -> Html {
     match route {
-        PandaPartyRoute::Calendar => html!(
+        BambooGroveRoute::Calendar => html!(
             <>
                 <Helmet>
                     <title>{"Event Kalender"}</title>
@@ -91,7 +91,7 @@ fn switch_panda_party(route: PandaPartyRoute) -> Html {
                 <CalendarPage />
             </>
         ),
-        PandaPartyRoute::User => html!(
+        BambooGroveRoute::User => html!(
             <>
                 <Helmet>
                     <title>{"Pandas"}</title>
@@ -105,17 +105,17 @@ fn switch_panda_party(route: PandaPartyRoute) -> Html {
 fn switch_app(route: AppRoute) -> Html {
     match route {
         AppRoute::Home => html!(
-            <Redirect<AppRoute> to={AppRoute::PandaPartyRoot} />
+            <Redirect<AppRoute> to={AppRoute::BambooGroveRoot} />
         ),
-        AppRoute::PandaPartyRoot => html!(
-            <Redirect<PandaPartyRoute> to={PandaPartyRoute::Calendar} />
+        AppRoute::BambooGroveRoot => html!(
+            <Redirect<BambooGroveRoute> to={BambooGroveRoute::Calendar} />
         ),
-        AppRoute::PandaParty => html!(
+        AppRoute::BambooGrove => html!(
             <>
                 <Helmet>
                     <title>{"Bambushain"}</title>
                 </Helmet>
-                <Switch<PandaPartyRoute> render={switch_panda_party} />
+                <Switch<BambooGroveRoute> render={switch_panda_party} />
             </>
         ),
         AppRoute::FinalFantasyRoot => html!(
@@ -188,7 +188,7 @@ fn app_layout() -> Html {
                     <Switch<AppRoute> render={switch_top_bar}/>
                     <CosmoMenuBar>
                         <CosmoMainMenu>
-                            <Switch<AppRoute> render={render_main_menu_entry("Pandas".into(), AppRoute::PandaPartyRoot, AppRoute::PandaParty)} />
+                            <Switch<AppRoute> render={render_main_menu_entry("Bambushain".into(), AppRoute::BambooGroveRoot, AppRoute::BambooGrove)} />
                             <Switch<AppRoute> render={render_main_menu_entry("Final Fantasy".into(), AppRoute::FinalFantasyRoot, AppRoute::FinalFantasy)} />
                         </CosmoMainMenu>
                         <Switch<AppRoute> render={switch_sub_menu} />
@@ -530,7 +530,7 @@ object-fit: scale-down;
                     </CosmoInputGroup>
                 </CosmoModal>
             } else {
-                <CosmoConfirm title="Zwei Faktor per App aktivieren" message={r#"Hier kannst du deinen Zwei Faktor Code anpassen, von Haus aus sendet Pandaparty einen Code an deine Emailadresse,
+                <CosmoConfirm title="Zwei Faktor per App aktivieren" message={r#"Hier kannst du deinen Zwei Faktor Code anpassen, von Haus aus sendet BambooGrove einen Code an deine Emailadresse,
 du kannst allerdings auch eine App wie Google Authenticator oder Authy einrichten und dann damit einen Code generieren.
 Um eine App einzurichten, musst du unten auf App einrichten klicken.
 Anschließend kommt ein QR Code, den musst du scannen und danach einen Code aus deiner App eingeben."#} confirm_label="App einrichten" decline_label="Abbrechen" on_confirm={enable_totp} on_decline={props.on_close.clone()} />
