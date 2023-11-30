@@ -87,6 +87,7 @@ impl Model {
             is_mod,
             display_name,
             discord_name,
+            #[cfg(feature = "backend")]
             two_factor_code: None,
             #[cfg(feature = "backend")]
             totp_secret: None,
