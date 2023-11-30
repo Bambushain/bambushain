@@ -186,10 +186,11 @@ pub async fn enable_totp(authentication: Authentication, db: DbConnection) -> Ht
     let mut totp = totp_rs::TOTP::default();
     let secret = totp.secret.clone();
     let data = bamboo_dbal::user::enable_totp(authentication.user.id, secret, &db).await;
+
     match data {
         Ok(_) => {
             totp.account_name = authentication.user.display_name.clone();
-            totp.issuer = Some("Pandaparty".to_string());
+            totp.issuer = Some("Bambushain".to_string());
             let qr = match totp.get_qr_base64() {
                 Ok(qr) => qr,
                 Err(err) => {
@@ -219,8 +220,14 @@ pub async fn validate_totp(
     if authentication.user.totp_validated.unwrap_or(false) {
         bad_request!("Already validated")
     } else {
-        let result =
-            bamboo_dbal::user::validate_totp(authentication.user.id, body.code.clone(), &db).await;
+        let result = bamboo_dbal::user::validate_totp(
+            authentication.user.id,
+            body.password.clone(),
+            body.code.clone(),
+            &db,
+        )
+        .await;
+
         match result {
             Ok(true) => no_content!(),
             Ok(false) => forbidden!(),

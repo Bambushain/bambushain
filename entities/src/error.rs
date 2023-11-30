@@ -16,6 +16,7 @@ pub enum BambooErrorCode {
     InsufficientRightsError,
     UnauthorizedError,
     UnknownError,
+    CryptoError,
 }
 
 impl Default for BambooErrorCode {
@@ -147,6 +148,17 @@ macro_rules! bamboo_unauthorized_error {
             entity_type: $entity_type.to_string(),
             message: $message.to_string(),
             error_type: bamboo_entities::prelude::BambooErrorCode::UnauthorizedError,
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! bamboo_crypto_error {
+    ($entity_type:expr, $message:expr) => {
+        bamboo_entities::prelude::BambooError {
+            entity_type: $entity_type.to_string(),
+            message: $message.to_string(),
+            error_type: bamboo_entities::prelude::BambooErrorCode::CryptoError,
         }
     };
 }

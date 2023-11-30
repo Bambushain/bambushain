@@ -15,7 +15,7 @@ async fn map_character(
     character: Character,
     user_id: i32,
     db: &DatabaseConnection,
-) -> PandaPartyResult<Character> {
+) -> BambooResult<Character> {
     Ok(Character {
         id: character.id,
         race: character.race,
@@ -28,10 +28,7 @@ async fn map_character(
     })
 }
 
-pub async fn get_characters(
-    user_id: i32,
-    db: &DatabaseConnection,
-) -> PandaPartyResult<Vec<Character>> {
+pub async fn get_characters(user_id: i32, db: &DatabaseConnection) -> BambooResult<Vec<Character>> {
     let characters = character::Entity::find()
         .filter(character::Column::UserId.eq(user_id))
         .order_by_asc(character::Column::Name)
@@ -54,7 +51,7 @@ pub async fn get_character(
     id: i32,
     user_id: i32,
     db: &DatabaseConnection,
-) -> PandaPartyResult<Character> {
+) -> BambooResult<Character> {
     let character = character::Entity::find_by_id(id)
         .filter(character::Column::UserId.eq(user_id))
         .one(db)
@@ -78,7 +75,7 @@ async fn fill_custom_fields(
     user_id: i32,
     character_id: i32,
     db: &DatabaseConnection,
-) -> PandaPartyResult<Vec<CustomField>> {
+) -> BambooResult<Vec<CustomField>> {
     let data = custom_character_field_value::Entity::find()
         .select_only()
         .inner_join(custom_character_field_option::Entity)
@@ -174,7 +171,7 @@ pub async fn create_character(
     user_id: i32,
     character: Character,
     db: &DatabaseConnection,
-) -> PandaPartyResult<Character> {
+) -> BambooResult<Character> {
     let mut model = character.clone().into_active_model();
     if let Some(free_company) = character.free_company {
         model.free_company_id = Set(Some(free_company.id));
@@ -197,7 +194,7 @@ pub async fn update_character(
     user_id: i32,
     character: Character,
     db: &DatabaseConnection,
-) -> PandaPartyErrorResult {
+) -> BambooErrorResult {
     character::Entity::update_many()
         .filter(character::Column::Id.eq(id))
         .filter(character::Column::UserId.eq(user_id))
@@ -229,7 +226,7 @@ async fn create_custom_field_values(
     character_id: i32,
     custom_fields: Vec<CustomField>,
     db: &DatabaseConnection,
-) -> PandaPartyErrorResult {
+) -> BambooErrorResult {
     if custom_fields.is_empty() {
         return Ok(());
     }
@@ -281,11 +278,7 @@ async fn create_custom_field_values(
         .map(|_| ())
 }
 
-pub async fn delete_character(
-    id: i32,
-    user_id: i32,
-    db: &DatabaseConnection,
-) -> PandaPartyErrorResult {
+pub async fn delete_character(id: i32, user_id: i32, db: &DatabaseConnection) -> BambooErrorResult {
     character::Entity::delete_many()
         .filter(character::Column::Id.eq(id))
         .filter(character::Column::UserId.eq(user_id))

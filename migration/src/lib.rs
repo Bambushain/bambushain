@@ -14,6 +14,8 @@ mod m20230829_194101_create_table_custom_character_field_value;
 mod m20230917_003256_add_position_to_custom_field;
 mod m20230923_090306_add_field_free_company;
 mod m20231128_215928_rename_schema_panda_party;
+mod m20231129_222204_add_field_to_set_totp_secret_encrypted;
+mod m20231130_013324_increase_size_of_two_factor_code;
 
 pub struct Migrator;
 
@@ -35,6 +37,8 @@ impl MigratorTrait for Migrator {
             Box::new(m20230917_003256_add_position_to_custom_field::Migration),
             Box::new(m20230923_090306_add_field_free_company::Migration),
             Box::new(m20231128_215928_rename_schema_panda_party::Migration),
+            Box::new(m20231129_222204_add_field_to_set_totp_secret_encrypted::Migration),
+            Box::new(m20231130_013324_increase_size_of_two_factor_code::Migration),
         ]
     }
 }

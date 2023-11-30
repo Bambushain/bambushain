@@ -5,7 +5,7 @@ use sea_orm::{NotSet, QueryOrder, QuerySelect, Set};
 pub async fn get_free_companies(
     user_id: i32,
     db: &DatabaseConnection,
-) -> PandaPartyResult<Vec<FreeCompany>> {
+) -> BambooResult<Vec<FreeCompany>> {
     bamboo_entities::free_company::Entity::find()
         .filter(bamboo_entities::free_company::Column::UserId.eq(user_id))
         .order_by_asc(bamboo_entities::free_company::Column::Name)
@@ -21,7 +21,7 @@ pub async fn get_free_company(
     free_company_id: Option<i32>,
     user_id: i32,
     db: &DatabaseConnection,
-) -> PandaPartyResult<Option<FreeCompany>> {
+) -> BambooResult<Option<FreeCompany>> {
     if let Some(id) = free_company_id {
         bamboo_entities::free_company::Entity::find_by_id(id)
             .filter(bamboo_entities::free_company::Column::UserId.eq(user_id))
@@ -40,7 +40,7 @@ pub async fn create_free_company(
     user_id: i32,
     name: String,
     db: &DatabaseConnection,
-) -> PandaPartyResult<FreeCompany> {
+) -> BambooResult<FreeCompany> {
     let mut active_model = bamboo_entities::free_company::ActiveModel::new();
     active_model.user_id = Set(user_id);
     active_model.name = Set(name);
@@ -57,7 +57,7 @@ pub async fn update_free_company(
     user_id: i32,
     name: String,
     db: &DatabaseConnection,
-) -> PandaPartyErrorResult {
+) -> BambooErrorResult {
     bamboo_entities::free_company::Entity::update_many()
         .filter(bamboo_entities::free_company::Column::UserId.eq(user_id))
         .filter(bamboo_entities::free_company::Column::Id.eq(id))
@@ -78,7 +78,7 @@ pub async fn delete_free_company(
     id: i32,
     user_id: i32,
     db: &DatabaseConnection,
-) -> PandaPartyErrorResult {
+) -> BambooErrorResult {
     bamboo_entities::free_company::Entity::delete_by_id(id)
         .filter(bamboo_entities::free_company::Column::UserId.eq(user_id))
         .exec(db)

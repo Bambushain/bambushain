@@ -1,50 +1,34 @@
+use base64::Engine;
 use rand::distributions::Uniform;
 use rand::Rng;
 use sea_orm::prelude::Expr;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, IntoActiveModel, NotSet,
-    QueryFilter,
+    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, NotSet, QueryFilter,
 };
 
 use bamboo_entities::prelude::*;
 use bamboo_entities::{bamboo_db_error, bamboo_validation_error};
+
+use crate::encrypt_string;
+use crate::user::validate_login;
 
 pub async fn validate_auth_and_create_token(
     username: String,
     password: String,
     two_factor_code: String,
     db: &DatabaseConnection,
-) -> PandaPartyResult<LoginResult> {
+) -> BambooResult<LoginResult> {
     let user = crate::user::get_user_by_email_or_username(username.clone(), db)
         .await
         .map_err(|err| {
-            log::error!("Failed to load user {}: {err}", username);
+            log::error!("Failed to load user {username}: {err}");
             bamboo_not_found_error!("user", "User not found")
         })?;
 
-    let password_valid = user.validate_password(password);
-    if !password_valid {
-        return Err(bamboo_validation_error!("token", "Password is invalid"));
-    }
+    validate_login(user.id, two_factor_code, password, false, db).await?;
 
-    let two_factor_code_valid = if !user.totp_validated.unwrap_or(false) {
-        user.two_factor_code.eq(&Some(two_factor_code))
-    } else {
-        user.check_totp(two_factor_code)
-    };
-
-    if !two_factor_code_valid {
-        return Err(bamboo_validation_error!(
-            "token",
-            "Two factor code is invalid"
-        ));
-    }
-
-    let mut active = user.clone().into_active_model();
-    active.two_factor_code = Set(None);
-
-    bamboo_entities::token::ActiveModel {
+    let result = bamboo_entities::token::ActiveModel {
         id: NotSet,
         token: Set(uuid::Uuid::new_v4().to_string()),
         user_id: Set(user.id),
@@ -58,22 +42,33 @@ pub async fn validate_auth_and_create_token(
     .map_err(|err| {
         log::error!("{err}");
         bamboo_db_error!("token", "Failed to create token")
-    })
+    });
+
+    let _ = bamboo_entities::user::Entity::update_many()
+        .col_expr(
+            bamboo_entities::user::Column::TwoFactorCode,
+            Expr::value::<Option<String>>(None),
+        )
+        .filter(bamboo_entities::user::Column::Id.eq(user.id))
+        .exec(db)
+        .await;
+
+    result
 }
 
 pub async fn validate_auth_and_set_two_factor_code(
     username: String,
     password: String,
     db: &DatabaseConnection,
-) -> PandaPartyResult<TwoFactorResult> {
+) -> BambooResult<TwoFactorResult> {
     let user = crate::user::get_user_by_email_or_username(username.clone(), db)
         .await
         .map_err(|err| {
-            log::error!("Failed to load user {}: {err}", username);
+            log::error!("Failed to load user {username}: {err}");
             bamboo_not_found_error!("user", "User not found")
         })?;
 
-    let password_valid = user.validate_password(password);
+    let password_valid = user.validate_password(password.clone());
     if !password_valid {
         return Err(bamboo_validation_error!("token", "Password is invalid"));
     }
@@ -92,10 +87,12 @@ pub async fn validate_auth_and_set_two_factor_code(
         .collect::<Vec<String>>()
         .join("");
 
+    let encrypted_code = encrypt_string(two_factor_code.clone().into_bytes(), password)?;
+
     bamboo_entities::user::Entity::update_many()
         .col_expr(
             bamboo_entities::user::Column::TwoFactorCode,
-            Expr::value(two_factor_code.clone()),
+            Expr::value(base64::prelude::BASE64_STANDARD.encode(encrypted_code)),
         )
         .filter(bamboo_entities::user::Column::Id.eq(user.id))
         .exec(db)
@@ -107,7 +104,7 @@ pub async fn validate_auth_and_set_two_factor_code(
         })
 }
 
-pub async fn delete_token(token: String, db: &DatabaseConnection) -> PandaPartyErrorResult {
+pub async fn delete_token(token: String, db: &DatabaseConnection) -> BambooErrorResult {
     bamboo_entities::token::Entity::delete_many()
         .filter(bamboo_entities::token::Column::Token.eq(token))
         .exec(db)

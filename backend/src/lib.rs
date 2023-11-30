@@ -82,6 +82,7 @@ macro_rules! error_response {
             bamboo_entities::prelude::BambooErrorCode::DbError
             | bamboo_entities::prelude::BambooErrorCode::IoError
             | bamboo_entities::prelude::BambooErrorCode::SerializationError
+            | bamboo_entities::prelude::BambooErrorCode::CryptoError
             | bamboo_entities::prelude::BambooErrorCode::UnknownError => {
                 internal_server_error!($err)
             }

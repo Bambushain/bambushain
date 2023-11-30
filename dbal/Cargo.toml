@@ -8,11 +8,15 @@ edition.workspace = true
 [dependencies]
 bamboo-entities = { path = "../entities" }
 
+base64 = { workspace = true }
 bcrypt = { workspace = true }
+chacha20poly1305 = { workspace = true }
 date-range = { workspace = true }
 futures = { workspace = true }
 log = { workspace = true }
+pbkdf2 = { workspace = true }
 rand = { workspace = true }
 sea-orm = { workspace = true }
+sha2 = { workspace = true }
 uuid = { workspace = true }
 totp-rs = { workspace = true }

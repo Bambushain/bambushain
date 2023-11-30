@@ -67,7 +67,7 @@ pub async fn enable_totp() -> api::PandapartyApiResult<TotpQrCode> {
     api::post_no_body("/api/my/totp").await
 }
 
-pub async fn validate_totp(code: String) -> api::PandapartyApiResult<()> {
+pub async fn validate_totp(code: String, password: String) -> api::PandapartyApiResult<()> {
     log::debug!("Validate totp for current user");
-    api::put_no_content("/api/my/totp/validate", &ValidateTotp { code }).await
+    api::put_no_content("/api/my/totp/validate", &ValidateTotp { code, password }).await
 }
