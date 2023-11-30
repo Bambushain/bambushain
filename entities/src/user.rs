@@ -22,10 +22,12 @@ pub struct Model {
     pub display_name: String,
     pub is_mod: bool,
     pub discord_name: String,
+    #[cfg(feature = "backend")]
     pub two_factor_code: Option<String>,
     #[cfg(feature = "backend")]
     pub totp_secret: Option<Vec<u8>>,
     #[cfg(feature = "backend")]
+    #[serde(default)]
     pub totp_secret_encrypted: bool,
     pub totp_validated: Option<bool>,
 }
