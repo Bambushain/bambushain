@@ -5,7 +5,7 @@ use sea_orm::{Condition, IntoActiveModel, NotSet, QueryOrder};
 use bamboo_entities::event;
 use bamboo_entities::prelude::*;
 
-pub async fn get_events(range: DateRange, db: &DatabaseConnection) -> PandaPartyResult<Vec<Event>> {
+pub async fn get_events(range: DateRange, db: &DatabaseConnection) -> BambooResult<Vec<Event>> {
     event::Entity::find()
         .filter(
             Condition::any()
@@ -29,7 +29,7 @@ pub async fn get_events(range: DateRange, db: &DatabaseConnection) -> PandaParty
         })
 }
 
-pub async fn create_event(event: Event, db: &DatabaseConnection) -> PandaPartyResult<Event> {
+pub async fn create_event(event: Event, db: &DatabaseConnection) -> BambooResult<Event> {
     let mut model = event.into_active_model();
     model.id = NotSet;
 
@@ -39,7 +39,7 @@ pub async fn create_event(event: Event, db: &DatabaseConnection) -> PandaPartyRe
     })
 }
 
-pub async fn update_event(id: i32, event: Event, db: &DatabaseConnection) -> PandaPartyErrorResult {
+pub async fn update_event(id: i32, event: Event, db: &DatabaseConnection) -> BambooErrorResult {
     event::Entity::update_many()
         .filter(event::Column::Id.eq(id))
         .col_expr(event::Column::StartDate, Expr::value(event.start_date))
@@ -56,7 +56,7 @@ pub async fn update_event(id: i32, event: Event, db: &DatabaseConnection) -> Pan
         .map(|_| ())
 }
 
-pub async fn delete_event(id: i32, db: &DatabaseConnection) -> PandaPartyErrorResult {
+pub async fn delete_event(id: i32, db: &DatabaseConnection) -> BambooErrorResult {
     event::Entity::delete_many()
         .filter(event::Column::Id.eq(id))
         .exec(db)

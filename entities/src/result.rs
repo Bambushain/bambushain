@@ -1,5 +1,5 @@
 use crate::error::BambooError;
 
-pub type PandaPartyErrorResult = Result<(), BambooError>;
+pub type BambooErrorResult = Result<(), BambooError>;
 
-pub type PandaPartyResult<T> = Result<T, BambooError>;
+pub type BambooResult<T> = Result<T, BambooError>;

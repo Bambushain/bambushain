@@ -25,6 +25,8 @@ pub struct Model {
     pub two_factor_code: Option<String>,
     #[cfg(feature = "backend")]
     pub totp_secret: Option<Vec<u8>>,
+    #[cfg(feature = "backend")]
+    pub totp_secret_encrypted: bool,
     pub totp_validated: Option<bool>,
 }
 
@@ -86,6 +88,8 @@ impl Model {
             two_factor_code: None,
             #[cfg(feature = "backend")]
             totp_secret: None,
+            #[cfg(feature = "backend")]
+            totp_secret_encrypted: false,
             totp_validated: None,
         }
     }
@@ -97,28 +101,6 @@ impl Model {
             Ok(res) => res,
             Err(err) => {
                 log::error!("Failed to validate password {err}");
-                false
-            }
-        }
-    }
-
-    #[cfg(feature = "backend")]
-    pub fn check_totp(&self, code: String) -> bool {
-        match totp_rs::TOTP::from_rfc6238(
-            totp_rs::Rfc6238::new(
-                6,
-                self.totp_secret.clone().unwrap(),
-                Some("Pandaparty".to_string()),
-                self.display_name.clone(),
-            )
-            .expect("Should be valid"),
-        ) {
-            Ok(totp) => totp.check_current(code.as_str()).unwrap_or_else(|err| {
-                log::error!("Failed to validate totp {err}");
-                false
-            }),
-            Err(err) => {
-                log::error!("Failed to create totp url {err}");
                 false
             }
         }
@@ -179,6 +161,7 @@ impl UpdateProfile {
 #[serde(rename_all = "camelCase")]
 pub struct ValidateTotp {
     pub code: String,
+    pub password: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]

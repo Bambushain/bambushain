@@ -12,7 +12,7 @@ pub async fn get_fighters(
     user_id: i32,
     character_id: i32,
     db: &DatabaseConnection,
-) -> PandaPartyResult<Vec<Fighter>> {
+) -> BambooResult<Vec<Fighter>> {
     fighter::Entity::find()
         .filter(fighter::Column::CharacterId.eq(character_id))
         .filter(character::Column::UserId.eq(user_id))
@@ -31,7 +31,7 @@ pub async fn get_fighter(
     user_id: i32,
     character_id: i32,
     db: &DatabaseConnection,
-) -> PandaPartyResult<Fighter> {
+) -> BambooResult<Fighter> {
     match fighter::Entity::find()
         .filter(fighter::Column::Id.eq(id))
         .filter(fighter::Column::CharacterId.eq(character_id))
@@ -97,7 +97,7 @@ pub async fn create_fighter(
     character_id: i32,
     fighter: Fighter,
     db: &DatabaseConnection,
-) -> PandaPartyResult<Fighter> {
+) -> BambooResult<Fighter> {
     if !character_exists(user_id, character_id, db).await {
         return Err(bamboo_not_found_error!(
             "fighter",
@@ -119,7 +119,7 @@ pub async fn update_fighter(
     id: i32,
     fighter: Fighter,
     db: &DatabaseConnection,
-) -> PandaPartyErrorResult {
+) -> BambooErrorResult {
     fighter::Entity::update_many()
         .filter(fighter::Column::Id.eq(id))
         .col_expr(fighter::Column::Level, Expr::value(fighter.level))
@@ -133,7 +133,7 @@ pub async fn update_fighter(
         .map(|_| ())
 }
 
-pub async fn delete_fighter(id: i32, db: &DatabaseConnection) -> PandaPartyErrorResult {
+pub async fn delete_fighter(id: i32, db: &DatabaseConnection) -> BambooErrorResult {
     fighter::Entity::delete_many()
         .filter(fighter::Column::Id.eq(id))
         .exec(db)

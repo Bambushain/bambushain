@@ -13,7 +13,7 @@ use crate::pages::bamboo::user::UsersPage;
 use crate::pages::final_fantasy::character::CharacterPage;
 use crate::pages::final_fantasy::settings::SettingsPage;
 use crate::pages::login::LoginPage;
-use crate::routing::{AppRoute, FinalFantasyRoute, BambooGroveRoute};
+use crate::routing::{AppRoute, BambooGroveRoute, FinalFantasyRoute};
 use crate::{api, storage};
 
 #[derive(Properties, Clone, PartialEq)]
@@ -421,10 +421,14 @@ fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
 
     let error_message_state = use_state_eq(|| AttrValue::from(""));
     let code_state = use_state_eq(|| AttrValue::from(""));
+    let current_password_state = use_state_eq(|| AttrValue::from(""));
     let qrcode_state = use_state_eq(|| AttrValue::from(""));
     let secret_state = use_state_eq(|| AttrValue::from(""));
 
     let update_code = use_callback(code_state.clone(), |value, state| state.set(value));
+    let update_password = use_callback(current_password_state.clone(), |value, state| {
+        state.set(value)
+    });
 
     let enable_totp = {
         let enable_start_state = enable_start_state.clone();
@@ -476,6 +480,7 @@ fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
 
         let error_message_state = error_message_state.clone();
         let code_state = code_state.clone();
+        let current_password_state = current_password_state.clone();
 
         let on_close = props.on_close.clone();
 
@@ -484,11 +489,17 @@ fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
 
             let error_message_state = error_message_state.clone();
             let code_state = code_state.clone();
+            let current_password_state = current_password_state.clone();
 
             let on_close = on_close.clone();
 
             yew::platform::spawn_local(async move {
-                match api::validate_totp((*code_state).to_string()).await {
+                match api::validate_totp(
+                    (*code_state).to_string(),
+                    (*current_password_state).to_string(),
+                )
+                .await
+                {
                     Ok(_) => {
                         on_close.emit(());
                     }
@@ -496,7 +507,7 @@ fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
                         log::error!("Failed to validate token: {err}");
                         error_state.set(true);
                         error_message_state.set(
-                            "Der von dir eingegebene Code ist ungültig, versuch es nochmal".into(),
+                            "Der von dir eingegebene Code oder dein Passwort ist ungültig, versuch es nochmal".into(),
                         );
                     }
                 }
@@ -526,6 +537,7 @@ object-fit: scale-down;
                 )}>
                     <img class={img_style} src={format!("data:image/png;base64,{}", (*qrcode_state).clone())} alt={(*secret_state).clone()} />
                     <CosmoInputGroup>
+                        <CosmoTextBox input_type={CosmoTextBoxType::Password} label="Aktuelles Passwort" required={true} on_input={update_password} value={(*current_password_state).clone()} />
                         <CosmoTextBox label="Zwei Faktor Code" required={true} on_input={update_code} value={(*code_state).clone()} />
                     </CosmoInputGroup>
                 </CosmoModal>

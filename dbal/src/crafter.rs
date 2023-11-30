@@ -12,7 +12,7 @@ pub async fn get_crafters(
     user_id: i32,
     character_id: i32,
     db: &DatabaseConnection,
-) -> PandaPartyResult<Vec<Crafter>> {
+) -> BambooResult<Vec<Crafter>> {
     crafter::Entity::find()
         .filter(crafter::Column::CharacterId.eq(character_id))
         .filter(character::Column::UserId.eq(user_id))
@@ -31,7 +31,7 @@ pub async fn get_crafter(
     user_id: i32,
     character_id: i32,
     db: &DatabaseConnection,
-) -> PandaPartyResult<Crafter> {
+) -> BambooResult<Crafter> {
     match crafter::Entity::find_by_id(id)
         .filter(crafter::Column::CharacterId.eq(character_id))
         .filter(character::Column::UserId.eq(user_id))
@@ -96,7 +96,7 @@ pub async fn create_crafter(
     character_id: i32,
     crafter: Crafter,
     db: &DatabaseConnection,
-) -> PandaPartyResult<Crafter> {
+) -> BambooResult<Crafter> {
     if !character_exists(user_id, character_id, db).await {
         return Err(bamboo_not_found_error!(
             "crafter",
@@ -118,7 +118,7 @@ pub async fn update_crafter(
     id: i32,
     crafter: Crafter,
     db: &DatabaseConnection,
-) -> PandaPartyErrorResult {
+) -> BambooErrorResult {
     crafter::Entity::update_many()
         .filter(crafter::Column::Id.eq(id))
         .col_expr(crafter::Column::Level, Expr::value(crafter.level))
@@ -131,7 +131,7 @@ pub async fn update_crafter(
         .map(|_| ())
 }
 
-pub async fn delete_crafter(id: i32, db: &DatabaseConnection) -> PandaPartyErrorResult {
+pub async fn delete_crafter(id: i32, db: &DatabaseConnection) -> BambooErrorResult {
     crafter::Entity::delete_many()
         .filter(crafter::Column::Id.eq(id))
         .exec(db)

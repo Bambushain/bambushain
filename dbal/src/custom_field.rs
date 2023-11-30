@@ -10,7 +10,7 @@ use bamboo_entities::{bamboo_db_error, custom_character_field, custom_character_
 pub async fn get_custom_fields(
     user_id: i32,
     db: &DatabaseConnection,
-) -> PandaPartyResult<Vec<CustomCharacterField>> {
+) -> BambooResult<Vec<CustomCharacterField>> {
     let fields = custom_character_field::Entity::find()
         .find_with_related(custom_character_field_option::Entity)
         .filter(custom_character_field::Column::UserId.eq(user_id))
@@ -39,7 +39,7 @@ pub async fn get_custom_field(
     custom_field_id: i32,
     user_id: i32,
     db: &DatabaseConnection,
-) -> PandaPartyResult<CustomCharacterField> {
+) -> BambooResult<CustomCharacterField> {
     let fields = custom_character_field::Entity::find_by_id(custom_field_id)
         .find_with_related(custom_character_field_option::Entity)
         .filter(custom_character_field::Column::UserId.eq(user_id))
@@ -71,7 +71,7 @@ pub async fn create_custom_field(
     user_id: i32,
     custom_field: CustomField,
     db: &DatabaseConnection,
-) -> PandaPartyResult<CustomCharacterField> {
+) -> BambooResult<CustomCharacterField> {
     custom_character_field::Entity::update_many()
         .filter(custom_character_field::Column::UserId.eq(user_id))
         .col_expr(
@@ -126,7 +126,7 @@ pub async fn update_custom_field(
     user_id: i32,
     custom_field: CustomField,
     db: &DatabaseConnection,
-) -> PandaPartyErrorResult {
+) -> BambooErrorResult {
     custom_character_field::Entity::update_many()
         .filter(custom_character_field::Column::Id.eq(id))
         .filter(custom_character_field::Column::UserId.eq(user_id))
@@ -147,7 +147,7 @@ pub async fn delete_custom_field(
     id: i32,
     user_id: i32,
     db: &DatabaseConnection,
-) -> PandaPartyErrorResult {
+) -> BambooErrorResult {
     custom_character_field::Entity::delete_many()
         .filter(custom_character_field::Column::Id.eq(id))
         .filter(custom_character_field::Column::UserId.eq(user_id))
@@ -164,7 +164,7 @@ pub async fn get_custom_field_options(
     custom_field_id: i32,
     user_id: i32,
     db: &DatabaseConnection,
-) -> PandaPartyResult<Vec<CustomCharacterFieldOption>> {
+) -> BambooResult<Vec<CustomCharacterFieldOption>> {
     custom_character_field_option::Entity::find()
         .filter(custom_character_field_option::Column::CustomCharacterFieldId.eq(custom_field_id))
         .filter(custom_character_field::Column::UserId.eq(user_id))
@@ -180,7 +180,7 @@ pub async fn create_custom_field_option(
     custom_field_id: i32,
     label: String,
     db: &DatabaseConnection,
-) -> PandaPartyResult<CustomCharacterFieldOption> {
+) -> BambooResult<CustomCharacterFieldOption> {
     custom_character_field_option::ActiveModel {
         id: NotSet,
         custom_character_field_id: Set(custom_field_id),
@@ -199,7 +199,7 @@ pub async fn update_custom_field_option(
     custom_field_id: i32,
     option: String,
     db: &DatabaseConnection,
-) -> PandaPartyErrorResult {
+) -> BambooErrorResult {
     custom_character_field_option::Entity::update_many()
         .filter(custom_character_field_option::Column::Id.eq(id))
         .filter(custom_character_field_option::Column::CustomCharacterFieldId.eq(custom_field_id))
@@ -220,7 +220,7 @@ pub async fn delete_custom_field_option(
     id: i32,
     custom_field_id: i32,
     db: &DatabaseConnection,
-) -> PandaPartyErrorResult {
+) -> BambooErrorResult {
     custom_character_field_option::Entity::delete_many()
         .filter(custom_character_field_option::Column::Id.eq(id))
         .filter(custom_character_field_option::Column::CustomCharacterFieldId.eq(custom_field_id))
@@ -265,7 +265,7 @@ pub async fn move_custom_field(
     field_id: i32,
     position: i32,
     db: &DatabaseConnection,
-) -> PandaPartyErrorResult {
+) -> BambooErrorResult {
     let old_position = if let Some(old_position) = custom_character_field::Entity::find()
         .select_only()
         .column(custom_character_field::Column::Position)
