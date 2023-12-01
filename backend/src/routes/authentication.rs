@@ -122,7 +122,13 @@ Alles Gute vom 🐼"#
     }
 }
 
-pub async fn login(body: web::Json<Login>, db: DbConnection, services: Services) -> HttpResponse {
+pub async fn login(
+    body: Option<web::Json<Login>>,
+    db: DbConnection,
+    services: Services,
+) -> HttpResponse {
+    let body = check_missing_fields!(body, "authentication");
+
     if let Some(two_factor_code) = body.two_factor_code.clone() {
         let data = validate_auth_and_create_token(
             body.email.clone(),

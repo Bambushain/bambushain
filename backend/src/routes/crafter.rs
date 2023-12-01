@@ -18,20 +18,24 @@ pub struct CrafterPathInfo {
 }
 
 pub async fn get_crafters(
-    path: web::Path<CraftersPathInfo>,
+    path: Option<web::Path<CraftersPathInfo>>,
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
+    let path = check_invalid_path!(path, "crafter");
+
     ok_or_error!(
         bamboo_dbal::crafter::get_crafters(authentication.user.id, path.character_id, &db).await
     )
 }
 
 pub async fn get_crafter(
-    path: web::Path<CrafterPathInfo>,
+    path: Option<web::Path<CrafterPathInfo>>,
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
+    let path = check_invalid_path!(path, "crafter");
+
     match bamboo_dbal::crafter::get_crafter(path.id, authentication.user.id, path.character_id, &db)
         .await
     {
@@ -44,11 +48,14 @@ pub async fn get_crafter(
 }
 
 pub async fn create_crafter(
-    path: web::Path<CraftersPathInfo>,
-    body: web::Json<Crafter>,
+    path: Option<web::Path<CraftersPathInfo>>,
+    body: Option<web::Json<Crafter>>,
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
+    let path = check_invalid_path!(path, "crafter");
+    let body = check_missing_fields!(body, "crafter");
+
     if bamboo_dbal::crafter::crafter_exists_by_job(
         authentication.user.id,
         path.character_id,
@@ -75,11 +82,14 @@ pub async fn create_crafter(
 }
 
 pub async fn update_crafter(
-    body: web::Json<Crafter>,
-    path: web::Path<CrafterPathInfo>,
+    body: Option<web::Json<Crafter>>,
+    path: Option<web::Path<CrafterPathInfo>>,
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
+    let path = check_invalid_path!(path, "crafter");
+    let body = check_missing_fields!(body, "crafter");
+
     match bamboo_dbal::crafter::get_crafter(path.id, authentication.user.id, path.character_id, &db)
         .await
     {
@@ -94,10 +104,12 @@ pub async fn update_crafter(
 }
 
 pub async fn delete_crafter(
-    path: web::Path<CrafterPathInfo>,
+    path: Option<web::Path<CrafterPathInfo>>,
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
+    let path = check_invalid_path!(path, "crafter");
+
     if !bamboo_dbal::crafter::crafter_exists(
         path.id,
         authentication.user.id,

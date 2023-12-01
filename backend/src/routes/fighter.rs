@@ -18,20 +18,24 @@ pub struct FighterPathInfo {
 }
 
 pub async fn get_fighters(
-    path: web::Path<FightersPathInfo>,
+    path: Option<web::Path<FightersPathInfo>>,
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
+    let path = check_invalid_path!(path, "fighter");
+
     ok_or_error!(
         bamboo_dbal::fighter::get_fighters(authentication.user.id, path.character_id, &db).await
     )
 }
 
 pub async fn get_fighter(
-    path: web::Path<FighterPathInfo>,
+    path: Option<web::Path<FighterPathInfo>>,
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
+    let path = check_invalid_path!(path, "fighter");
+
     match bamboo_dbal::fighter::get_fighter(path.id, authentication.user.id, path.character_id, &db)
         .await
     {
@@ -44,11 +48,14 @@ pub async fn get_fighter(
 }
 
 pub async fn create_fighter(
-    path: web::Path<FightersPathInfo>,
-    body: web::Json<Fighter>,
+    path: Option<web::Path<FightersPathInfo>>,
+    body: Option<web::Json<Fighter>>,
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
+    let path = check_invalid_path!(path, "fighter");
+    let body = check_missing_fields!(body, "fighter");
+
     if bamboo_dbal::fighter::fighter_exists_by_job(
         authentication.user.id,
         path.character_id,
@@ -75,11 +82,14 @@ pub async fn create_fighter(
 }
 
 pub async fn update_fighter(
-    body: web::Json<Fighter>,
-    path: web::Path<FighterPathInfo>,
+    body: Option<web::Json<Fighter>>,
+    path: Option<web::Path<FighterPathInfo>>,
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
+    let path = check_invalid_path!(path, "fighter");
+    let body = check_missing_fields!(body, "fighter");
+
     match bamboo_dbal::fighter::get_fighter(path.id, authentication.user.id, path.character_id, &db)
         .await
     {
@@ -94,10 +104,12 @@ pub async fn update_fighter(
 }
 
 pub async fn delete_fighter(
-    path: web::Path<FighterPathInfo>,
+    path: Option<web::Path<FighterPathInfo>>,
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
+    let path = check_invalid_path!(path, "fighter");
+
     if !bamboo_dbal::fighter::fighter_exists(
         path.id,
         authentication.user.id,

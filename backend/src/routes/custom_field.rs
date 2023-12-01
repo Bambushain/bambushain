@@ -28,10 +28,12 @@ pub async fn get_custom_fields(authentication: Authentication, db: DbConnection)
 }
 
 pub async fn get_custom_field(
-    path: web::Path<CustomFieldPath>,
+    path: Option<web::Path<CustomFieldPath>>,
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
+    let path = check_invalid_path!(path, "custom_field");
+
     match bamboo_dbal::custom_field::get_custom_field(path.id, authentication.user.id, &db).await {
         Ok(custom_field) => ok_json!(custom_field),
         Err(_) => not_found!(bamboo_not_found_error!(
@@ -42,10 +44,12 @@ pub async fn get_custom_field(
 }
 
 pub async fn create_custom_field(
-    body: web::Json<CustomField>,
+    body: Option<web::Json<CustomField>>,
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
+    let body = check_missing_fields!(body, "custom_field");
+
     if bamboo_dbal::custom_field::custom_field_exists_by_label(
         body.label.clone(),
         authentication.user.id,
@@ -70,11 +74,14 @@ pub async fn create_custom_field(
 }
 
 pub async fn update_custom_field(
-    path: web::Path<CustomFieldPath>,
-    body: web::Json<CustomField>,
+    path: Option<web::Path<CustomFieldPath>>,
+    body: Option<web::Json<CustomField>>,
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
+    let path = check_invalid_path!(path, "custom_field");
+    let body = check_missing_fields!(body, "custom_field");
+
     match bamboo_dbal::custom_field::get_custom_field(path.id, authentication.user.id, &db).await {
         Ok(_) => no_content_or_error!(
             bamboo_dbal::custom_field::update_custom_field(
@@ -93,10 +100,12 @@ pub async fn update_custom_field(
 }
 
 pub async fn delete_custom_field(
-    path: web::Path<CustomFieldPath>,
+    path: Option<web::Path<CustomFieldPath>>,
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
+    let path = check_invalid_path!(path, "custom_field");
+
     if !bamboo_dbal::custom_field::custom_field_exists(authentication.user.id, path.id, &db).await {
         return not_found!(bamboo_not_found_error!(
             "custom_field",
@@ -110,11 +119,14 @@ pub async fn delete_custom_field(
 }
 
 pub async fn create_custom_field_option(
-    path: web::Path<CustomFieldPath>,
-    body: web::Json<String>,
+    path: Option<web::Path<CustomFieldPath>>,
+    body: Option<web::Json<String>>,
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
+    let path = check_invalid_path!(path, "custom_field");
+    let body = check_missing_fields!(body, "custom_field");
+
     if !bamboo_dbal::custom_field::custom_field_exists(authentication.user.id, path.id, &db).await {
         return not_found!(bamboo_not_found_error!(
             "custom_field",
@@ -129,10 +141,12 @@ pub async fn create_custom_field_option(
 }
 
 pub async fn get_custom_field_options(
-    path: web::Path<CustomFieldPath>,
+    path: Option<web::Path<CustomFieldPath>>,
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
+    let path = check_invalid_path!(path, "custom_field");
+
     if !bamboo_dbal::custom_field::custom_field_exists(authentication.user.id, path.id, &db).await {
         return not_found!(bamboo_not_found_error!(
             "custom_field",
@@ -147,11 +161,14 @@ pub async fn get_custom_field_options(
 }
 
 pub async fn update_custom_field_option(
-    path: web::Path<CustomFieldOptionPath>,
-    body: web::Json<String>,
+    path: Option<web::Path<CustomFieldOptionPath>>,
+    body: Option<web::Json<String>>,
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
+    let path = check_invalid_path!(path, "custom_field");
+    let body = check_missing_fields!(body, "custom_field");
+
     if !bamboo_dbal::custom_field::custom_field_exists(authentication.user.id, path.field_id, &db)
         .await
     {
@@ -173,10 +190,12 @@ pub async fn update_custom_field_option(
 }
 
 pub async fn delete_custom_field_option(
-    path: web::Path<CustomFieldOptionPath>,
+    path: Option<web::Path<CustomFieldOptionPath>>,
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
+    let path = check_invalid_path!(path, "custom_field");
+
     if !bamboo_dbal::custom_field::custom_field_exists(authentication.user.id, path.field_id, &db)
         .await
     {
@@ -192,10 +211,12 @@ pub async fn delete_custom_field_option(
 }
 
 pub async fn move_custom_field(
-    path: web::Path<CustomFieldOptionPositionPath>,
+    path: Option<web::Path<CustomFieldOptionPositionPath>>,
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
+    let path = check_invalid_path!(path, "custom_field");
+
     if !bamboo_dbal::custom_field::custom_field_exists(authentication.user.id, path.field_id, &db)
         .await
     {

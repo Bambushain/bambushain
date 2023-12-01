@@ -1,6 +1,8 @@
-use bamboo_services::prelude::*;
-use sea_orm::DatabaseConnection;
 use std::sync::Arc;
+
+use sea_orm::DatabaseConnection;
+
+use bamboo_services::prelude::*;
 
 macro_rules! no_content {
     () => {{
@@ -126,6 +128,66 @@ macro_rules! ok_json {
 macro_rules! created_json {
     ($data:expr) => {{
         actix_web::HttpResponse::Created().json($data)
+    }};
+}
+
+macro_rules! missing_fields {
+    ($entity:expr) => {{
+        actix_web::HttpResponse::BadRequest().json(bamboo_entities::prelude::BambooError {
+            entity_type: $entity.to_string(),
+            error_type: bamboo_entities::prelude::BambooErrorCode::InvalidDataError,
+            message: "You are missing some fields".to_string(),
+        })
+    }};
+}
+
+macro_rules! check_missing_fields {
+    ($body:expr, $entity:expr) => {{
+        if let Some(body) = $body {
+            body
+        } else {
+            return missing_fields!($entity);
+        }
+    }};
+}
+
+macro_rules! invalid_path {
+    ($entity:expr) => {{
+        actix_web::HttpResponse::BadRequest().json(bamboo_entities::prelude::BambooError {
+            entity_type: $entity.to_string(),
+            error_type: bamboo_entities::prelude::BambooErrorCode::InvalidDataError,
+            message: "You passed invalid path data".to_string(),
+        })
+    }};
+}
+
+macro_rules! check_invalid_path {
+    ($body:expr, $entity:expr) => {{
+        if let Some(body) = $body {
+            body
+        } else {
+            return invalid_path!($entity);
+        }
+    }};
+}
+
+macro_rules! invalid_query {
+    ($entity:expr) => {{
+        actix_web::HttpResponse::BadRequest().json(bamboo_entities::prelude::BambooError {
+            entity_type: $entity.to_string(),
+            error_type: bamboo_entities::prelude::BambooErrorCode::InvalidDataError,
+            message: "You passed invalid query data".to_string(),
+        })
+    }};
+}
+
+macro_rules! check_invalid_query {
+    ($body:expr, $entity:expr) => {{
+        if let Some(body) = $body {
+            body
+        } else {
+            return invalid_query!($entity);
+        }
     }};
 }
 
