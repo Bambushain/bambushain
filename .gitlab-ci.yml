@@ -80,3 +80,15 @@ docker-build-testing:
     - if: $CI_COMMIT_BRANCH == "main"
       exists:
         - Dockerfile
+
+pages:
+  image: library/node:latest
+  stage: deploy
+  script:
+    - cp -r docs public
+    - echo "/* /index.html 200" > public/_redirects
+  artifacts:
+    paths:
+      - public
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
