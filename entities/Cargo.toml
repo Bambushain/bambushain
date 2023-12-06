@@ -2,7 +2,6 @@
 name = "bamboo-entities"
 version.workspace = true
 edition.workspace = true
-license-file.workspace = true
 license.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -12,13 +11,12 @@ bcrypt = { workspace = true }
 chrono = { workspace = true }
 color-art = { workspace = true }
 log = { workspace = true }
-sea-orm = { workspace = true, optional = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+sea-orm = { workspace = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
 strum = { workspace = true }
 strum_macros = { workspace = true }
-totp-rs = { workspace = true, optional = true }
-
-[features]
-backend = ["dep:sea-orm", "dep:totp-rs"]
-default = ["backend"]

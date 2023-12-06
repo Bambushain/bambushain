@@ -1,14 +1,14 @@
 use std::cmp::Ordering;
 
-#[cfg(feature = "backend")]
+#[cfg(not(target_arch = "wasm32"))]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
-#[cfg(not(feature = "backend"))]
+#[cfg(not(not(target_arch = "wasm32")))]
 use strum_macros::EnumIter;
 
 #[derive(Serialize, Deserialize, EnumIter, Debug, Eq, PartialEq, Clone, Default, Copy)]
 #[cfg_attr(
-    feature = "backend",
+    not(target_arch = "wasm32"),
     derive(DeriveActiveEnum),
     sea_orm(
         rs_type = "String",
@@ -18,27 +18,27 @@ use strum_macros::EnumIter;
 )]
 pub enum CrafterJob {
     #[default]
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "carpenter"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "carpenter"))]
     Carpenter,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "blacksmith"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "blacksmith"))]
     Blacksmith,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "armorer"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "armorer"))]
     Armorer,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "goldsmith"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "goldsmith"))]
     Goldsmith,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "leatherworker"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "leatherworker"))]
     Leatherworker,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "weaver"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "weaver"))]
     Weaver,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "alchemist"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "alchemist"))]
     Alchemist,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "culinarian"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "culinarian"))]
     Culinarian,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "miner"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "miner"))]
     Miner,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "botanist"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "botanist"))]
     Botanist,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "fisher"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "fisher"))]
     Fisher,
 }
 
@@ -130,13 +130,13 @@ impl From<String> for CrafterJob {
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Default)]
 #[cfg_attr(
-    feature = "backend",
+    not(target_arch = "wasm32"),
     derive(DeriveEntityModel),
     sea_orm(table_name = "crafter", schema_name = "final_fantasy")
 )]
 #[serde(rename_all = "camelCase")]
 pub struct Model {
-    #[cfg_attr(feature = "backend", sea_orm(primary_key))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(primary_key))]
     pub id: i32,
     pub job: CrafterJob,
     pub level: Option<String>,
@@ -155,7 +155,7 @@ impl Ord for Model {
     }
 }
 
-#[cfg(feature = "backend")]
+#[cfg(not(target_arch = "wasm32"))]
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
@@ -168,14 +168,14 @@ pub enum Relation {
     Character,
 }
 
-#[cfg(feature = "backend")]
+#[cfg(not(target_arch = "wasm32"))]
 impl Related<super::character::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Character.def()
     }
 }
 
-#[cfg(feature = "backend")]
+#[cfg(not(target_arch = "wasm32"))]
 impl ActiveModelBehavior for ActiveModel {}
 
 impl Model {

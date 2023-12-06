@@ -1,15 +1,15 @@
 use std::cmp::Ordering;
 
 use crate::prelude::{CustomField, FreeCompany};
-#[cfg(feature = "backend")]
+#[cfg(not(target_arch = "wasm32"))]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
-#[cfg(not(feature = "backend"))]
+#[cfg(not(not(target_arch = "wasm32")))]
 use strum_macros::EnumIter;
 
 #[derive(Serialize, Deserialize, EnumIter, Debug, Eq, PartialEq, Clone, Default, Copy)]
 #[cfg_attr(
-    feature = "backend",
+    not(target_arch = "wasm32"),
     derive(DeriveActiveEnum),
     sea_orm(
         rs_type = "String",
@@ -19,21 +19,21 @@ use strum_macros::EnumIter;
 )]
 pub enum CharacterRace {
     #[default]
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "hyur"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "hyur"))]
     Hyur,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "elezen"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "elezen"))]
     Elezen,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "lalafell"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "lalafell"))]
     Lalafell,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "miqote"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "miqote"))]
     Miqote,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "roegadyn"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "roegadyn"))]
     Roegadyn,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "au_ra"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "au_ra"))]
     AuRa,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "hrothgar"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "hrothgar"))]
     Hrothgar,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "viera"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "viera"))]
     Viera,
 }
 
@@ -99,30 +99,30 @@ impl From<String> for CharacterRace {
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 #[cfg_attr(
-    feature = "backend",
+    not(target_arch = "wasm32"),
     derive(DeriveEntityModel),
     sea_orm(table_name = "character", schema_name = "final_fantasy")
 )]
 #[serde(rename_all = "camelCase")]
 pub struct Model {
-    #[cfg_attr(feature = "backend", sea_orm(primary_key))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(primary_key))]
     pub id: i32,
     pub race: CharacterRace,
     pub name: String,
     pub world: String,
-    #[cfg(feature = "backend")]
+    #[cfg(not(target_arch = "wasm32"))]
     #[serde(skip)]
     pub user_id: i32,
-    #[cfg(feature = "backend")]
+    #[cfg(not(target_arch = "wasm32"))]
     #[serde(skip)]
     pub free_company_id: Option<i32>,
-    #[cfg_attr(feature = "backend", sea_orm(ignore))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(ignore))]
     pub custom_fields: Vec<CustomField>,
-    #[cfg_attr(feature = "backend", sea_orm(ignore))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(ignore))]
     pub free_company: Option<FreeCompany>,
 }
 
-#[cfg(feature = "backend")]
+#[cfg(not(target_arch = "wasm32"))]
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
@@ -145,28 +145,28 @@ pub enum Relation {
     CustomFieldValue,
 }
 
-#[cfg(feature = "backend")]
+#[cfg(not(target_arch = "wasm32"))]
 impl Related<super::user::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::User.def()
     }
 }
 
-#[cfg(feature = "backend")]
+#[cfg(not(target_arch = "wasm32"))]
 impl Related<super::free_company::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::FreeCompany.def()
     }
 }
 
-#[cfg(feature = "backend")]
+#[cfg(not(target_arch = "wasm32"))]
 impl Related<super::custom_character_field_value::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::CustomFieldValue.def()
     }
 }
 
-#[cfg(feature = "backend")]
+#[cfg(not(target_arch = "wasm32"))]
 impl ActiveModelBehavior for ActiveModel {}
 
 impl Model {
@@ -182,9 +182,9 @@ impl Model {
             race,
             name,
             world,
-            #[cfg(feature = "backend")]
+            #[cfg(not(target_arch = "wasm32"))]
             user_id: i32::default(),
-            #[cfg(feature = "backend")]
+            #[cfg(not(target_arch = "wasm32"))]
             free_company_id: None,
             custom_fields,
             free_company,

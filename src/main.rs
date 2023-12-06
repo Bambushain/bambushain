@@ -75,7 +75,7 @@ async fn main() -> std::io::Result<()> {
     };
 
     if !at_least_one_mod_exists {
-        log::info!("At least one user exists, not creating initial user");
+        log::info!("No mod exists, creating initial user");
         let password = thread_rng()
             .sample_iter(&Alphanumeric)
             .take(12)

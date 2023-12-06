@@ -1,0 +1,69 @@
+{
+    "configurations": [
+        {
+            "type": "cargo",
+            "name": "Start app",
+            "cargoArgs": [
+                "run"
+            ],
+            "environment": {
+                "DATABASE_URL": "postgres://app_bambushain_testsystem:app_bambushain_testsystem@database-server.ulbricht.casa:5432/app_bambushain_testsystem",
+                "FRONTEND_DIR": "$PROJECT_DIR$/",
+                "INITIAL_USER_DISPLAY_NAME": "Knerd",
+                "INITIAL_USER_EMAIL": "me@imanuel.dev",
+                "MAILER_ENCRYPTION": "false",
+                "MAILER_FROM": "noreply@creastina.art",
+                "MAILER_PASSWORD": "CPt2FGruqwbm",
+                "MAILER_PORT": "1025",
+                "MAILER_SERVER": "localhost",
+                "MAILER_STARTTLS": "false",
+                "MAILER_USERNAME": "noreply@creastina.art"
+            },
+        },
+        {
+            "type": "command",
+            "name": "Build frontend",
+            "program": "trunk",
+            "workingDir": "$PROJECT_DIR$/frontend/",
+            "args": [
+                "build"
+            ],
+        },
+        {
+            "type": "command",
+            "name": "Watch frontend",
+            "program": "trunk",
+            "workingDir": "$PROJECT_DIR$/frontend/",
+            "args": [
+                "watch"
+            ],
+        },
+        {
+            "type": "command",
+            "name": "Rustfmt",
+            "program": "rustfmt",
+            "args": [
+                "--edition",
+                "2021",
+                "src/main.rs",
+                "frontend/src/main.rs",
+            ],
+        },
+        {
+            "type": "cargo",
+            "name": "Clippy backend",
+            "cargoArgs": [
+                "clippy"
+            ],
+        },
+        {
+            "type": "cargo",
+            "name": "Clippy frontend",
+            "cargoArgs": [
+                "clippy",
+                "-p",
+                "bamboo-frontend"
+            ],
+        },
+    ]
+}

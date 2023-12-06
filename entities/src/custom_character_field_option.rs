@@ -1,11 +1,11 @@
-#[cfg(feature = "backend")]
+#[cfg(not(target_arch = "wasm32"))]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Default)]
 #[cfg_attr(
-    feature = "backend",
+    not(target_arch = "wasm32"),
     derive(DeriveEntityModel),
     sea_orm(
         table_name = "custom_character_field_option",
@@ -14,7 +14,7 @@ use std::cmp::Ordering;
 )]
 #[serde(rename_all = "camelCase")]
 pub struct Model {
-    #[cfg_attr(feature = "backend", sea_orm(primary_key))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(primary_key))]
     pub id: i32,
     pub label: String,
     #[serde(skip)]
@@ -33,7 +33,7 @@ impl Ord for Model {
     }
 }
 
-#[cfg(feature = "backend")]
+#[cfg(not(target_arch = "wasm32"))]
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
@@ -46,14 +46,14 @@ pub enum Relation {
     CustomCharacterField,
 }
 
-#[cfg(feature = "backend")]
+#[cfg(not(target_arch = "wasm32"))]
 impl Related<super::custom_character_field::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::CustomCharacterField.def()
     }
 }
 
-#[cfg(feature = "backend")]
+#[cfg(not(target_arch = "wasm32"))]
 impl ActiveModelBehavior for ActiveModel {}
 
 impl Model {

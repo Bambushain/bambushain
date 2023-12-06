@@ -1,94 +1,92 @@
-.base-cache:
-  variables:
+.base-cache: 
+  variables: 
     CARGO_HOME: $CI_PROJECT_DIR/.cargo
-  cache:
+  cache: 
     key: $CI_PROJECT_NAME
-    paths:
+    paths: 
       - $CI_PROJECT_DIR/target/
       - $CI_PROJECT_DIR/.cargo/
       - $CI_PROJECT_DIR/Cargo.lock
 
-.base-trunk:
-  extends:
+.base-trunk: 
+  extends: 
     - .base-cache
-  image:
+  image: 
     name: harbor.ulbricht.casa/imanuel/trunk-docker-base-image:latest
     pull_policy: always
 
-.base-kaniko:
-  image:
+.base-kaniko: 
+  image: 
     name: gcr.io/kaniko-project/executor:debug
     pull_policy: always
     entrypoint: [""]
-  before_script:
+  before_script: 
     - echo $KANIKO_DOCKERHUB_AND_HARBOR > /kaniko/.docker/config.json
 
-stages:
+stages: 
   - lint
   - build
   - deploy
 
-lint:
+lint: 
   stage: lint
-  extends:
+  extends: 
     - .base-trunk
-  script:
+  script: 
     - cargo clippy -p bamboo
     - cargo clippy -p bamboo-frontend
-    - cargo check -p bamboo
-    - cargo check -p bamboo-frontend
 
-test-build-backend:
+test-build-backend: 
   stage: build
-  extends:
+  extends: 
     - .base-trunk
-  script:
+  script: 
     - cargo build --release
 
-test-build-frontend:
+test-build-frontend: 
   stage: build
-  extends:
+  extends: 
     - .base-trunk
-  script:
+  script: 
     - trunk build --release
 
-docker-build:
+docker-build: 
   stage: deploy
-  extends:
+  extends: 
     - .base-kaniko
-  script:
+  script: 
     - /kaniko/executor
-      --context "${CI_PROJECT_DIR}"
-      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
-      --destination "harbor.ulbricht.casa/creastina/bamboo:${CI_COMMIT_TAG}"
-      --destination "harbor.ulbricht.casa/creastina/bamboo:latest"
-  rules:
+    --context "${CI_PROJECT_DIR}"
+    --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
+    --destination "harbor.ulbricht.casa/creastina/bamboo:${CI_COMMIT_TAG}"
+    --destination "harbor.ulbricht.casa/creastina/bamboo:latest"
+  rules: 
     - if: $CI_COMMIT_TAG
-      exists:
+      exists: 
         - Dockerfile
 
-docker-build-testing:
+docker-build-testing: 
   stage: deploy
-  extends:
+  extends: 
     - .base-kaniko
-  script:
+  script: 
     - /kaniko/executor
-      --context "${CI_PROJECT_DIR}"
-      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
-      --destination "harbor.ulbricht.casa/creastina/bamboo:1.5.3-test-$CI_PIPELINE_IID"
-  rules:
+    --context "${CI_PROJECT_DIR}"
+    --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
+    --destination "harbor.ulbricht.casa/creastina/bamboo:1.5.3-test-$CI_PIPELINE_IID"
+  rules: 
     - if: $CI_COMMIT_BRANCH == "main"
-      exists:
+      exists: 
         - Dockerfile
 
-pages:
+pages: 
   image: library/node:latest
   stage: deploy
-  script:
+  script: 
     - cp -r docs public
     - echo "/* /index.html 200" > public/_redirects
-  artifacts:
-    paths:
+  artifacts: 
+    paths: 
       - public
-  rules:
+  rules: 
     - if: $CI_COMMIT_BRANCH == "main"
