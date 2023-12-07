@@ -1,92 +1,81 @@
-use std::future::{ready, Ready};
-use std::rc::Rc;
+use actix_web::{body, dev, error::ParseError, http::header, web, Error, HttpMessage};
+use actix_web_lab::middleware::Next;
+use serde::{Deserialize, Serialize};
 
-use actix_web::{body, dev, web, Error, HttpMessage};
-use futures_util::future::LocalBoxFuture;
-
-use crate::DbConnection;
 use bamboo_dbal::prelude::*;
 use bamboo_entities::bamboo_unauthorized_error;
 use bamboo_entities::prelude::*;
 
+use crate::DbConnection;
+
 #[derive(Clone)]
-pub struct AuthenticationState {
+pub(crate) struct AuthenticationState {
     pub token: String,
     pub user: User,
 }
 
-pub type Authentication = web::ReqData<AuthenticationState>;
+pub(crate) type Authentication = web::ReqData<AuthenticationState>;
 
-pub struct AuthenticateUser;
+#[derive(Ord, PartialOrd, Eq, PartialEq, Clone, Serialize, Deserialize)]
+pub(crate) struct AuthorizationHeader {
+    pub authorization: Option<String>,
+}
 
-impl<S: 'static, B> dev::Transform<S, dev::ServiceRequest> for AuthenticateUser
-where
-    S: dev::Service<dev::ServiceRequest, Response = dev::ServiceResponse<B>, Error = Error>,
-    S::Future: 'static,
-    B: 'static,
-{
-    type Response = dev::ServiceResponse<body::EitherBody<B>>;
-    type Error = Error;
-    type Transform = AuthenticateUserMiddleware<S>;
-    type InitError = ();
-    type Future = Ready<Result<Self::Transform, Self::InitError>>;
+impl header::TryIntoHeaderValue for AuthorizationHeader {
+    type Error = header::InvalidHeaderValue;
 
-    fn new_transform(&self, service: S) -> Self::Future {
-        ready(Ok(AuthenticateUserMiddleware {
-            service: Rc::new(service),
-        }))
+    fn try_into_value(self) -> Result<header::HeaderValue, Self::Error> {
+        header::HeaderValue::from_str(self.authorization.unwrap_or_default().as_str())
     }
 }
 
-pub struct AuthenticateUserMiddleware<S> {
-    service: Rc<S>,
+impl header::Header for AuthorizationHeader {
+    fn name() -> header::HeaderName {
+        header::AUTHORIZATION
+    }
+
+    fn parse<M: HttpMessage>(msg: &M) -> Result<Self, ParseError> {
+        let authorization = match msg.headers().get(header::AUTHORIZATION) {
+            Some(header) => Ok(header),
+            None => Err(ParseError::Header),
+        }?
+        .to_str()
+        .map_err(|_| ParseError::Header)
+        .map(|header| header.strip_prefix("Panda ").map(|res| res.to_string()))?;
+
+        Ok(AuthorizationHeader { authorization })
+    }
 }
 
-impl<S, B> dev::Service<dev::ServiceRequest> for AuthenticateUserMiddleware<S>
-where
-    S: dev::Service<dev::ServiceRequest, Response = dev::ServiceResponse<B>, Error = Error>
-        + 'static,
-    S::Future: 'static,
-    B: 'static,
-{
-    type Response = dev::ServiceResponse<body::EitherBody<B>>;
-    type Error = Error;
-    type Future = LocalBoxFuture<'static, Result<Self::Response, Self::Error>>;
+pub(crate) async fn authenticate_user(
+    db: DbConnection,
+    authorization: Option<web::Header<AuthorizationHeader>>,
+    req: dev::ServiceRequest,
+    next: Next<impl body::MessageBody>,
+) -> Result<dev::ServiceResponse<impl body::MessageBody>, Error> {
+    let unauthorized = bamboo_unauthorized_error!("user", "Authorization failed");
+    let token = if let Some(header) = authorization {
+        if let Some(authorization) = header.authorization.clone() {
+            Ok(authorization)
+        } else {
+            Err(unauthorized.clone())
+        }
+    } else {
+        Err(unauthorized.clone())
+    }?;
 
-    dev::forward_ready!(service);
+    let user = get_user_by_token(token.clone(), &db)
+        .await
+        .map_err(|_| unauthorized.clone())?;
 
-    fn call(&self, req: dev::ServiceRequest) -> Self::Future {
-        let svc = self.service.clone();
+    req.extensions_mut()
+        .insert(AuthenticationState { token, user });
 
-        Box::pin(async move {
-            let unauthorized = unauthorized!(bamboo_unauthorized_error!("", "No auth present"))
-                .map_into_right_body();
-            let request = req.request();
+    next.call(req).await
+}
 
-            let auth_header = match request.headers().get("Authorization") {
-                Some(header) => header
-                    .to_str()
-                    .expect("Header value should be convertible to string"),
-                _ => return Ok(dev::ServiceResponse::new(request.clone(), unauthorized)),
-            };
-
-            let token = match auth_header.strip_prefix("Panda ") {
-                Some(token) => token,
-                _ => return Ok(dev::ServiceResponse::new(request.clone(), unauthorized)),
-            };
-
-            let db = req.app_data::<DbConnection>().unwrap();
-            let user = match get_user_by_token(token.to_string(), db).await {
-                Ok(user) => user,
-                _ => return Ok(dev::ServiceResponse::new(request.clone(), unauthorized)),
-            };
-            req.extensions_mut().insert(AuthenticationState {
-                token: token.to_string(),
-                user,
-            });
-
-            let res = svc.call(req).await;
-            res.map(dev::ServiceResponse::map_into_left_body)
-        })
-    }
+macro_rules! authenticate {
+    () => {
+        actix_web_lab::middleware::from_fn(crate::middleware::authenticate_user::authenticate_user)
+    };
 }

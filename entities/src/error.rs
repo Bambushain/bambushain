@@ -1,6 +1,8 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 
+#[cfg(not(target_arch = "wasm32"))]
+use actix_web::{body, HttpRequest, HttpResponse, Responder, ResponseError};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone)]
@@ -46,6 +48,31 @@ impl Display for BambooError {
 }
 
 impl Error for BambooError {}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl ResponseError for BambooError {}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl Responder for BambooError {
+    type Body = body::BoxBody;
+
+    fn respond_to(self, _req: &HttpRequest) -> HttpResponse<Self::Body> {
+        match self.error_type {
+            BambooErrorCode::NotFoundError => HttpResponse::NotFound(),
+            BambooErrorCode::ExistsAlreadyError => HttpResponse::Conflict(),
+            BambooErrorCode::UnauthorizedError => HttpResponse::Unauthorized(),
+            BambooErrorCode::InsufficientRightsError => HttpResponse::Forbidden(),
+            BambooErrorCode::InvalidDataError
+            | BambooErrorCode::SerializationError
+            | BambooErrorCode::ValidationError => HttpResponse::BadRequest(),
+            BambooErrorCode::IoError
+            | BambooErrorCode::DbError
+            | BambooErrorCode::CryptoError
+            | BambooErrorCode::UnknownError => HttpResponse::InternalServerError(),
+        }
+        .body(serde_json::to_string(&self).unwrap())
+    }
+}
 
 pub enum PasswordError {
     WrongPassword,

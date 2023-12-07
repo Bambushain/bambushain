@@ -194,13 +194,13 @@ macro_rules! check_invalid_query {
 pub type DbConnection = actix_web::web::Data<DatabaseConnection>;
 
 #[derive(Default, Clone)]
-pub struct ServicesState {
+pub(crate) struct ServicesState {
     pub environment_service: Arc<EnvironmentService>,
 }
 
-pub type Services = actix_web::web::Data<ServicesState>;
+pub(crate) type Services = actix_web::web::Data<ServicesState>;
 
-pub mod broadcaster;
-pub mod middleware;
-pub mod routes;
-pub mod sse;
+mod broadcaster;
+mod middleware;
+mod routes;
+mod sse;
