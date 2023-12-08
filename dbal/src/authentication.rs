@@ -8,7 +8,7 @@ use sea_orm::{
 };
 
 use bamboo_entities::prelude::*;
-use bamboo_entities::{bamboo_db_error, bamboo_validation_error};
+use bamboo_error::*;
 
 use crate::encrypt_string;
 use crate::user::validate_login;

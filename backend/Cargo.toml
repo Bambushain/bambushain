@@ -9,6 +9,7 @@ license.workspace = true
 [dependencies]
 bamboo-dbal = { path = "../dbal" }
 bamboo-entities = { path = "../entities" }
+bamboo-error = { path = "../error" }
 bamboo-services = { path = "../services" }
 
 actix-web = { workspace = true }

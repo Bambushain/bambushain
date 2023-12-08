@@ -7,11 +7,7 @@ use sea_orm::{
 };
 
 use bamboo_entities::prelude::*;
-use bamboo_entities::user::Model;
-use bamboo_entities::{
-    bamboo_crypto_error, bamboo_db_error, bamboo_not_found_error, bamboo_unauthorized_error, token,
-    user,
-};
+use bamboo_error::*;
 
 use crate::{decrypt_string, encrypt_string};
 
@@ -311,7 +307,7 @@ pub async fn validate_login(
 async fn validate_totp_token(
     code: String,
     password: String,
-    user: Model,
+    user: User,
     db: &DatabaseConnection,
 ) -> BambooErrorResult {
     let totp_secret = if user.totp_secret_encrypted {
@@ -357,7 +353,7 @@ async fn validate_totp_token(
     }
 }
 
-fn validate_email_token(code: String, password: String, user: Model) -> BambooErrorResult {
+fn validate_email_token(code: String, password: String, user: User) -> BambooErrorResult {
     let two_factor_code = String::from_utf8_lossy(&decrypt_string(
         base64::prelude::BASE64_STANDARD
             .decode(user.two_factor_code.unwrap())

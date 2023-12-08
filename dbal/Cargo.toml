@@ -8,6 +8,7 @@ license.workspace = true
 
 [dependencies]
 bamboo-entities = { path = "../entities" }
+bamboo-error = { path = "../error" }
 
 base64 = { workspace = true }
 bcrypt = { workspace = true }

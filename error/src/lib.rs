@@ -80,13 +80,17 @@ pub enum PasswordError {
     UnknownError,
 }
 
+pub type BambooErrorResult = Result<(), BambooError>;
+
+pub type BambooResult<T> = Result<T, BambooError>;
+
 #[macro_export]
 macro_rules! bamboo_not_found_error {
     ($entity_type:expr, $message:expr) => {
-        bamboo_entities::prelude::BambooError {
+        bamboo_error::BambooError {
             entity_type: $entity_type.to_string(),
             message: $message.to_string(),
-            error_type: bamboo_entities::prelude::BambooErrorCode::NotFoundError,
+            error_type: bamboo_error::BambooErrorCode::NotFoundError,
         }
     };
 }
@@ -94,10 +98,10 @@ macro_rules! bamboo_not_found_error {
 #[macro_export]
 macro_rules! bamboo_exists_already_error {
     ($entity_type:expr, $message:expr) => {
-        bamboo_entities::prelude::BambooError {
+        bamboo_error::BambooError {
             entity_type: $entity_type.to_string(),
             message: $message.to_string(),
-            error_type: bamboo_entities::prelude::BambooErrorCode::ExistsAlreadyError,
+            error_type: bamboo_error::BambooErrorCode::ExistsAlreadyError,
         }
     };
 }
@@ -105,10 +109,10 @@ macro_rules! bamboo_exists_already_error {
 #[macro_export]
 macro_rules! bamboo_invalid_data_error {
     ($entity_type:expr, $message:expr) => {
-        bamboo_entities::prelude::BambooError {
+        bamboo_error::BambooError {
             entity_type: $entity_type.to_string(),
             message: $message.to_string(),
-            error_type: bamboo_entities::prelude::BambooErrorCode::InvalidDataError,
+            error_type: bamboo_error::BambooErrorCode::InvalidDataError,
         }
     };
 }
@@ -116,10 +120,10 @@ macro_rules! bamboo_invalid_data_error {
 #[macro_export]
 macro_rules! bamboo_db_error {
     ($entity_type:expr, $message:expr) => {
-        bamboo_entities::prelude::BambooError {
+        bamboo_error::BambooError {
             entity_type: $entity_type.to_string(),
             message: $message.to_string(),
-            error_type: bamboo_entities::prelude::BambooErrorCode::DbError,
+            error_type: bamboo_error::BambooErrorCode::DbError,
         }
     };
 }
@@ -127,10 +131,10 @@ macro_rules! bamboo_db_error {
 #[macro_export]
 macro_rules! bamboo_serialization_error {
     ($entity_type:expr, $message:expr) => {
-        bamboo_entities::prelude::BambooError {
+        bamboo_error::BambooError {
             entity_type: $entity_type.to_string(),
             message: $message.to_string(),
-            error_type: bamboo_entities::prelude::BambooErrorCode::SerializationError,
+            error_type: bamboo_error::BambooErrorCode::SerializationError,
         }
     };
 }
@@ -138,10 +142,10 @@ macro_rules! bamboo_serialization_error {
 #[macro_export]
 macro_rules! bamboo_validation_error {
     ($entity_type:expr, $message:expr) => {
-        bamboo_entities::prelude::BambooError {
+        bamboo_error::BambooError {
             entity_type: $entity_type.to_string(),
             message: $message.to_string(),
-            error_type: bamboo_entities::prelude::BambooErrorCode::ValidationError,
+            error_type: bamboo_error::BambooErrorCode::ValidationError,
         }
     };
 }
@@ -149,10 +153,10 @@ macro_rules! bamboo_validation_error {
 #[macro_export]
 macro_rules! bamboo_unknown_error {
     ($entity_type:expr, $message:expr) => {
-        bamboo_entities::prelude::BambooError {
+        bamboo_error::BambooError {
             entity_type: $entity_type.to_string(),
             message: $message.to_string(),
-            error_type: bamboo_entities::prelude::BambooErrorCode::UnknownError,
+            error_type: bamboo_error::BambooErrorCode::UnknownError,
         }
     };
 }
@@ -160,10 +164,10 @@ macro_rules! bamboo_unknown_error {
 #[macro_export]
 macro_rules! bamboo_insufficient_rights_error {
     ($entity_type:expr, $message:expr) => {
-        bamboo_entities::prelude::BambooError {
+        bamboo_error::BambooError {
             entity_type: $entity_type.to_string(),
             message: $message.to_string(),
-            error_type: bamboo_entities::prelude::BambooErrorCode::InsufficientRightsError,
+            error_type: bamboo_error::BambooErrorCode::InsufficientRightsError,
         }
     };
 }
@@ -171,10 +175,10 @@ macro_rules! bamboo_insufficient_rights_error {
 #[macro_export]
 macro_rules! bamboo_unauthorized_error {
     ($entity_type:expr, $message:expr) => {
-        bamboo_entities::prelude::BambooError {
+        bamboo_error::BambooError {
             entity_type: $entity_type.to_string(),
             message: $message.to_string(),
-            error_type: bamboo_entities::prelude::BambooErrorCode::UnauthorizedError,
+            error_type: bamboo_error::BambooErrorCode::UnauthorizedError,
         }
     };
 }
@@ -182,10 +186,10 @@ macro_rules! bamboo_unauthorized_error {
 #[macro_export]
 macro_rules! bamboo_crypto_error {
     ($entity_type:expr, $message:expr) => {
-        bamboo_entities::prelude::BambooError {
+        bamboo_error::BambooError {
             entity_type: $entity_type.to_string(),
             message: $message.to_string(),
-            error_type: bamboo_entities::prelude::BambooErrorCode::CryptoError,
+            error_type: bamboo_error::BambooErrorCode::CryptoError,
         }
     };
 }

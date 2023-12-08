@@ -10,6 +10,7 @@ license = "MIT"
 
 [dependencies]
 bamboo-entities = { path = "../entities" }
+bamboo-error = { path = "../error" }
 
 async-trait = "0.1.74"
 bounce = { version = "0.9.0", features = ["query", "helmet"] }

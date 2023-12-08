@@ -8,6 +8,7 @@ edition.workspace = true
 bamboo-backend = { path = "backend" }
 bamboo-dbal = { path = "dbal" }
 bamboo-entities = { path = "entities" }
+bamboo-error = { path = "error" }
 bamboo-migration = { path = "migration" }
 bamboo-services = { path = "services" }
 
@@ -23,6 +24,7 @@ members = [
     "backend",
     "dbal",
     "entities",
+    "error",
     "migration",
     "services",
 ]

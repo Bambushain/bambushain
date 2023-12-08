@@ -3,10 +3,9 @@ use actix_web_lab::middleware::Next;
 use serde::{Deserialize, Serialize};
 
 use bamboo_dbal::prelude::*;
-use bamboo_entities::bamboo_unauthorized_error;
 use bamboo_entities::prelude::*;
-
-use crate::DbConnection;
+use bamboo_error::bamboo_unauthorized_error;
+use bamboo_services::prelude::DbConnection;
 
 #[derive(Clone)]
 pub(crate) struct AuthenticationState {
@@ -79,3 +78,5 @@ macro_rules! authenticate {
         actix_web_lab::middleware::from_fn(crate::middleware::authenticate_user::authenticate_user)
     };
 }
+
+pub(crate) use authenticate;

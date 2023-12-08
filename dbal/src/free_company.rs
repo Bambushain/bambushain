@@ -1,6 +1,8 @@
-use bamboo_entities::prelude::*;
 use sea_orm::prelude::*;
 use sea_orm::{NotSet, QueryOrder, QuerySelect, Set};
+
+use bamboo_entities::prelude::*;
+use bamboo_error::*;
 
 pub async fn get_free_companies(
     user_id: i32,

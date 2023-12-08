@@ -5,7 +5,8 @@ use sea_orm::{IntoSimpleExpr, NotSet, QueryOrder, QuerySelect};
 use std::cmp::Ordering;
 
 use bamboo_entities::prelude::*;
-use bamboo_entities::{bamboo_db_error, custom_character_field, custom_character_field_option};
+use bamboo_entities::{custom_character_field, custom_character_field_option};
+use bamboo_error::*;
 
 pub async fn get_custom_fields(
     user_id: i32,

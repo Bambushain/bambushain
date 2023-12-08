@@ -4,6 +4,7 @@ use sea_orm::{Condition, IntoActiveModel, NotSet, QueryOrder};
 
 use bamboo_entities::event;
 use bamboo_entities::prelude::*;
+use bamboo_error::*;
 
 pub async fn get_events(range: DateRange, db: &DatabaseConnection) -> BambooResult<Vec<Event>> {
     event::Entity::find()

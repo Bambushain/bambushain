@@ -4,8 +4,11 @@ use std::fmt::{Debug, Display, Formatter};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
+use bamboo_error::*;
+
+use crate::storage::get_token;
+
 pub use authentication::*;
-use bamboo_entities::prelude::*;
 pub use character::*;
 pub use crafter::*;
 pub use custom_field::*;
@@ -13,8 +16,6 @@ pub use event::*;
 pub use fighter::*;
 pub use my::*;
 pub use user::*;
-
-use crate::storage::get_token;
 
 pub mod authentication;
 pub mod character;
@@ -69,7 +70,7 @@ impl Display for ApiError {
     }
 }
 
-pub type PandapartyApiResult<T> = Result<T, ApiError>;
+pub type BambooApiResult<T> = Result<T, ApiError>;
 
 error_code!(SEND_ERROR, -1);
 error_code!(JSON_SERIALIZE_ERROR, -2);
@@ -108,7 +109,7 @@ macro_rules! handle_response {
                 log::warn!("Request failed to execute {}", err);
                 return Err(crate::api::ApiError {
                     code: SEND_ERROR,
-                    bamboo_error: bamboo_entities::prelude::BambooError::default(),
+                    bamboo_error: bamboo_error::BambooError::default(),
                 });
             }
         };
@@ -122,7 +123,7 @@ macro_rules! handle_response {
                 log::warn!("Json deserialize failed {}", err);
                 Err(crate::api::ApiError {
                     code: JSON_DESERIALIZE_ERROR,
-                    bamboo_error: bamboo_entities::prelude::BambooError::default(),
+                    bamboo_error: bamboo_error::BambooError::default(),
                 })
             }
         }
@@ -157,14 +158,14 @@ macro_rules! handle_response_code {
                 log::warn!("Request failed to execute {}", err);
                 Err(ApiError {
                     code: SEND_ERROR,
-                    bamboo_error: bamboo_entities::prelude::BambooError::default(),
+                    bamboo_error: bamboo_error::BambooError::default(),
                 })
             }
         }
     }};
 }
 
-pub async fn get<OUT: DeserializeOwned>(uri: impl Into<String>) -> PandapartyApiResult<OUT> {
+pub async fn get<OUT: DeserializeOwned>(uri: impl Into<String>) -> BambooApiResult<OUT> {
     let into_uri = uri.into();
     let token = get_token().unwrap_or_default();
     log::debug!("Use auth token {}", token);
@@ -180,7 +181,7 @@ pub async fn get<OUT: DeserializeOwned>(uri: impl Into<String>) -> PandapartyApi
 pub async fn get_with_query<OUT: DeserializeOwned, Value: AsRef<str>>(
     uri: impl Into<String>,
     query: Vec<(&str, Value)>,
-) -> PandapartyApiResult<OUT> {
+) -> BambooApiResult<OUT> {
     let into_uri = uri.into();
     let token = get_token().unwrap_or_default();
     log::debug!("Use auth token {}", token);
@@ -194,7 +195,7 @@ pub async fn get_with_query<OUT: DeserializeOwned, Value: AsRef<str>>(
     handle_response!(response)
 }
 
-pub async fn delete(uri: impl Into<String>) -> PandapartyApiResult<()> {
+pub async fn delete(uri: impl Into<String>) -> BambooApiResult<()> {
     let into_uri = uri.into();
     let token = get_token().unwrap_or_default();
     log::debug!("Use auth token {}", token);
@@ -207,7 +208,7 @@ pub async fn delete(uri: impl Into<String>) -> PandapartyApiResult<()> {
     handle_response_code!(response)
 }
 
-pub async fn put_no_body_no_content(uri: impl Into<String>) -> PandapartyApiResult<()> {
+pub async fn put_no_body_no_content(uri: impl Into<String>) -> BambooApiResult<()> {
     let into_uri = uri.into();
     let token = get_token().unwrap_or_default();
     log::debug!("Use auth token {}", token);
@@ -223,7 +224,7 @@ pub async fn put_no_body_no_content(uri: impl Into<String>) -> PandapartyApiResu
 pub async fn put_no_content<IN: Serialize>(
     uri: impl Into<String>,
     body: &IN,
-) -> PandapartyApiResult<()> {
+) -> BambooApiResult<()> {
     let into_uri = uri.into();
     let token = get_token().unwrap_or_default();
     log::debug!("Use auth token {}", token);
@@ -246,7 +247,7 @@ pub async fn put_no_content<IN: Serialize>(
 pub async fn post<IN: Serialize, OUT: DeserializeOwned>(
     uri: impl Into<String>,
     body: &IN,
-) -> PandapartyApiResult<OUT> {
+) -> BambooApiResult<OUT> {
     let into_uri = uri.into();
     let token = get_token().unwrap_or_default();
     log::debug!("Use auth token {}", token);
@@ -271,7 +272,7 @@ pub async fn post<IN: Serialize, OUT: DeserializeOwned>(
 pub async fn post_no_content<IN: Serialize>(
     uri: impl Into<String>,
     body: &IN,
-) -> PandapartyApiResult<()> {
+) -> BambooApiResult<()> {
     let into_uri = uri.into();
     let token = get_token().unwrap_or_default();
     log::debug!("Use auth token {}", token);
@@ -293,9 +294,7 @@ pub async fn post_no_content<IN: Serialize>(
     }
 }
 
-pub async fn post_no_body<OUT: DeserializeOwned>(
-    uri: impl Into<String>,
-) -> PandapartyApiResult<OUT> {
+pub async fn post_no_body<OUT: DeserializeOwned>(uri: impl Into<String>) -> BambooApiResult<OUT> {
     let into_uri = uri.into();
     let token = get_token().unwrap_or_default();
     log::debug!("Use auth token {}", token);

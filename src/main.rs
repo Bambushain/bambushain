@@ -1,14 +1,12 @@
-use std::sync::Arc;
-
-use actix_web::web;
-use actix_web::{App, HttpResponse, HttpServer};
+use actix_web::{App, HttpServer};
 use rand::distributions::Alphanumeric;
 use rand::prelude::*;
 use sea_orm::prelude::*;
 
-use bamboo_backend::{DbConnection, Services, ServicesState};
+use bamboo_backend::prelude::*;
 use bamboo_entities::user;
 use bamboo_migration::{IntoSchemaManagerConnection, Migrator, MigratorTrait};
+use bamboo_services::prelude::DbConnection;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -72,11 +70,11 @@ async fn main() -> std::io::Result<()> {
         }
     }
 
-    log::info!("Serving on port 8070");
     HttpServer::new(move || {
         App::new()
             .app_data(DbConnection::new(db.clone()))
-            .configure(bamboo_backend::routes::configure_routes)
+            .app_data(Notification::new(NotificationState::new()))
+            .configure(bamboo_backend::prelude::configure_routes)
     })
     .bind(("0.0.0.0", 8070))?
     .run()

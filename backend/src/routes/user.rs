@@ -3,9 +3,10 @@ use serde::Deserialize;
 
 use bamboo_dbal::prelude::*;
 use bamboo_entities::prelude::*;
+use bamboo_error::*;
+use bamboo_services::prelude::DbConnection;
 
 use crate::middleware::authenticate_user::Authentication;
-use crate::DbConnection;
 
 #[derive(Deserialize)]
 pub struct UserPathInfo {

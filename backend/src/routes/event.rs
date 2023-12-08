@@ -3,11 +3,11 @@ use chrono::NaiveDate;
 use date_range::DateRange;
 use serde::Deserialize;
 
-use bamboo_entities::bamboo_invalid_data_error;
 use bamboo_entities::prelude::Event;
+use bamboo_error::*;
+use bamboo_services::prelude::DbConnection;
 
 use crate::sse::Notification;
-use crate::DbConnection;
 
 #[derive(Deserialize)]
 pub struct GetEventsQuery {
