@@ -5,6 +5,7 @@ use sea_orm::{IntoActiveModel, NotSet, QueryOrder, QuerySelect};
 
 use bamboo_entities::prelude::*;
 use bamboo_entities::{character, fighter};
+use bamboo_error::*;
 
 use crate::prelude::character_exists;
 

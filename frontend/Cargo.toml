@@ -1,31 +1,47 @@
 [package]
 name = "bamboo-frontend"
-version.workspace = true
-edition.workspace = true
+version = "1.5.0"
+edition = "2021"
+license = "MIT"
+
+[workspace]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bamboo-entities = { path = "../entities", default-features = false }
+bamboo-entities = { path = "../entities" }
+bamboo-error = { path = "../error" }
 
-async-trait = { workspace = true }
-bounce = { workspace = true }
-chrono = { workspace = true, features = ["unstable-locales"] }
-date-range = { workspace = true }
-either = { workspace = true }
-gloo = { workspace = true }
-log = { workspace = true }
-rand = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
-strum = { workspace = true }
-strum_macros = { workspace = true }
-stylist = { workspace = true }
-wasm-bindgen = { workspace = true }
-wasm-logger = { workspace = true }
-web-sys = { workspace = true }
-yew = { workspace = true }
-yew-cosmo = { workspace = true }
-yew_icons = { workspace = true }
-yew-hooks = { workspace = true }
-yew-router = { workspace = true }
+async-trait = "0.1.74"
+bounce = { version = "0.9.0", features = ["query", "helmet"] }
+chrono = { version = "0.4.31", features = ["serde", "unstable-locales"] }
+date-range = "0.3.0"
+either = "1.9.0"
+gloo = { version = "0.10.0", default-features = false, features = ["storage", "net"] }
+log = "0.4.20"
+rand = "0.8.5"
+serde = { version = "1.0.189", features = ["derive"] }
+serde_json = "1.0.107"
+strum = "0.25.0"
+stylist = { version = "0.13.0", features = ["yew"] }
+wasm-bindgen = "0.2.87"
+wasm-logger = "0.2.0"
+web-sys = "0.3.64"
+yew = { version = "0.21.0", features = ["csr", "hydration"] }
+yew-cosmo = "1.0.3"
+yew_icons = { version = "0.8.0", features = ["lucide"] }
+yew-hooks = "0.3.0"
+yew-router = "0.18.0"
+
+[profile.release]
+# less code to include into binary
+panic = "abort"
+# optimization over all codebase ( better optimization, slower build )
+codegen-units = 1
+# optimization for size ( more aggressive )
+opt-level = "z"
+# optimization for size
+# opt-level = 's'
+# link time optimization using using whole-program analysis
+lto = true
+strip = "symbols"

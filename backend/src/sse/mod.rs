@@ -10,4 +10,14 @@ pub struct NotificationState {
     pub event_broadcaster: Arc<EventBroadcaster>,
 }
 
+impl NotificationState {
+    pub fn new() -> Self {
+        let event_broadcaster = EventBroadcaster::create();
+
+        Self {
+            event_broadcaster
+        }
+    }
+}
+
 pub type Notification = web::Data<NotificationState>;

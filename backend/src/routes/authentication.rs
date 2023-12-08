@@ -6,17 +6,18 @@ use lettre::AsyncTransport;
 
 use bamboo_dbal::prelude::*;
 use bamboo_entities::prelude::*;
+use bamboo_error::*;
+use bamboo_services::prelude::{DbConnection, EnvService};
 
-use crate::middleware::authenticate_user::AuthenticationState;
-use crate::{DbConnection, Services};
+use crate::middleware::authenticate_user::Authentication;
 
 async fn send_two_factor_mail(
     display_name: String,
     email: String,
     token: String,
-    services: Services,
+    env_service: EnvService,
 ) -> HttpResponse {
-    let env_service = services.environment_service.clone();
+    let env_service = env_service.clone();
     let html_template = format!(
         r#"
 <html lang="de" style="font-family: system-ui,-apple-system,'Segoe UI','Roboto','Ubuntu','Cantarell','Noto Sans',sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol','Noto Color Emoji';">
@@ -122,7 +123,13 @@ Alles Gute vom 🐼"#
     }
 }
 
-pub async fn login(body: web::Json<Login>, db: DbConnection, services: Services) -> HttpResponse {
+pub async fn login(
+    body: Option<web::Json<Login>>,
+    db: DbConnection,
+    env_service: EnvService,
+) -> HttpResponse {
+    let body = check_missing_fields!(body, "authentication");
+
     if let Some(two_factor_code) = body.two_factor_code.clone() {
         let data = validate_auth_and_create_token(
             body.email.clone(),
@@ -153,7 +160,7 @@ pub async fn login(body: web::Json<Login>, db: DbConnection, services: Services)
                         result.user.display_name,
                         result.user.email,
                         two_factor_code,
-                        services,
+                        env_service,
                     )
                     .await
                 } else {
@@ -172,8 +179,8 @@ pub async fn login(body: web::Json<Login>, db: DbConnection, services: Services)
     }
 }
 
-pub async fn logout(state: web::ReqData<AuthenticationState>, db: DbConnection) -> HttpResponse {
-    let _ = delete_token(state.token.clone(), &db).await;
+pub async fn logout(auth: Authentication, db: DbConnection) -> HttpResponse {
+    let _ = delete_token(auth.token.clone(), &db).await;
 
     no_content!()
 }

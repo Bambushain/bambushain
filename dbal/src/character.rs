@@ -7,9 +7,9 @@ use std::collections::{BTreeMap, BTreeSet};
 use crate::free_company::get_free_company;
 use bamboo_entities::prelude::*;
 use bamboo_entities::{
-    bamboo_db_error, character, custom_character_field, custom_character_field_option,
-    custom_character_field_value,
+    character, custom_character_field, custom_character_field_option, custom_character_field_value,
 };
+use bamboo_error::*;
 
 async fn map_character(
     character: Character,

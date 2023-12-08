@@ -6,7 +6,7 @@ use bounce::BounceStates;
 
 use bamboo_entities::prelude::*;
 
-use crate::api::{delete, get, post, put_no_content, ApiError, PandapartyApiResult};
+use crate::api::{delete, get, post, put_no_content, ApiError, BambooApiResult};
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
 pub struct MyCharacters {
@@ -19,7 +19,7 @@ impl From<Vec<Character>> for MyCharacters {
     }
 }
 
-async fn get_character() -> PandapartyApiResult<Vec<Character>> {
+async fn get_character() -> BambooApiResult<Vec<Character>> {
     log::debug!("Get character");
     get("/api/final-fantasy/character").await
 }
@@ -36,17 +36,17 @@ impl Query for MyCharacters {
     }
 }
 
-pub async fn create_character(character: Character) -> PandapartyApiResult<Character> {
+pub async fn create_character(character: Character) -> BambooApiResult<Character> {
     log::debug!("Create character {}", character.name);
     post("/api/final-fantasy/character", &character).await
 }
 
-pub async fn update_character(id: i32, character: Character) -> PandapartyApiResult<()> {
+pub async fn update_character(id: i32, character: Character) -> BambooApiResult<()> {
     log::debug!("Update character {id}");
     put_no_content(format!("/api/final-fantasy/character/{id}"), &character).await
 }
 
-pub async fn delete_character(id: i32) -> PandapartyApiResult<()> {
+pub async fn delete_character(id: i32) -> BambooApiResult<()> {
     log::debug!("Delete character {id}");
     delete(format!("/api/final-fantasy/character/{id}")).await
 }

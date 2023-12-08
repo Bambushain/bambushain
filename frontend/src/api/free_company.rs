@@ -1,4 +1,4 @@
-use crate::api::{delete, get, post, put_no_content, ApiError, PandapartyApiResult};
+use crate::api::{delete, get, post, put_no_content, ApiError, BambooApiResult};
 use async_trait::async_trait;
 use bamboo_entities::prelude::FreeCompany;
 use bounce::query::{Query, QueryResult};
@@ -28,17 +28,17 @@ impl Query for FreeCompanies {
     }
 }
 
-pub async fn get_free_companies() -> PandapartyApiResult<Vec<FreeCompany>> {
+pub async fn get_free_companies() -> BambooApiResult<Vec<FreeCompany>> {
     log::debug!("Get free companies");
     get("/api/final-fantasy/free-company").await
 }
 
-pub async fn create_free_company(free_company: FreeCompany) -> PandapartyApiResult<FreeCompany> {
+pub async fn create_free_company(free_company: FreeCompany) -> BambooApiResult<FreeCompany> {
     log::debug!("Create free company {}", free_company.name);
     post("/api/final-fantasy/free-company", &free_company).await
 }
 
-pub async fn update_free_company(id: i32, free_company: FreeCompany) -> PandapartyApiResult<()> {
+pub async fn update_free_company(id: i32, free_company: FreeCompany) -> BambooApiResult<()> {
     log::debug!("Update free company {id}");
     put_no_content(
         format!("/api/final-fantasy/free-company/{id}"),
@@ -47,7 +47,7 @@ pub async fn update_free_company(id: i32, free_company: FreeCompany) -> Pandapar
     .await
 }
 
-pub async fn delete_free_company(id: i32) -> PandapartyApiResult<()> {
+pub async fn delete_free_company(id: i32) -> BambooApiResult<()> {
     log::debug!("Delete free company {id}");
     delete(format!("/api/final-fantasy/free-company/{id}")).await
 }

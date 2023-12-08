@@ -8,6 +8,7 @@ edition.workspace = true
 bamboo-backend = { path = "backend" }
 bamboo-dbal = { path = "dbal" }
 bamboo-entities = { path = "entities" }
+bamboo-error = { path = "error" }
 bamboo-migration = { path = "migration" }
 bamboo-services = { path = "services" }
 
@@ -23,7 +24,7 @@ members = [
     "backend",
     "dbal",
     "entities",
-    "frontend",
+    "error",
     "migration",
     "services",
 ]
@@ -31,6 +32,7 @@ members = [
 [workspace.package]
 version = "1.5.0"
 edition = "2021"
+license = "MIT"
 
 [workspace.dependencies]
 actix-web = "4.4.0"
@@ -71,16 +73,3 @@ yew-cosmo = "1.0.3"
 yew_icons = { version = "0.8.0", features = ["lucide"] }
 yew-hooks = "0.3.0"
 yew-router = "0.18.0"
-
-[profile.release]
-# less code to include into binary
-panic = "abort"
-# optimization over all codebase ( better optimization, slower build )
-codegen-units = 1
-# optimization for size ( more aggressive )
-opt-level = "z"
-# optimization for size
-# opt-level = 's'
-# link time optimization using using whole-program analysis
-lto = true
-strip = "symbols"

@@ -2,9 +2,10 @@ use actix_web::{web, HttpResponse};
 use serde::Deserialize;
 
 use bamboo_entities::prelude::*;
+use bamboo_error::*;
+use bamboo_services::prelude::DbConnection;
 
 use crate::middleware::authenticate_user::Authentication;
-use crate::DbConnection;
 
 #[derive(Deserialize)]
 pub struct FreeCompanyPathInfo {
@@ -16,10 +17,12 @@ pub async fn get_free_companies(authentication: Authentication, db: DbConnection
 }
 
 pub async fn get_free_company(
-    path: web::Path<FreeCompanyPathInfo>,
+    path: Option<web::Path<FreeCompanyPathInfo>>,
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
+    let path = check_invalid_path!(path, "free_company");
+
     match bamboo_dbal::free_company::get_free_company(Some(path.id), authentication.user.id, &db)
         .await
     {
@@ -32,10 +35,12 @@ pub async fn get_free_company(
 }
 
 pub async fn create_free_company(
-    body: web::Json<FreeCompany>,
+    body: Option<web::Json<FreeCompany>>,
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
+    let body = check_missing_fields!(body, "free_company");
+
     if bamboo_dbal::free_company::free_company_exists_by_name(
         body.name.clone(),
         authentication.user.id,
@@ -60,11 +65,14 @@ pub async fn create_free_company(
 }
 
 pub async fn update_free_company(
-    body: web::Json<FreeCompany>,
-    path: web::Path<FreeCompanyPathInfo>,
+    body: Option<web::Json<FreeCompany>>,
+    path: Option<web::Path<FreeCompanyPathInfo>>,
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
+    let path = check_invalid_path!(path, "free_company");
+    let body = check_missing_fields!(body, "free_company");
+
     match bamboo_dbal::free_company::get_free_company(Some(path.id), authentication.user.id, &db)
         .await
     {
@@ -85,10 +93,12 @@ pub async fn update_free_company(
 }
 
 pub async fn delete_free_company(
-    path: web::Path<FreeCompanyPathInfo>,
+    path: Option<web::Path<FreeCompanyPathInfo>>,
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
+    let path = check_invalid_path!(path, "free_company");
+
     if !bamboo_dbal::free_company::free_company_exists(authentication.user.id, path.id, &db).await {
         return not_found!(bamboo_not_found_error!(
             "free_company",

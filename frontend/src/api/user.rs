@@ -7,7 +7,7 @@ use bounce::BounceStates;
 use bamboo_entities::prelude::*;
 
 use crate::api::{
-    delete, get, post, put_no_body_no_content, put_no_content, ApiError, PandapartyApiResult,
+    delete, get, post, put_no_body_no_content, put_no_content, ApiError, BambooApiResult,
 };
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
@@ -21,7 +21,7 @@ impl From<Vec<WebUser>> for Users {
     }
 }
 
-pub(crate) async fn get_users() -> PandapartyApiResult<Vec<WebUser>> {
+pub(crate) async fn get_users() -> BambooApiResult<Vec<WebUser>> {
     log::debug!("Get users");
     get("/api/user").await
 }
@@ -36,27 +36,27 @@ impl Query for Users {
     }
 }
 
-pub async fn create_user(user: User) -> PandapartyApiResult<WebUser> {
+pub async fn create_user(user: User) -> BambooApiResult<WebUser> {
     log::debug!("Create user {}", user.email);
     post("/api/user", &user).await
 }
 
-pub async fn make_user_mod(id: i32) -> PandapartyApiResult<()> {
+pub async fn make_user_mod(id: i32) -> BambooApiResult<()> {
     log::debug!("Make user {id} mod");
     put_no_body_no_content(format!("/api/user/{id}/mod")).await
 }
 
-pub async fn remove_user_mod(id: i32) -> PandapartyApiResult<()> {
+pub async fn remove_user_mod(id: i32) -> BambooApiResult<()> {
     log::debug!("Remove user {id} mod");
     delete(format!("/api/user/{id}/mod")).await
 }
 
-pub async fn delete_user(id: i32) -> PandapartyApiResult<()> {
+pub async fn delete_user(id: i32) -> BambooApiResult<()> {
     log::debug!("Remove user {id} main");
     delete(format!("/api/user/{id}")).await
 }
 
-pub async fn change_user_password(id: i32, new_password: String) -> PandapartyApiResult<()> {
+pub async fn change_user_password(id: i32, new_password: String) -> BambooApiResult<()> {
     log::debug!("Change user {id} password");
     put_no_content(
         format!("/api/user/{id}/password"),
@@ -65,7 +65,7 @@ pub async fn change_user_password(id: i32, new_password: String) -> PandapartyAp
     .await
 }
 
-pub async fn update_profile(id: i32, profile: UpdateProfile) -> PandapartyApiResult<()> {
+pub async fn update_profile(id: i32, profile: UpdateProfile) -> BambooApiResult<()> {
     log::debug!(
         "Update profile of user {id} to the following data {:?}",
         profile

@@ -1,78 +1,30 @@
-use std::future::{ready, Ready};
-use std::rc::Rc;
+use actix_web::{body, dev, Error};
+use actix_web_lab::middleware::Next;
 
-use actix_web::dev;
-use actix_web::{body, Error, HttpMessage, HttpResponse};
-use futures_util::future::LocalBoxFuture;
+use bamboo_error::bamboo_insufficient_rights_error;
 
-use crate::middleware::authenticate_user::AuthenticationState;
+use crate::middleware::authenticate_user::Authentication;
 
-pub struct CheckMod;
-
-impl<S: 'static, B> dev::Transform<S, dev::ServiceRequest> for CheckMod
-where
-    S: dev::Service<dev::ServiceRequest, Response = dev::ServiceResponse<B>, Error = Error>,
-    S::Future: 'static,
-    B: 'static,
-{
-    type Response = dev::ServiceResponse<body::EitherBody<B>>;
-    type Error = Error;
-    type Transform = CheckModMiddleware<S>;
-    type InitError = ();
-    type Future = Ready<Result<Self::Transform, Self::InitError>>;
-
-    fn new_transform(&self, service: S) -> Self::Future {
-        ready(Ok(CheckModMiddleware {
-            service: Rc::new(service),
-        }))
+pub(crate) async fn check_mod(
+    authentication_state: Option<Authentication>,
+    req: dev::ServiceRequest,
+    next: Next<impl body::MessageBody>,
+) -> Result<dev::ServiceResponse<impl body::MessageBody>, Error> {
+    if let Some(state) = authentication_state {
+        if state.user.is_mod {
+            next.call(req).await
+        } else {
+            Err(bamboo_insufficient_rights_error!("user", "You need to be a mod").into())
+        }
+    } else {
+        Err(bamboo_insufficient_rights_error!("user", "You need to be a mod").into())
     }
 }
 
-pub struct CheckModMiddleware<S> {
-    service: Rc<S>,
+macro_rules! is_mod {
+    () => {
+        actix_web_lab::middleware::from_fn(crate::middleware::check_mod::check_mod)
+    };
 }
 
-impl<S, B> dev::Service<dev::ServiceRequest> for CheckModMiddleware<S>
-where
-    S: dev::Service<dev::ServiceRequest, Response = dev::ServiceResponse<B>, Error = Error>
-        + 'static,
-    S::Future: 'static,
-    B: 'static,
-{
-    type Response = dev::ServiceResponse<body::EitherBody<B>>;
-    type Error = Error;
-    type Future = LocalBoxFuture<'static, Result<Self::Response, Self::Error>>;
-
-    dev::forward_ready!(service);
-
-    fn call(&self, req: dev::ServiceRequest) -> Self::Future {
-        let svc = self.service.clone();
-
-        Box::pin(async move {
-            let needs_to_be_mod = HttpResponse::Forbidden()
-                .json(bamboo_entities::error::BambooError {
-                    entity_type: "".to_string(),
-                    error_type: bamboo_entities::error::BambooErrorCode::InsufficientRightsError,
-                    message: "You need to be a mod".to_string(),
-                })
-                .map_into_right_body();
-            let request = req.request();
-
-            let is_mod = {
-                let extensions = req.extensions();
-                let state = extensions.get::<AuthenticationState>();
-                if state.is_none() {
-                    return Ok(dev::ServiceResponse::new(request.clone(), needs_to_be_mod));
-                }
-                state.unwrap().user.is_mod
-            };
-
-            if is_mod {
-                let res = svc.call(req).await;
-                res.map(dev::ServiceResponse::map_into_left_body)
-            } else {
-                Ok(dev::ServiceResponse::new(request.clone(), needs_to_be_mod))
-            }
-        })
-    }
-}
+pub(crate) use is_mod;

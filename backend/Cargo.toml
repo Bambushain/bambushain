@@ -2,12 +2,14 @@
 name = "bamboo-backend"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 bamboo-dbal = { path = "../dbal" }
 bamboo-entities = { path = "../entities" }
+bamboo-error = { path = "../error" }
 bamboo-services = { path = "../services" }
 
 actix-web = { workspace = true }

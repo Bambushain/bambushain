@@ -1,7 +1,3 @@
-use bamboo_services::prelude::*;
-use sea_orm::DatabaseConnection;
-use std::sync::Arc;
-
 macro_rules! no_content {
     () => {{
         actix_web::HttpResponse::new(actix_web::http::StatusCode::NO_CONTENT)
@@ -65,25 +61,25 @@ macro_rules! internal_server_error {
 macro_rules! error_response {
     ($err:expr) => {
         match $err.error_type {
-            bamboo_entities::prelude::BambooErrorCode::NotFoundError => not_found!($err),
-            bamboo_entities::prelude::BambooErrorCode::ExistsAlreadyError => {
+            bamboo_error::BambooErrorCode::NotFoundError => not_found!($err),
+            bamboo_error::BambooErrorCode::ExistsAlreadyError => {
                 conflict!($err)
             }
-            bamboo_entities::prelude::BambooErrorCode::InsufficientRightsError => {
+            bamboo_error::BambooErrorCode::InsufficientRightsError => {
                 forbidden!($err)
             }
-            bamboo_entities::prelude::BambooErrorCode::UnauthorizedError => {
+            bamboo_error::BambooErrorCode::UnauthorizedError => {
                 unauthorized!($err)
             }
-            bamboo_entities::prelude::BambooErrorCode::InvalidDataError
-            | bamboo_entities::prelude::BambooErrorCode::ValidationError => {
+            bamboo_error::BambooErrorCode::InvalidDataError
+            | bamboo_error::BambooErrorCode::ValidationError => {
                 bad_request!($err)
             }
-            bamboo_entities::prelude::BambooErrorCode::DbError
-            | bamboo_entities::prelude::BambooErrorCode::IoError
-            | bamboo_entities::prelude::BambooErrorCode::SerializationError
-            | bamboo_entities::prelude::BambooErrorCode::CryptoError
-            | bamboo_entities::prelude::BambooErrorCode::UnknownError => {
+            bamboo_error::BambooErrorCode::DbError
+            | bamboo_error::BambooErrorCode::IoError
+            | bamboo_error::BambooErrorCode::SerializationError
+            | bamboo_error::BambooErrorCode::CryptoError
+            | bamboo_error::BambooErrorCode::UnknownError => {
                 internal_server_error!($err)
             }
         }
@@ -129,16 +125,73 @@ macro_rules! created_json {
     }};
 }
 
-pub type DbConnection = actix_web::web::Data<DatabaseConnection>;
-
-#[derive(Default, Clone)]
-pub struct ServicesState {
-    pub environment_service: Arc<EnvironmentService>,
+macro_rules! missing_fields {
+    ($entity:expr) => {{
+        actix_web::HttpResponse::BadRequest().json(bamboo_error::BambooError {
+            entity_type: $entity.to_string(),
+            error_type: bamboo_error::BambooErrorCode::InvalidDataError,
+            message: "You are missing some fields".to_string(),
+        })
+    }};
 }
 
-pub type Services = actix_web::web::Data<ServicesState>;
+macro_rules! check_missing_fields {
+    ($body:expr, $entity:expr) => {{
+        if let Some(body) = $body {
+            body
+        } else {
+            return missing_fields!($entity);
+        }
+    }};
+}
 
-pub mod broadcaster;
-pub mod middleware;
-pub mod routes;
-pub mod sse;
+macro_rules! invalid_path {
+    ($entity:expr) => {{
+        actix_web::HttpResponse::BadRequest().json(bamboo_error::BambooError {
+            entity_type: $entity.to_string(),
+            error_type: bamboo_error::BambooErrorCode::InvalidDataError,
+            message: "You passed invalid path data".to_string(),
+        })
+    }};
+}
+
+macro_rules! check_invalid_path {
+    ($body:expr, $entity:expr) => {{
+        if let Some(body) = $body {
+            body
+        } else {
+            return invalid_path!($entity);
+        }
+    }};
+}
+
+macro_rules! invalid_query {
+    ($entity:expr) => {{
+        actix_web::HttpResponse::BadRequest().json(bamboo_error::BambooError {
+            entity_type: $entity.to_string(),
+            error_type: bamboo_error::BambooErrorCode::InvalidDataError,
+            message: "You passed invalid query data".to_string(),
+        })
+    }};
+}
+
+macro_rules! check_invalid_query {
+    ($body:expr, $entity:expr) => {{
+        if let Some(body) = $body {
+            body
+        } else {
+            return invalid_query!($entity);
+        }
+    }};
+}
+
+mod broadcaster;
+mod middleware;
+mod routes;
+mod sse;
+
+pub mod prelude {
+    pub use crate::broadcaster::event::EventBroadcaster;
+    pub use crate::routes::configure_routes;
+    pub use crate::sse::{Notification, NotificationState};
+}

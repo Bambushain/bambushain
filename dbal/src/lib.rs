@@ -1,9 +1,9 @@
-use bamboo_entities::bamboo_crypto_error;
-use bamboo_entities::prelude::BambooResult;
 use chacha20poly1305::aead::{Aead, OsRng};
 use chacha20poly1305::{AeadCore, ChaCha20Poly1305, Key, KeyInit, Nonce};
 use pbkdf2::hmac::Hmac;
 use sha2::Sha512;
+
+use bamboo_error::*;
 
 pub mod authentication;
 pub mod character;
