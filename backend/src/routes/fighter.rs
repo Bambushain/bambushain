@@ -1,11 +1,11 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{delete, get, post, put, web, HttpResponse};
 use serde::Deserialize;
 
 use bamboo_entities::prelude::*;
 use bamboo_error::*;
 use bamboo_services::prelude::DbConnection;
 
-use crate::middleware::authenticate_user::Authentication;
+use crate::middleware::authenticate_user::{authenticate, Authentication};
 
 #[derive(Deserialize)]
 pub struct FightersPathInfo {
@@ -18,6 +18,10 @@ pub struct FighterPathInfo {
     pub character_id: i32,
 }
 
+#[get(
+    "/api/final-fantasy/character/{character_id}/fighter",
+    wrap = "authenticate!()"
+)]
 pub async fn get_fighters(
     path: Option<web::Path<FightersPathInfo>>,
     authentication: Authentication,
@@ -30,6 +34,10 @@ pub async fn get_fighters(
     )
 }
 
+#[get(
+    "/api/final-fantasy/character/{character_id}/fighter/{id}",
+    wrap = "authenticate!()"
+)]
 pub async fn get_fighter(
     path: Option<web::Path<FighterPathInfo>>,
     authentication: Authentication,
@@ -48,6 +56,10 @@ pub async fn get_fighter(
     }
 }
 
+#[post(
+    "/api/final-fantasy/character/{character_id}/fighter",
+    wrap = "authenticate!()"
+)]
 pub async fn create_fighter(
     path: Option<web::Path<FightersPathInfo>>,
     body: Option<web::Json<Fighter>>,
@@ -82,6 +94,10 @@ pub async fn create_fighter(
     )
 }
 
+#[put(
+    "/api/final-fantasy/character/{character_id}/fighter/{id}",
+    wrap = "authenticate!()"
+)]
 pub async fn update_fighter(
     body: Option<web::Json<Fighter>>,
     path: Option<web::Path<FighterPathInfo>>,
@@ -104,6 +120,10 @@ pub async fn update_fighter(
     }
 }
 
+#[delete(
+    "/api/final-fantasy/character/{character_id}/fighter/{id}",
+    wrap = "authenticate!()"
+)]
 pub async fn delete_fighter(
     path: Option<web::Path<FighterPathInfo>>,
     authentication: Authentication,

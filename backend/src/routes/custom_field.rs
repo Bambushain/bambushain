@@ -1,11 +1,11 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{delete, get, post, put, web, HttpResponse};
 use serde::Deserialize;
 
 use bamboo_entities::prelude::*;
 use bamboo_error::*;
 use bamboo_services::prelude::DbConnection;
 
-use crate::middleware::authenticate_user::Authentication;
+use crate::middleware::authenticate_user::{authenticate, Authentication};
 
 #[derive(Deserialize)]
 pub struct CustomFieldPath {
@@ -19,15 +19,20 @@ pub struct CustomFieldOptionPath {
 }
 
 #[derive(Deserialize)]
-pub struct CustomFieldOptionPositionPath {
-    pub field_id: i32,
+pub struct CustomFieldPositionPath {
+    pub id: i32,
     pub position: i32,
 }
 
+#[get("/api/final-fantasy/character/custom-field", wrap = "authenticate!()")]
 pub async fn get_custom_fields(authentication: Authentication, db: DbConnection) -> HttpResponse {
     ok_or_error!(bamboo_dbal::custom_field::get_custom_fields(authentication.user.id, &db).await)
 }
 
+#[get(
+    "/api/final-fantasy/character/custom-field/{id}",
+    wrap = "authenticate!()"
+)]
 pub async fn get_custom_field(
     path: Option<web::Path<CustomFieldPath>>,
     authentication: Authentication,
@@ -44,6 +49,7 @@ pub async fn get_custom_field(
     }
 }
 
+#[post("/api/final-fantasy/character/custom-field", wrap = "authenticate!()")]
 pub async fn create_custom_field(
     body: Option<web::Json<CustomField>>,
     authentication: Authentication,
@@ -74,6 +80,10 @@ pub async fn create_custom_field(
     )
 }
 
+#[put(
+    "/api/final-fantasy/character/custom-field/{id}",
+    wrap = "authenticate!()"
+)]
 pub async fn update_custom_field(
     path: Option<web::Path<CustomFieldPath>>,
     body: Option<web::Json<CustomField>>,
@@ -100,6 +110,10 @@ pub async fn update_custom_field(
     }
 }
 
+#[delete(
+    "/api/final-fantasy/character/custom-field/{id}",
+    wrap = "authenticate!()"
+)]
 pub async fn delete_custom_field(
     path: Option<web::Path<CustomFieldPath>>,
     authentication: Authentication,
@@ -119,6 +133,10 @@ pub async fn delete_custom_field(
     )
 }
 
+#[post(
+    "/api/final-fantasy/character/custom-field/{id}/option",
+    wrap = "authenticate!()"
+)]
 pub async fn create_custom_field_option(
     path: Option<web::Path<CustomFieldPath>>,
     body: Option<web::Json<String>>,
@@ -141,6 +159,10 @@ pub async fn create_custom_field_option(
     )
 }
 
+#[get(
+    "/api/final-fantasy/character/custom-field/{id}/option",
+    wrap = "authenticate!()"
+)]
 pub async fn get_custom_field_options(
     path: Option<web::Path<CustomFieldPath>>,
     authentication: Authentication,
@@ -161,6 +183,10 @@ pub async fn get_custom_field_options(
     )
 }
 
+#[put(
+    "/api/final-fantasy/character/custom-field/{field_id}/option/{id}",
+    wrap = "authenticate!()"
+)]
 pub async fn update_custom_field_option(
     path: Option<web::Path<CustomFieldOptionPath>>,
     body: Option<web::Json<String>>,
@@ -190,6 +216,10 @@ pub async fn update_custom_field_option(
     )
 }
 
+#[delete(
+    "/api/final-fantasy/character/custom-field/{field_id}/option/{id}",
+    wrap = "authenticate!()"
+)]
 pub async fn delete_custom_field_option(
     path: Option<web::Path<CustomFieldOptionPath>>,
     authentication: Authentication,
@@ -211,16 +241,18 @@ pub async fn delete_custom_field_option(
     )
 }
 
+#[put(
+    "/api/final-fantasy/character/custom-field/{field_id}/{position}",
+    wrap = "authenticate!()"
+)]
 pub async fn move_custom_field(
-    path: Option<web::Path<CustomFieldOptionPositionPath>>,
+    path: Option<web::Path<CustomFieldPositionPath>>,
     authentication: Authentication,
     db: DbConnection,
 ) -> HttpResponse {
     let path = check_invalid_path!(path, "custom_field");
 
-    if !bamboo_dbal::custom_field::custom_field_exists(authentication.user.id, path.field_id, &db)
-        .await
-    {
+    if !bamboo_dbal::custom_field::custom_field_exists(authentication.user.id, path.id, &db).await {
         return not_found!(bamboo_not_found_error!(
             "custom_field",
             "The custom field was not found"
@@ -230,7 +262,7 @@ pub async fn move_custom_field(
     no_content_or_error!(
         bamboo_dbal::custom_field::move_custom_field(
             authentication.user.id,
-            path.field_id,
+            path.id,
             path.position,
             &db
         )

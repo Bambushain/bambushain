@@ -1,4 +1,4 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{delete, get, post, put, web, HttpResponse};
 use chrono::NaiveDate;
 use date_range::DateRange;
 use serde::Deserialize;
@@ -7,6 +7,7 @@ use bamboo_entities::prelude::Event;
 use bamboo_error::*;
 use bamboo_services::prelude::DbConnection;
 
+use crate::middleware::authenticate_user::authenticate;
 use crate::sse::Notification;
 
 #[derive(Deserialize)]
@@ -20,6 +21,7 @@ pub struct EventPath {
     pub id: i32,
 }
 
+#[get("/api/bamboo-grove/event", wrap = "authenticate!()")]
 pub async fn get_events(
     query: Option<web::Query<GetEventsQuery>>,
     db: DbConnection,
@@ -39,6 +41,7 @@ pub async fn get_events(
     ok_or_error!(bamboo_dbal::event::get_events(range, &db).await)
 }
 
+#[post("/api/bamboo-grove/event", wrap = "authenticate!()")]
 pub async fn create_event(
     body: Option<web::Json<Event>>,
     notification: Notification,
@@ -56,6 +59,7 @@ pub async fn create_event(
     created_or_error!(data)
 }
 
+#[put("/api/bamboo-grove/event/{id}", wrap = "authenticate!()")]
 pub async fn update_event(
     path: Option<web::Path<EventPath>>,
     body: Option<web::Json<Event>>,
@@ -75,6 +79,7 @@ pub async fn update_event(
     no_content_or_error!(data)
 }
 
+#[delete("/api/bamboo-grove/event/{id}", wrap = "authenticate!()")]
 pub async fn delete_event(path: Option<web::Path<EventPath>>, db: DbConnection) -> HttpResponse {
     let path = check_invalid_path!(path, "event");
 

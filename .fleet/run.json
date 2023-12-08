@@ -21,6 +21,13 @@
             },
         },
         {
+            "type": "cargo",
+            "name": "Build app",
+            "cargoArgs": [
+                "build"
+            ],
+        },
+        {
             "type": "command",
             "name": "Build frontend",
             "program": "trunk",

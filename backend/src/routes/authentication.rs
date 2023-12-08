@@ -1,4 +1,4 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{delete,post, web, HttpResponse};
 use lettre::message::MultiPart;
 use lettre::transport::smtp;
 use lettre::transport::smtp::client::TlsParameters;
@@ -9,7 +9,7 @@ use bamboo_entities::prelude::*;
 use bamboo_error::*;
 use bamboo_services::prelude::{DbConnection, EnvService};
 
-use crate::middleware::authenticate_user::Authentication;
+use crate::middleware::authenticate_user::{authenticate, Authentication};
 
 async fn send_two_factor_mail(
     display_name: String,
@@ -123,6 +123,7 @@ Alles Gute vom 🐼"#
     }
 }
 
+#[post("/api/login")]
 pub async fn login(
     body: Option<web::Json<Login>>,
     db: DbConnection,
@@ -179,6 +180,7 @@ pub async fn login(
     }
 }
 
+#[delete("/api/login", wrap = "authenticate!()")]
 pub async fn logout(auth: Authentication, db: DbConnection) -> HttpResponse {
     let _ = delete_token(auth.token.clone(), &db).await;
 

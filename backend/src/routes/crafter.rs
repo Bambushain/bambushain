@@ -1,11 +1,11 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{delete, get, post, put, web, HttpResponse};
 use serde::Deserialize;
 
 use bamboo_entities::prelude::*;
 use bamboo_error::*;
 use bamboo_services::prelude::DbConnection;
 
-use crate::middleware::authenticate_user::Authentication;
+use crate::middleware::authenticate_user::{authenticate, Authentication};
 
 #[derive(Deserialize)]
 pub struct CraftersPathInfo {
@@ -18,6 +18,10 @@ pub struct CrafterPathInfo {
     pub character_id: i32,
 }
 
+#[get(
+    "/api/final-fantasy/character/{character_id}/crafter",
+    wrap = "authenticate!()"
+)]
 pub async fn get_crafters(
     path: Option<web::Path<CraftersPathInfo>>,
     authentication: Authentication,
@@ -30,6 +34,10 @@ pub async fn get_crafters(
     )
 }
 
+#[get(
+    "/api/final-fantasy/character/{character_id}/crafter/{id}",
+    wrap = "authenticate!()"
+)]
 pub async fn get_crafter(
     path: Option<web::Path<CrafterPathInfo>>,
     authentication: Authentication,
@@ -48,6 +56,10 @@ pub async fn get_crafter(
     }
 }
 
+#[post(
+    "/api/final-fantasy/character/{character_id}/crafter",
+    wrap = "authenticate!()"
+)]
 pub async fn create_crafter(
     path: Option<web::Path<CraftersPathInfo>>,
     body: Option<web::Json<Crafter>>,
@@ -82,6 +94,10 @@ pub async fn create_crafter(
     )
 }
 
+#[put(
+    "/api/final-fantasy/character/{character_id}/crafter/{id}",
+    wrap = "authenticate!()"
+)]
 pub async fn update_crafter(
     body: Option<web::Json<Crafter>>,
     path: Option<web::Path<CrafterPathInfo>>,
@@ -104,6 +120,10 @@ pub async fn update_crafter(
     }
 }
 
+#[delete(
+    "/api/final-fantasy/character/{character_id}/crafter/{id}",
+    wrap = "authenticate!()"
+)]
 pub async fn delete_crafter(
     path: Option<web::Path<CrafterPathInfo>>,
     authentication: Authentication,

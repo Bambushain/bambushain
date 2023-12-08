@@ -34,9 +34,10 @@ impl header::Header for AuthorizationHeader {
     }
 
     fn parse<M: HttpMessage>(msg: &M) -> Result<Self, ParseError> {
-        let authorization = match msg.headers().get(header::AUTHORIZATION) {
-            Some(header) => Ok(header),
-            None => Err(ParseError::Header),
+        let authorization = if let Some(header) = msg.headers().get(header::AUTHORIZATION) {
+            Ok(header)
+        } else {
+            Err(ParseError::Header)
         }?
         .to_str()
         .map_err(|_| ParseError::Header)

@@ -13,14 +13,13 @@ bamboo-error = { path = "../error" }
 bamboo-services = { path = "../services" }
 
 actix-web = { workspace = true }
-actix-web-lab = { workspace = true }
+actix-web-lab = { workspace = true, features = ["spa"] }
 chrono = { workspace = true }
 date-range = { workspace = true }
 futures-util = { workspace = true }
 lettre = { workspace = true }
 log = { workspace = true }
 parking_lot = { workspace = true }
-sea-orm = { workspace = true }
 serde = { workspace = true }
 tokio = { workspace = true }
 totp-rs = { workspace = true }

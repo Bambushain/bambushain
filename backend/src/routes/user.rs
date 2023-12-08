@@ -1,4 +1,4 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{delete, get, post, put, web, HttpResponse};
 use serde::Deserialize;
 
 use bamboo_dbal::prelude::*;
@@ -6,7 +6,8 @@ use bamboo_entities::prelude::*;
 use bamboo_error::*;
 use bamboo_services::prelude::DbConnection;
 
-use crate::middleware::authenticate_user::Authentication;
+use crate::middleware::authenticate_user::{authenticate, Authentication};
+use crate::middleware::check_mod::is_mod;
 
 #[derive(Deserialize)]
 pub struct UserPathInfo {
@@ -21,6 +22,7 @@ macro_rules! prevent_me {
     }};
 }
 
+#[get("/api/user", wrap = "authenticate!()")]
 pub async fn get_users(db: DbConnection) -> HttpResponse {
     ok_or_error!(bamboo_dbal::user::get_users(&db).await.map(|users| users
         .into_iter()
@@ -28,6 +30,7 @@ pub async fn get_users(db: DbConnection) -> HttpResponse {
         .collect::<Vec<WebUser>>()))
 }
 
+#[get("/api/user/{id}", wrap = "authenticate!()")]
 pub async fn get_user(path: Option<web::Path<UserPathInfo>>, db: DbConnection) -> HttpResponse {
     let path = check_invalid_path!(path, "user");
 
@@ -36,6 +39,7 @@ pub async fn get_user(path: Option<web::Path<UserPathInfo>>, db: DbConnection) -
         .map(|u| u.to_web_user()))
 }
 
+#[post("/api/user", wrap = "authenticate!()", wrap = "is_mod!()")]
 pub async fn create_user(body: Option<web::Json<User>>, db: DbConnection) -> HttpResponse {
     let body = check_missing_fields!(body, "user");
 
@@ -51,6 +55,7 @@ pub async fn create_user(body: Option<web::Json<User>>, db: DbConnection) -> Htt
         .map(|u| u.to_web_user()))
 }
 
+#[delete("/api/user/{id}", wrap = "authenticate!()", wrap = "is_mod!()")]
 pub async fn delete_user(
     path: Option<web::Path<UserPathInfo>>,
     authentication: Authentication,
@@ -70,6 +75,7 @@ pub async fn delete_user(
     no_content_or_error!(bamboo_dbal::user::delete_user(path.id, &db).await)
 }
 
+#[put("/api/user/{id}/mod", wrap = "authenticate!()", wrap = "is_mod!()")]
 pub async fn add_mod_user(
     path: Option<web::Path<UserPathInfo>>,
     authentication: Authentication,
@@ -89,6 +95,7 @@ pub async fn add_mod_user(
     no_content_or_error!(change_mod_status(path.id, true, &db).await)
 }
 
+#[delete("/api/user/{id}/mod", wrap = "authenticate!()", wrap = "is_mod!()")]
 pub async fn remove_mod_user(
     path: Option<web::Path<UserPathInfo>>,
     authentication: Authentication,
@@ -108,6 +115,11 @@ pub async fn remove_mod_user(
     no_content_or_error!(change_mod_status(path.id, false, &db).await)
 }
 
+#[put(
+    "/api/user/{id}/password",
+    wrap = "authenticate!()",
+    wrap = "is_mod!()"
+)]
 pub async fn change_password(
     path: Option<web::Path<UserPathInfo>>,
     body: Option<web::Json<ChangePassword>>,
@@ -131,6 +143,7 @@ pub async fn change_password(
     )
 }
 
+#[put("/api/my/password", wrap = "authenticate!()")]
 pub async fn change_my_password(
     body: Option<web::Json<ChangeMyPassword>>,
     authentication: Authentication,
@@ -160,6 +173,7 @@ pub async fn change_my_password(
     }
 }
 
+#[put("/api/my/profile", wrap = "authenticate!()")]
 pub async fn update_profile(
     body: Option<web::Json<UpdateProfile>>,
     authentication: Authentication,
@@ -179,6 +193,7 @@ pub async fn update_profile(
     )
 }
 
+#[put("/api/user/{id}/profile", wrap = "authenticate!()", wrap = "is_mod!()")]
 pub async fn update_user_profile(
     path: Option<web::Path<UserPathInfo>>,
     body: Option<web::Json<UpdateProfile>>,
@@ -199,10 +214,12 @@ pub async fn update_user_profile(
     )
 }
 
+#[get("/api/user/{id}/profile", wrap = "authenticate!()")]
 pub async fn get_profile(authentication: Authentication) -> HttpResponse {
     ok_json!(authentication.user.to_web_user())
 }
 
+#[post("/api/my/totp", wrap = "authenticate!()")]
 pub async fn enable_totp(authentication: Authentication, db: DbConnection) -> HttpResponse {
     let mut totp = totp_rs::TOTP::default();
     let secret = totp.secret.clone();
@@ -233,6 +250,7 @@ pub async fn enable_totp(authentication: Authentication, db: DbConnection) -> Ht
     }
 }
 
+#[put("/api/my/totp/validate", wrap = "authenticate!()")]
 pub async fn validate_totp(
     body: Option<web::Json<ValidateTotp>>,
     authentication: Authentication,

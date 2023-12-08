@@ -2,7 +2,7 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 
 #[cfg(not(target_arch = "wasm32"))]
-use actix_web::{body, HttpRequest, HttpResponse, Responder, ResponseError};
+use actix_web::{body, http, HttpRequest, HttpResponse, Responder, ResponseError};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone)]
@@ -83,6 +83,12 @@ pub enum PasswordError {
 pub type BambooErrorResult = Result<(), BambooError>;
 
 pub type BambooResult<T> = Result<T, BambooError>;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub type BambooApiResponseResult = Result<HttpResponse, BambooError>;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub type BambooApiResult<T> = Result<(T, http::StatusCode), BambooError>;
 
 #[macro_export]
 macro_rules! bamboo_not_found_error {

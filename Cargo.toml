@@ -8,12 +8,10 @@ edition.workspace = true
 bamboo-backend = { path = "backend" }
 bamboo-dbal = { path = "dbal" }
 bamboo-entities = { path = "entities" }
-bamboo-error = { path = "error" }
 bamboo-migration = { path = "migration" }
 bamboo-services = { path = "services" }
 
 actix-web = { workspace = true }
-actix-web-lab = { workspace = true, features = ["spa"] }
 log = { workspace = true }
 rand = { workspace = true }
 sea-orm = { workspace = true }
@@ -37,7 +35,6 @@ license = "MIT"
 [workspace.dependencies]
 actix-web = "4.4.0"
 actix-web-lab = "0.20.1"
-async-trait = "0.1.74"
 base64 = "0.21.5"
 bcrypt = "0.15.0"
 bounce = { version = "0.9.0", features = ["query", "helmet"] }
@@ -48,7 +45,6 @@ date-range = "0.3.0"
 either = "1.9.0"
 futures = "0.3.28"
 futures-util = "0.3.28"
-gloo = { version = "0.10.0", default-features = false, features = ["storage", "net"] }
 lettre = { version = "0.11.0", features = ["tokio1-rustls-tls", "smtp-transport", "pool", "hostname", "builder"], default-features = false }
 log = "0.4.20"
 parking_lot = "0.12.1"
@@ -61,15 +57,6 @@ sha2 = "0.10.8"
 stderrlog = "0.5.4"
 strum = "0.25.0"
 strum_macros = "0.25.2"
-stylist = { version = "0.13.0", features = ["yew"] }
 tokio = "1.34.0"
 totp-rs = { version = "5.4.0", features = ["qr", "gen_secret"] }
 uuid = { version = "1.4.1", features = ["v4"] }
-wasm-bindgen = "0.2.87"
-wasm-logger = "0.2.0"
-web-sys = "0.3.64"
-yew = { version = "0.21.0", features = ["csr", "hydration"] }
-yew-cosmo = "1.0.3"
-yew_icons = { version = "0.8.0", features = ["lucide"] }
-yew-hooks = "0.3.0"
-yew-router = "0.18.0"
