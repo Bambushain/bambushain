@@ -7,7 +7,7 @@
                 "run"
             ],
             "environment": {
-                "DATABASE_URL": "postgres://app_bambushain_testsystem:app_bambushain_testsystem@database-server.ulbricht.casa:5432/app_bambushain_testsystem",
+                "DATABASE_URL": "postgres://coder:coder@coder-database-knerd-bambushain:5432/coder",
                 "FRONTEND_DIR": "$PROJECT_DIR$/",
                 "INITIAL_USER_DISPLAY_NAME": "Knerd",
                 "INITIAL_USER_EMAIL": "me@imanuel.dev",

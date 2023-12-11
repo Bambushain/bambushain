@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="pandaparty@localhost" uuid="d29e4579-4c20-44d6-8420-96828ea441c3">
+    <data-source source="LOCAL" name="coder@10.152.183.164" uuid="d29e4579-4c20-44d6-8420-96828ea441c3">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
-      <jdbc-url>jdbc:postgresql://localhost:5434/pandaparty</jdbc-url>
+      <jdbc-url>jdbc:postgresql://10.152.183.164:5432/coder</jdbc-url>
       <jdbc-additional-properties>
         <property name="com.intellij.clouds.kubernetes.db.enabled" value="false" />
       </jdbc-additional-properties>

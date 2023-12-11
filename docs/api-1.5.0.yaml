@@ -2084,16 +2084,17 @@ components:
             - free_company
         errorType: 
           enum: 
-            - NotFoundError
-            - ExistsAlreadyError
-            - InvalidDataError
-            - IoError
-            - DbError
-            - SerializationError
-            - ValidationError
-            - InsufficientRightsError
-            - UnauthorizedError
-            - UnknownError
+            - NotFound
+            - ExistsAlready
+            - InvalidData
+            - Io
+            - Db
+            - Serialization
+            - Validation
+            - InsufficientRights
+            - Unauthorized
+            - Unknown
+            - Crypto
           type: string
         message: 
           type: string

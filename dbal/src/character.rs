@@ -256,8 +256,14 @@ async fn create_custom_field_values(
     }
 
     let mut condition = Condition::any();
-    for option in custom_fields.iter().flat_map(|field| field.values.clone()) {
-        condition = condition.add(custom_character_field_option::Column::Label.eq(option));
+    for custom_field in custom_fields {
+        for option in custom_field.values.clone() {
+            condition = condition.add(
+                Condition::all()
+                    .add(custom_character_field_option::Column::Label.eq(option))
+                    .add(custom_character_field::Column::Label.eq(custom_field.label.clone())),
+            );
+        }
     }
 
     custom_character_field_value::Entity::delete_many()
