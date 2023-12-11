@@ -9,7 +9,7 @@ use bamboo_entities::prelude::{CustomCharacterField, CustomField};
 
 use crate::api::{
     delete, get, post, post_no_content, put_no_body_no_content, put_no_content, ApiError,
-    PandapartyApiResult,
+    BambooApiResult,
 };
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
@@ -23,7 +23,7 @@ impl From<Vec<CustomCharacterField>> for CustomCharacterFields {
     }
 }
 
-pub async fn get_custom_fields() -> PandapartyApiResult<Vec<CustomCharacterField>> {
+pub async fn get_custom_fields() -> BambooApiResult<Vec<CustomCharacterField>> {
     log::debug!("Get custom fields");
     get("/api/final-fantasy/character/custom-field").await
 }
@@ -43,7 +43,7 @@ impl Query for CustomCharacterFields {
 pub async fn create_custom_field(
     label: String,
     position: usize,
-) -> PandapartyApiResult<CustomCharacterField> {
+) -> BambooApiResult<CustomCharacterField> {
     log::debug!("Create new field: {label}");
     post(
         "/api/final-fantasy/character/custom-field",
@@ -56,11 +56,7 @@ pub async fn create_custom_field(
     .await
 }
 
-pub async fn update_custom_field(
-    id: i32,
-    label: String,
-    position: usize,
-) -> PandapartyApiResult<()> {
+pub async fn update_custom_field(id: i32, label: String, position: usize) -> BambooApiResult<()> {
     log::debug!("Update field: {id} {label}");
     put_no_content(
         format!("/api/final-fantasy/character/custom-field/{id}"),
@@ -73,12 +69,12 @@ pub async fn update_custom_field(
     .await
 }
 
-pub async fn delete_custom_field(id: i32) -> PandapartyApiResult<()> {
+pub async fn delete_custom_field(id: i32) -> BambooApiResult<()> {
     log::debug!("Delete field: {id}");
     delete(format!("/api/final-fantasy/character/custom-field/{id}")).await
 }
 
-pub async fn add_custom_field_option(field_id: i32, label: String) -> PandapartyApiResult<()> {
+pub async fn add_custom_field_option(field_id: i32, label: String) -> BambooApiResult<()> {
     log::debug!("Create field option: {field_id} {label}");
     post_no_content(
         format!("/api/final-fantasy/character/custom-field/{field_id}/option"),
@@ -91,7 +87,7 @@ pub async fn update_custom_field_option(
     field_id: i32,
     id: i32,
     label: String,
-) -> PandapartyApiResult<()> {
+) -> BambooApiResult<()> {
     log::debug!("Rename field option: {field_id} {id} {label}");
     put_no_content(
         format!("/api/final-fantasy/character/custom-field/{field_id}/option/{id}"),
@@ -100,7 +96,7 @@ pub async fn update_custom_field_option(
     .await
 }
 
-pub async fn delete_custom_field_option(field_id: i32, id: i32) -> PandapartyApiResult<()> {
+pub async fn delete_custom_field_option(field_id: i32, id: i32) -> BambooApiResult<()> {
     log::debug!("Delete field option: {field_id} {id}");
     delete(format!(
         "/api/final-fantasy/character/custom-field/{field_id}/option/{id}"
@@ -108,7 +104,7 @@ pub async fn delete_custom_field_option(field_id: i32, id: i32) -> PandapartyApi
     .await
 }
 
-pub async fn move_custom_field(id: i32, position: usize) -> PandapartyApiResult<()> {
+pub async fn move_custom_field(id: i32, position: usize) -> BambooApiResult<()> {
     log::debug!("Move field: {id} {position}");
     put_no_body_no_content(format!(
         "/api/final-fantasy/character/custom-field/{id}/{position}"

@@ -8,10 +8,10 @@ use sea_orm::{
 };
 
 use bamboo_entities::prelude::*;
-use bamboo_entities::{bamboo_db_error, bamboo_validation_error};
+use bamboo_error::*;
 
-use crate::encrypt_string;
-use crate::user::validate_login;
+use crate::{decrypt_string, encrypt_string};
+use crate::prelude::dbal;
 
 pub async fn validate_auth_and_create_token(
     username: String,
@@ -23,7 +23,7 @@ pub async fn validate_auth_and_create_token(
         .await
         .map_err(|err| {
             log::error!("Failed to load user {username}: {err}");
-            bamboo_not_found_error!("user", "User not found")
+            BambooError::not_found("user", "User not found")
         })?;
 
     validate_login(user.id, two_factor_code, password, false, db).await?;
@@ -37,11 +37,11 @@ pub async fn validate_auth_and_create_token(
     .await
     .map(|token| LoginResult {
         token: token.token,
-        user: user.to_web_user(),
+        user: user.clone().into(),
     })
     .map_err(|err| {
         log::error!("{err}");
-        bamboo_db_error!("token", "Failed to create token")
+        BambooError::database("token", "Failed to create token")
     });
 
     let _ = bamboo_entities::user::Entity::update_many()
@@ -65,17 +65,17 @@ pub async fn validate_auth_and_set_two_factor_code(
         .await
         .map_err(|err| {
             log::error!("Failed to load user {username}: {err}");
-            bamboo_not_found_error!("user", "User not found")
+            BambooError::not_found("user", "User not found")
         })?;
 
     let password_valid = user.validate_password(password.clone());
     if !password_valid {
-        return Err(bamboo_validation_error!("token", "Password is invalid"));
+        return Err(BambooError::validation("token", "Password is invalid"));
     }
 
     if user.totp_secret.is_some() && user.totp_validated.unwrap_or(false) {
         return Ok(TwoFactorResult {
-            user: user.to_web_user(),
+            user: user.into(),
             two_factor_code: None,
         });
     }
@@ -97,9 +97,9 @@ pub async fn validate_auth_and_set_two_factor_code(
         .filter(bamboo_entities::user::Column::Id.eq(user.id))
         .exec(db)
         .await
-        .map_err(|_| bamboo_validation_error!("token", "Failed to set two factor code"))
+        .map_err(|_| BambooError::validation("token", "Failed to set two factor code"))
         .map(|_| TwoFactorResult {
-            user: user.clone().to_web_user(),
+            user: user.clone().into(),
             two_factor_code: Some(two_factor_code),
         })
 }
@@ -112,6 +112,93 @@ pub async fn delete_token(token: String, db: &DatabaseConnection) -> BambooError
         .map(|_| ())
         .map_err(|err| {
             log::error!("{err}");
-            bamboo_db_error!("token", "Failed to delete the token")
+            BambooError::database("token", "Failed to delete the token")
         })
+}
+
+pub async fn validate_login(
+    id: i32,
+    code: String,
+    password: String,
+    initial_validation: bool,
+    db: &DatabaseConnection,
+    ) -> BambooErrorResult {
+    let user = dbal::get_user(id, db).await?;
+
+    let password_valid = user.validate_password(password.clone());
+    if !password_valid {
+        return Err(BambooError::unauthorized("user", "Invalid login data"));
+    }
+
+    if initial_validation || user.totp_validated.unwrap_or(false) {
+        validate_totp_token(code, password, user, db).await
+    } else {
+        validate_email_token(code, password, user)
+    }
+}
+
+async fn validate_totp_token(
+    code: String,
+    password: String,
+    user: User,
+    db: &DatabaseConnection,
+    ) -> BambooErrorResult {
+    let totp_secret = if user.totp_secret_encrypted {
+        decrypt_string(user.totp_secret.unwrap(), password.clone())?
+    } else {
+        let decrypted_secret = user.totp_secret.unwrap();
+        let encrypted_secret = encrypt_string(decrypted_secret.clone(), password.clone())?;
+
+        user::Entity::update_many()
+            .col_expr(user::Column::TotpSecretEncrypted, Expr::value(true))
+            .col_expr(user::Column::TotpSecret, Expr::value(encrypted_secret))
+            .filter(user::Column::Id.eq(user.id))
+            .exec(db)
+            .await
+            .map_err(|_| BambooError::database("user", "Failed to validate"))?;
+
+        decrypted_secret
+    };
+
+    let is_totp_valid = totp_rs::TOTP::from_rfc6238(
+        totp_rs::Rfc6238::new(
+            6,
+            totp_secret.clone(),
+            Some("Bambushain".to_string()),
+            user.display_name.clone(),
+        )
+        .map_err(|_| BambooError::crypto("user", "Failed to validate"))?,
+    )
+    .map_err(|err| {
+        log::error!("Failed to create totp url {err}");
+        BambooError::crypto("user", "Failed to validate")
+    })
+    .map(|totp| {
+        totp.check_current(code.as_str()).unwrap_or_else(|err| {
+            log::error!("Failed to validate totp {err}");
+            false
+        })
+    })?;
+
+    if is_totp_valid {
+        Ok(())
+    } else {
+        Err(BambooError::crypto("user", "Failed to validate"))
+    }
+}
+
+fn validate_email_token(code: String, password: String, user: User) -> BambooErrorResult {
+    let two_factor_code = String::from_utf8_lossy(&decrypt_string(
+        base64::prelude::BASE64_STANDARD
+            .decode(user.two_factor_code.unwrap())
+            .map_err(|_| BambooError::unauthorized("user", "Failed to validate"))?,
+        password.clone(),
+    )?)
+    .into_owned();
+
+    if two_factor_code.eq(&code) {
+        Ok(())
+    } else {
+        Err(BambooError::unauthorized("user", "Failed to validate"))
+    }
 }

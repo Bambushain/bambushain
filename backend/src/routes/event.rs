@@ -1,13 +1,17 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{delete, get, post, put, web};
 use chrono::NaiveDate;
 use date_range::DateRange;
 use serde::Deserialize;
 
-use bamboo_entities::bamboo_invalid_data_error;
+use bamboo_dbal::prelude::dbal;
 use bamboo_entities::prelude::Event;
+use bamboo_error::*;
+use bamboo_services::prelude::DbConnection;
 
-use crate::sse::Notification;
-use crate::DbConnection;
+use crate::middleware::authenticate_user::authenticate;
+use crate::notifier;
+use crate::path;
+use crate::response::macros::*;
 
 #[derive(Deserialize)]
 pub struct GetEventsQuery {
@@ -15,56 +19,63 @@ pub struct GetEventsQuery {
     pub end: NaiveDate,
 }
 
-#[derive(Deserialize)]
-pub struct EventPath {
-    pub id: i32,
+#[get("/api/bamboo-grove/event", wrap = "authenticate!()")]
+pub async fn get_events(
+    query: Option<web::Query<GetEventsQuery>>,
+    db: DbConnection,
+) -> BambooApiResponseResult {
+    let query = check_invalid_query!(query, "event")?;
+
+    let range = DateRange::new(query.start, query.end).map_err(|_| {
+        BambooError::invalid_data("event", "The start date cannot be after the end date")
+    })?;
+
+    dbal::get_events(range, &db).await.map(|data| list!(data))
 }
 
-pub async fn get_events(query: web::Query<GetEventsQuery>, db: DbConnection) -> HttpResponse {
-    let range = match DateRange::new(query.start, query.end) {
-        Ok(range) => range,
-        Err(_) => {
-            return bad_request!(bamboo_invalid_data_error!(
-                "event",
-                "The start date cannot be after the end date"
-            ))
-        }
-    };
-
-    ok_or_error!(bamboo_dbal::event::get_events(range, &db).await)
-}
-
+#[post("/api/bamboo-grove/event", wrap = "authenticate!()")]
 pub async fn create_event(
-    body: web::Json<Event>,
-    notification: Notification,
+    body: Option<web::Json<Event>>,
+    notifier: notifier::Notifier,
     db: DbConnection,
-) -> HttpResponse {
-    let data = bamboo_dbal::event::create_event(body.into_inner(), &db).await;
-    if data.is_ok() {
-        actix_web::rt::spawn(async move {
-            notification.event_broadcaster.notify_change().await;
-        });
-    }
+) -> BambooApiResult<Event> {
+    let body = check_missing_fields!(body, "event")?;
 
-    created_or_error!(data)
+    let data = dbal::create_event(body.into_inner(), &db).await?;
+    notifier.notify_event_create(data.clone());
+
+    Ok(created!(data))
 }
 
+#[put("/api/bamboo-grove/event/{event_id}", wrap = "authenticate!()")]
 pub async fn update_event(
-    path: web::Path<EventPath>,
-    body: web::Json<Event>,
-    notification: Notification,
+    path: Option<path::EventPath>,
+    body: Option<web::Json<Event>>,
+    notifier: notifier::Notifier,
     db: DbConnection,
-) -> HttpResponse {
-    let data = bamboo_dbal::event::update_event(path.id, body.into_inner(), &db).await;
-    if data.is_ok() {
-        actix_web::rt::spawn(async move {
-            notification.event_broadcaster.notify_change().await;
-        });
-    }
+) -> BambooApiResponseResult {
+    let path = check_invalid_path!(path, "event")?;
+    let body = check_missing_fields!(body, "event")?;
 
-    no_content_or_error!(data)
+    dbal::update_event(path.event_id, body.into_inner(), &db).await?;
+
+    let event = dbal::get_event(path.event_id, &db).await?;
+    notifier.notify_event_update(event);
+
+    Ok(no_content!())
 }
 
-pub async fn delete_event(path: web::Path<EventPath>, db: DbConnection) -> HttpResponse {
-    no_content_or_error!(bamboo_dbal::event::delete_event(path.id, &db).await)
+#[delete("/api/bamboo-grove/event/{event_id}", wrap = "authenticate!()")]
+pub async fn delete_event(
+    path: Option<path::EventPath>,
+    notifier: notifier::Notifier,
+    db: DbConnection,
+) -> BambooApiResponseResult {
+    let path = check_invalid_path!(path, "event")?;
+
+    let event = dbal::get_event(path.event_id, &db).await?;
+    dbal::delete_event(path.event_id, &db).await?;
+    notifier.notify_event_delete(event);
+
+    Ok(no_content!())
 }

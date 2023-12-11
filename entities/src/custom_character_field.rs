@@ -1,8 +1,11 @@
-#[cfg(feature = "backend")]
+#[cfg(not(target_arch = "wasm32"))]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
+
+#[cfg(not(target_arch = "wasm32"))]
+use bamboo_macros::*;
 
 use crate::prelude::CustomCharacterFieldOption;
 
@@ -15,20 +18,20 @@ pub struct CustomField {
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Default)]
 #[cfg_attr(
-    feature = "backend",
-    derive(DeriveEntityModel),
+    not(target_arch = "wasm32"),
+    derive(DeriveEntityModel, Responder),
     sea_orm(table_name = "custom_character_field", schema_name = "final_fantasy")
 )]
 #[serde(rename_all = "camelCase")]
 pub struct Model {
-    #[cfg_attr(feature = "backend", sea_orm(primary_key))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(primary_key))]
     pub id: i32,
     pub label: String,
-    #[cfg(feature = "backend")]
+    #[cfg(not(target_arch = "wasm32"))]
     #[serde(skip)]
     pub user_id: i32,
     pub position: i32,
-    #[cfg_attr(feature = "backend", sea_orm(ignore))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(ignore))]
     pub options: Vec<CustomCharacterFieldOption>,
 }
 
@@ -44,7 +47,7 @@ impl Ord for Model {
     }
 }
 
-#[cfg(feature = "backend")]
+#[cfg(not(target_arch = "wasm32"))]
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
@@ -61,28 +64,28 @@ pub enum Relation {
     CustomFieldValue,
 }
 
-#[cfg(feature = "backend")]
+#[cfg(not(target_arch = "wasm32"))]
 impl Related<super::user::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::User.def()
     }
 }
 
-#[cfg(feature = "backend")]
+#[cfg(not(target_arch = "wasm32"))]
 impl Related<super::custom_character_field_option::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::CustomFieldOption.def()
     }
 }
 
-#[cfg(feature = "backend")]
+#[cfg(not(target_arch = "wasm32"))]
 impl Related<super::custom_character_field_value::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::CustomFieldValue.def()
     }
 }
 
-#[cfg(feature = "backend")]
+#[cfg(not(target_arch = "wasm32"))]
 impl ActiveModelBehavior for ActiveModel {}
 
 impl Model {
@@ -90,7 +93,7 @@ impl Model {
         Self {
             id: i32::default(),
             label,
-            #[cfg(feature = "backend")]
+            #[cfg(not(target_arch = "wasm32"))]
             user_id: i32::default(),
             options,
             position: 0,

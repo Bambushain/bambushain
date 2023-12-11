@@ -1,116 +1,106 @@
-use actix_web::{web, HttpResponse};
-use serde::Deserialize;
+use actix_web::{delete, get, post, put, web};
 
+use bamboo_dbal::prelude::*;
 use bamboo_entities::prelude::*;
+use bamboo_error::*;
+use bamboo_services::prelude::DbConnection;
 
-use crate::middleware::authenticate_user::Authentication;
-use crate::DbConnection;
+use crate::middleware::authenticate_user::{authenticate, Authentication};
+use crate::middleware::extract_character::{character, CharacterData};
+use crate::path;
+use crate::response::macros::*;
 
-#[derive(Deserialize)]
-pub struct CraftersPathInfo {
-    pub character_id: i32,
-}
-
-#[derive(Deserialize)]
-pub struct CrafterPathInfo {
-    pub id: i32,
-    pub character_id: i32,
-}
-
+#[get(
+    "/api/final-fantasy/character/{character_id}/crafter",
+    wrap = "authenticate!()",
+    wrap = "character!()"
+)]
 pub async fn get_crafters(
-    path: web::Path<CraftersPathInfo>,
     authentication: Authentication,
+    character: CharacterData,
     db: DbConnection,
-) -> HttpResponse {
-    ok_or_error!(
-        bamboo_dbal::crafter::get_crafters(authentication.user.id, path.character_id, &db).await
-    )
+) -> BambooApiResponseResult {
+    dbal::get_crafters(authentication.user.id, character.id, &db)
+        .await
+        .map(|data| list!(data))
 }
 
+#[get(
+    "/api/final-fantasy/character/{character_id}/crafter/{crafter_id}",
+    wrap = "authenticate!()",
+    wrap = "character!()"
+)]
 pub async fn get_crafter(
-    path: web::Path<CrafterPathInfo>,
+    path: Option<path::CrafterPath>,
+    character: CharacterData,
     authentication: Authentication,
     db: DbConnection,
-) -> HttpResponse {
-    match bamboo_dbal::crafter::get_crafter(path.id, authentication.user.id, path.character_id, &db)
+) -> BambooApiResult<Crafter> {
+    let path = check_invalid_path!(path, "crafter")?;
+
+    dbal::get_crafter(path.crafter_id, authentication.user.id, character.id, &db)
         .await
-    {
-        Ok(crafter) => ok_json!(crafter),
-        Err(_) => not_found!(bamboo_not_found_error!(
-            "crafter",
-            "The crafter was not found"
-        )),
-    }
+        .map(|crafter| ok!(crafter))
 }
 
+#[post(
+    "/api/final-fantasy/character/{character_id}/crafter",
+    wrap = "authenticate!()",
+    wrap = "character!()"
+)]
 pub async fn create_crafter(
-    path: web::Path<CraftersPathInfo>,
-    body: web::Json<Crafter>,
+    body: Option<web::Json<Crafter>>,
+    character: CharacterData,
     authentication: Authentication,
     db: DbConnection,
-) -> HttpResponse {
-    if bamboo_dbal::crafter::crafter_exists_by_job(
-        authentication.user.id,
-        path.character_id,
-        body.job,
-        &db,
-    )
-    .await
-    {
-        return conflict!(bamboo_exists_already_error!(
-            "crafter",
-            "The crafter already exists"
-        ));
-    }
+) -> BambooApiResult<Crafter> {
+    let body = check_missing_fields!(body, "crafter")?;
 
-    created_or_error!(
-        bamboo_dbal::crafter::create_crafter(
-            authentication.user.id,
-            path.character_id,
-            body.into_inner(),
-            &db
-        )
+    dbal::create_crafter(authentication.user.id, character.id, body.into_inner(), &db)
         .await
-    )
+        .map(|data| ok!(data))
 }
 
+#[put(
+    "/api/final-fantasy/character/{character_id}/crafter/{crafter_id}",
+    wrap = "authenticate!()",
+    wrap = "character!()"
+)]
 pub async fn update_crafter(
-    body: web::Json<Crafter>,
-    path: web::Path<CrafterPathInfo>,
+    body: Option<web::Json<Crafter>>,
+    path: Option<path::CrafterPath>,
+    character: CharacterData,
     authentication: Authentication,
     db: DbConnection,
-) -> HttpResponse {
-    match bamboo_dbal::crafter::get_crafter(path.id, authentication.user.id, path.character_id, &db)
-        .await
-    {
-        Ok(_) => no_content_or_error!(
-            bamboo_dbal::crafter::update_crafter(path.id, body.into_inner(), &db).await
-        ),
-        Err(_) => not_found!(bamboo_not_found_error!(
-            "crafter",
-            "The crafter was not found"
-        )),
-    }
-}
+) -> BambooApiResponseResult {
+    let path = check_invalid_path!(path, "crafter")?;
+    let body = check_missing_fields!(body, "crafter")?;
 
-pub async fn delete_crafter(
-    path: web::Path<CrafterPathInfo>,
-    authentication: Authentication,
-    db: DbConnection,
-) -> HttpResponse {
-    if !bamboo_dbal::crafter::crafter_exists(
-        path.id,
+    dbal::update_crafter(
+        path.crafter_id,
         authentication.user.id,
-        path.character_id,
+        character.id,
+        body.into_inner(),
         &db,
     )
     .await
-    {
-        return not_found!(bamboo_not_found_error!(
-            "crafter",
-            "The crafter was not found"
-        ));
-    }
+    .map(|_| no_content!())
+}
 
-    no_content_or_error!(bamboo_dbal::crafter::delete_crafter(path.id, &db).await)
+#[delete(
+    "/api/final-fantasy/character/{character_id}/crafter/{crafter_id}",
+    wrap = "authenticate!()",
+    wrap = "character!()"
+)]
+pub async fn delete_crafter(
+    path: Option<path::CrafterPath>,
+    character: CharacterData,
+    authentication: Authentication,
+    db: DbConnection,
+) -> BambooApiResponseResult {
+    let path = check_invalid_path!(path, "crafter")?;
+
+    dbal::delete_crafter(path.crafter_id, authentication.user.id, character.id, &db)
+        .await
+        .map(|_| no_content!())
 }

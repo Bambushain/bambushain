@@ -5,6 +5,8 @@ body {
     background-size: cover !important;
     background-position-y: bottom !important;
     background-position-x: left !important;
+    padding: 0;
+    margin: 0;
 
     --gradient-bottom-color: transparent !important;
     --menu-text-selected-color: rgb(204, 204, 204);

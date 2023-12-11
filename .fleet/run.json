@@ -1,0 +1,77 @@
+{
+    "configurations": [
+        {
+            "type": "cargo",
+            "name": "Start app",
+            "cargoArgs": [
+                "run"
+            ],
+            "environment": {
+                "DATABASE_URL": "postgres://coder:coder@coder-database-knerd-bambushain:5432/coder",
+                "FRONTEND_DIR": "$PROJECT_DIR$/",
+                "INITIAL_USER_DISPLAY_NAME": "Knerd",
+                "INITIAL_USER_EMAIL": "me@imanuel.dev",
+                "MAILER_ENCRYPTION": "false",
+                "MAILER_FROM": "noreply@creastina.art",
+                "MAILER_PASSWORD": "CPt2FGruqwbm",
+                "MAILER_PORT": "1025",
+                "MAILER_SERVER": "localhost",
+                "MAILER_STARTTLS": "false",
+                "MAILER_USERNAME": "noreply@creastina.art",
+                "RUST_LOG": "DEBUG"
+            },
+        },
+        {
+            "type": "cargo",
+            "name": "Build app",
+            "cargoArgs": [
+                "build"
+            ],
+        },
+        {
+            "type": "command",
+            "name": "Build frontend",
+            "program": "trunk",
+            "workingDir": "$PROJECT_DIR$/frontend/",
+            "args": [
+                "build"
+            ],
+        },
+        {
+            "type": "command",
+            "name": "Watch frontend",
+            "program": "trunk",
+            "workingDir": "$PROJECT_DIR$/frontend/",
+            "args": [
+                "watch"
+            ],
+        },
+        {
+            "type": "command",
+            "name": "Rustfmt",
+            "program": "rustfmt",
+            "args": [
+                "--edition",
+                "2021",
+                "src/main.rs",
+                "frontend/src/main.rs",
+            ],
+        },
+        {
+            "type": "cargo",
+            "name": "Clippy backend",
+            "cargoArgs": [
+                "clippy"
+            ],
+        },
+        {
+            "type": "cargo",
+            "name": "Clippy frontend",
+            "cargoArgs": [
+                "clippy",
+                "-p",
+                "bamboo-frontend"
+            ],
+        },
+    ]
+}

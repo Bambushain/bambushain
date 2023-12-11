@@ -3,7 +3,7 @@ use bamboo_entities::prelude::*;
 use crate::api;
 use crate::storage;
 
-pub async fn login(login_data: Login) -> api::PandapartyApiResult<either::Either<LoginResult, ()>> {
+pub async fn login(login_data: Login) -> api::BambooApiResult<either::Either<LoginResult, ()>> {
     log::debug!("Execute login");
     if login_data.two_factor_code.is_none() {
         api::post_no_content("/api/login", &login_data).await?;

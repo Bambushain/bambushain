@@ -1,14 +1,17 @@
 use std::cmp::Ordering;
 
-#[cfg(feature = "backend")]
+#[cfg(not(target_arch = "wasm32"))]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
-#[cfg(not(feature = "backend"))]
+#[cfg(not(not(target_arch = "wasm32")))]
 use strum_macros::EnumIter;
+
+#[cfg(not(target_arch = "wasm32"))]
+use bamboo_macros::*;
 
 #[derive(Serialize, Deserialize, EnumIter, Debug, Eq, PartialEq, Clone, Default, Copy)]
 #[cfg_attr(
-    feature = "backend",
+    not(target_arch = "wasm32"),
     derive(DeriveActiveEnum),
     sea_orm(
         rs_type = "String",
@@ -18,45 +21,45 @@ use strum_macros::EnumIter;
 )]
 pub enum FighterJob {
     #[default]
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "paladin"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "paladin"))]
     Paladin,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "warrior"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "warrior"))]
     Warrior,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "dark_knight"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "dark_knight"))]
     DarkKnight,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "gunbreaker"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "gunbreaker"))]
     Gunbreaker,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "white_mage"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "white_mage"))]
     WhiteMage,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "scholar"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "scholar"))]
     Scholar,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "astrologian"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "astrologian"))]
     Astrologian,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "sage"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "sage"))]
     Sage,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "monk"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "monk"))]
     Monk,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "dragoon"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "dragoon"))]
     Dragoon,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "ninja"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "ninja"))]
     Ninja,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "samurai"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "samurai"))]
     Samurai,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "reaper"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "reaper"))]
     Reaper,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "bard"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "bard"))]
     Bard,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "machinist"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "machinist"))]
     Machinist,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "dancer"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "dancer"))]
     Dancer,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "black_mage"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "black_mage"))]
     BlackMage,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "summoner"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "summoner"))]
     Summoner,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "red_mage"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "red_mage"))]
     RedMage,
-    #[cfg_attr(feature = "backend", sea_orm(string_value = "blue_mage"))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "blue_mage"))]
     BlueMage,
 }
 
@@ -184,13 +187,13 @@ impl From<String> for FighterJob {
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Default)]
 #[cfg_attr(
-    feature = "backend",
-    derive(DeriveEntityModel),
+    not(target_arch = "wasm32"),
+    derive(DeriveEntityModel, Responder),
     sea_orm(table_name = "fighter", schema_name = "final_fantasy")
 )]
 #[serde(rename_all = "camelCase")]
 pub struct Model {
-    #[cfg_attr(feature = "backend", sea_orm(primary_key))]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(primary_key))]
     pub id: i32,
     pub job: FighterJob,
     pub level: Option<String>,
@@ -210,7 +213,7 @@ impl Ord for Model {
     }
 }
 
-#[cfg(feature = "backend")]
+#[cfg(not(target_arch = "wasm32"))]
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
@@ -223,14 +226,14 @@ pub enum Relation {
     Character,
 }
 
-#[cfg(feature = "backend")]
+#[cfg(not(target_arch = "wasm32"))]
 impl Related<super::character::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Character.def()
     }
 }
 
-#[cfg(feature = "backend")]
+#[cfg(not(target_arch = "wasm32"))]
 impl ActiveModelBehavior for ActiveModel {}
 
 impl Model {

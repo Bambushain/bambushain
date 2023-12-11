@@ -1,0 +1,11 @@
+[package]
+name = "bamboo-sse"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bamboo-entities = { path = "../entities" }
+
+actix-web-lab = { workspace = true }
+serde = { workspace = true }

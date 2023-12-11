@@ -1,49 +1,17 @@
-use std::sync::Arc;
-
-use actix_web::web;
-use actix_web::{App, HttpResponse, HttpServer};
+use actix_web::{middleware, App, HttpServer};
 use rand::distributions::Alphanumeric;
 use rand::prelude::*;
 use sea_orm::prelude::*;
 
-use bamboo_backend::broadcaster::event::EventBroadcaster;
-use bamboo_backend::middleware::authenticate_user::AuthenticateUser;
-use bamboo_backend::middleware::check_mod::CheckMod;
-use bamboo_backend::routes::authentication::{login, logout};
-use bamboo_backend::routes::character::{
-    create_character, delete_character, get_character, get_characters, update_character,
-};
-use bamboo_backend::routes::crafter::{
-    create_crafter, delete_crafter, get_crafter, get_crafters, update_crafter,
-};
-use bamboo_backend::routes::custom_field::{
-    create_custom_field, create_custom_field_option, delete_custom_field,
-    delete_custom_field_option, get_custom_field, get_custom_field_options, get_custom_fields,
-    move_custom_field, update_custom_field, update_custom_field_option,
-};
-use bamboo_backend::routes::event::{create_event, delete_event, get_events, update_event};
-use bamboo_backend::routes::fighter::{
-    create_fighter, delete_fighter, get_fighter, get_fighters, update_fighter,
-};
-use bamboo_backend::routes::free_company::{
-    create_free_company, delete_free_company, get_free_companies, get_free_company,
-    update_free_company,
-};
-use bamboo_backend::routes::user::{
-    add_mod_user, change_my_password, change_password, create_user, delete_user, enable_totp,
-    get_profile, get_user, get_users, remove_mod_user, update_profile, update_user_profile,
-    validate_totp,
-};
-use bamboo_backend::sse::event::event_sse_client;
-use bamboo_backend::sse::{Notification, NotificationState};
-use bamboo_backend::{DbConnection, Services, ServicesState};
+use bamboo_backend::prelude::*;
+use bamboo_dbal::prelude::dbal;
 use bamboo_entities::user;
 use bamboo_migration::{IntoSchemaManagerConnection, Migrator, MigratorTrait};
-use bamboo_services::prelude::EnvironmentService;
+use bamboo_services::prelude::DbConnection;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    stderrlog::new().verbosity(log::Level::Info).init().unwrap();
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
 
     log::info!("Open the bamboo grove");
 
@@ -52,30 +20,24 @@ async fn main() -> std::io::Result<()> {
     opts.sqlx_logging(true)
         .sqlx_logging_level(log::LevelFilter::Debug);
 
-    let db = match sea_orm::Database::connect(opts).await {
-        Ok(db) => db,
-        Err(err) => panic!("{err}"),
-    };
+    let db = sea_orm::Database::connect(opts)
+        .await
+        .map_err(std::io::Error::other)?;
 
-    match Migrator::up(db.into_schema_manager_connection(), None).await {
-        Ok(_) => log::info!("Successfully migrated database"),
-        Err(err) => panic!("{err}"),
-    }
+    Migrator::up(db.into_schema_manager_connection(), None)
+        .await
+        .map_err(std::io::Error::other)?;
+    log::info!("Successfully migrated database");
 
-    let at_least_one_mod_exists = match user::Entity::find()
+    let at_least_one_mod_exists = user::Entity::find()
         .filter(user::Column::IsMod.eq(true))
         .count(&db)
         .await
-    {
-        Ok(count) => {
-            log::info!("Database contains {count} users");
-            count > 0
-        }
-        Err(err) => panic!("{err}"),
-    };
+        .map(|count| count > 0)
+        .map_err(std::io::Error::other)?;
 
     if !at_least_one_mod_exists {
-        log::info!("At least one user exists, not creating initial user");
+        log::info!("No mod exists, creating initial user");
         let password = thread_rng()
             .sample_iter(&Alphanumeric)
             .take(12)
@@ -86,7 +48,7 @@ async fn main() -> std::io::Result<()> {
             .expect("INITIAL_USER_DISPLAY_NAME must be set");
         let email = std::env::var("INITIAL_USER_EMAIL").expect("INITIAL_USER_EMAIL must be set");
 
-        match bamboo_dbal::user::create_user(
+        let _ = dbal::create_user(
             user::Model::new(
                 email.clone(),
                 password.clone(),
@@ -97,275 +59,18 @@ async fn main() -> std::io::Result<()> {
             &db,
         )
         .await
-        {
-            Ok(_) => log::info!("Created initial user {email} with password {password}"),
-            Err(err) => panic!("Failed to create initial user, {err}"),
-        }
+        .map_err(std::io::Error::other)?;
+        log::info!("Created initial user {email} with password {password}");
     }
 
-    let event_broadcaster = EventBroadcaster::create();
+    let notifier = NotifierState::new();
 
-    let environment_service = EnvironmentService::new();
-
-    let frontend_base_path = environment_service.get_env("FRONTEND_DIR", ".");
-    log::info!("Frontend base path: {frontend_base_path}");
-
-    log::info!("Serving on port 8070");
     HttpServer::new(move || {
         App::new()
-            .app_data(Notification::new(NotificationState {
-                event_broadcaster: Arc::clone(&event_broadcaster),
-            }))
-            .app_data(Services::new(ServicesState {
-                environment_service: Arc::new(environment_service.clone()),
-            }))
+            .wrap(middleware::Compress::default())
+            .app_data(Notifier::new(notifier.clone()))
             .app_data(DbConnection::new(db.clone()))
-            .route("/api/login", web::post().to(login))
-            .route(
-                "/api/login",
-                web::delete().to(logout).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/login",
-                web::head()
-                    .to(HttpResponse::NoContent)
-                    .wrap(AuthenticateUser),
-            )
-            .route("/api/user", web::get().to(get_users).wrap(AuthenticateUser))
-            .route(
-                "/api/user",
-                web::post()
-                    .to(create_user)
-                    .wrap(CheckMod)
-                    .wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/user/{id}",
-                web::get().to(get_user).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/user/{id}",
-                web::delete()
-                    .to(delete_user)
-                    .wrap(CheckMod)
-                    .wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/user/{id}/profile",
-                web::put()
-                    .to(update_user_profile)
-                    .wrap(CheckMod)
-                    .wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/user/{id}/mod",
-                web::put()
-                    .to(add_mod_user)
-                    .wrap(CheckMod)
-                    .wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/user/{id}/mod",
-                web::delete()
-                    .to(remove_mod_user)
-                    .wrap(CheckMod)
-                    .wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/user/{id}/password",
-                web::put()
-                    .to(change_password)
-                    .wrap(CheckMod)
-                    .wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/pandaparty/event",
-                web::get().to(get_events).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/pandaparty/event",
-                web::post().to(create_event).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/pandaparty/event/{id}",
-                web::put().to(update_event).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/pandaparty/event/{id}",
-                web::delete().to(delete_event).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/bamboo-grove/event",
-                web::get().to(get_events).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/bamboo-grove/event",
-                web::post().to(create_event).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/bamboo-grove/event/{id}",
-                web::put().to(update_event).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/bamboo-grove/event/{id}",
-                web::delete().to(delete_event).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/my/profile",
-                web::get().to(get_profile).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/my/profile",
-                web::put().to(update_profile).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/my/password",
-                web::put().to(change_my_password).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/my/totp",
-                web::post().to(enable_totp).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/my/totp/validate",
-                web::put().to(validate_totp).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/final-fantasy/character/custom-field",
-                web::get().to(get_custom_fields).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/final-fantasy/character/custom-field",
-                web::post().to(create_custom_field).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/final-fantasy/character/custom-field/{id}",
-                web::get().to(get_custom_field).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/final-fantasy/character/custom-field/{id}",
-                web::put().to(update_custom_field).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/final-fantasy/character/custom-field/{field_id}/{position}",
-                web::put().to(move_custom_field).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/final-fantasy/character/custom-field/{id}",
-                web::delete().to(delete_custom_field).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/final-fantasy/character/custom-field/{id}/option",
-                web::get()
-                    .to(get_custom_field_options)
-                    .wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/final-fantasy/character/custom-field/{id}/option",
-                web::post()
-                    .to(create_custom_field_option)
-                    .wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/final-fantasy/character/custom-field/{field_id}/option/{id}",
-                web::put()
-                    .to(update_custom_field_option)
-                    .wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/final-fantasy/character/custom-field/{field_id}/option/{id}",
-                web::delete()
-                    .to(delete_custom_field_option)
-                    .wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/final-fantasy/character",
-                web::get().to(get_characters).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/final-fantasy/character",
-                web::post().to(create_character).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/final-fantasy/character/{id}",
-                web::get().to(get_character).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/final-fantasy/character/{id}",
-                web::put().to(update_character).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/final-fantasy/character/{id}",
-                web::delete().to(delete_character).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/final-fantasy/free-company",
-                web::get().to(get_free_companies).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/final-fantasy/free-company",
-                web::post().to(create_free_company).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/final-fantasy/free-company/{id}",
-                web::get().to(get_free_company).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/final-fantasy/free-company/{id}",
-                web::put().to(update_free_company).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/final-fantasy/free-company/{id}",
-                web::delete().to(delete_free_company).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/final-fantasy/character/{character_id}/crafter",
-                web::get().to(get_crafters).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/final-fantasy/character/{character_id}/crafter",
-                web::post().to(create_crafter).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/final-fantasy/character/{character_id}/crafter/{id}",
-                web::get().to(get_crafter).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/final-fantasy/character/{character_id}/crafter/{id}",
-                web::put().to(update_crafter).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/final-fantasy/character/{character_id}/crafter/{id}",
-                web::delete().to(delete_crafter).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/final-fantasy/character/{character_id}/fighter",
-                web::get().to(get_fighters).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/final-fantasy/character/{character_id}/fighter",
-                web::post().to(create_fighter).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/final-fantasy/character/{character_id}/fighter/{id}",
-                web::get().to(get_fighter).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/final-fantasy/character/{character_id}/fighter/{id}",
-                web::put().to(update_fighter).wrap(AuthenticateUser),
-            )
-            .route(
-                "/api/final-fantasy/character/{character_id}/fighter/{id}",
-                web::delete().to(delete_fighter).wrap(AuthenticateUser),
-            )
-            .route("/sse/event", web::get().to(event_sse_client))
-            .service(
-                actix_web_lab::web::spa()
-                    .index_file(format!("{frontend_base_path}/dist/index.html"))
-                    .static_resources_location(format!("{frontend_base_path}/dist"))
-                    .static_resources_mount("/static")
-                    .finish(),
-            )
+            .configure(bamboo_backend::prelude::configure_routes)
     })
     .bind(("0.0.0.0", 8070))?
     .run()

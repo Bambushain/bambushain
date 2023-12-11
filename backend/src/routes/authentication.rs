@@ -1,4 +1,4 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{cookie::Cookie, delete, post, web, HttpResponse};
 use lettre::message::MultiPart;
 use lettre::transport::smtp;
 use lettre::transport::smtp::client::TlsParameters;
@@ -6,17 +6,19 @@ use lettre::AsyncTransport;
 
 use bamboo_dbal::prelude::*;
 use bamboo_entities::prelude::*;
+use bamboo_error::*;
+use bamboo_services::prelude::{DbConnection, EnvService};
 
-use crate::middleware::authenticate_user::AuthenticationState;
-use crate::{DbConnection, Services};
+use crate::middleware::authenticate_user::{authenticate, Authentication};
+use crate::response::macros::*;
 
 async fn send_two_factor_mail(
     display_name: String,
     email: String,
     token: String,
-    services: Services,
-) -> HttpResponse {
-    let env_service = services.environment_service.clone();
+    env_service: EnvService,
+) -> BambooApiResponseResult {
+    let env_service = env_service.clone();
     let html_template = format!(
         r#"
 <html lang="de" style="font-family: system-ui,-apple-system,'Segoe UI','Roboto','Ubuntu','Cantarell','Noto Sans',sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol','Noto Color Emoji';">
@@ -41,7 +43,7 @@ hier ist dein Zwei-Faktor-Code für den Bambushain: {token}
 Alles Gute vom 🐼"#
     );
 
-    let email = match lettre::Message::builder()
+    let email = lettre::Message::builder()
         .from(
             env_service
                 .get_env("MAILER_FROM", "noreply@bambushain.app")
@@ -53,20 +55,14 @@ Alles Gute vom 🐼"#
         .multipart(MultiPart::alternative_plain_html(
             text_template,
             html_template,
-        )) {
-        Ok(email) => email,
-        Err(err) => {
+        ))
+        .map_err(|err| {
             log::error!("Failed to construct the email message {err}");
-            return HttpResponse::Unauthorized().json(BambooError {
-                entity_type: "user".to_string(),
-                message: "Email or Password is invalid".to_string(),
-                error_type: BambooErrorCode::InvalidDataError,
-            });
-        }
-    };
+            BambooError::unauthorized("user", "Login data is invalid")
+        })?;
 
     let mail_server = env_service.get_env("MAILER_SERVER", "localhost");
-    let transport = if env_service
+    let builder = if env_service
         .get_env("MAILER_STARTTLS", "false")
         .to_lowercase()
         == "true"
@@ -74,19 +70,11 @@ Alles Gute vom 🐼"#
         lettre::AsyncSmtpTransport::<lettre::Tokio1Executor>::starttls_relay(mail_server.as_str())
     } else {
         lettre::AsyncSmtpTransport::<lettre::Tokio1Executor>::relay(mail_server.as_str())
-    };
-
-    let builder = match transport {
-        Ok(builder) => builder,
-        Err(err) => {
-            log::error!("Failed to create the email builder {err}");
-            return HttpResponse::Unauthorized().json(BambooError {
-                entity_type: "user".to_string(),
-                message: "Email or Password is invalid".to_string(),
-                error_type: BambooErrorCode::InvalidDataError,
-            });
-        }
-    };
+    }
+    .map_err(|err| {
+        log::error!("Failed to create the email builder {err}");
+        BambooError::unauthorized("user", "Login data is invalid")
+    })?;
 
     let port = env_service
         .get_env("MAILER_PORT", "25")
@@ -96,7 +84,10 @@ Alles Gute vom 🐼"#
         builder.tls(smtp::client::Tls::None)
     } else {
         builder.tls(smtp::client::Tls::Required(
-            TlsParameters::new(mail_server).expect("Should work"),
+            TlsParameters::new(mail_server).map_err(|err| {
+                log::error!("Failed to parse the server domain {err}");
+                BambooError::unauthorized("user", "Login data is invalid")
+            })?,
         ))
     };
 
@@ -108,72 +99,78 @@ Alles Gute vom 🐼"#
         .port(port)
         .build();
 
-    match mailer.send(email).await {
-        Ok(_) => no_content!(),
-        Err(err) => {
+    mailer
+        .send(email)
+        .await
+        .map_err(|err| {
             log::error!("Failed to send email {err}");
             log::error!("{err:#?}");
-            HttpResponse::Unauthorized().json(BambooError {
-                entity_type: "user".to_string(),
-                message: "Email or Password is invalid".to_string(),
-                error_type: BambooErrorCode::InvalidDataError,
-            })
-        }
-    }
+
+            BambooError::unauthorized("user", "Login data is invalid")
+        })
+        .map(|_| no_content!())
 }
 
-pub async fn login(body: web::Json<Login>, db: DbConnection, services: Services) -> HttpResponse {
+#[post("/api/login")]
+pub async fn login(
+    body: Option<web::Json<Login>>,
+    db: DbConnection,
+    env_service: EnvService,
+) -> BambooApiResponseResult {
+    let body = check_missing_fields!(body, "authentication")?;
+
     if let Some(two_factor_code) = body.two_factor_code.clone() {
-        let data = validate_auth_and_create_token(
+        dbal::validate_auth_and_create_token(
             body.email.clone(),
             body.password.clone(),
             two_factor_code,
             &db,
         )
-        .await;
-        match data {
-            Ok(result) => ok_json!(result),
-            Err(err) => {
-                log::error!("Failed to login {err}");
-                HttpResponse::Unauthorized().json(BambooError {
-                    entity_type: "user".to_string(),
-                    message: "Email or Password is invalid".to_string(),
-                    error_type: BambooErrorCode::InvalidDataError,
-                })
-            }
-        }
+        .await
+        .map_err(|err| {
+            log::error!("Failed to login {err}");
+            BambooError::unauthorized("user", "Login data is invalid")
+        })
+        .map(|data| {
+            let mut response = list!(data.clone());
+            let _ = response.add_cookie(
+                &Cookie::build(crate::cookie::BAMBOO_AUTH_COOKIE, data.token.clone())
+                    .path("/")
+                    .http_only(true)
+                    .finish(),
+            );
+
+            response
+        })
     } else {
-        let data =
-            validate_auth_and_set_two_factor_code(body.email.clone(), body.password.clone(), &db)
-                .await;
-        match data {
-            Ok(result) => {
-                if let Some(two_factor_code) = result.two_factor_code {
-                    send_two_factor_mail(
-                        result.user.display_name,
-                        result.user.email,
-                        two_factor_code,
-                        services,
-                    )
-                    .await
-                } else {
-                    no_content!()
-                }
-            }
-            Err(err) => {
-                log::error!("Failed to login {err}");
-                HttpResponse::Unauthorized().json(BambooError {
-                    entity_type: "user".to_string(),
-                    message: "Email or Password is invalid".to_string(),
-                    error_type: BambooErrorCode::InvalidDataError,
-                })
-            }
+        let data = dbal::validate_auth_and_set_two_factor_code(
+            body.email.clone(),
+            body.password.clone(),
+            &db,
+        )
+        .await
+        .map_err(|err| {
+            log::error!("Failed to login {err}");
+            BambooError::unauthorized("user", "Login data is invalid")
+        })?;
+        if let Some(two_factor_code) = data.two_factor_code {
+            send_two_factor_mail(
+                data.user.display_name,
+                data.user.email,
+                two_factor_code,
+                env_service,
+            )
+            .await
+            .map(|_| no_content!())
+        } else {
+            Ok(no_content!())
         }
     }
 }
 
-pub async fn logout(state: web::ReqData<AuthenticationState>, db: DbConnection) -> HttpResponse {
-    let _ = delete_token(state.token.clone(), &db).await;
+#[delete("/api/login", wrap = "authenticate!()")]
+pub async fn logout(auth: Authentication, db: DbConnection) -> HttpResponse {
+    let _ = dbal::delete_token(auth.token.clone(), &db).await;
 
     no_content!()
 }

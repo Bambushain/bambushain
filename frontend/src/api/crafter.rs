@@ -6,7 +6,7 @@ use bounce::BounceStates;
 
 use bamboo_entities::prelude::*;
 
-use crate::api::{delete, get, post, put_no_content, ApiError, PandapartyApiResult};
+use crate::api::{delete, get, post, put_no_content, ApiError, BambooApiResult};
 
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone)]
 pub struct CrafterForCharacter {
@@ -19,7 +19,7 @@ impl From<Vec<Crafter>> for CrafterForCharacter {
     }
 }
 
-async fn get_crafter(character_id: i32) -> PandapartyApiResult<Vec<Crafter>> {
+async fn get_crafter(character_id: i32) -> BambooApiResult<Vec<Crafter>> {
     log::debug!("Get crafter");
     get(format!(
         "/api/final-fantasy/character/{character_id}/crafter"
@@ -39,7 +39,7 @@ impl Query for CrafterForCharacter {
     }
 }
 
-pub async fn create_crafter(character_id: i32, crafter: Crafter) -> PandapartyApiResult<Crafter> {
+pub async fn create_crafter(character_id: i32, crafter: Crafter) -> BambooApiResult<Crafter> {
     log::debug!("Create crafter {}", crafter.job.get_job_name());
     post(
         format!("/api/final-fantasy/character/{character_id}/crafter"),
@@ -48,11 +48,7 @@ pub async fn create_crafter(character_id: i32, crafter: Crafter) -> PandapartyAp
     .await
 }
 
-pub async fn update_crafter(
-    character_id: i32,
-    id: i32,
-    crafter: Crafter,
-) -> PandapartyApiResult<()> {
+pub async fn update_crafter(character_id: i32, id: i32, crafter: Crafter) -> BambooApiResult<()> {
     log::debug!("Update crafter {id}");
     put_no_content(
         format!("/api/final-fantasy/character/{character_id}/crafter/{id}"),
@@ -61,7 +57,7 @@ pub async fn update_crafter(
     .await
 }
 
-pub async fn delete_crafter(character_id: i32, id: i32) -> PandapartyApiResult<()> {
+pub async fn delete_crafter(character_id: i32, id: i32) -> BambooApiResult<()> {
     log::debug!("Delete crafter {id}");
     delete(format!(
         "/api/final-fantasy/character/{character_id}/crafter/{id}"

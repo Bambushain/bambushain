@@ -1,116 +1,106 @@
-use actix_web::{web, HttpResponse};
-use serde::Deserialize;
+use actix_web::{delete, get, post, put, web};
 
+use bamboo_dbal::prelude::*;
 use bamboo_entities::prelude::*;
+use bamboo_error::*;
+use bamboo_services::prelude::DbConnection;
 
-use crate::middleware::authenticate_user::Authentication;
-use crate::DbConnection;
+use crate::middleware::authenticate_user::{authenticate, Authentication};
+use crate::middleware::extract_character::{character, CharacterData};
+use crate::path;
+use crate::response::macros::*;
 
-#[derive(Deserialize)]
-pub struct FightersPathInfo {
-    pub character_id: i32,
-}
-
-#[derive(Deserialize)]
-pub struct FighterPathInfo {
-    pub id: i32,
-    pub character_id: i32,
-}
-
+#[get(
+    "/api/final-fantasy/character/{character_id}/fighter",
+    wrap = "authenticate!()",
+    wrap = "character!()"
+)]
 pub async fn get_fighters(
-    path: web::Path<FightersPathInfo>,
     authentication: Authentication,
+    character: CharacterData,
     db: DbConnection,
-) -> HttpResponse {
-    ok_or_error!(
-        bamboo_dbal::fighter::get_fighters(authentication.user.id, path.character_id, &db).await
-    )
+) -> BambooApiResponseResult {
+    dbal::get_fighters(authentication.user.id, character.id, &db)
+        .await
+        .map(|data| list!(data))
 }
 
+#[get(
+    "/api/final-fantasy/character/{character_id}/fighter/{fighter_id}",
+    wrap = "authenticate!()",
+    wrap = "character!()"
+)]
 pub async fn get_fighter(
-    path: web::Path<FighterPathInfo>,
+    path: Option<path::FighterPath>,
+    character: CharacterData,
     authentication: Authentication,
     db: DbConnection,
-) -> HttpResponse {
-    match bamboo_dbal::fighter::get_fighter(path.id, authentication.user.id, path.character_id, &db)
+) -> BambooApiResult<Fighter> {
+    let path = check_invalid_path!(path, "fighter")?;
+
+    dbal::get_fighter(path.fighter_id, authentication.user.id, character.id, &db)
         .await
-    {
-        Ok(fighter) => ok_json!(fighter),
-        Err(_) => not_found!(bamboo_not_found_error!(
-            "fighter",
-            "The fighter was not found"
-        )),
-    }
+        .map(|fighter| ok!(fighter))
 }
 
+#[post(
+    "/api/final-fantasy/character/{character_id}/fighter",
+    wrap = "authenticate!()",
+    wrap = "character!()"
+)]
 pub async fn create_fighter(
-    path: web::Path<FightersPathInfo>,
-    body: web::Json<Fighter>,
+    body: Option<web::Json<Fighter>>,
+    character: CharacterData,
     authentication: Authentication,
     db: DbConnection,
-) -> HttpResponse {
-    if bamboo_dbal::fighter::fighter_exists_by_job(
-        authentication.user.id,
-        path.character_id,
-        body.job,
-        &db,
-    )
-    .await
-    {
-        return conflict!(bamboo_exists_already_error!(
-            "fighter",
-            "The fighter already exists"
-        ));
-    }
+) -> BambooApiResult<Fighter> {
+    let body = check_missing_fields!(body, "fighter")?;
 
-    created_or_error!(
-        bamboo_dbal::fighter::create_fighter(
-            authentication.user.id,
-            path.character_id,
-            body.into_inner(),
-            &db
-        )
+    dbal::create_fighter(authentication.user.id, character.id, body.into_inner(), &db)
         .await
-    )
+        .map(|data| ok!(data))
 }
 
+#[put(
+    "/api/final-fantasy/character/{character_id}/fighter/{fighter_id}",
+    wrap = "authenticate!()",
+    wrap = "character!()"
+)]
 pub async fn update_fighter(
-    body: web::Json<Fighter>,
-    path: web::Path<FighterPathInfo>,
+    body: Option<web::Json<Fighter>>,
+    path: Option<path::FighterPath>,
+    character: CharacterData,
     authentication: Authentication,
     db: DbConnection,
-) -> HttpResponse {
-    match bamboo_dbal::fighter::get_fighter(path.id, authentication.user.id, path.character_id, &db)
-        .await
-    {
-        Ok(_) => no_content_or_error!(
-            bamboo_dbal::fighter::update_fighter(path.id, body.into_inner(), &db).await
-        ),
-        Err(_) => not_found!(bamboo_not_found_error!(
-            "fighter",
-            "The fighter was not found"
-        )),
-    }
-}
+) -> BambooApiResponseResult {
+    let path = check_invalid_path!(path, "fighter")?;
+    let body = check_missing_fields!(body, "fighter")?;
 
-pub async fn delete_fighter(
-    path: web::Path<FighterPathInfo>,
-    authentication: Authentication,
-    db: DbConnection,
-) -> HttpResponse {
-    if !bamboo_dbal::fighter::fighter_exists(
-        path.id,
+    dbal::update_fighter(
+        path.fighter_id,
         authentication.user.id,
-        path.character_id,
+        character.id,
+        body.into_inner(),
         &db,
     )
     .await
-    {
-        return not_found!(bamboo_not_found_error!(
-            "fighter",
-            "The fighter was not found"
-        ));
-    }
+    .map(|_| no_content!())
+}
 
-    no_content_or_error!(bamboo_dbal::fighter::delete_fighter(path.id, &db).await)
+#[delete(
+    "/api/final-fantasy/character/{character_id}/fighter/{fighter_id}",
+    wrap = "authenticate!()",
+    wrap = "character!()"
+)]
+pub async fn delete_fighter(
+    path: Option<path::FighterPath>,
+    character: CharacterData,
+    authentication: Authentication,
+    db: DbConnection,
+) -> BambooApiResponseResult {
+    let path = check_invalid_path!(path, "fighter")?;
+
+    dbal::delete_fighter(path.fighter_id, authentication.user.id, character.id, &db)
+        .await
+        .map(|_| no_content!())
 }

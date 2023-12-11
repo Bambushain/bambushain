@@ -3,8 +3,10 @@ FROM harbor.ulbricht.casa/imanuel/trunk-docker-base-image:latest as build
 WORKDIR /usr/src/bamboo
 COPY . .
 
-RUN trunk build --release
 RUN cargo install --path .
+
+WORKDIR /usr/src/bamboo/frontend
+RUN trunk build --release
 
 FROM library/alpine:3.18
 
