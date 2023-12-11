@@ -611,7 +611,7 @@ fn top_bar() -> Html {
 
     html!(
         <>
-            <CosmoTopBar profile_picture="/static/favicon.png" has_right_item={true} right_item_on_click={logout} right_item_label="Abmelden">
+            <CosmoTopBar profile_picture="/static/logo.webp" has_right_item={true} right_item_on_click={logout} right_item_label="Abmelden">
                 <CosmoTopBarItem label="Mein Profil" on_click={update_my_profile_click} />
                 <CosmoTopBarItem label="Passwort ändern" on_click={change_password_click} />
                 if !profile_atom.profile.app_totp_enabled {
