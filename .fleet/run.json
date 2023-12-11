@@ -30,24 +30,6 @@
         },
         {
             "type": "command",
-            "name": "Build frontend",
-            "program": "trunk",
-            "workingDir": "$PROJECT_DIR$/frontend/",
-            "args": [
-                "build"
-            ],
-        },
-        {
-            "type": "command",
-            "name": "Watch frontend",
-            "program": "trunk",
-            "workingDir": "$PROJECT_DIR$/frontend/",
-            "args": [
-                "watch"
-            ],
-        },
-        {
-            "type": "command",
             "name": "Rustfmt",
             "program": "rustfmt",
             "args": [
@@ -62,15 +44,6 @@
             "name": "Clippy backend",
             "cargoArgs": [
                 "clippy"
-            ],
-        },
-        {
-            "type": "cargo",
-            "name": "Clippy frontend",
-            "cargoArgs": [
-                "clippy",
-                "-p",
-                "bamboo-frontend"
             ],
         },
     ]

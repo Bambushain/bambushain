@@ -917,7 +917,6 @@ fn crafter_details(props: &CrafterDetailsProps) -> Html {
 
     html!(
         <>
-            <CosmoHeader level={CosmoHeaderLevel::H3} header={format!("{}s Crafter", props.character.name.clone())} />
             if new_crafter.is_some() {
                 <CosmoToolbar>
                     <CosmoToolbarGroup>
@@ -1189,7 +1188,6 @@ fn fighter_details(props: &FighterDetailsProps) -> Html {
 
     html!(
         <>
-            <CosmoHeader level={CosmoHeaderLevel::H3} header={format!("{}s Kämpfer", props.character.name.clone())} />
             if new_fighter.is_some() {
                 <CosmoToolbar>
                     <CosmoToolbarGroup>
