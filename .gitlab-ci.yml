@@ -58,10 +58,10 @@ docker-build:
     - .base-kaniko
   script: 
     - /kaniko/executor
-    --context "${CI_PROJECT_DIR}"
-    --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
-    --destination "harbor.ulbricht.casa/creastina/bamboo:${CI_COMMIT_TAG}"
-    --destination "harbor.ulbricht.casa/creastina/bamboo:latest"
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
+      --destination "harbor.ulbricht.casa/creastina/bamboo:${CI_COMMIT_TAG}"
+      --destination "harbor.ulbricht.casa/creastina/bamboo:latest"
   rules: 
     - if: $CI_COMMIT_TAG
       exists: 
@@ -73,9 +73,9 @@ docker-build-testing:
     - .base-kaniko
   script: 
     - /kaniko/executor
-    --context "${CI_PROJECT_DIR}"
-    --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
-    --destination "harbor.ulbricht.casa/creastina/bamboo:1.5.3-test-$CI_PIPELINE_IID"
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
+      --destination "harbor.ulbricht.casa/creastina/bamboo:1.5.3-test-$CI_PIPELINE_IID"
   rules: 
     - if: $CI_COMMIT_BRANCH == "main"
       exists: 
