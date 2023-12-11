@@ -1,37 +1,38 @@
-use actix_web::{delete, get, post, put, web, HttpResponse};
-use serde::Deserialize;
+use actix_web::{delete, get, post, put, web};
 
+use bamboo_dbal::prelude::*;
 use bamboo_entities::prelude::*;
 use bamboo_error::*;
 use bamboo_services::prelude::DbConnection;
 
 use crate::middleware::authenticate_user::{authenticate, Authentication};
-
-#[derive(Deserialize)]
-pub struct CharacterPathInfo {
-    pub id: i32,
-}
+use crate::path;
+use crate::response::macros::*;
 
 #[get("/api/final-fantasy/character", wrap = "authenticate!()")]
-pub async fn get_characters(authentication: Authentication, db: DbConnection) -> HttpResponse {
-    ok_or_error!(bamboo_dbal::character::get_characters(authentication.user.id, &db).await)
-}
-
-#[get("/api/final-fantasy/character/{id}", wrap = "authenticate!()")]
-pub async fn get_character(
-    path: Option<web::Path<CharacterPathInfo>>,
+pub async fn get_characters(
     authentication: Authentication,
     db: DbConnection,
-) -> HttpResponse {
-    let path = check_invalid_path!(path, "character");
+) -> BambooApiResponseResult {
+    dbal::get_characters(authentication.user.id, &db)
+        .await
+        .map(|data| list!(data))
+}
 
-    match bamboo_dbal::character::get_character(path.id, authentication.user.id, &db).await {
-        Ok(character) => ok_json!(character),
-        Err(_) => not_found!(bamboo_not_found_error!(
-            "character",
-            "The character was not found"
-        )),
-    }
+#[get(
+    "/api/final-fantasy/character/{character_id}",
+    wrap = "authenticate!()"
+)]
+pub async fn get_character(
+    path: Option<path::CharacterPath>,
+    authentication: Authentication,
+    db: DbConnection,
+) -> BambooApiResult<Character> {
+    let path = check_invalid_path!(path, "character")?;
+
+    dbal::get_character(path.character_id, authentication.user.id, &db)
+        .await
+        .map(|data| ok!(data))
 }
 
 #[post("/api/final-fantasy/character", wrap = "authenticate!()")]
@@ -39,71 +40,49 @@ pub async fn create_character(
     body: Option<web::Json<Character>>,
     authentication: Authentication,
     db: DbConnection,
-) -> HttpResponse {
-    let body = check_missing_fields!(body, "character");
+) -> BambooApiResult<Character> {
+    let body = check_missing_fields!(body, "character")?;
 
-    if bamboo_dbal::character::character_exists_by_name(
-        body.name.clone(),
+    dbal::create_character(authentication.user.id, body.into_inner(), &db)
+        .await
+        .map(|data| created!(data))
+}
+
+#[put(
+    "/api/final-fantasy/character/{character_id}",
+    wrap = "authenticate!()"
+)]
+pub async fn update_character(
+    body: Option<web::Json<Character>>,
+    path: Option<path::CharacterPath>,
+    authentication: Authentication,
+    db: DbConnection,
+) -> BambooApiResponseResult {
+    let path = check_invalid_path!(path, "character")?;
+    let body = check_missing_fields!(body, "character")?;
+
+    dbal::update_character(
+        path.character_id,
         authentication.user.id,
+        body.into_inner(),
         &db,
     )
     .await
-    {
-        return conflict!(bamboo_exists_already_error!(
-            "character",
-            "The character already exists"
-        ));
-    }
-
-    created_or_error!(
-        bamboo_dbal::character::create_character(authentication.user.id, body.into_inner(), &db)
-            .await
-    )
+    .map(|_| no_content!())
 }
 
-#[put("/api/final-fantasy/character/{id}", wrap = "authenticate!()")]
-pub async fn update_character(
-    body: Option<web::Json<Character>>,
-    path: Option<web::Path<CharacterPathInfo>>,
-    authentication: Authentication,
-    db: DbConnection,
-) -> HttpResponse {
-    let path = check_invalid_path!(path, "character");
-    let body = check_missing_fields!(body, "character");
-
-    match bamboo_dbal::character::get_character(path.id, authentication.user.id, &db).await {
-        Ok(_) => no_content_or_error!(
-            bamboo_dbal::character::update_character(
-                path.id,
-                authentication.user.id,
-                body.into_inner(),
-                &db
-            )
-            .await
-        ),
-        Err(_) => not_found!(bamboo_not_found_error!(
-            "character",
-            "The character was not found"
-        )),
-    }
-}
-
-#[delete("/api/final-fantasy/character/{id}", wrap = "authenticate!()")]
+#[delete(
+    "/api/final-fantasy/character/{character_id}",
+    wrap = "authenticate!()"
+)]
 pub async fn delete_character(
-    path: Option<web::Path<CharacterPathInfo>>,
+    path: Option<path::CharacterPath>,
     authentication: Authentication,
     db: DbConnection,
-) -> HttpResponse {
-    let path = check_invalid_path!(path, "character");
+) -> BambooApiResponseResult {
+    let path = check_invalid_path!(path, "character")?;
 
-    if !bamboo_dbal::character::character_exists(authentication.user.id, path.id, &db).await {
-        return not_found!(bamboo_not_found_error!(
-            "character",
-            "The character was not found"
-        ));
-    }
-
-    no_content_or_error!(
-        bamboo_dbal::character::delete_character(path.id, authentication.user.id, &db).await
-    )
+    dbal::delete_character(path.character_id, authentication.user.id, &db)
+        .await
+        .map(|_| no_content!())
 }

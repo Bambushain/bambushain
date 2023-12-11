@@ -1,0 +1,31 @@
+{
+    "configurations": [
+        {
+            "type": "command",
+            "name": "Build frontend",
+            "program": "trunk",
+            "workingDir": "$PROJECT_DIR$/",
+            "args": [
+                "build"
+            ],
+        },
+        {
+            "type": "command",
+            "name": "Watch frontend",
+            "program": "trunk",
+            "workingDir": "$PROJECT_DIR$/",
+            "args": [
+                "watch"
+            ],
+        },
+        {
+            "type": "cargo",
+            "name": "Clippy frontend",
+            "cargoArgs": [
+                "clippy",
+                "-p",
+                "bamboo-frontend"
+            ],
+        },
+    ]
+}

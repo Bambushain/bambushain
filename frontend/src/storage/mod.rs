@@ -3,19 +3,19 @@ use bounce::Atom;
 use gloo::storage::{LocalStorage, Storage};
 
 pub fn get_token() -> Option<String> {
-    LocalStorage::get("/pandaparty/token").ok()
+    LocalStorage::get("/bamboo/token").ok()
 }
 
 pub fn set_token(token: String) {
-    _ = LocalStorage::set("/pandaparty/token", token);
+    _ = LocalStorage::set("/bamboo/token", token);
 }
 
 pub fn delete_token() {
-    LocalStorage::delete("/pandaparty/token");
+    LocalStorage::delete("/bamboo/token");
 }
 
 pub fn get_log_level() -> Option<String> {
-    LocalStorage::get("/pandaparty/log/level").ok()
+    LocalStorage::get("/bamboo/log/level").ok()
 }
 
 pub fn is_logging_on() -> bool {

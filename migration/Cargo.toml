@@ -5,4 +5,4 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-sea-orm-migration = { version = "0.12.2", features = ["sqlx-mysql", "runtime-tokio-rustls"] }
+sea-orm-migration = { workspace = true }

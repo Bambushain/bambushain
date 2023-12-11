@@ -6,7 +6,6 @@ use crate::pages::app::App;
 use crate::storage::{get_log_level, is_logging_on};
 
 mod api;
-mod hooks;
 mod pages;
 mod routing;
 mod storage;

@@ -1,13 +1,11 @@
 use sea_orm::prelude::*;
 use sea_orm::sea_query::Expr;
 use sea_orm::ActiveValue::Set;
-use sea_orm::{IntoActiveModel, NotSet, QueryOrder, QuerySelect};
+use sea_orm::{IntoActiveModel, NotSet, QueryOrder};
 
 use bamboo_entities::prelude::*;
 use bamboo_entities::{character, crafter};
 use bamboo_error::*;
-
-use crate::prelude::character_exists;
 
 pub async fn get_crafters(
     user_id: i32,
@@ -23,7 +21,7 @@ pub async fn get_crafters(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            bamboo_db_error!("crafter", "Failed to load crafters")
+            BambooError::database("crafter", "Failed to load crafters")
         })
 }
 
@@ -33,55 +31,36 @@ pub async fn get_crafter(
     character_id: i32,
     db: &DatabaseConnection,
 ) -> BambooResult<Crafter> {
-    match crafter::Entity::find_by_id(id)
+    crafter::Entity::find_by_id(id)
         .filter(crafter::Column::CharacterId.eq(character_id))
         .filter(character::Column::UserId.eq(user_id))
         .inner_join(character::Entity)
         .one(db)
         .await
-    {
-        Ok(Some(res)) => Ok(res),
-        Ok(None) => Err(bamboo_not_found_error!(
-            "crafter",
-            "The crafter was not found"
-        )),
-        Err(err) => {
+        .map_err(|err| {
             log::error!("{err}");
-            Err(bamboo_db_error!(
-                "crafter",
-                "Failed to execute database query"
-            ))
-        }
-    }
+            BambooError::database("crafter", "Failed to load crafter")
+        })
+        .map(|res| {
+            if let Some(res) = res {
+                Ok(res)
+            } else {
+                Err(BambooError::not_found(
+                    "crafter",
+                    "The crafter was not found"
+                ))
+            }
+        })?
 }
 
-pub async fn crafter_exists(
+async fn crafter_exists_by_id(
     id: i32,
-    user_id: i32,
-    character_id: i32,
-    db: &DatabaseConnection,
-) -> bool {
-    crafter::Entity::find_by_id(id)
-        .select_only()
-        .column(crafter::Column::Id)
-        .filter(crafter::Column::CharacterId.eq(character_id))
-        .filter(character::Column::UserId.eq(user_id))
-        .inner_join(character::Entity)
-        .count(db)
-        .await
-        .map(|count| count > 0)
-        .unwrap_or(false)
-}
-
-pub async fn crafter_exists_by_job(
     user_id: i32,
     character_id: i32,
     job: CrafterJob,
     db: &DatabaseConnection,
-) -> bool {
-    crafter::Entity::find()
-        .select_only()
-        .column(crafter::Column::Id)
+) -> BambooResult<bool> {
+    crafter::Entity::find_by_id(id)
         .filter(crafter::Column::Job.eq(job))
         .filter(crafter::Column::CharacterId.eq(character_id))
         .filter(character::Column::UserId.eq(user_id))
@@ -89,7 +68,30 @@ pub async fn crafter_exists_by_job(
         .count(db)
         .await
         .map(|count| count > 0)
-        .unwrap_or(false)
+        .map_err(|err| {
+            log::error!("Failed to load crafter {err}");
+            BambooError::database("crafter", "Failed to load the crafters")
+        })
+}
+
+async fn crafter_exists_by_job(
+    user_id: i32,
+    character_id: i32,
+    job: CrafterJob,
+    db: &DatabaseConnection,
+) -> BambooResult<bool> {
+    crafter::Entity::find()
+        .filter(crafter::Column::Job.eq(job))
+        .filter(crafter::Column::CharacterId.eq(character_id))
+        .filter(character::Column::UserId.eq(user_id))
+        .inner_join(character::Entity)
+        .count(db)
+        .await
+        .map(|count| count > 0)
+        .map_err(|err| {
+            log::error!("Failed to load crafter {err}");
+            BambooError::database("crafter", "Failed to load the crafters")
+        })
 }
 
 pub async fn create_crafter(
@@ -98,10 +100,10 @@ pub async fn create_crafter(
     crafter: Crafter,
     db: &DatabaseConnection,
 ) -> BambooResult<Crafter> {
-    if !character_exists(user_id, character_id, db).await {
-        return Err(bamboo_not_found_error!(
+    if crafter_exists_by_job(user_id, character_id, crafter.job, db).await? {
+        return Err(BambooError::exists_already(
             "crafter",
-            "The character does not exist"
+            "A crafter with that job exists already"
         ));
     }
 
@@ -111,35 +113,52 @@ pub async fn create_crafter(
 
     model.insert(db).await.map_err(|err| {
         log::error!("{err}");
-        bamboo_db_error!("crafter", "Failed to create crafter")
+        BambooError::database("crafter", "Failed to create crafter")
     })
 }
 
 pub async fn update_crafter(
     id: i32,
+    user_id: i32,
+    character_id: i32,
     crafter: Crafter,
     db: &DatabaseConnection,
 ) -> BambooErrorResult {
+    if crafter_exists_by_id(id, user_id, character_id, crafter.job, db).await? {
+        return Err(BambooError::exists_already(
+            "crafter",
+            "A crafter with that job exists already"
+        ));
+    }
+
     crafter::Entity::update_many()
         .filter(crafter::Column::Id.eq(id))
+        .filter(crafter::Column::CharacterId.eq(character_id))
         .col_expr(crafter::Column::Level, Expr::value(crafter.level))
         .exec(db)
         .await
         .map_err(|err| {
             log::error!("{err}");
-            bamboo_db_error!("crafter", "Failed to update crafter")
+            BambooError::database("crafter", "Failed to update crafter")
         })
         .map(|_| ())
 }
 
-pub async fn delete_crafter(id: i32, db: &DatabaseConnection) -> BambooErrorResult {
+pub async fn delete_crafter(
+    id: i32,
+    user_id: i32,
+    character_id: i32,
+    db: &DatabaseConnection,
+) -> BambooErrorResult {
     crafter::Entity::delete_many()
         .filter(crafter::Column::Id.eq(id))
+        .filter(crafter::Column::CharacterId.eq(character_id))
+        .filter(character::Column::UserId.eq(user_id))
         .exec(db)
         .await
         .map_err(|err| {
             log::error!("{err}");
-            bamboo_db_error!("crafter", "Failed to delete crafter")
+            BambooError::database("crafter", "Failed to delete crafter")
         })
         .map(|_| ())
 }

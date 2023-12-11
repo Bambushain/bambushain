@@ -1,11 +1,15 @@
 use std::cmp::Ordering;
 
-use crate::prelude::{CustomField, FreeCompany};
 #[cfg(not(target_arch = "wasm32"))]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 #[cfg(not(not(target_arch = "wasm32")))]
 use strum_macros::EnumIter;
+
+#[cfg(not(target_arch = "wasm32"))]
+use bamboo_macros::*;
+
+use crate::prelude::{CustomField, FreeCompany};
 
 #[derive(Serialize, Deserialize, EnumIter, Debug, Eq, PartialEq, Clone, Default, Copy)]
 #[cfg_attr(
@@ -100,7 +104,7 @@ impl From<String> for CharacterRace {
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 #[cfg_attr(
     not(target_arch = "wasm32"),
-    derive(DeriveEntityModel),
+    derive(DeriveEntityModel, Responder),
     sea_orm(table_name = "character", schema_name = "final_fantasy")
 )]
 #[serde(rename_all = "camelCase")]

@@ -4,6 +4,9 @@ use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
 
+#[cfg(not(target_arch = "wasm32"))]
+use bamboo_macros::*;
+
 use crate::prelude::CustomCharacterFieldOption;
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
@@ -16,7 +19,7 @@ pub struct CustomField {
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Default)]
 #[cfg_attr(
     not(target_arch = "wasm32"),
-    derive(DeriveEntityModel),
+    derive(DeriveEntityModel, Responder),
     sea_orm(table_name = "custom_character_field", schema_name = "final_fantasy")
 )]
 #[serde(rename_all = "camelCase")]

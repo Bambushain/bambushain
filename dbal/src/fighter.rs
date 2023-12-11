@@ -1,13 +1,11 @@
 use sea_orm::prelude::*;
 use sea_orm::sea_query::Expr;
 use sea_orm::ActiveValue::Set;
-use sea_orm::{IntoActiveModel, NotSet, QueryOrder, QuerySelect};
+use sea_orm::{IntoActiveModel, NotSet, QueryOrder};
 
 use bamboo_entities::prelude::*;
 use bamboo_entities::{character, fighter};
 use bamboo_error::*;
-
-use crate::prelude::character_exists;
 
 pub async fn get_fighters(
     user_id: i32,
@@ -23,7 +21,7 @@ pub async fn get_fighters(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            bamboo_db_error!("fighter", "Failed to load fighters")
+            BambooError::database("fighter", "Failed to load fighters")
         })
 }
 
@@ -33,56 +31,36 @@ pub async fn get_fighter(
     character_id: i32,
     db: &DatabaseConnection,
 ) -> BambooResult<Fighter> {
-    match fighter::Entity::find()
-        .filter(fighter::Column::Id.eq(id))
+    fighter::Entity::find_by_id(id)
         .filter(fighter::Column::CharacterId.eq(character_id))
         .filter(character::Column::UserId.eq(user_id))
         .inner_join(character::Entity)
         .one(db)
         .await
-    {
-        Ok(Some(res)) => Ok(res),
-        Ok(None) => Err(bamboo_not_found_error!(
-            "fighter",
-            "The fighter was not found"
-        )),
-        Err(err) => {
+        .map_err(|err| {
             log::error!("{err}");
-            Err(bamboo_db_error!(
-                "fighter",
-                "Failed to execute database query"
-            ))
-        }
-    }
+            BambooError::database("fighter", "Failed to load fighter")
+        })
+        .map(|res| {
+            if let Some(res) = res {
+                Ok(res)
+            } else {
+                Err(BambooError::not_found(
+                    "fighter",
+                    "The fighter was not found"
+                ))
+            }
+        })?
 }
 
-pub async fn fighter_exists(
+async fn fighter_exists_by_id(
     id: i32,
-    user_id: i32,
-    character_id: i32,
-    db: &DatabaseConnection,
-) -> bool {
-    fighter::Entity::find_by_id(id)
-        .select_only()
-        .column(fighter::Column::Id)
-        .filter(fighter::Column::CharacterId.eq(character_id))
-        .filter(character::Column::UserId.eq(user_id))
-        .inner_join(character::Entity)
-        .count(db)
-        .await
-        .map(|count| count > 0)
-        .unwrap_or(false)
-}
-
-pub async fn fighter_exists_by_job(
     user_id: i32,
     character_id: i32,
     job: FighterJob,
     db: &DatabaseConnection,
-) -> bool {
-    fighter::Entity::find()
-        .select_only()
-        .column(fighter::Column::Id)
+) -> BambooResult<bool> {
+    fighter::Entity::find_by_id(id)
         .filter(fighter::Column::Job.eq(job))
         .filter(fighter::Column::CharacterId.eq(character_id))
         .filter(character::Column::UserId.eq(user_id))
@@ -90,7 +68,30 @@ pub async fn fighter_exists_by_job(
         .count(db)
         .await
         .map(|count| count > 0)
-        .unwrap_or(false)
+        .map_err(|err| {
+            log::error!("Failed to load fighter {err}");
+            BambooError::database("fighter", "Failed to load the fighters")
+        })
+}
+
+async fn fighter_exists_by_job(
+    user_id: i32,
+    character_id: i32,
+    job: FighterJob,
+    db: &DatabaseConnection,
+) -> BambooResult<bool> {
+    fighter::Entity::find()
+        .filter(fighter::Column::Job.eq(job))
+        .filter(fighter::Column::CharacterId.eq(character_id))
+        .filter(character::Column::UserId.eq(user_id))
+        .inner_join(character::Entity)
+        .count(db)
+        .await
+        .map(|count| count > 0)
+        .map_err(|err| {
+            log::error!("Failed to load fighter {err}");
+            BambooError::database("fighter", "Failed to load the fighters")
+        })
 }
 
 pub async fn create_fighter(
@@ -99,10 +100,10 @@ pub async fn create_fighter(
     fighter: Fighter,
     db: &DatabaseConnection,
 ) -> BambooResult<Fighter> {
-    if !character_exists(user_id, character_id, db).await {
-        return Err(bamboo_not_found_error!(
+    if fighter_exists_by_job(user_id, character_id, fighter.job, db).await? {
+        return Err(BambooError::exists_already(
             "fighter",
-            "The character does not exist"
+            "A fighter with that job exists already"
         ));
     }
 
@@ -112,36 +113,53 @@ pub async fn create_fighter(
 
     model.insert(db).await.map_err(|err| {
         log::error!("{err}");
-        bamboo_db_error!("fighter", "Failed to create fighter")
+        BambooError::database("fighter", "Failed to create fighter")
     })
 }
 
 pub async fn update_fighter(
     id: i32,
+    user_id: i32,
+    character_id: i32,
     fighter: Fighter,
     db: &DatabaseConnection,
 ) -> BambooErrorResult {
+    if fighter_exists_by_id(id, user_id, character_id, fighter.job, db).await? {
+        return Err(BambooError::exists_already(
+            "fighter",
+            "A fighter with that job exists already"
+        ));
+    }
+
     fighter::Entity::update_many()
         .filter(fighter::Column::Id.eq(id))
+        .filter(fighter::Column::CharacterId.eq(character_id))
+        .filter(character::Column::UserId.eq(user_id))
         .col_expr(fighter::Column::Level, Expr::value(fighter.level))
-        .col_expr(fighter::Column::GearScore, Expr::value(fighter.gear_score))
         .exec(db)
         .await
         .map_err(|err| {
             log::error!("{err}");
-            bamboo_db_error!("fighter", "Failed to update fighter")
+            BambooError::database("fighter", "Failed to update fighter")
         })
         .map(|_| ())
 }
 
-pub async fn delete_fighter(id: i32, db: &DatabaseConnection) -> BambooErrorResult {
+pub async fn delete_fighter(
+    id: i32,
+    user_id: i32,
+    character_id: i32,
+    db: &DatabaseConnection,
+) -> BambooErrorResult {
     fighter::Entity::delete_many()
         .filter(fighter::Column::Id.eq(id))
+        .filter(fighter::Column::CharacterId.eq(character_id))
+        .filter(character::Column::UserId.eq(user_id))
         .exec(db)
         .await
         .map_err(|err| {
             log::error!("{err}");
-            bamboo_db_error!("fighter", "Failed to delete fighter")
+            BambooError::database("fighter", "Failed to delete fighter")
         })
         .map(|_| ())
 }

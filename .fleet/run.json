@@ -17,7 +17,8 @@
                 "MAILER_PORT": "1025",
                 "MAILER_SERVER": "localhost",
                 "MAILER_STARTTLS": "false",
-                "MAILER_USERNAME": "noreply@creastina.art"
+                "MAILER_USERNAME": "noreply@creastina.art",
+                "RUST_LOG": "DEBUG"
             },
         },
         {

@@ -8,28 +8,36 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone)]
 #[serde(rename_all = "camelCase")]
 pub enum BambooErrorCode {
-    NotFoundError,
-    ExistsAlreadyError,
-    InvalidDataError,
-    IoError,
-    DbError,
-    SerializationError,
-    ValidationError,
-    InsufficientRightsError,
-    UnauthorizedError,
-    UnknownError,
-    CryptoError,
+    NotFound,
+    ExistsAlready,
+    InvalidData,
+    Io,
+    Database,
+    Serialization,
+    Validation,
+    InsufficientRights,
+    Unauthorized,
+    Unknown,
+    Crypto,
 }
 
 impl Default for BambooErrorCode {
     fn default() -> Self {
-        Self::UnknownError
+        Self::Unknown
     }
 }
 
+#[cfg(target_arch = "wasm32")]
 impl Display for BambooErrorCode {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_str(format!("{:?}", self).as_str())
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl Display for BambooErrorCode {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(serde_json::to_string(self).unwrap().as_str())
     }
 }
 
@@ -41,16 +49,40 @@ pub struct BambooError {
     pub message: String,
 }
 
+#[cfg(target_arch = "wasm32")]
 impl Display for BambooError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_str(format!("{:?}", self).as_str())
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
+impl Display for BambooError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(serde_json::to_string(self).unwrap().as_str())
+    }
+}
+
 impl Error for BambooError {}
 
 #[cfg(not(target_arch = "wasm32"))]
-impl ResponseError for BambooError {}
+impl ResponseError for BambooError {
+    fn status_code(&self) -> http::StatusCode {
+        match self.error_type {
+            BambooErrorCode::NotFound => http::StatusCode::NOT_FOUND,
+            BambooErrorCode::ExistsAlready => http::StatusCode::CONFLICT,
+            BambooErrorCode::Unauthorized => http::StatusCode::UNAUTHORIZED,
+            BambooErrorCode::InsufficientRights => http::StatusCode::FORBIDDEN,
+            BambooErrorCode::InvalidData
+            | BambooErrorCode::Serialization
+            | BambooErrorCode::Validation => http::StatusCode::BAD_REQUEST,
+            BambooErrorCode::Io
+            | BambooErrorCode::Database
+            | BambooErrorCode::Crypto
+            | BambooErrorCode::Unknown => http::StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+}
 
 #[cfg(not(target_arch = "wasm32"))]
 impl Responder for BambooError {
@@ -58,26 +90,96 @@ impl Responder for BambooError {
 
     fn respond_to(self, _req: &HttpRequest) -> HttpResponse<Self::Body> {
         match self.error_type {
-            BambooErrorCode::NotFoundError => HttpResponse::NotFound(),
-            BambooErrorCode::ExistsAlreadyError => HttpResponse::Conflict(),
-            BambooErrorCode::UnauthorizedError => HttpResponse::Unauthorized(),
-            BambooErrorCode::InsufficientRightsError => HttpResponse::Forbidden(),
-            BambooErrorCode::InvalidDataError
-            | BambooErrorCode::SerializationError
-            | BambooErrorCode::ValidationError => HttpResponse::BadRequest(),
-            BambooErrorCode::IoError
-            | BambooErrorCode::DbError
-            | BambooErrorCode::CryptoError
-            | BambooErrorCode::UnknownError => HttpResponse::InternalServerError(),
+            BambooErrorCode::NotFound => HttpResponse::NotFound(),
+            BambooErrorCode::ExistsAlready => HttpResponse::Conflict(),
+            BambooErrorCode::Unauthorized => HttpResponse::Unauthorized(),
+            BambooErrorCode::InsufficientRights => HttpResponse::Forbidden(),
+            BambooErrorCode::InvalidData
+            | BambooErrorCode::Serialization
+            | BambooErrorCode::Validation => HttpResponse::BadRequest(),
+            BambooErrorCode::Io
+            | BambooErrorCode::Database
+            | BambooErrorCode::Crypto
+            | BambooErrorCode::Unknown => HttpResponse::InternalServerError(),
         }
         .body(serde_json::to_string(&self).unwrap())
+    }
+}
+
+impl BambooError {
+    fn new(
+        entity_type: impl Into<String>,
+        message: impl Into<String>,
+        error_type: BambooErrorCode,
+    ) -> Self {
+        Self {
+            entity_type: entity_type.into(),
+            message: message.into(),
+            error_type,
+        }
+    }
+
+    pub fn insufficient_rights(entity_type: impl Into<String>, message: impl Into<String>) -> Self {
+        Self::new(entity_type, message, BambooErrorCode::InsufficientRights)
+    }
+
+    pub fn not_found(entity_type: impl Into<String>, message: impl Into<String>) -> Self {
+        Self::new(entity_type, message, BambooErrorCode::NotFound)
+    }
+
+    pub fn exists_already(entity_type: impl Into<String>, message: impl Into<String>) -> Self {
+        Self::new(entity_type, message, BambooErrorCode::ExistsAlready)
+    }
+
+    pub fn invalid_data(entity_type: impl Into<String>, message: impl Into<String>) -> Self {
+        Self::new(entity_type, message, BambooErrorCode::InvalidData)
+    }
+
+    pub fn io(entity_type: impl Into<String>, message: impl Into<String>) -> Self {
+        Self::new(entity_type, message, BambooErrorCode::Io)
+    }
+
+    pub fn database(entity_type: impl Into<String>, message: impl Into<String>) -> Self {
+        Self::new(entity_type, message, BambooErrorCode::Database)
+    }
+
+    pub fn serialization(entity_type: impl Into<String>, message: impl Into<String>) -> Self {
+        Self::new(entity_type, message, BambooErrorCode::Serialization)
+    }
+
+    pub fn validation(entity_type: impl Into<String>, message: impl Into<String>) -> Self {
+        Self::new(entity_type, message, BambooErrorCode::Validation)
+    }
+
+    pub fn unauthorized(entity_type: impl Into<String>, message: impl Into<String>) -> Self {
+        Self::new(entity_type, message, BambooErrorCode::Unauthorized)
+    }
+
+    pub fn unknown(entity_type: impl Into<String>, message: impl Into<String>) -> Self {
+        Self::new(entity_type, message, BambooErrorCode::Unknown)
+    }
+
+    pub fn crypto(entity_type: impl Into<String>, message: impl Into<String>) -> Self {
+        Self::new(entity_type, message, BambooErrorCode::Crypto)
     }
 }
 
 pub enum PasswordError {
     WrongPassword,
     UserNotFound,
-    UnknownError,
+    Unknown,
+}
+
+impl From<PasswordError> for BambooError {
+    fn from(value: PasswordError) -> Self {
+        match value {
+            PasswordError::WrongPassword => {
+                BambooError::insufficient_rights("user", "The current password is wrong")
+            }
+            PasswordError::UserNotFound => BambooError::not_found("user", "The user was not found"),
+            PasswordError::Unknown => BambooError::unknown("user", "An unknown error occurred"),
+        }
+    }
 }
 
 pub type BambooErrorResult = Result<(), BambooError>;
@@ -89,113 +191,3 @@ pub type BambooApiResponseResult = Result<HttpResponse, BambooError>;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub type BambooApiResult<T> = Result<(T, http::StatusCode), BambooError>;
-
-#[macro_export]
-macro_rules! bamboo_not_found_error {
-    ($entity_type:expr, $message:expr) => {
-        bamboo_error::BambooError {
-            entity_type: $entity_type.to_string(),
-            message: $message.to_string(),
-            error_type: bamboo_error::BambooErrorCode::NotFoundError,
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! bamboo_exists_already_error {
-    ($entity_type:expr, $message:expr) => {
-        bamboo_error::BambooError {
-            entity_type: $entity_type.to_string(),
-            message: $message.to_string(),
-            error_type: bamboo_error::BambooErrorCode::ExistsAlreadyError,
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! bamboo_invalid_data_error {
-    ($entity_type:expr, $message:expr) => {
-        bamboo_error::BambooError {
-            entity_type: $entity_type.to_string(),
-            message: $message.to_string(),
-            error_type: bamboo_error::BambooErrorCode::InvalidDataError,
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! bamboo_db_error {
-    ($entity_type:expr, $message:expr) => {
-        bamboo_error::BambooError {
-            entity_type: $entity_type.to_string(),
-            message: $message.to_string(),
-            error_type: bamboo_error::BambooErrorCode::DbError,
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! bamboo_serialization_error {
-    ($entity_type:expr, $message:expr) => {
-        bamboo_error::BambooError {
-            entity_type: $entity_type.to_string(),
-            message: $message.to_string(),
-            error_type: bamboo_error::BambooErrorCode::SerializationError,
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! bamboo_validation_error {
-    ($entity_type:expr, $message:expr) => {
-        bamboo_error::BambooError {
-            entity_type: $entity_type.to_string(),
-            message: $message.to_string(),
-            error_type: bamboo_error::BambooErrorCode::ValidationError,
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! bamboo_unknown_error {
-    ($entity_type:expr, $message:expr) => {
-        bamboo_error::BambooError {
-            entity_type: $entity_type.to_string(),
-            message: $message.to_string(),
-            error_type: bamboo_error::BambooErrorCode::UnknownError,
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! bamboo_insufficient_rights_error {
-    ($entity_type:expr, $message:expr) => {
-        bamboo_error::BambooError {
-            entity_type: $entity_type.to_string(),
-            message: $message.to_string(),
-            error_type: bamboo_error::BambooErrorCode::InsufficientRightsError,
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! bamboo_unauthorized_error {
-    ($entity_type:expr, $message:expr) => {
-        bamboo_error::BambooError {
-            entity_type: $entity_type.to_string(),
-            message: $message.to_string(),
-            error_type: bamboo_error::BambooErrorCode::UnauthorizedError,
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! bamboo_crypto_error {
-    ($entity_type:expr, $message:expr) => {
-        bamboo_error::BambooError {
-            entity_type: $entity_type.to_string(),
-            message: $message.to_string(),
-            error_type: bamboo_error::BambooErrorCode::CryptoError,
-        }
-    };
-}

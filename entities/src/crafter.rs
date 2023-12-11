@@ -6,6 +6,9 @@ use serde::{Deserialize, Serialize};
 #[cfg(not(not(target_arch = "wasm32")))]
 use strum_macros::EnumIter;
 
+#[cfg(not(target_arch = "wasm32"))]
+use bamboo_macros::*;
+
 #[derive(Serialize, Deserialize, EnumIter, Debug, Eq, PartialEq, Clone, Default, Copy)]
 #[cfg_attr(
     not(target_arch = "wasm32"),
@@ -131,7 +134,7 @@ impl From<String> for CrafterJob {
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Default)]
 #[cfg_attr(
     not(target_arch = "wasm32"),
-    derive(DeriveEntityModel),
+    derive(DeriveEntityModel, Responder),
     sea_orm(table_name = "crafter", schema_name = "final_fantasy")
 )]
 #[serde(rename_all = "camelCase")]

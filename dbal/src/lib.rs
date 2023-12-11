@@ -5,23 +5,28 @@ use sha2::Sha512;
 
 use bamboo_error::*;
 
-pub mod authentication;
-pub mod character;
-pub mod crafter;
-pub mod custom_field;
-pub mod event;
-pub mod fighter;
-pub mod free_company;
-pub mod user;
+mod authentication;
+mod character;
+mod crafter;
+mod custom_field;
+mod event;
+mod fighter;
+mod free_company;
+mod my;
+mod user;
 
 pub mod prelude {
-    pub use crate::authentication::*;
-    pub use crate::character::*;
-    pub use crate::crafter::*;
-    pub use crate::custom_field::*;
-    pub use crate::fighter::*;
-    pub use crate::free_company::*;
-    pub use crate::user::*;
+    pub mod dbal {
+        pub use crate::authentication::*;
+        pub use crate::character::*;
+        pub use crate::crafter::*;
+        pub use crate::custom_field::*;
+        pub use crate::event::*;
+        pub use crate::fighter::*;
+        pub use crate::free_company::*;
+        pub use crate::my::*;
+        pub use crate::user::*;
+    }
 }
 
 fn get_passphrase(passphrase: &[u8]) -> BambooResult<Key> {
@@ -34,7 +39,7 @@ fn get_passphrase(passphrase: &[u8]) -> BambooResult<Key> {
         12,
         &mut key,
     )
-    .map_err(|_| bamboo_crypto_error!("encryption", "Failed to create pbkdf2 key"))?;
+    .map_err(|_| BambooError::crypto("encryption", "Failed to create pbkdf2 key"))?;
 
     Ok(Key::from(key))
 }
@@ -45,7 +50,7 @@ pub(crate) fn decrypt_string(encrypted: Vec<u8>, passphrase: String) -> BambooRe
 
     let decrypted = cipher
         .decrypt(nonce, encrypted[12..].as_ref())
-        .map_err(|_| bamboo_crypto_error!("encryption", "Failed to decrypt"))?;
+        .map_err(|_| BambooError::crypto("encryption", "Failed to decrypt"))?;
 
     Ok(decrypted)
 }
@@ -56,7 +61,7 @@ pub(crate) fn encrypt_string(plain: Vec<u8>, passphrase: String) -> BambooResult
 
     let encrypted = cipher
         .encrypt(&nonce, plain.as_ref())
-        .map_err(|_| bamboo_crypto_error!("encryption", "Failed to encrypt"))?;
+        .map_err(|_| BambooError::crypto("encryption", "Failed to encrypt"))?;
 
     let mut data = vec![];
     data.extend_from_slice(&nonce);

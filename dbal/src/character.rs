@@ -36,7 +36,7 @@ pub async fn get_characters(user_id: i32, db: &DatabaseConnection) -> BambooResu
         .await
         .map_err(|err| {
             log::error!("{err}");
-            bamboo_db_error!("character", "Failed to load characters")
+            BambooError::database("character", "Failed to load characters")
         })?;
 
     let mut result = vec![];
@@ -58,15 +58,15 @@ pub async fn get_character(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            bamboo_db_error!("character", "Failed to execute database query")
+            BambooError::database("character", "Error contacting the database")
         })?;
 
-    if let Some(character) = character.into_iter().next() {
+    if let Some(character) = character {
         map_character(character, user_id, db).await
     } else {
-        Err(bamboo_not_found_error!(
+        Err(BambooError::not_found(
             "character",
-            "The character was not found"
+            "The character was not found",
         ))
     }
 }
@@ -91,7 +91,7 @@ async fn fill_custom_fields(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            bamboo_db_error!("character", "Failed to load custom fields")
+            BambooError::database("character", "Failed to load custom fields")
         })?;
 
     let positions_from_db = custom_character_field_value::Entity::find()
@@ -111,7 +111,7 @@ async fn fill_custom_fields(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            bamboo_db_error!("character", "Failed to load custom fields")
+            BambooError::database("character", "Failed to load custom fields")
         })?;
 
     let mut positions = BTreeMap::new();
@@ -144,27 +144,40 @@ async fn fill_custom_fields(
         .collect::<Vec<CustomField>>())
 }
 
-pub async fn character_exists(user_id: i32, id: i32, db: &DatabaseConnection) -> bool {
-    character::Entity::find_by_id(id)
+async fn character_exists_by_id(
+    id: i32,
+    name: String,
+    user_id: i32,
+    db: &DatabaseConnection,
+) -> BambooResult<bool> {
+    character::Entity::find()
+        .filter(character::Column::Id.ne(id))
+        .filter(character::Column::Name.eq(name))
         .filter(character::Column::UserId.eq(user_id))
-        .select_only()
-        .column(character::Column::Id)
         .count(db)
         .await
         .map(|count| count > 0)
-        .unwrap_or(false)
+        .map_err(|err| {
+            log::error!("Failed to load characters {err}");
+            BambooError::database("character", "Failed to load the characters")
+        })
 }
 
-pub async fn character_exists_by_name(name: String, user_id: i32, db: &DatabaseConnection) -> bool {
+async fn character_exists_by_name(
+    name: String,
+    user_id: i32,
+    db: &DatabaseConnection,
+) -> BambooResult<bool> {
     character::Entity::find()
         .filter(character::Column::Name.eq(name))
         .filter(character::Column::UserId.eq(user_id))
-        .select_only()
-        .column(character::Column::Id)
         .count(db)
         .await
         .map(|count| count > 0)
-        .unwrap_or(false)
+        .map_err(|err| {
+            log::error!("Failed to load characters {err}");
+            BambooError::database("character", "Failed to load the characters")
+        })
 }
 
 pub async fn create_character(
@@ -172,16 +185,21 @@ pub async fn create_character(
     character: Character,
     db: &DatabaseConnection,
 ) -> BambooResult<Character> {
-    let mut model = character.clone().into_active_model();
-    if let Some(free_company) = character.free_company {
-        model.free_company_id = Set(Some(free_company.id));
+    if character_exists_by_name(character.name.clone(), user_id, db).await? {
+        return Err(BambooError::exists_already(
+            "character",
+            "A character with that name already exists",
+        ));
     }
+
+    let mut model = character.clone().into_active_model();
+    model.free_company_id = Set(character.free_company.map(|company| company.id));
     model.user_id = Set(user_id);
     model.id = NotSet;
 
     let model = model.insert(db).await.map_err(|err| {
         log::error!("{err}");
-        bamboo_db_error!("character", "Failed to create character")
+        BambooError::database("character", "Failed to create character")
     })?;
 
     create_custom_field_values(user_id, model.id, character.custom_fields, db).await?;
@@ -195,6 +213,12 @@ pub async fn update_character(
     character: Character,
     db: &DatabaseConnection,
 ) -> BambooErrorResult {
+    if character_exists_by_id(id, character.name.clone(), user_id, db).await? {
+        return Err(BambooError::exists_already(
+            "character",
+            "A character with that name already exists",
+        ));
+    }
     character::Entity::update_many()
         .filter(character::Column::Id.eq(id))
         .filter(character::Column::UserId.eq(user_id))
@@ -215,7 +239,7 @@ pub async fn update_character(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            bamboo_db_error!("character", "Failed to update character")
+            BambooError::database("character", "Failed to update character")
         })?;
 
     create_custom_field_values(user_id, id, character.custom_fields, db).await
@@ -242,7 +266,7 @@ async fn create_custom_field_values(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            bamboo_db_error!("character", "Failed to set custom fields")
+            BambooError::database("character", "Failed to set custom fields")
         })?;
 
     let custom_fields = custom_character_field::Entity::find()
@@ -253,7 +277,7 @@ async fn create_custom_field_values(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            bamboo_db_error!("character", "Failed to set custom fields")
+            BambooError::database("character", "Failed to set custom fields")
         })?;
 
     let mut values = vec![];
@@ -273,7 +297,7 @@ async fn create_custom_field_values(
         .await
         .map_err(|err| {
             log::error!("{err}");
-            bamboo_db_error!("character", "Failed to set custom fields")
+            BambooError::database("character", "Failed to set custom fields")
         })
         .map(|_| ())
 }
@@ -286,7 +310,7 @@ pub async fn delete_character(id: i32, user_id: i32, db: &DatabaseConnection) ->
         .await
         .map_err(|err| {
             log::error!("{err}");
-            bamboo_db_error!("character", "Failed to delete character")
+            BambooError::database("character", "Failed to delete character")
         })
         .map(|_| ())
 }

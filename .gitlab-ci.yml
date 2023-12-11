@@ -33,8 +33,9 @@ lint:
   extends: 
     - .base-trunk
   script: 
-    - cargo clippy -p bamboo
-    - cargo clippy -p bamboo-frontend
+    - cargo clippy
+    - cd frontend
+    - cargo clippy
 
 test-build-backend: 
   stage: build
@@ -48,6 +49,7 @@ test-build-frontend:
   extends: 
     - .base-trunk
   script: 
+    - cd frontend
     - trunk build --release
 
 docker-build: 

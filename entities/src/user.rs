@@ -6,10 +6,13 @@ use sea_orm::entity::prelude::*;
 use sea_orm::ActiveValue::Set;
 use serde::{Deserialize, Serialize};
 
+#[cfg(not(target_arch = "wasm32"))]
+use bamboo_macros::*;
+
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 #[cfg_attr(
     not(target_arch = "wasm32"),
-    derive(DeriveEntityModel),
+    derive(DeriveEntityModel, Responder),
     sea_orm(table_name = "user", schema_name = "authentication")
 )]
 #[serde(rename_all = "camelCase")]
@@ -108,21 +111,11 @@ impl Model {
             }
         }
     }
-
-    pub fn to_web_user(&self) -> WebUser {
-        WebUser {
-            id: self.id,
-            is_mod: self.is_mod,
-            display_name: self.display_name.to_string(),
-            email: self.email.to_string(),
-            discord_name: self.discord_name.clone(),
-            app_totp_enabled: self.totp_validated.unwrap_or(false),
-        }
-    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Responder))]
 pub struct WebUser {
     pub id: i32,
     pub display_name: String,
@@ -130,6 +123,19 @@ pub struct WebUser {
     pub is_mod: bool,
     pub discord_name: String,
     pub app_totp_enabled: bool,
+}
+
+impl From<Model> for WebUser {
+    fn from(value: Model) -> Self {
+        Self {
+            id: value.id,
+            is_mod: value.is_mod,
+            display_name: value.display_name.to_string(),
+            email: value.email.to_string(),
+            discord_name: value.discord_name.clone(),
+            app_totp_enabled: value.totp_validated.unwrap_or(false),
+        }
+    }
 }
 
 impl Display for WebUser {
@@ -169,6 +175,7 @@ pub struct ValidateTotp {
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(not(target_arch = "wasm32"), derive(Responder))]
 pub struct TotpQrCode {
     pub qr_code: String,
     pub secret: String,

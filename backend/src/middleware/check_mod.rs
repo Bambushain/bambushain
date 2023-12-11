@@ -1,23 +1,24 @@
-use actix_web::{body, dev, Error};
+use actix_web::{body, dev, web, Error};
 use actix_web_lab::middleware::Next;
 
-use bamboo_error::bamboo_insufficient_rights_error;
+use bamboo_error::BambooError;
+use bamboo_services::prelude::DbConnection;
 
-use crate::middleware::authenticate_user::Authentication;
+use crate::header;
+use crate::middleware::helpers;
 
 pub(crate) async fn check_mod(
-    authentication_state: Option<Authentication>,
+    db: DbConnection,
+    authorization: Option<web::Header<header::AuthorizationHeader>>,
     req: dev::ServiceRequest,
     next: Next<impl body::MessageBody>,
 ) -> Result<dev::ServiceResponse<impl body::MessageBody>, Error> {
-    if let Some(state) = authentication_state {
-        if state.user.is_mod {
-            next.call(req).await
-        } else {
-            Err(bamboo_insufficient_rights_error!("user", "You need to be a mod").into())
-        }
+    let (_, user) = helpers::get_user_and_token_by_header(&db, authorization).await?;
+
+    if user.is_mod {
+        next.call(req).await
     } else {
-        Err(bamboo_insufficient_rights_error!("user", "You need to be a mod").into())
+        Err(BambooError::insufficient_rights("user", "You need to be a mod").into())
     }
 }
 

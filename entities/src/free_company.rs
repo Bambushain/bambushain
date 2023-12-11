@@ -2,10 +2,13 @@
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
+#[cfg(not(target_arch = "wasm32"))]
+use bamboo_macros::*;
+
 #[derive(Serialize, Deserialize, Debug, Eq, Ord, PartialOrd, PartialEq, Clone, Default)]
 #[cfg_attr(
     not(target_arch = "wasm32"),
-    derive(DeriveEntityModel),
+    derive(DeriveEntityModel, Responder),
     sea_orm(table_name = "free_company", schema_name = "final_fantasy")
 )]
 #[serde(rename_all = "camelCase")]
