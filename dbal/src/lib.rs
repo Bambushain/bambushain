@@ -7,6 +7,7 @@ use bamboo_error::*;
 
 mod authentication;
 mod character;
+mod character_housing;
 mod crafter;
 mod custom_field;
 mod event;
@@ -19,6 +20,7 @@ pub mod prelude {
     pub mod dbal {
         pub use crate::authentication::*;
         pub use crate::character::*;
+        pub use crate::character_housing::*;
         pub use crate::crafter::*;
         pub use crate::custom_field::*;
         pub use crate::event::*;

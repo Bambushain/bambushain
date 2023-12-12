@@ -16,6 +16,7 @@ mod m20230923_090306_add_field_free_company;
 mod m20231128_215928_rename_schema_panda_party;
 mod m20231129_222204_add_field_to_set_totp_secret_encrypted;
 mod m20231130_013324_increase_size_of_two_factor_code;
+mod m20231212_004733_create_table_character_housing;
 
 pub struct Migrator;
 
@@ -39,6 +40,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20231128_215928_rename_schema_panda_party::Migration),
             Box::new(m20231129_222204_add_field_to_set_totp_secret_encrypted::Migration),
             Box::new(m20231130_013324_increase_size_of_two_factor_code::Migration),
+            Box::new(m20231212_004733_create_table_character_housing::Migration),
         ]
     }
 }
