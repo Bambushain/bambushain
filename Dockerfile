@@ -8,7 +8,7 @@ RUN cargo install --path .
 WORKDIR /usr/src/bamboo/frontend
 RUN trunk build --release
 
-FROM library/alpine:3.18
+FROM library/alpine:3.19
 
 ENV FRONTEND_DIR=/usr/local/share/bamboo/web/
 
