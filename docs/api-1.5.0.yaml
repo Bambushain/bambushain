@@ -450,6 +450,87 @@ paths:
         schema: 
           type: number
         required: true
+  /api/final-fantasy/character/{character_id}/housing: 
+    summary: Paths for housing actions
+    description: >-
+      Perform a GET request to get a list of all housings for the current character
+      or perform a POST request to create a new housing
+    get: 
+      tags: 
+        - Character Housing
+      responses: 
+        '200': 
+          content: 
+            application/json: 
+              schema: 
+                type: array
+                items: 
+                  $ref: '#/components/schemas/housing'
+          description: A list of housings
+        '401': 
+          description: The api token is invalid
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/error_details'
+        '500': 
+          description: Unknown error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/error_details'
+      security: 
+        - Panda: []
+      operationId: get_housings
+      summary: Get list of housing
+      description: Gets a list of all housings the current user has configured
+    post: 
+      requestBody: 
+        description: The housing to create
+        content: 
+          application/json: 
+            schema: 
+              $ref: '#/components/schemas/character_housing'
+        required: true
+      tags: 
+        - Character Housing
+      responses: 
+        '200': 
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/character_housing'
+          description: The created housing
+        '401': 
+          description: The api token is invalid
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/error_details'
+        '409': 
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/error_details'
+          description: A housing with the given data already exists
+        '500': 
+          description: Unknown error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/error_details'
+      security: 
+        - Panda: []
+      operationId: create_housing
+      summary: Creates a new housing for the current user
+      description: Creates a new housing for the current user
+    parameters: 
+      - in: path
+        name: character_id
+        description: ''
+        schema: 
+          type: number
+        required: true
   /api/final-fantasy/character/{character_id}/crafter/{id}: 
     summary: Path for actions around a specific crafter
     description: >-
@@ -695,6 +776,130 @@ paths:
       - in: path
         name: id
         description: The id of the fighter
+        schema: 
+          type: number
+        required: true
+  /api/final-fantasy/character/{character_id}/housing/{id}: 
+    summary: Path for actions around a specific housing
+    description: >-
+      Perform a GET request to get a housing by id, perform a PUT request to
+      update a housing or perform a DELETE request to delete a housing
+    get: 
+      tags: 
+        - Character Housing
+      responses: 
+        '200': 
+          description: The housing
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/housing'
+        '401': 
+          description: The api token is invalid
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/error_details'
+        '404': 
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/error_details'
+          description: A housing with the given id does not exist
+        '500': 
+          description: Unknown error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/error_details'
+      security: 
+        - Panda: []
+      operationId: get_housing
+      summary: Get a housing by job
+      description: Gets the housing with the given job
+    put: 
+      requestBody: 
+        description: The housing data to update to
+        content: 
+          application/json: 
+            schema: 
+              $ref: '#/components/schemas/character_housing'
+        required: true
+      tags: 
+        - Character Housing
+      responses: 
+        '204': 
+          description: The housing was updated successfully
+        '400': 
+          description: The data is invalid
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/error_details'
+        '401': 
+          description: The api token is invalid
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/error_details'
+        '404': 
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/error_details'
+          description: A housing with the given id does not exist
+        '409': 
+          description: A housing with the given dara already exists
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/error_details'
+        '500': 
+          description: Unknown error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/error_details'
+      operationId: update_housing
+      summary: Updates the given housing
+      description: Updates the given housing with the new values
+    delete: 
+      tags: 
+        - Character Housing
+      responses: 
+        '204': 
+          description: Successfully deleted the housing
+        '401': 
+          description: The api token is invalid
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/error_details'
+        '404': 
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/error_details'
+          description: A housing with the given id does not exist
+        '500': 
+          description: Unknown error
+          content: 
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/error_details'
+      operationId: delete_housing
+      summary: Delete the given housing
+      description: Deletes the given housing
+    parameters: 
+      - in: path
+        name: character_id
+        description: The id of the character
+        schema: 
+          type: number
+        required: true
+      - in: path
+        name: id
+        description: The id of the housing
         schema: 
           type: number
         required: true
@@ -2067,6 +2272,30 @@ components:
           type: integer
       required: 
         - job
+        - characterId
+    character_housing: 
+      type: object
+      properties: 
+        id: 
+          type: integer
+        district: 
+          type: string
+          enum: 
+            - TheLavenderBeds
+            - Mist
+            - TheGoblet
+            - Shirogane
+            - Empyreum
+        ward: 
+          type: integer
+        plot: 
+          type: integer
+        characterId: 
+          type: integer
+      required: 
+        - district
+        - ward
+        - plot
         - characterId
     error_details: 
       title: Root Type for ErrorDetails
