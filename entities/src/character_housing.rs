@@ -138,6 +138,7 @@ impl Related<super::character::Entity> for Entity {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl ActiveModelBehavior for ActiveModel {}
 
 impl Model {
