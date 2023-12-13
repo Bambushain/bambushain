@@ -88,6 +88,7 @@ docker-build:
   extends: 
     - .base-kaniko
   script: 
+    - ls $CI_PROJECT_DIR
     - /kaniko/executor
       --context "${CI_PROJECT_DIR}"
       --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
@@ -106,6 +107,7 @@ docker-build-testing:
   extends: 
     - .base-kaniko
   script: 
+    - ls $CI_PROJECT_DIR
     - /kaniko/executor
       --context "${CI_PROJECT_DIR}"
       --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
