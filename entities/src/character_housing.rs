@@ -52,7 +52,7 @@ impl HousingDistrict {
 impl ToString for HousingDistrict {
     fn to_string(&self) -> String {
         match self {
-            HousingDistrict::TheLavenderBeds => "Lavendel Beete",
+            HousingDistrict::TheLavenderBeds => "Lavendelbeete",
             HousingDistrict::Mist => "Dorf des Nebels",
             HousingDistrict::TheGoblet => "Kelchkuppe",
             HousingDistrict::Shirogane => "Shirogane",
