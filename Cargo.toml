@@ -60,7 +60,7 @@ quote = "1.0.33"
 rand = "0.8.5"
 sea-orm = { version = "0.12.9", features = ["with-json", "runtime-actix-rustls", "sqlx-postgres"] }
 sea-orm-migration = { version = "0.12.6", features = ["sqlx-mysql", "runtime-tokio-rustls"] }
-sentry = "0.32.0"
+sentry = { version = "0.32.0", default-features = false, features = ["backtrace", "contexts", "panic", "transport", "debug-images", "reqwest", "rustls"] }
 sentry-actix = "0.32.0"
 sentry-log = "0.32.0"
 serde = { version = "1.0.189", features = ["derive"] }
