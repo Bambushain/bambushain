@@ -14,9 +14,10 @@
   cache: 
     key: $CI_PROJECT_NAME-backend
     paths: 
-      - $CI_PROJECT_DIR/target/
+      - $CI_PROJECT_DIR/dist/
+      - $CI_PROJECT_DIR/frontend/target/
       - $CI_PROJECT_DIR/.cargo/
-      - $CI_PROJECT_DIR/Cargo.lock
+      - $CI_PROJECT_DIR/frontend/Cargo.lock
 
 .base-trunk: 
   extends: 
