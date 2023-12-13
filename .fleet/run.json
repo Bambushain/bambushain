@@ -18,7 +18,9 @@
                 "MAILER_SERVER": "localhost",
                 "MAILER_STARTTLS": "false",
                 "MAILER_USERNAME": "noreply@creastina.art",
-                "RUST_LOG": "DEBUG"
+                "RUST_LOG": "DEBUG",
+                "SENTRY_DSN": "",
+                "SENTRY_ENVIRONMENT": "development"
             },
         },
         {

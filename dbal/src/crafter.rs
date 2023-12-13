@@ -47,7 +47,7 @@ pub async fn get_crafter(
             } else {
                 Err(BambooError::not_found(
                     "crafter",
-                    "The crafter was not found"
+                    "The crafter was not found",
                 ))
             }
         })?
@@ -103,7 +103,7 @@ pub async fn create_crafter(
     if crafter_exists_by_job(user_id, character_id, crafter.job, db).await? {
         return Err(BambooError::exists_already(
             "crafter",
-            "A crafter with that job exists already"
+            "A crafter with that job exists already",
         ));
     }
 
@@ -127,7 +127,7 @@ pub async fn update_crafter(
     if crafter_exists_by_id(id, user_id, character_id, crafter.job, db).await? {
         return Err(BambooError::exists_already(
             "crafter",
-            "A crafter with that job exists already"
+            "A crafter with that job exists already",
         ));
     }
 
@@ -150,11 +150,9 @@ pub async fn delete_crafter(
     character_id: i32,
     db: &DatabaseConnection,
 ) -> BambooErrorResult {
-    crafter::Entity::delete_many()
-        .filter(crafter::Column::Id.eq(id))
-        .filter(crafter::Column::CharacterId.eq(character_id))
-        .filter(character::Column::UserId.eq(user_id))
-        .exec(db)
+    get_crafter(id, user_id, character_id, db)
+        .await?
+        .delete(db)
         .await
         .map_err(|err| {
             log::error!("{err}");

@@ -1,5 +1,6 @@
 mod authentication;
 mod character;
+mod character_housing;
 mod crafter;
 mod custom_field;
 mod event;
@@ -76,6 +77,11 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
         .service(fighter::get_fighter)
         .service(fighter::update_fighter)
         .service(fighter::delete_fighter)
+        .service(character_housing::get_character_housings)
+        .service(character_housing::create_character_housing)
+        .service(character_housing::get_character_housing)
+        .service(character_housing::update_character_housing)
+        .service(character_housing::delete_character_housing)
         .service(crate::sse::event::event_sse_client)
         .service(
             actix_web_lab::web::spa()

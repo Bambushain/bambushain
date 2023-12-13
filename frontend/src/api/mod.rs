@@ -1,6 +1,7 @@
 use std::convert::Into;
 use std::fmt::{Debug, Display, Formatter};
 
+use gloo::net::http::Response;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
@@ -10,6 +11,7 @@ use crate::storage::get_token;
 
 pub use authentication::*;
 pub use character::*;
+pub use character_housing::*;
 pub use crafter::*;
 pub use custom_field::*;
 pub use event::*;
@@ -19,6 +21,7 @@ pub use user::*;
 
 pub mod authentication;
 pub mod character;
+pub mod character_housing;
 pub mod crafter;
 pub mod custom_field;
 pub mod event;
@@ -56,10 +59,46 @@ impl From<i32> for ErrorCode {
     }
 }
 
+impl From<u16> for ErrorCode {
+    fn from(value: u16) -> Self {
+        Self(value as i32)
+    }
+}
+
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone, Serialize, Deserialize, Debug)]
 pub struct ApiError {
     pub code: ErrorCode,
     pub bamboo_error: BambooError,
+}
+
+impl ApiError {
+    pub fn new(status: u16, error: bamboo_error::BambooError) -> Self {
+        ApiError {
+            code: ErrorCode::from(status),
+            bamboo_error: error,
+        }
+    }
+
+    pub fn send_error() -> Self {
+        Self {
+            code: SEND_ERROR,
+            bamboo_error: bamboo_error::BambooError::default(),
+        }
+    }
+
+    pub fn json_deserialize_error() -> Self {
+        Self {
+            code: JSON_DESERIALIZE_ERROR,
+            bamboo_error: bamboo_error::BambooError::default(),
+        }
+    }
+
+    pub fn json_serialize_error() -> Self {
+        Self {
+            code: JSON_SERIALIZE_ERROR,
+            bamboo_error: bamboo_error::BambooError::default(),
+        }
+    }
 }
 
 impl std::error::Error for ApiError {}
@@ -81,230 +120,141 @@ error_code!(NOT_FOUND, 404);
 error_code!(CONFLICT, 409);
 error_code!(INTERNAL_SERVER_ERROR, 500);
 
-macro_rules! handle_response {
-    ($response:expr) => {{
-        let json_result = match $response {
-            Ok(response) => {
-                log::debug!("Request executed successfully");
-                let status = response.status();
-                log::debug!("Response status code is {}", status);
-                if 199 < status && 300 > status {
-                    let text = response.text().await.unwrap();
-                    log::trace!("Response body: {text}");
-                    serde_json::from_str(text.as_str())
-                } else {
-                    log::debug!("Request status code is not in success range (200-299)");
-                    let text = response.text().await.unwrap();
-                    log::trace!("Error text: {text}");
-                    let error =
-                        serde_json::from_str(text.as_str()).expect("Should deserialize the data");
+macro_rules! request_with_response {
+    ($func_name:ident, $method:tt) => {
+        pub async fn $func_name<OUT: DeserializeOwned>(
+            uri: impl Into<String>,
+        ) -> BambooApiResult<OUT> {
+            let uri = uri.into();
+            let token = get_token().unwrap_or_default();
+            log::debug!("Use auth token {token}");
+            log::debug!("Execute $method request against {uri}");
+            let response = gloo::net::http::Request::$method(uri.as_str())
+                .header("Authorization", format!("Panda {token}").as_str())
+                .send()
+                .await
+                .map_err(|_| ApiError::send_error())?;
 
-                    return Err(crate::api::ApiError {
-                        code: crate::api::ErrorCode::from(response.status() as i32),
-                        bamboo_error: error,
-                    });
-                }
-            }
-            Err(err) => {
-                log::warn!("Request failed to execute {}", err);
-                return Err(crate::api::ApiError {
-                    code: SEND_ERROR,
-                    bamboo_error: bamboo_error::BambooError::default(),
-                });
-            }
-        };
-
-        match json_result {
-            Ok(result) => {
-                log::debug!("Json deserialize was successful");
-                Ok(result)
-            }
-            Err(err) => {
-                log::warn!("Json deserialize failed {}", err);
-                Err(crate::api::ApiError {
-                    code: JSON_DESERIALIZE_ERROR,
-                    bamboo_error: bamboo_error::BambooError::default(),
-                })
-            }
+            handle_response(response).await
         }
-    }};
+    };
 }
 
-macro_rules! handle_response_code {
-    ($response:expr) => {{
-        match $response {
-            Ok(response) => {
-                log::debug!("Request executed successfully");
-                let status = response.status();
-                log::debug!("Response status code is {}", status);
-                if 199 < status && 300 > status {
-                    let text = response.text().await.unwrap();
-                    log::trace!("Response body: {text}");
-                    Ok(())
-                } else {
-                    log::debug!("Request status code is not in success range (200-299)");
-                    let text = response.text().await.unwrap();
-                    log::trace!("Error text: {text}");
-                    let error =
-                        serde_json::from_str(text.as_str()).expect("Should deserialize the data");
+macro_rules! request_with_response_no_content {
+    ($func_name:ident, $method:tt) => {
+        pub async fn $func_name<IN: Serialize>(
+            uri: impl Into<String>,
+            body: &IN,
+        ) -> BambooApiResult<()> {
+            let uri = uri.into();
+            let token = get_token().unwrap_or_default();
+            log::debug!("Use auth token {token}");
+            log::debug!("Execute $method request against {uri}");
+            let request = gloo::net::http::Request::$method(uri.as_str())
+                .header("Authorization", format!("Panda {token}").as_str())
+                .json(body)
+                .map_err(|_| ApiError::json_serialize_error())?
+                .send()
+                .await
+                .map_err(|_| ApiError::send_error())?;
 
-                    return Err(crate::api::ApiError {
-                        code: crate::api::ErrorCode::from(response.status() as i32),
-                        bamboo_error: error,
-                    });
-                }
-            }
-            Err(err) => {
-                log::warn!("Request failed to execute {}", err);
-                Err(ApiError {
-                    code: SEND_ERROR,
-                    bamboo_error: bamboo_error::BambooError::default(),
-                })
-            }
+            handle_response_code(request).await
         }
-    }};
+    };
 }
 
-pub async fn get<OUT: DeserializeOwned>(uri: impl Into<String>) -> BambooApiResult<OUT> {
-    let into_uri = uri.into();
-    let token = get_token().unwrap_or_default();
-    log::debug!("Use auth token {}", token);
-    log::debug!("Execute get request against {}", &into_uri);
-    let response = gloo::net::http::Request::get(into_uri.as_str())
-        .header("Authorization", format!("Panda {}", token).as_str())
-        .send()
-        .await;
+async fn handle_response<OUT: DeserializeOwned>(response: Response) -> BambooApiResult<OUT> {
+    log::debug!("Request executed successfully");
+    let status = response.status();
+    log::debug!("Response status code is {status}");
+    if 199 < status && 300 > status {
+        let text = response.text().await.unwrap();
+        log::trace!("Response body: {text}");
+        Ok(serde_json::from_str(text.as_str()).map_err(|_| ApiError::json_deserialize_error())?)
+    } else {
+        log::debug!("Request status code is not in success range (200-299)");
+        let text = response.text().await.unwrap();
+        log::trace!("Error text: {text}");
 
-    handle_response!(response)
+        Err(serde_json::from_str(text.as_str())
+            .map_err(|_| ApiError::json_deserialize_error())
+            .map(|err| ApiError::new(response.status(), err))?)
+    }
 }
+
+async fn handle_response_code(response: Response) -> BambooApiResult<()> {
+    log::debug!("Request executed successfully");
+    let status = response.status();
+    log::debug!("Response status code is {status}");
+    if 199 < status && 300 > status {
+        let text = response.text().await.unwrap();
+        log::trace!("Response body: {text}");
+        Ok(())
+    } else {
+        log::debug!("Request status code is not in success range (200-299)");
+        let text = response.text().await.unwrap();
+        log::trace!("Error text: {text}");
+
+        Err(serde_json::from_str(text.as_str())
+            .map_err(|_| ApiError::json_deserialize_error())
+            .map(|err| ApiError::new(response.status(), err))?)
+    }
+}
+
+request_with_response!(get, get);
+request_with_response!(put_no_body_no_content, put);
+request_with_response!(post_no_body, post);
+
+request_with_response_no_content!(post_no_content, post);
+request_with_response_no_content!(put_no_content, put);
 
 pub async fn get_with_query<OUT: DeserializeOwned, Value: AsRef<str>>(
     uri: impl Into<String>,
     query: Vec<(&str, Value)>,
 ) -> BambooApiResult<OUT> {
-    let into_uri = uri.into();
+    let uri = uri.into();
     let token = get_token().unwrap_or_default();
-    log::debug!("Use auth token {}", token);
-    log::debug!("Execute get request against {}", &into_uri);
-    let response = gloo::net::http::Request::get(into_uri.as_str())
+    log::debug!("Use auth token {token}");
+    log::debug!("Execute get request against {uri}");
+    let response = gloo::net::http::Request::get(uri.as_str())
         .query(query.into_iter())
-        .header("Authorization", format!("Panda {}", token).as_str())
+        .header("Authorization", format!("Panda {token}").as_str())
         .send()
-        .await;
+        .await
+        .map_err(|_| ApiError::send_error())?;
 
-    handle_response!(response)
-}
-
-pub async fn delete(uri: impl Into<String>) -> BambooApiResult<()> {
-    let into_uri = uri.into();
-    let token = get_token().unwrap_or_default();
-    log::debug!("Use auth token {}", token);
-    log::debug!("Execute get request against {}", &into_uri);
-    let response = gloo::net::http::Request::delete(into_uri.as_str())
-        .header("Authorization", format!("Panda {}", token).as_str())
-        .send()
-        .await;
-
-    handle_response_code!(response)
-}
-
-pub async fn put_no_body_no_content(uri: impl Into<String>) -> BambooApiResult<()> {
-    let into_uri = uri.into();
-    let token = get_token().unwrap_or_default();
-    log::debug!("Use auth token {}", token);
-    log::debug!("Execute get request against {}", &into_uri);
-    let response = gloo::net::http::Request::put(into_uri.as_str())
-        .header("Authorization", format!("Panda {}", token).as_str())
-        .send()
-        .await;
-
-    handle_response_code!(response)
-}
-
-pub async fn put_no_content<IN: Serialize>(
-    uri: impl Into<String>,
-    body: &IN,
-) -> BambooApiResult<()> {
-    let into_uri = uri.into();
-    let token = get_token().unwrap_or_default();
-    log::debug!("Use auth token {}", token);
-    log::debug!("Execute get request against {}", &into_uri);
-    match gloo::net::http::Request::put(into_uri.as_str())
-        .header("Authorization", format!("Panda {}", token).as_str())
-        .json(body)
-    {
-        Ok(request) => handle_response_code!(request.send().await),
-        Err(err) => {
-            log::warn!("Serialize failed {}", err);
-            Err(ApiError {
-                bamboo_error: BambooError::default(),
-                code: JSON_SERIALIZE_ERROR,
-            })
-        }
-    }
+    handle_response(response).await
 }
 
 pub async fn post<IN: Serialize, OUT: DeserializeOwned>(
     uri: impl Into<String>,
     body: &IN,
 ) -> BambooApiResult<OUT> {
-    let into_uri = uri.into();
+    let uri = uri.into();
     let token = get_token().unwrap_or_default();
-    log::debug!("Use auth token {}", token);
-    let token = get_token().unwrap_or_default();
-
-    log::debug!("Execute post request against {}", &into_uri);
-    match gloo::net::http::Request::post(into_uri.as_str())
-        .header("Authorization", format!("Panda {}", token).as_str())
+    log::debug!("Use auth token {token}");
+    log::debug!("Execute post request against {uri}");
+    let request = gloo::net::http::Request::post(uri.as_str())
+        .header("Authorization", format!("Panda {token}").as_str())
         .json(body)
-    {
-        Ok(request) => handle_response!(request.send().await),
-        Err(err) => {
-            log::warn!("Serialize failed {}", err);
-            Err(ApiError {
-                bamboo_error: BambooError::default(),
-                code: JSON_SERIALIZE_ERROR,
-            })
-        }
-    }
+        .map_err(|_| ApiError::json_serialize_error())?
+        .send()
+        .await
+        .map_err(|_| ApiError::send_error())?;
+
+    handle_response(request).await
 }
 
-pub async fn post_no_content<IN: Serialize>(
-    uri: impl Into<String>,
-    body: &IN,
-) -> BambooApiResult<()> {
-    let into_uri = uri.into();
+pub async fn delete(uri: impl Into<String>) -> BambooApiResult<()> {
+    let uri = uri.into();
     let token = get_token().unwrap_or_default();
-    log::debug!("Use auth token {}", token);
-    let token = get_token().unwrap_or_default();
+    log::debug!("Use auth token {token}");
+    log::debug!("Execute $method request against {uri}");
+    let request = gloo::net::http::Request::delete(uri.as_str())
+        .header("Authorization", format!("Panda {token}").as_str())
+        .send()
+        .await
+        .map_err(|_| ApiError::send_error())?;
 
-    log::debug!("Execute post request against {}", &into_uri);
-    match gloo::net::http::Request::post(into_uri.as_str())
-        .header("Authorization", format!("Panda {}", token).as_str())
-        .json(body)
-    {
-        Ok(request) => handle_response_code!(request.send().await),
-        Err(err) => {
-            log::warn!("Serialize failed {}", err);
-            Err(ApiError {
-                bamboo_error: BambooError::default(),
-                code: JSON_SERIALIZE_ERROR,
-            })
-        }
-    }
-}
-
-pub async fn post_no_body<OUT: DeserializeOwned>(uri: impl Into<String>) -> BambooApiResult<OUT> {
-    let into_uri = uri.into();
-    let token = get_token().unwrap_or_default();
-    log::debug!("Use auth token {}", token);
-    let token = get_token().unwrap_or_default();
-
-    log::debug!("Execute post request against {}", &into_uri);
-    handle_response!(
-        gloo::net::http::Request::post(into_uri.as_str())
-            .header("Authorization", format!("Panda {}", token).as_str())
-            .send()
-            .await
-    )
+    handle_response_code(request).await
 }

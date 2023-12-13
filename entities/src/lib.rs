@@ -1,5 +1,6 @@
 pub mod authentication;
 pub mod character;
+pub mod character_housing;
 pub mod crafter;
 pub mod custom_character_field;
 pub mod custom_character_field_option;
@@ -16,6 +17,9 @@ pub mod prelude {
     pub use crate::character;
     pub use crate::character::CharacterRace;
     pub use crate::character::Model as Character;
+    pub use crate::character_housing;
+    pub use crate::character_housing::HousingDistrict;
+    pub use crate::character_housing::Model as CharacterHousing;
     pub use crate::crafter;
     pub use crate::crafter::CrafterJob;
     pub use crate::crafter::Model as Crafter;

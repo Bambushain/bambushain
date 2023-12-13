@@ -28,23 +28,41 @@ stages:
   - build
   - deploy
 
-lint: 
+lint-backend: 
+  stage: lint
+  image: 
+    name: harbor.ulbricht.casa/base-images/rust-docker-base-image:latest
+    pull_policy: always
+  extends: 
+    - .base-cache
+  script: 
+    - cargo clippy
+
+lint-frontend: 
   stage: lint
   extends: 
     - .base-trunk
   script: 
-    - cargo clippy
     - cd frontend
     - cargo clippy
+  artifacts: 
+    paths: 
+      - dist
 
-test-build-backend: 
+build-backend: 
   stage: build
+  image: 
+    name: harbor.ulbricht.casa/base-images/rust-docker-base-image:latest
+    pull_policy: always
   extends: 
-    - .base-trunk
+    - .base-cache
   script: 
     - cargo build --release
+  artifacts: 
+    paths: 
+      - target/release/bamboo
 
-test-build-frontend: 
+build-frontend: 
   stage: build
   extends: 
     - .base-trunk
@@ -62,6 +80,9 @@ docker-build:
       --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
       --destination "harbor.ulbricht.casa/creastina/bamboo:${CI_COMMIT_TAG}"
       --destination "harbor.ulbricht.casa/creastina/bamboo:latest"
+  dependencies: 
+    - build-backend
+    - build-frontend
   rules: 
     - if: $CI_COMMIT_TAG
       exists: 
@@ -75,7 +96,10 @@ docker-build-testing:
     - /kaniko/executor
       --context "${CI_PROJECT_DIR}"
       --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
-      --destination "harbor.ulbricht.casa/creastina/bamboo:1.5.3-test-$CI_PIPELINE_IID"
+      --destination "harbor.ulbricht.casa/creastina/bamboo:1.5.0-test-$CI_PIPELINE_IID"
+  dependencies: 
+    - build-backend
+    - build-frontend
   rules: 
     - if: $CI_COMMIT_BRANCH == "main"
       exists: 
