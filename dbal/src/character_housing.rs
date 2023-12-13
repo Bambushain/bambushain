@@ -60,8 +60,8 @@ async fn character_housing_exists_by_id(
     user_id: i32,
     character_id: i32,
     district: HousingDistrict,
-    ward: u8,
-    plot: u8,
+    ward: i16,
+    plot: i16,
     db: &DatabaseConnection,
 ) -> BambooResult<bool> {
     character_housing::Entity::find_by_id(id)
@@ -84,8 +84,8 @@ async fn character_housing_exists_by_fields(
     user_id: i32,
     character_id: i32,
     district: HousingDistrict,
-    ward: u8,
-    plot: u8,
+    ward: i16,
+    plot: i16,
     db: &DatabaseConnection,
 ) -> BambooResult<bool> {
     character_housing::Entity::find()
@@ -163,7 +163,10 @@ pub async fn update_character_housing(
     character_housing::Entity::update_many()
         .filter(character_housing::Column::Id.eq(id))
         .filter(character_housing::Column::CharacterId.eq(character_id))
-        .col_expr(character_housing::Column::District, Expr::value(housing.district))
+        .col_expr(
+            character_housing::Column::District,
+            Expr::val(housing.district).as_enum(character_housing::HousingDistrictEnum),
+        )
         .col_expr(character_housing::Column::Ward, Expr::value(housing.ward))
         .col_expr(character_housing::Column::Plot, Expr::value(housing.plot))
         .exec(db)
@@ -181,11 +184,9 @@ pub async fn delete_character_housing(
     character_id: i32,
     db: &DatabaseConnection,
 ) -> BambooErrorResult {
-    character_housing::Entity::delete_many()
-        .filter(character_housing::Column::Id.eq(id))
-        .filter(character_housing::Column::CharacterId.eq(character_id))
-        .filter(character::Column::UserId.eq(user_id))
-        .exec(db)
+    get_character_housing(id, user_id, character_id, db)
+        .await?
+        .delete(db)
         .await
         .map_err(|err| {
             log::error!("{err}");

@@ -19,7 +19,6 @@ fn main() -> std::io::Result<()> {
     log::info!("Configure glitchtip");
     let _sentry = sentry::init(sentry::ClientOptions {
         release: sentry::release_name!(),
-        debug: true,
         ..Default::default()
     });
 

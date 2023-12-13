@@ -47,7 +47,7 @@ pub async fn get_fighter(
             } else {
                 Err(BambooError::not_found(
                     "fighter",
-                    "The fighter was not found"
+                    "The fighter was not found",
                 ))
             }
         })?
@@ -103,7 +103,7 @@ pub async fn create_fighter(
     if fighter_exists_by_job(user_id, character_id, fighter.job, db).await? {
         return Err(BambooError::exists_already(
             "fighter",
-            "A fighter with that job exists already"
+            "A fighter with that job exists already",
         ));
     }
 
@@ -127,7 +127,7 @@ pub async fn update_fighter(
     if fighter_exists_by_id(id, user_id, character_id, fighter.job, db).await? {
         return Err(BambooError::exists_already(
             "fighter",
-            "A fighter with that job exists already"
+            "A fighter with that job exists already",
         ));
     }
 
@@ -151,11 +151,9 @@ pub async fn delete_fighter(
     character_id: i32,
     db: &DatabaseConnection,
 ) -> BambooErrorResult {
-    fighter::Entity::delete_many()
-        .filter(fighter::Column::Id.eq(id))
-        .filter(fighter::Column::CharacterId.eq(character_id))
-        .filter(character::Column::UserId.eq(user_id))
-        .exec(db)
+    get_fighter(id, user_id, character_id, db)
+        .await?
+        .delete(db)
         .await
         .map_err(|err| {
             log::error!("{err}");

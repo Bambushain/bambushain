@@ -16,7 +16,7 @@ use bamboo_macros::*;
     sea_orm(
         rs_type = "String",
         db_type = "Enum",
-        enum_name = "final_fantasy.housing_district"
+        enum_name = "final_fantasy.district"
     )
 )]
 pub enum HousingDistrict {
@@ -52,7 +52,7 @@ impl HousingDistrict {
 impl ToString for HousingDistrict {
     fn to_string(&self) -> String {
         match self {
-            HousingDistrict::TheLavenderBeds => "Lavender Beete",
+            HousingDistrict::TheLavenderBeds => "Lavendel Beete",
             HousingDistrict::Mist => "Dorf des Nebels",
             HousingDistrict::TheGoblet => "Kelchkuppe",
             HousingDistrict::Shirogane => "Shirogane",
@@ -98,8 +98,8 @@ pub struct Model {
     #[cfg_attr(not(target_arch = "wasm32"), sea_orm(primary_key))]
     pub id: i32,
     pub district: HousingDistrict,
-    pub ward: u8,
-    pub plot: u8,
+    pub ward: i16,
+    pub plot: i16,
     pub character_id: i32,
 }
 
@@ -142,7 +142,7 @@ impl Related<super::character::Entity> for Entity {
 impl ActiveModelBehavior for ActiveModel {}
 
 impl Model {
-    pub fn new(character_id: i32, district: HousingDistrict, ward: u8, plot: u8) -> Self {
+    pub fn new(character_id: i32, district: HousingDistrict, ward: i16, plot: i16) -> Self {
         Self {
             id: i32::default(),
             district,
