@@ -4,6 +4,7 @@ use std::rc::Rc;
 use bounce::helmet::Helmet;
 use bounce::query::use_query_value;
 use strum::IntoEnumIterator;
+use stylist::yew::use_style;
 use yew::prelude::*;
 use yew::virtual_dom::{Key, VChild};
 use yew_cosmo::prelude::*;
@@ -386,19 +387,43 @@ fn modify_housing_modal(props: &ModifyHousingModalProps) -> Html {
     let ward_state = use_state_eq(|| props.housing.ward);
     let plot_state = use_state_eq(|| props.housing.plot);
 
-    let districts = HousingDistrict::iter().map(|district| {
-        CosmoModernSelectItem::new(district.to_string(), district.get_name(), (*district_state).clone().eq(&district))
-    }).collect::<Vec<CosmoModernSelectItem>>();
-    let wards = (1..31i16).map(|ward| {
-        CosmoModernSelectItem::new(ward.to_string(), ward.to_string(), (*ward_state).clone().eq(&ward))
-    }).collect::<Vec<CosmoModernSelectItem>>();
-    let plots = (1..61i16).map(|plot| {
-        CosmoModernSelectItem::new(plot.to_string(), plot.to_string(), (*plot_state).clone().eq(&plot))
-    }).collect::<Vec<CosmoModernSelectItem>>();
+    let districts = HousingDistrict::iter()
+        .map(|district| {
+            CosmoModernSelectItem::new(
+                district.to_string(),
+                district.get_name(),
+                (*district_state).clone().eq(&district),
+            )
+        })
+        .collect::<Vec<CosmoModernSelectItem>>();
+    let wards = (1..31i16)
+        .map(|ward| {
+            CosmoModernSelectItem::new(
+                ward.to_string(),
+                ward.to_string(),
+                (*ward_state).clone().eq(&ward),
+            )
+        })
+        .collect::<Vec<CosmoModernSelectItem>>();
+    let plots = (1..61i16)
+        .map(|plot| {
+            CosmoModernSelectItem::new(
+                plot.to_string(),
+                plot.to_string(),
+                (*plot_state).clone().eq(&plot),
+            )
+        })
+        .collect::<Vec<CosmoModernSelectItem>>();
 
     let on_close = props.on_close.clone();
     let on_save = use_callback(
-        (district_state.clone(), ward_state.clone(), plot_state.clone(), props.on_save.clone(), props.character_id),
+        (
+            district_state.clone(),
+            ward_state.clone(),
+            plot_state.clone(),
+            props.on_save.clone(),
+            props.character_id,
+        ),
         |_, (district_state, ward_state, plot_state, on_save, character_id)| {
             on_save.emit(CharacterHousing::new(
                 *character_id,
@@ -409,9 +434,15 @@ fn modify_housing_modal(props: &ModifyHousingModalProps) -> Html {
         },
     );
 
-    let update_district = use_callback(district_state.clone(), |value: AttrValue, state| state.set(HousingDistrict::from(value.to_string())));
-    let update_ward = use_callback(ward_state.clone(), |value: AttrValue, state| state.set(value.to_string().as_str().parse::<i16>().unwrap()));
-    let update_plot = use_callback(plot_state.clone(), |value: AttrValue, state| state.set(value.to_string().as_str().parse::<i16>().unwrap()));
+    let update_district = use_callback(district_state.clone(), |value: AttrValue, state| {
+        state.set(HousingDistrict::from(value.to_string()))
+    });
+    let update_ward = use_callback(ward_state.clone(), |value: AttrValue, state| {
+        state.set(value.to_string().as_str().parse::<i16>().unwrap())
+    });
+    let update_plot = use_callback(plot_state.clone(), |value: AttrValue, state| {
+        state.set(value.to_string().as_str().parse::<i16>().unwrap())
+    });
 
     html!(
         <>
@@ -956,6 +987,42 @@ fn housing_details(props: &HousingDetailsProps) -> Html {
         action_state.set(HousingActions::Delete(housing))
     });
 
+    let housing_list_style = use_style!(
+        r#"
+display: flex;
+margin-top: 2rem;
+flex-flow: row wrap;
+gap: 1rem;
+"#
+    );
+    let housing_container_style = use_style!(
+        r#"
+display: flex;
+flex-flow: column;
+background: var(--modal-backdrop);
+backdrop-filter: var(--modal-container-backdrop-filter);
+
+h5 {
+    margin-top: 0;
+}
+
+button {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+"#
+    );
+    let housing_address_style = use_style!(
+        r#"
+border: var(--input-border-width) solid var(--control-border-color);
+border-radius: var(--border-radius);
+border-bottom: 0;
+padding: 0.5rem 1rem;
+margin-bottom: calc(var(--input-border-width) * -1 * 2);
+font-style: normal;
+    "#
+    );
+
     match housing_query_state.result() {
         None => {
             log::debug!("Still loading");
@@ -987,7 +1054,7 @@ fn housing_details(props: &HousingDetailsProps) -> Html {
                     <CosmoButton label="Unterkunft hinzufügen" on_click={on_create_open} />
                 </CosmoToolbarGroup>
             </CosmoToolbar>
-            <CosmoTable headers={vec![AttrValue::from("Gebiet"), AttrValue::from("Bezirk"), AttrValue::from("Nummer"), AttrValue::from("Aktionen")]}>
+            <div class={housing_list_style}>
                 {for (*housing_state).clone().into_iter().map(|housing| {
                     let edit_housing = housing.clone();
                     let delete_housing = housing.clone();
@@ -995,21 +1062,21 @@ fn housing_details(props: &HousingDetailsProps) -> Html {
                     let on_edit_open = on_edit_open.clone();
                     let on_delete_open = on_delete_open.clone();
 
-                    CosmoTableRow::from_table_cells(vec![
-                        CosmoTableCell::from_html(html!({housing.district.to_string()}), None),
-                        CosmoTableCell::from_html(html!({housing.ward}), None),
-                        CosmoTableCell::from_html(html!({housing.plot}), None),
-                        CosmoTableCell::from_html(html!(
-                            <>
-                                <CosmoToolbarGroup>
-                                    <CosmoButton label="Bearbeiten" on_click={move |_| on_edit_open.emit(edit_housing.clone())} />
-                                    <CosmoButton label="Löschen" on_click={move |_| on_delete_open.emit(delete_housing.clone())} />
-                                </CosmoToolbarGroup>
-                            </>
-                        ), None),
-                    ], Some(housing.id.into()))
+                    html!(
+                        <div class={housing_container_style.clone()}>
+                            <address class={housing_address_style.clone()}>
+                                <CosmoHeader level={CosmoHeaderLevel::H5} header={housing.district.to_string()} />
+                                <span>{format!("Bezirk {}", housing.ward)}</span><br />
+                                <span>{format!("Nr. {}", housing.plot)}</span>
+                            </address>
+                            <CosmoToolbarGroup>
+                                <CosmoButton label="Bearbeiten" on_click={move |_| on_edit_open.emit(edit_housing.clone())} />
+                                <CosmoButton label="Löschen" on_click={move |_| on_delete_open.emit(delete_housing.clone())} />
+                            </CosmoToolbarGroup>
+                        </div>
+                    )
                 })}
-            </CosmoTable>
+            </div>
             {match (*action_state).clone() {
                 HousingActions::Edit(housing) => html!(
                     <ModifyHousingModal character_id={props.character.id} is_edit={true} title="Unterkunft bearbeiten" save_label="Unterkunft speichern" on_save={on_modal_update_save} on_close={on_modal_action_close} housing={housing} error_message={(*error_message_state).clone()} has_error={*error_state} />
