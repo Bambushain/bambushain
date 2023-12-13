@@ -20,7 +20,7 @@ fn main() {
         .location()
         .hostname()
         .unwrap_or("development".to_string())
-        .split(".")
+        .split('.')
         .next()
         .unwrap_or("development")
         .to_string();
@@ -37,7 +37,7 @@ fn main() {
             },
         ));
     }
-    
+
     log::info!("Starting the party");
     yew::Renderer::<App>::new().render();
 }
