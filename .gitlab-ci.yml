@@ -47,7 +47,7 @@ lint-backend:
   extends: 
     - .base-backend-cache
   script: 
-    - cargo clippy
+    - cargo clippy --release
 
 lint-frontend: 
   stage: lint
@@ -55,7 +55,7 @@ lint-frontend:
     - .base-trunk
   script: 
     - cd frontend
-    - cargo clippy
+    - cargo clippy --release
   artifacts: 
     paths: 
       - dist
