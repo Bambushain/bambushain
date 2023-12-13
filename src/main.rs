@@ -11,7 +11,7 @@ use bamboo_services::prelude::DbConnection;
 
 fn main() -> std::io::Result<()> {
     let mut log_builder = env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"));
-    let logger = sentry_log::SentryLogger::with_dest(log_builder.build());
+    let logger = sentry::integrations::log::SentryLogger::with_dest(log_builder.build());
 
     log::set_boxed_logger(Box::new(logger)).unwrap();
     log::set_max_level(log::LevelFilter::Info);

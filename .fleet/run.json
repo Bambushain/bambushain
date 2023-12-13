@@ -19,7 +19,7 @@
                 "MAILER_STARTTLS": "false",
                 "MAILER_USERNAME": "noreply@creastina.art",
                 "RUST_LOG": "DEBUG",
-                "SENTRY_DSN": "https://c3769a24b1a74ad5a449712e5f1517ab@glitchtip.imanuel.dev/1",
+                "SENTRY_DSN": "",
                 "SENTRY_ENVIRONMENT": "development"
             },
         },

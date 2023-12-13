@@ -18,10 +18,6 @@ pub fn get_log_level() -> Option<String> {
     LocalStorage::get("/bamboo/log/level").ok()
 }
 
-pub fn is_logging_on() -> bool {
-    get_log_level().is_some()
-}
-
 #[derive(Atom, PartialEq, Clone, Default)]
 pub struct CurrentUser {
     pub profile: WebUser,
