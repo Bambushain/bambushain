@@ -1,8 +1,18 @@
-.base-cache: 
+.base-frontend-cache: 
   variables: 
     CARGO_HOME: $CI_PROJECT_DIR/.cargo
   cache: 
-    key: $CI_PROJECT_NAME
+    key: $CI_PROJECT_NAME-frontend
+    paths: 
+      - $CI_PROJECT_DIR/target/
+      - $CI_PROJECT_DIR/.cargo/
+      - $CI_PROJECT_DIR/Cargo.lock
+
+.base-backend-cache: 
+  variables: 
+    CARGO_HOME: $CI_PROJECT_DIR/.cargo
+  cache: 
+    key: $CI_PROJECT_NAME-backend
     paths: 
       - $CI_PROJECT_DIR/target/
       - $CI_PROJECT_DIR/.cargo/
@@ -10,7 +20,7 @@
 
 .base-trunk: 
   extends: 
-    - .base-cache
+    - .base-frontend-cache
   image: 
     name: harbor.ulbricht.casa/imanuel/trunk-docker-base-image:latest
     pull_policy: always
@@ -34,7 +44,7 @@ lint-backend:
     name: harbor.ulbricht.casa/base-images/rust-docker-base-image:latest
     pull_policy: always
   extends: 
-    - .base-cache
+    - .base-backend-cache
   script: 
     - cargo clippy
 
@@ -55,7 +65,7 @@ build-backend:
     name: harbor.ulbricht.casa/base-images/rust-docker-base-image:latest
     pull_policy: always
   extends: 
-    - .base-cache
+    - .base-backend-cache
   script: 
     - cargo build --release
   artifacts: 
