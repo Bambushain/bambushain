@@ -1,25 +1,22 @@
 use actix_web::{cookie::Cookie, delete, post, web, HttpResponse};
-use lettre::message::MultiPart;
-use lettre::transport::smtp;
-use lettre::transport::smtp::client::TlsParameters;
-use lettre::AsyncTransport;
 
 use bamboo_dbal::prelude::*;
 use bamboo_entities::prelude::*;
 use bamboo_error::*;
 use bamboo_services::prelude::{DbConnection, EnvService};
 
+use crate::mailing;
 use crate::middleware::authenticate_user::{authenticate, Authentication};
 use crate::response::macros::*;
 
 async fn send_two_factor_mail(
     display_name: String,
-    email: String,
+    to: String,
     token: String,
     env_service: EnvService,
 ) -> BambooApiResponseResult {
     let env_service = env_service.clone();
-    let html_template = format!(
+    let html_body = format!(
         r#"
 <html lang="de" style="font-family: system-ui,-apple-system,'Segoe UI','Roboto','Ubuntu','Cantarell','Noto Sans',sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol','Noto Color Emoji';">
 <head>
@@ -34,7 +31,7 @@ async fn send_two_factor_mail(
 </body>
 </html>"#
     );
-    let text_template = format!(
+    let plain_body = format!(
         r#"
 Hallo {display_name},
 
@@ -43,72 +40,21 @@ hier ist dein Zwei-Faktor-Code für den Bambushain: {token}
 Alles Gute vom 🐼"#
     );
 
-    let email = lettre::Message::builder()
-        .from(
-            env_service
-                .get_env("MAILER_FROM", "noreply@bambushain.app")
-                .parse()
-                .unwrap(),
-        )
-        .to(email.parse().unwrap())
-        .subject("Dein Zwei-Factor-Code für den Bambushain")
-        .multipart(MultiPart::alternative_plain_html(
-            text_template,
-            html_template,
-        ))
-        .map_err(|err| {
-            log::error!("Failed to construct the email message {err}");
-            BambooError::unauthorized("user", "Login data is invalid")
-        })?;
-
-    let mail_server = env_service.get_env("MAILER_SERVER", "localhost");
-    let builder = if env_service
-        .get_env("MAILER_STARTTLS", "false")
-        .to_lowercase()
-        == "true"
-    {
-        lettre::AsyncSmtpTransport::<lettre::Tokio1Executor>::starttls_relay(mail_server.as_str())
-    } else {
-        lettre::AsyncSmtpTransport::<lettre::Tokio1Executor>::relay(mail_server.as_str())
-    }
+    mailing::send_mail(
+        env_service,
+        "Dein Zwei-Factor-Code für den Bambushain",
+        to,
+        plain_body,
+        html_body,
+    )
+    .await
     .map_err(|err| {
-        log::error!("Failed to create the email builder {err}");
+        log::error!("Failed to send email {err}");
+        log::error!("{err:#?}");
+
         BambooError::unauthorized("user", "Login data is invalid")
-    })?;
-
-    let port = env_service
-        .get_env("MAILER_PORT", "25")
-        .parse::<u16>()
-        .unwrap_or(25u16);
-    let builder = if env_service.get_env("MAILER_ENCRYPTION", "false") == "false" {
-        builder.tls(smtp::client::Tls::None)
-    } else {
-        builder.tls(smtp::client::Tls::Required(
-            TlsParameters::new(mail_server).map_err(|err| {
-                log::error!("Failed to parse the server domain {err}");
-                BambooError::unauthorized("user", "Login data is invalid")
-            })?,
-        ))
-    };
-
-    let mailer = builder
-        .credentials(smtp::authentication::Credentials::new(
-            env_service.get_env("MAILER_USERNAME", ""),
-            env_service.get_env("MAILER_PASSWORD", ""),
-        ))
-        .port(port)
-        .build();
-
-    mailer
-        .send(email)
-        .await
-        .map_err(|err| {
-            log::error!("Failed to send email {err}");
-            log::error!("{err:#?}");
-
-            BambooError::unauthorized("user", "Login data is invalid")
-        })
-        .map(|_| no_content!())
+    })
+    .map(|_| no_content!())
 }
 
 #[post("/api/login")]
