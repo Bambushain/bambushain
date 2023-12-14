@@ -465,7 +465,7 @@ paths:
               schema: 
                 type: array
                 items: 
-                  $ref: '#/components/schemas/housing'
+                  $ref: '#/components/schemas/character_housing'
           description: A list of housings
         '401': 
           description: The api token is invalid
@@ -793,7 +793,7 @@ paths:
           content: 
             application/json: 
               schema: 
-                $ref: '#/components/schemas/housing'
+                $ref: '#/components/schemas/character_housing'
         '401': 
           description: The api token is invalid
           content: 
@@ -2329,7 +2329,7 @@ components:
           type: string
       example: 
         entityType: crafter
-        errorType: notFoundError
+        errorType: NotFound
         message: The crafter was not found
       required: 
         - message
@@ -2490,3 +2490,5 @@ tags:
     description: All endpoints around the calendar of pandaparty
   - name: Character
     description: All endpoints around the character of the current user
+  - name: Character Housing
+    description: All endpoints around the character housing of the current character
