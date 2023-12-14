@@ -18,10 +18,14 @@ struct SupportSectionProps {
 fn support_section(props: &SupportSectionProps) -> Html {
     let container_style = use_style!(
         r#"
-max-width: 50%;
+max-width: calc(var(--input-width-large) + 10rem + var(--input-group-gap));
 padding-top: 2rem;
 display: flex;
 flex-flow: column;
+
+@media screen and (max-width: 1600px) {
+    max-width: 100%;
+}
     "#
     );
 
@@ -82,8 +86,8 @@ flex-flow: column;
             <div class={container_style}>
                 {props.children.clone()}
                 <CosmoForm on_submit={send_request} buttons={html!(<CosmoButton state={CosmoButtonType::Primary} label={props.submit_label.clone()} is_submit={true} />)}>
-                    <CosmoTextBox required={true} value={(*subject_state).clone()} on_input={update_subject} label="Betreff" />
-                    <CosmoTextArea rows={20} required={true} value={(*message_state).clone()} on_input={update_message} label="Nachricht" />
+                    <CosmoTextBox width={CosmoInputWidth::Large} required={true} value={(*subject_state).clone()} on_input={update_subject} label="Betreff" />
+                    <CosmoTextArea width={CosmoInputWidth::Large} rows={20} required={true} value={(*message_state).clone()} on_input={update_message} label="Nachricht" />
                 </CosmoForm>
             </div>
             if *send_state && *error_state {
