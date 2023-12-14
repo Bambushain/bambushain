@@ -5,9 +5,6 @@
             "name": "Build frontend",
             "program": "trunk",
             "workingDir": "$PROJECT_DIR$/",
-            "environment": {
-                "SENTRY_DSN": ""
-            },
             "args": [
                 "build"
             ],
@@ -17,9 +14,6 @@
             "name": "Watch frontend",
             "program": "trunk",
             "workingDir": "$PROJECT_DIR$/",
-            "environment": {
-                "SENTRY_DSN": ""
-            },
             "args": [
                 "watch"
             ],
@@ -27,9 +21,6 @@
         {
             "type": "cargo",
             "name": "Clippy frontend",
-            "environment": {
-                "SENTRY_DSN": ""
-            },
             "cargoArgs": [
                 "clippy",
                 "-p",

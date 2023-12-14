@@ -86,14 +86,12 @@ build-frontend:
 
 docker-build: 
   stage: deploy
+  variables: 
+    SENTRY_RELEASE: $CI_COMMIT_TAG
   extends: 
     - .base-kaniko
   script: 
-    - /kaniko/executor
-      --context "dir://${CI_PROJECT_DIR}"
-      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
-      --destination "harbor.ulbricht.casa/creastina/bamboo:${CI_COMMIT_TAG}"
-      --destination "harbor.ulbricht.casa/creastina/bamboo:latest"
+    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/Dockerfile" --destination "harbor.ulbricht.casa/creastina/bamboo:${CI_COMMIT_TAG}" --destination "harbor.ulbricht.casa/creastina/bamboo:latest"
   dependencies: 
     - build-backend
     - build-frontend
@@ -104,13 +102,12 @@ docker-build:
 
 docker-build-testing: 
   stage: deploy
+  variables: 
+    SENTRY_RELEASE: $CI_COMMIT_BRANCH
   extends: 
     - .base-kaniko
   script: 
-    - /kaniko/executor
-      --context "dir://${CI_PROJECT_DIR}"
-      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
-      --destination "harbor.ulbricht.casa/creastina/bamboo:1.5.0-test-$CI_PIPELINE_IID"
+    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/Dockerfile" --destination "harbor.ulbricht.casa/creastina/bamboo:1.5.0-test-$CI_PIPELINE_IID"
   dependencies: 
     - build-backend
     - build-frontend

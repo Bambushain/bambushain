@@ -16,28 +16,6 @@ fn main() {
             .unwrap_or(Level::Warn),
     ));
 
-    let environment = gloo::utils::window()
-        .location()
-        .hostname()
-        .unwrap_or("development".to_string())
-        .split('.')
-        .next()
-        .unwrap_or("development")
-        .to_string();
-    let dsn = env!("SENTRY_DSN");
-
-    if !dsn.is_empty() {
-        log::info!("Configure glitchtip");
-        let _sentry = sentry::init((
-            dsn,
-            sentry::ClientOptions {
-                release: sentry::release_name!(),
-                environment: Some(environment.into()),
-                ..Default::default()
-            },
-        ));
-    }
-
     log::info!("Starting the party");
     yew::Renderer::<App>::new().render();
 }
