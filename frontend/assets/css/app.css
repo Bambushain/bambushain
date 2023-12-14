@@ -10,6 +10,7 @@ body {
 
     --gradient-bottom-color: transparent !important;
     --menu-text-selected-color: rgb(204, 204, 204);
+    --list-items-width: 17rem;
 }
 
 body > div {

@@ -17,6 +17,7 @@ pub use custom_field::*;
 pub use event::*;
 pub use fighter::*;
 pub use my::*;
+pub use support::*;
 pub use user::*;
 
 pub mod authentication;
@@ -28,6 +29,7 @@ pub mod event;
 pub mod fighter;
 pub mod free_company;
 pub mod my;
+pub mod support;
 pub mod user;
 
 macro_rules! error_code {

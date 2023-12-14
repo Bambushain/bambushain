@@ -29,7 +29,7 @@ wasm-bindgen = "0.2.87"
 wasm-logger = "0.2.0"
 web-sys = "0.3.64"
 yew = { version = "0.21.0", features = ["csr", "hydration"] }
-yew-cosmo = "1.0.3"
+yew-cosmo = "1.0.5"
 yew_icons = { version = "0.8.0", features = ["lucide"] }
 yew-hooks = "0.3.0"
 yew-router = "0.18.0"

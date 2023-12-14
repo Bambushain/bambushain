@@ -13,8 +13,10 @@ use crate::pages::bamboo::user::UsersPage;
 use crate::pages::final_fantasy::character::CharacterPage;
 use crate::pages::final_fantasy::settings::SettingsPage;
 use crate::pages::login::LoginPage;
-use crate::routing::{AppRoute, BambooGroveRoute, FinalFantasyRoute};
+use crate::routing::{AppRoute, BambooGroveRoute, FinalFantasyRoute, SupportRoute};
 use crate::{api, storage};
+
+use super::support::contact::ContactPage;
 
 #[derive(Properties, Clone, PartialEq)]
 struct ChangePasswordDialogProps {
@@ -43,14 +45,19 @@ fn switch_sub_menu(route: AppRoute) -> Html {
     match route {
         AppRoute::BambooGroveRoot | AppRoute::BambooGrove => html!(
             <CosmoSubMenuBar>
-                <Switch<BambooGroveRoute> render={render_sub_menu_entry("Event Kalender".into(), BambooGroveRoute::Calendar)} />
-                <Switch<BambooGroveRoute> render={render_sub_menu_entry("Pandas".into(), BambooGroveRoute::User)} />
+                <Switch<BambooGroveRoute> render={render_sub_menu_entry("Event Kalender", BambooGroveRoute::Calendar)} />
+                <Switch<BambooGroveRoute> render={render_sub_menu_entry("Pandas", BambooGroveRoute::User)} />
             </CosmoSubMenuBar>
         ),
         AppRoute::FinalFantasyRoot | AppRoute::FinalFantasy => html!(
             <CosmoSubMenuBar>
-                <Switch<FinalFantasyRoute> render={render_sub_menu_entry("Meine Charaktere".into(), FinalFantasyRoute::Characters)} />
-                <Switch<FinalFantasyRoute> render={render_sub_menu_entry("Personalisierung".into(), FinalFantasyRoute::Settings)} />
+                <Switch<FinalFantasyRoute> render={render_sub_menu_entry("Meine Charaktere", FinalFantasyRoute::Characters)} />
+                <Switch<FinalFantasyRoute> render={render_sub_menu_entry("Personalisierung", FinalFantasyRoute::Settings)} />
+            </CosmoSubMenuBar>
+        ),
+        AppRoute::SupportRoot | AppRoute::Support => html!(
+            <CosmoSubMenuBar>
+                <Switch<SupportRoute> render={render_sub_menu_entry("Kontakt", SupportRoute::Contact)} />
             </CosmoSubMenuBar>
         ),
         _ => {
@@ -102,6 +109,19 @@ fn switch_panda_party(route: BambooGroveRoute) -> Html {
     }
 }
 
+fn switch_support(route: SupportRoute) -> Html {
+    match route {
+        SupportRoute::Contact => html!(
+            <>
+                <Helmet>
+                    <title>{"Kontakt"}</title>
+                </Helmet>
+                <ContactPage />
+            </>
+        ),
+    }
+}
+
 fn switch_app(route: AppRoute) -> Html {
     match route {
         AppRoute::Home => html!(
@@ -129,12 +149,23 @@ fn switch_app(route: AppRoute) -> Html {
                 <Switch<FinalFantasyRoute> render={switch_final_fantasy} />
             </>
         ),
+        AppRoute::SupportRoot => html!(
+            <Redirect<SupportRoute> to={SupportRoute::Contact} />
+        ),
+        AppRoute::Support => html!(
+            <>
+                <Helmet>
+                    <title>{"Bambussupport"}</title>
+                </Helmet>
+                <Switch<SupportRoute> render={switch_support} />
+            </>
+        ),
         AppRoute::Login => html!(),
     }
 }
 
 fn render_main_menu_entry(
-    label: AttrValue,
+    label: impl Into<AttrValue> + Clone,
     to: AppRoute,
     active: AppRoute,
 ) -> impl Fn(AppRoute) -> Html {
@@ -142,20 +173,20 @@ fn render_main_menu_entry(
         let is_active = route.eq(&active);
 
         html!(
-            <CosmoMainMenuItemLink<AppRoute> to={to.clone()} label={label.clone()} is_active={is_active} />
+            <CosmoMainMenuItemLink<AppRoute> to={to.clone()} label={label.clone().into()} is_active={is_active} />
         )
     }
 }
 
 fn render_sub_menu_entry<Route: Routable + Clone + 'static>(
-    label: AttrValue,
+    label: impl Into<AttrValue> + Clone,
     to: Route,
 ) -> impl Fn(Route) -> Html {
     move |route| {
         let is_active = route.eq(&to);
 
         html!(
-            <CosmoSubMenuItemLink<Route> to={to.clone()} label={label.clone()} is_active={is_active} />
+            <CosmoSubMenuItemLink<Route> to={to.clone()} label={label.clone().into()} is_active={is_active} />
         )
     }
 }
@@ -188,8 +219,9 @@ fn app_layout() -> Html {
                     <Switch<AppRoute> render={switch_top_bar}/>
                     <CosmoMenuBar>
                         <CosmoMainMenu>
-                            <Switch<AppRoute> render={render_main_menu_entry("Bambushain".into(), AppRoute::BambooGroveRoot, AppRoute::BambooGrove)} />
-                            <Switch<AppRoute> render={render_main_menu_entry("Final Fantasy".into(), AppRoute::FinalFantasyRoot, AppRoute::FinalFantasy)} />
+                            <Switch<AppRoute> render={render_main_menu_entry("Bambushain", AppRoute::BambooGroveRoot, AppRoute::BambooGrove)} />
+                            <Switch<AppRoute> render={render_main_menu_entry("Final Fantasy", AppRoute::FinalFantasyRoot, AppRoute::FinalFantasy)} />
+                            <Switch<AppRoute> render={render_main_menu_entry("Bambussupport", AppRoute::SupportRoot, AppRoute::Support)} />
                         </CosmoMainMenu>
                         <Switch<AppRoute> render={switch_sub_menu} />
                     </CosmoMenuBar>
