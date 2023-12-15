@@ -83,6 +83,18 @@ pub async fn get_users(db: &DatabaseConnection) -> BambooResult<Vec<User>> {
         })
 }
 
+pub async fn get_users_with_mod_rights(db: &DatabaseConnection) -> BambooResult<Vec<User>> {
+    user::Entity::find()
+        .filter(user::Column::IsMod.eq(true))
+        .order_by_asc(user::Column::Email)
+        .all(db)
+        .await
+        .map_err(|err| {
+            log::error!("{err}");
+            BambooError::database("user", "Failed to load users")
+        })
+}
+
 async fn user_exists_by_id(
     id: i32,
     email: String,

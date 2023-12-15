@@ -21,3 +21,8 @@ pub fn logout() {
         let _ = api::delete("/api/login").await;
     });
 }
+
+pub async fn forgot_password(data: ForgotPassword) -> api::BambooApiResult<()> {
+    log::debug!("Request new password");
+    api::post_no_content("/api/forgot-password", &data).await
+}
