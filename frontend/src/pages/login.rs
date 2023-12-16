@@ -129,7 +129,7 @@ fn login_content() -> Html {
     let forgot_password_back = use_callback(
         (forgot_password_state.clone(), error_message_state.clone()),
         |_, (forgot_password_state, error_message_state)| {
-            forgot_password_state.set(true);
+            forgot_password_state.set(false);
             error_message_state.set("Melde dich an und betrete den Bambushain".into())
         },
     );
