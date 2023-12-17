@@ -15,6 +15,10 @@ pub enum AppRoute {
     FinalFantasyRoot,
     #[at("/final-fantasy/*")]
     FinalFantasy,
+    #[at("/support")]
+    SupportRoot,
+    #[at("/support/*")]
+    Support,
     #[at("/login")]
     Login,
 }
@@ -31,6 +35,12 @@ pub enum FinalFantasyRoute {
     Characters,
     #[at("/final-fantasy/settings")]
     Settings,
+}
+
+#[derive(Clone, Routable, PartialEq)]
+pub enum SupportRoute {
+    #[at("/support/contact")]
+    Contact,
 }
 
 #[derive(Clone, Routable, PartialEq)]

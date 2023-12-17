@@ -49,24 +49,24 @@ color-art = "0.3.7"
 date-range = "0.3.0"
 either = "1.9.0"
 env_logger = "0.10.1"
-futures = "0.3.28"
-futures-util = "0.3.28"
-lettre = { version = "0.11.0", features = ["tokio1-rustls-tls", "smtp-transport", "pool", "hostname", "builder"], default-features = false }
+futures = "0.3.29"
+futures-util = "0.3.29"
+lettre = { version = "0.11.2", features = ["tokio1-rustls-tls", "smtp-transport", "pool", "hostname", "builder"], default-features = false }
 log = "0.4.20"
 parking_lot = "0.12.1"
 pbkdf2 = "0.12.2"
 quote = "1.0.33"
 rand = "0.8.5"
-sea-orm = { version = "0.12.9", features = ["with-json", "runtime-actix-rustls", "sqlx-postgres"] }
-sea-orm-migration = { version = "0.12.6", features = ["sqlx-mysql", "runtime-tokio-rustls"] }
+sea-orm = { version = "0.12.10", features = ["with-json", "runtime-actix-rustls", "sqlx-postgres"] }
+sea-orm-migration = { version = "0.12.10", features = ["sqlx-mysql", "runtime-tokio-rustls"] }
 sentry = { version = "0.32.0", default-features = false, features = ["backtrace", "contexts", "panic", "debug-images", "reqwest", "rustls", "log"] }
 sentry-actix = "0.32.0"
-serde = { version = "1.0.189", features = ["derive"] }
-serde_json = "1.0.107"
+serde = { version = "1.0.193", features = ["derive"] }
+serde_json = "1.0.108"
 sha2 = "0.10.8"
 strum = "0.25.0"
-strum_macros = "0.25.2"
-syn = "2.0.39"
-tokio = "1.34.0"
+strum_macros = "0.25.3"
+syn = "2.0.41"
+tokio = "1.35.0"
 totp-rs = { version = "5.4.0", features = ["qr", "gen_secret"] }
-uuid = { version = "1.4.1", features = ["v4"] }
+uuid = { version = "1.6.1", features = ["v4"] }

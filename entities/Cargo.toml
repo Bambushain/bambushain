@@ -5,6 +5,8 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
+bamboo-error = { path = "../error" }
+
 bcrypt = { workspace = true }
 chrono = { workspace = true }
 color-art = { workspace = true }

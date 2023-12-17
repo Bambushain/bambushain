@@ -1,9 +1,12 @@
+use std::ops::Deref;
+
 use bounce::helmet::Helmet;
 use bounce::query::use_query_value;
 use bounce::{use_atom_setter, use_atom_value};
 use stylist::yew::use_style;
 use yew::prelude::*;
 use yew_cosmo::prelude::*;
+use yew_hooks::use_unmount;
 use yew_router::prelude::*;
 
 use bamboo_entities::user::UpdateProfile;
@@ -13,8 +16,10 @@ use crate::pages::bamboo::user::UsersPage;
 use crate::pages::final_fantasy::character::CharacterPage;
 use crate::pages::final_fantasy::settings::SettingsPage;
 use crate::pages::login::LoginPage;
-use crate::routing::{AppRoute, BambooGroveRoute, FinalFantasyRoute};
-use crate::{api, storage};
+use crate::routing::{AppRoute, BambooGroveRoute, FinalFantasyRoute, SupportRoute};
+use crate::{api, error, storage};
+
+use super::support::contact::ContactPage;
 
 #[derive(Properties, Clone, PartialEq)]
 struct ChangePasswordDialogProps {
@@ -43,14 +48,19 @@ fn switch_sub_menu(route: AppRoute) -> Html {
     match route {
         AppRoute::BambooGroveRoot | AppRoute::BambooGrove => html!(
             <CosmoSubMenuBar>
-                <Switch<BambooGroveRoute> render={render_sub_menu_entry("Event Kalender".into(), BambooGroveRoute::Calendar)} />
-                <Switch<BambooGroveRoute> render={render_sub_menu_entry("Pandas".into(), BambooGroveRoute::User)} />
+                <Switch<BambooGroveRoute> render={render_sub_menu_entry("Event Kalender", BambooGroveRoute::Calendar)} />
+                <Switch<BambooGroveRoute> render={render_sub_menu_entry("Pandas", BambooGroveRoute::User)} />
             </CosmoSubMenuBar>
         ),
         AppRoute::FinalFantasyRoot | AppRoute::FinalFantasy => html!(
             <CosmoSubMenuBar>
-                <Switch<FinalFantasyRoute> render={render_sub_menu_entry("Meine Charaktere".into(), FinalFantasyRoute::Characters)} />
-                <Switch<FinalFantasyRoute> render={render_sub_menu_entry("Personalisierung".into(), FinalFantasyRoute::Settings)} />
+                <Switch<FinalFantasyRoute> render={render_sub_menu_entry("Meine Charaktere", FinalFantasyRoute::Characters)} />
+                <Switch<FinalFantasyRoute> render={render_sub_menu_entry("Personalisierung", FinalFantasyRoute::Settings)} />
+            </CosmoSubMenuBar>
+        ),
+        AppRoute::SupportRoot | AppRoute::Support => html!(
+            <CosmoSubMenuBar>
+                <Switch<SupportRoute> render={render_sub_menu_entry("Kontakt", SupportRoute::Contact)} />
             </CosmoSubMenuBar>
         ),
         _ => {
@@ -102,6 +112,19 @@ fn switch_panda_party(route: BambooGroveRoute) -> Html {
     }
 }
 
+fn switch_support(route: SupportRoute) -> Html {
+    match route {
+        SupportRoute::Contact => html!(
+            <>
+                <Helmet>
+                    <title>{"Kontakt"}</title>
+                </Helmet>
+                <ContactPage />
+            </>
+        ),
+    }
+}
+
 fn switch_app(route: AppRoute) -> Html {
     match route {
         AppRoute::Home => html!(
@@ -129,12 +152,23 @@ fn switch_app(route: AppRoute) -> Html {
                 <Switch<FinalFantasyRoute> render={switch_final_fantasy} />
             </>
         ),
+        AppRoute::SupportRoot => html!(
+            <Redirect<SupportRoute> to={SupportRoute::Contact} />
+        ),
+        AppRoute::Support => html!(
+            <>
+                <Helmet>
+                    <title>{"Bambussupport"}</title>
+                </Helmet>
+                <Switch<SupportRoute> render={switch_support} />
+            </>
+        ),
         AppRoute::Login => html!(),
     }
 }
 
 fn render_main_menu_entry(
-    label: AttrValue,
+    label: impl Into<AttrValue> + Clone,
     to: AppRoute,
     active: AppRoute,
 ) -> impl Fn(AppRoute) -> Html {
@@ -142,20 +176,20 @@ fn render_main_menu_entry(
         let is_active = route.eq(&active);
 
         html!(
-            <CosmoMainMenuItemLink<AppRoute> to={to.clone()} label={label.clone()} is_active={is_active} />
+            <CosmoMainMenuItemLink<AppRoute> to={to.clone()} label={label.clone().into()} is_active={is_active} />
         )
     }
 }
 
 fn render_sub_menu_entry<Route: Routable + Clone + 'static>(
-    label: AttrValue,
+    label: impl Into<AttrValue> + Clone,
     to: Route,
 ) -> impl Fn(Route) -> Html {
     move |route| {
         let is_active = route.eq(&to);
 
         html!(
-            <CosmoSubMenuItemLink<Route> to={to.clone()} label={label.clone()} is_active={is_active} />
+            <CosmoSubMenuItemLink<Route> to={to.clone()} label={label.clone().into()} is_active={is_active} />
         )
     }
 }
@@ -177,6 +211,7 @@ fn app_layout() -> Html {
     let profile_query = use_query_value::<api::Profile>(().into());
     let profile_atom = use_atom_setter::<storage::CurrentUser>();
 
+    log::debug!("First render, so lets send the request to check if the token is valid and see");
     match profile_query.result() {
         None => html!(),
         Some(Ok(res)) => {
@@ -188,21 +223,19 @@ fn app_layout() -> Html {
                     <Switch<AppRoute> render={switch_top_bar}/>
                     <CosmoMenuBar>
                         <CosmoMainMenu>
-                            <Switch<AppRoute> render={render_main_menu_entry("Bambushain".into(), AppRoute::BambooGroveRoot, AppRoute::BambooGrove)} />
-                            <Switch<AppRoute> render={render_main_menu_entry("Final Fantasy".into(), AppRoute::FinalFantasyRoot, AppRoute::FinalFantasy)} />
+                            <Switch<AppRoute> render={render_main_menu_entry("Bambushain", AppRoute::BambooGroveRoot, AppRoute::BambooGrove)} />
+                            <Switch<AppRoute> render={render_main_menu_entry("Final Fantasy", AppRoute::FinalFantasyRoot, AppRoute::FinalFantasy)} />
+                            <Switch<AppRoute> render={render_main_menu_entry("Bambussupport", AppRoute::SupportRoot, AppRoute::Support)} />
                         </CosmoMainMenu>
                         <Switch<AppRoute> render={switch_sub_menu} />
                     </CosmoMenuBar>
                     <CosmoPageBody>
                         <Switch<AppRoute> render={switch_app} />
-                    </CosmoPageBody>
+                   </CosmoPageBody>
                 </>
             )
         }
         Some(Err(_)) => {
-            log::debug!(
-                "First render, so lets send the request to check if the token is valid and see"
-            );
             html!(
                 <Redirect<AppRoute> to={AppRoute::Login} />
             )
@@ -216,20 +249,46 @@ fn change_password_dialog(props: &ChangePasswordDialogProps) -> Html {
     let navigator = use_navigator();
 
     let error_state = use_state_eq(|| false);
+    let unknown_error_state = use_state_eq(|| false);
+
+    let bamboo_error_state = use_state_eq(api::ApiError::default);
 
     let error_header_state = use_state_eq(|| AttrValue::from(""));
     let error_message_state = use_state_eq(|| AttrValue::from(""));
     let old_password_state = use_state_eq(|| AttrValue::from(""));
     let new_password_state = use_state_eq(|| AttrValue::from(""));
 
+    {
+        let error_state = error_state.clone();
+
+        use_unmount(move || {
+            error_state.set(false);
+        })
+    }
+
     let update_old_password =
         use_callback(old_password_state.clone(), |value, state| state.set(value));
     let update_new_password =
         use_callback(new_password_state.clone(), |value, state| state.set(value));
 
+    let report_unknown_error = use_callback(
+        (bamboo_error_state.clone(), unknown_error_state.clone()),
+        |_, (bamboo_error_state, unknown_error_state)| {
+            error::report_unknown_error(
+                "layout",
+                "change_password_dialog",
+                bamboo_error_state.deref().clone(),
+            );
+            unknown_error_state.set(false);
+        },
+    );
+
     let on_close = props.on_close.clone();
     let on_save = {
         let error_state = error_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
 
         let error_message_state = error_message_state.clone();
         let error_header_state = error_header_state.clone();
@@ -241,6 +300,9 @@ fn change_password_dialog(props: &ChangePasswordDialogProps) -> Html {
             let navigator = navigator.clone();
 
             let error_state = error_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
+
+            let bamboo_error_state = bamboo_error_state.clone();
 
             let error_message_state = error_message_state.clone();
             let error_header_state = error_header_state.clone();
@@ -253,6 +315,7 @@ fn change_password_dialog(props: &ChangePasswordDialogProps) -> Html {
                         log::debug!("Password change was successful, now logout");
                         api::logout();
                         navigator.expect("Navigator should be available").push(&AppRoute::Login);
+                        unknown_error_state.set(false);
 
                         false
                     }
@@ -261,6 +324,7 @@ fn change_password_dialog(props: &ChangePasswordDialogProps) -> Html {
                             log::warn!("The old password is wrong");
                             error_message_state.set("Wenn du möchtest dass es von einem Mod zurückgesetzt wird, einfach anschreiben".into());
                             error_header_state.set("Das alte Passwort ist falsch".into());
+                            unknown_error_state.set(false);
 
                             true
                         }
@@ -268,13 +332,16 @@ fn change_password_dialog(props: &ChangePasswordDialogProps) -> Html {
                             log::warn!("The user was not found");
                             error_message_state.set("Bitte versuch es erneut um einen Fehler auszuschließen".into());
                             error_header_state.set("Du wurdest scheinbar gelöscht".into());
+                            unknown_error_state.set(false);
 
                             true
                         }
                         _ => {
                             log::warn!("Failed to change the password {err}");
-                            error_message_state.set("Leider konnte dein Passwort nicht geändert werden, bitte wende dich an Azami".into());
+                            error_message_state.set("Leider konnte dein Passwort nicht geändert werden".into());
                             error_header_state.set("Fehler beim ändern".into());
+                            unknown_error_state.set(true);
+                            bamboo_error_state.set(err.clone());
 
                             true
                         }
@@ -296,7 +363,11 @@ fn change_password_dialog(props: &ChangePasswordDialogProps) -> Html {
                 </>
             )}>
                 if *error_state {
-                    <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} header={(*error_header_state).clone()} />
+                    if *unknown_error_state {
+                        <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} header={(*error_header_state).clone()} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
+                    } else {
+                        <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} header={(*error_header_state).clone()} />
+                    }
                 } else {
                     <CosmoMessage message_type={CosmoMessageType::Information} message={format!("Falls du dich an dein altes Passwort nicht erinnern kannst,\nwende dich an einen Mod: {}", props.mods.join(", "))} header="Ändere dein Passwort" />
                 }
@@ -317,6 +388,9 @@ fn update_my_profile_dialog(props: &UpdateMyProfileDialogProps) -> Html {
     let user_atom = use_atom_value::<storage::CurrentUser>();
 
     let error_state = use_state_eq(|| false);
+    let unknown_error_state = use_state_eq(|| false);
+
+    let bamboo_error_state = use_state_eq(api::ApiError::default);
 
     let error_message_state = use_state_eq(|| AttrValue::from(""));
     let email_state = use_state_eq(|| AttrValue::from(user_atom.profile.email.clone()));
@@ -325,17 +399,40 @@ fn update_my_profile_dialog(props: &UpdateMyProfileDialogProps) -> Html {
     let discord_name_state =
         use_state_eq(|| AttrValue::from(user_atom.profile.discord_name.clone()));
 
+    {
+        let error_state = error_state.clone();
+
+        use_unmount(move || {
+            error_state.set(false);
+        })
+    }
+
     let update_email = use_callback(email_state.clone(), |value, state| state.set(value));
     let update_display_name =
         use_callback(display_name_state.clone(), |value, state| state.set(value));
     let update_discord_name =
         use_callback(discord_name_state.clone(), |value, state| state.set(value));
 
+    let report_unknown_error = use_callback(
+        (bamboo_error_state.clone(), unknown_error_state.clone()),
+        |_, (bamboo_error_state, unknown_error_state)| {
+            error::report_unknown_error(
+                "layout",
+                "update_my_profile_dialog",
+                bamboo_error_state.deref().clone(),
+            );
+            unknown_error_state.set(false);
+        },
+    );
+
     let on_close = props.on_close.clone();
     let on_save = {
         let authentication_state_query = authentication_state_query;
 
         let error_state = error_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
 
         let error_message_state = error_message_state.clone();
         let email_state = email_state.clone();
@@ -349,6 +446,9 @@ fn update_my_profile_dialog(props: &UpdateMyProfileDialogProps) -> Html {
             let authentication_state_query = authentication_state_query.clone();
 
             let error_state = error_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
+
+            let bamboo_error_state = bamboo_error_state.clone();
 
             let error_message_state = error_message_state.clone();
             let email_state = email_state.clone();
@@ -362,6 +462,7 @@ fn update_my_profile_dialog(props: &UpdateMyProfileDialogProps) -> Html {
                     Ok(_) => {
                         log::debug!("Profile update successful");
                         let _ = authentication_state_query.refresh().await;
+                        unknown_error_state.set(false);
 
                         on_close.emit(());
 
@@ -371,12 +472,15 @@ fn update_my_profile_dialog(props: &UpdateMyProfileDialogProps) -> Html {
                         api::NOT_FOUND => {
                             log::warn!("The user was not found");
                             error_message_state.set("Du wurdest scheinbar gelöscht, bitte versuch es erneut um einen Fehler auszuschließen".into());
+                            unknown_error_state.set(false);
 
                             true
                         }
                         _ => {
                             log::warn!("Failed to update the profile {err}");
-                            error_message_state.set("Dein Profil konnte leider nicht geändert werden, bitte wende dich an Azami".into());
+                            error_message_state.set("Dein Profil konnte leider nicht geändert werden".into());
+                            unknown_error_state.set(true);
+                            bamboo_error_state.set(err.clone());
 
                             true
                         }
@@ -398,7 +502,11 @@ fn update_my_profile_dialog(props: &UpdateMyProfileDialogProps) -> Html {
                 </>
             )}>
                 if *error_state {
-                    <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} header="Fehler beim Ändern" />
+                    if *unknown_error_state {
+                        <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} header="Fehler beim Ändern" actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
+                    } else {
+                        <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} header="Fehler beim Ändern" />
+                    }
                 }
                 <CosmoInputGroup>
                     <CosmoTextBox label="Email" input_type={CosmoTextBoxType::Email} required={true} on_input={update_email} value={(*email_state).clone()} />
@@ -415,6 +523,9 @@ fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
     log::debug!("Open dialog to enable totp");
     let enable_start_state = use_state_eq(|| false);
     let error_state = use_state_eq(|| false);
+    let unknown_error_state = use_state_eq(|| false);
+
+    let bamboo_error_state = use_state_eq(api::ApiError::default);
 
     let profile_query = use_query_value::<api::Profile>(().into());
     let profile_atom = use_atom_setter::<storage::CurrentUser>();
@@ -425,14 +536,37 @@ fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
     let qrcode_state = use_state_eq(|| AttrValue::from(""));
     let secret_state = use_state_eq(|| AttrValue::from(""));
 
+    {
+        let error_state = error_state.clone();
+
+        use_unmount(move || {
+            error_state.set(false);
+        })
+    }
+
     let update_code = use_callback(code_state.clone(), |value, state| state.set(value));
     let update_password = use_callback(current_password_state.clone(), |value, state| {
         state.set(value)
     });
 
+    let report_unknown_error = use_callback(
+        (bamboo_error_state.clone(), unknown_error_state.clone()),
+        |_, (bamboo_error_state, unknown_error_state)| {
+            error::report_unknown_error(
+                "layout",
+                "enable_totp_dialog",
+                bamboo_error_state.deref().clone(),
+            );
+            unknown_error_state.set(false);
+        },
+    );
+
     let enable_totp = {
         let enable_start_state = enable_start_state.clone();
         let error_state = error_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
 
         let qrcode_state = qrcode_state.clone();
         let secret_state = secret_state.clone();
@@ -444,6 +578,9 @@ fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
         Callback::from(move |_: ()| {
             let enable_start_state = enable_start_state.clone();
             let error_state = error_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
+
+            let bamboo_error_state = bamboo_error_state.clone();
 
             let qrcode_state = qrcode_state.clone();
             let secret_state = secret_state.clone();
@@ -457,6 +594,7 @@ fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
                     Ok(data) => {
                         enable_start_state.set(true);
                         qrcode_state.set(data.qr_code.clone().into());
+                        unknown_error_state.set(false);
                         secret_state.set(data.secret.clone().into());
                         log::info!("Here is the secret: {}", data.secret);
                         let _ = profile_query.refresh().await.map(|res| {
@@ -470,6 +608,9 @@ fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
                         error_state.set(true);
                         error_message_state
                             .set("Leider konnte Zwei Faktor per App nicht aktiviert werden".into());
+
+                        unknown_error_state.set(true);
+                        bamboo_error_state.set(err.clone());
                     }
                 }
             })
@@ -477,6 +618,9 @@ fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
     };
     let on_form_submit = {
         let error_state = error_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
 
         let error_message_state = error_message_state.clone();
         let code_state = code_state.clone();
@@ -486,6 +630,9 @@ fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
 
         Callback::from(move |_: ()| {
             let error_state = error_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
+
+            let bamboo_error_state = bamboo_error_state.clone();
 
             let error_message_state = error_message_state.clone();
             let code_state = code_state.clone();
@@ -494,6 +641,8 @@ fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
             let on_close = on_close.clone();
 
             yew::platform::spawn_local(async move {
+                unknown_error_state.set(false);
+
                 match api::validate_totp(
                     (*code_state).to_string(),
                     (*current_password_state).to_string(),
@@ -502,13 +651,22 @@ fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
                 {
                     Ok(_) => {
                         on_close.emit(());
+                        unknown_error_state.set(false);
                     }
                     Err(err) => {
                         log::error!("Failed to validate token: {err}");
                         error_state.set(true);
-                        error_message_state.set(
-                            "Der von dir eingegebene Code oder dein Passwort ist ungültig, versuch es nochmal".into(),
-                        );
+                        if err.code > api::ErrorCode::from(499) {
+                            error_message_state
+                                .set("Leider konnte Zwei Faktor nicht aktiviert werden".into());
+                            unknown_error_state.set(true);
+                            bamboo_error_state.set(err.clone());
+                        } else {
+                            unknown_error_state.set(false);
+                            error_message_state.set(
+                                "Der von dir eingegebene Code oder dein Passwort ist ungültig, versuch es nochmal".into(),
+                            );
+                        }
                     }
                 }
             })
@@ -548,7 +706,11 @@ Um eine App einzurichten, musst du unten auf App einrichten klicken.
 Anschließend kommt ein QR Code, den musst du scannen und danach einen Code aus deiner App eingeben."#} confirm_label="App einrichten" decline_label="Abbrechen" on_confirm={enable_totp} on_decline={props.on_close.clone()} />
             }
             if *error_state {
-                <CosmoAlert alert_type={CosmoModalType::Negative} title="Fehler beim Aktivieren" message={(*error_message_state).clone()} close_label="Schließen" on_close={move |_| error_state.set(false)} />
+                if *unknown_error_state {
+                    <CosmoConfirm confirm_type={CosmoModalType::Negative} title="Fehler beim Aktivieren" message={(*error_message_state).clone()} decline_label="Schließen" on_decline={move |_| error_state.set(false)} confirm_label="Fehler melden" on_confirm={report_unknown_error} />
+                } else {
+                    <CosmoAlert alert_type={CosmoModalType::Negative} title="Fehler beim Aktivieren" message={(*error_message_state).clone()} close_label="Schließen" on_close={move |_| error_state.set(false)} />
+                }
             }
         </>
     )

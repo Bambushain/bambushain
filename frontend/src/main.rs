@@ -6,6 +6,7 @@ use crate::pages::app::App;
 use crate::storage::get_log_level;
 
 mod api;
+mod error;
 mod pages;
 mod routing;
 mod storage;
@@ -16,6 +17,5 @@ fn main() {
             .unwrap_or(Level::Warn),
     ));
 
-    log::info!("Starting the party");
     yew::Renderer::<App>::new().render();
 }

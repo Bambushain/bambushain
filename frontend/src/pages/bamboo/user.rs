@@ -7,10 +7,13 @@ use rand::distributions::Alphanumeric;
 use rand::Rng;
 use yew::prelude::*;
 use yew_cosmo::prelude::*;
+use yew_hooks::prelude::use_unmount;
 
 use bamboo_entities::prelude::*;
 
+use crate::api;
 use crate::api::*;
+use crate::error;
 use crate::storage::CurrentUser;
 
 #[derive(Properties, PartialEq, Clone)]
@@ -64,8 +67,31 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
     let is_mod_state = use_state_eq(|| false);
     let error_state = use_state_eq(|| false);
     let created_state = use_state_eq(|| false);
+    let unknown_error_state = use_state_eq(|| false);
+
+    let bamboo_error_state = use_state_eq(api::ApiError::default);
 
     let created_user_state = use_state_eq(WebUser::default);
+
+    {
+        let email_state = email_state.clone();
+        let password_state = password_state.clone();
+        let display_name_state = display_name_state.clone();
+        let discord_name_state = discord_name_state.clone();
+
+        let is_mod_state = is_mod_state.clone();
+        let error_state = error_state.clone();
+
+        use_unmount(move || {
+            error_state.set(false);
+            is_mod_state.set(false);
+
+            email_state.set("".into());
+            password_state.set("".into());
+            display_name_state.set("".into());
+            discord_name_state.set("".into());
+        })
+    }
 
     let update_email = use_callback(email_state.clone(), |value, state| state.set(value));
     let update_display_name =
@@ -74,6 +100,18 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
         use_callback(discord_name_state.clone(), |value, state| state.set(value));
 
     let update_is_mod = use_callback(is_mod_state.clone(), |checked, state| state.set(checked));
+
+    let report_unknown_error = use_callback(
+        (bamboo_error_state.clone(), unknown_error_state.clone()),
+        |_, (bamboo_error_state, unknown_error_state)| {
+            error::report_unknown_error(
+                "bamboo_user",
+                "create_user_modal",
+                bamboo_error_state.deref().clone(),
+            );
+            unknown_error_state.set(false);
+        },
+    );
 
     let form_submit = {
         let email_state = email_state.clone();
@@ -84,7 +122,10 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
 
         let is_mod_state = is_mod_state.clone();
         let error_state = error_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
         let created_state = created_state.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
 
         let created_user = created_user_state.clone();
 
@@ -98,7 +139,10 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
 
             let is_mod_state = is_mod_state.clone();
             let error_state = error_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
             let created_state = created_state.clone();
+
+            let bamboo_error_state = bamboo_error_state.clone();
 
             let created_user = created_user.clone();
 
@@ -117,6 +161,7 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
                         log::debug!("User was created successfully, lets reload the users");
                         error_message_state.set(AttrValue::from(""));
                         error_state.set(false);
+                        unknown_error_state.set(false);
                         created_state.set(true);
                         created_user.set(user);
                     }
@@ -126,8 +171,12 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
                         if err.code == CONFLICT {
                             error_message_state
                                 .set("Ein Panda mit dieser Email ist bereits im Hain".into());
+                            unknown_error_state.set(false);
                         } else {
-                            error_message_state.set("Der Panda konnte nicht hinzugefügt werden, bitte wende dich an Azami".into());
+                            unknown_error_state.set(true);
+                            bamboo_error_state.set(err.clone());
+                            error_message_state
+                                .set("Der Panda konnte nicht hinzugefügt werden".into());
                         }
                         password_state.set(
                             rand::thread_rng()
@@ -165,7 +214,11 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
             } else {
                 <>
                     if *error_state {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim hinzufügen" message={(*error_message_state).clone()} />
+                        if *unknown_error_state {
+                            <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
+                        } else {
+                            <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} />
+                        }
                     } else {
                         <CosmoMessage message_type={CosmoMessageType::Information} header="Füge einen neuen Panda hinzu" message="Das Passwort wird angezeigt wenn der Panda erfolgreich hinzugefügt wurde" />
                     }
@@ -185,11 +238,30 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
 fn update_profile_dialog(props: &UpdateProfileDialogProps) -> Html {
     log::debug!("Open dialog to update profile");
     let error_state = use_state_eq(|| false);
+    let unknown_error_state = use_state_eq(|| false);
+
+    let bamboo_error_state = use_state_eq(api::ApiError::default);
 
     let error_message_state = use_state_eq(|| AttrValue::from(""));
     let display_name_state = use_state_eq(|| props.display_name.clone());
     let email_state = use_state_eq(|| props.email.clone());
     let discord_name_state = use_state_eq(|| props.discord_name.clone());
+
+    {
+        let error_state = error_state.clone();
+
+        let display_name_state = display_name_state.clone();
+let email_state = email_state.clone();
+let discord_name_state = discord_name_state.clone();
+
+        use_unmount(move || {
+            error_state.set(false);
+
+display_name_state.set("".into());
+email_state.set("".into());
+discord_name_state.set("".into());
+        })
+    }
 
     let update_display_name =
         use_callback(display_name_state.clone(), |value, state| state.set(value));
@@ -197,13 +269,28 @@ fn update_profile_dialog(props: &UpdateProfileDialogProps) -> Html {
     let update_discord_name =
         use_callback(discord_name_state.clone(), |value, state| state.set(value));
 
+    let report_unknown_error = use_callback(
+        (bamboo_error_state.clone(), unknown_error_state.clone()),
+        |_, (bamboo_error_state, unknown_error_state)| {
+            error::report_unknown_error(
+                "bamboo_user",
+                "update_profile_dialog",
+                bamboo_error_state.deref().clone(),
+            );
+            unknown_error_state.set(false);
+        },
+    );
+
     let on_save = {
         let error_state = error_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
 
         let error_message_state = error_message_state.clone();
         let display_name_state = display_name_state.clone();
         let email_state = email_state.clone();
         let discord_name_state = discord_name_state.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
 
         let id = props.id;
 
@@ -212,45 +299,66 @@ fn update_profile_dialog(props: &UpdateProfileDialogProps) -> Html {
         Callback::from(move |_| {
             log::debug!("Perform password change");
             let error_state = error_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
 
             let error_message_state = error_message_state.clone();
             let display_name_state = display_name_state.clone();
             let discord_name_state = discord_name_state.clone();
             let email_state = email_state.clone();
 
+            let bamboo_error_state = bamboo_error_state.clone();
+
             let on_close = on_close.clone();
 
             yew::platform::spawn_local(async move {
-                error_state.set(match update_profile(id, UpdateProfile::new((*email_state).to_string(), (*display_name_state).to_string(), (*discord_name_state).to_string())).await {
-                    Ok(_) => {
-                        log::debug!("Profile update successful");
-                        on_close.emit(());
+                error_state.set(
+                    match update_profile(
+                        id,
+                        UpdateProfile::new(
+                            (*email_state).to_string(),
+                            (*display_name_state).to_string(),
+                            (*discord_name_state).to_string(),
+                        ),
+                    )
+                    .await
+                    {
+                        Ok(_) => {
+                            log::debug!("Profile update successful");
+                            on_close.emit(());
+                            unknown_error_state.set(false);
 
-                        false
-                    }
-                    Err(err) => match err.code {
-                        FORBIDDEN => {
-                            error_message_state.set("Du musst Mod sein um andere Pandas zu bearbeiten".into());
-                            true
+                            false
                         }
-                        NOT_FOUND => {
-                            log::warn!("The user was not found");
-                            error_message_state.set("Der Panda wurde nicht gefunden".into());
+                        Err(err) => match err.code {
+                            FORBIDDEN => {
+                                error_message_state
+                                    .set("Du musst Mod sein um andere Pandas zu bearbeiten".into());
+                                unknown_error_state.set(false);
 
-                            true
-                        }
-                        _ => {
-                            log::warn!("Failed to change the profile {err}");
-                            error_message_state.set("Der Panda konnte leider nicht geändert werden, bitte wende dich an Azami".into());
+                                true
+                            }
+                            NOT_FOUND => {
+                                log::warn!("The user was not found");
+                                error_message_state.set("Der Panda wurde nicht gefunden".into());
+                                unknown_error_state.set(false);
 
-                            true
-                        }
-                    }
-                });
+                                true
+                            }
+                            _ => {
+                                log::warn!("Failed to change the profile {err}");
+                                error_message_state
+                                    .set("Der Panda konnte leider nicht geändert werden".into());
+                                bamboo_error_state.set(err.clone());
+                                unknown_error_state.set(true);
+
+                                true
+                            }
+                        },
+                    },
+                );
             });
         })
     };
-    let close_error = use_callback(error_state.clone(), |_, state| state.set(false));
 
     html!(
         <>
@@ -260,15 +368,19 @@ fn update_profile_dialog(props: &UpdateProfileDialogProps) -> Html {
                     <CosmoButton is_submit={true} label="Panda speichern" />
                 </>
             )}>
+                if *error_state {
+                    if *unknown_error_state {
+                        <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
+                    } else {
+                        <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} />
+                    }
+                }
                 <CosmoInputGroup>
                     <CosmoTextBox label="Email" required={true} input_type={CosmoTextBoxType::Email} on_input={update_email} value={(*email_state).clone()} />
                     <CosmoTextBox label="Name" required={true} on_input={update_display_name} value={(*display_name_state).clone()} />
                     <CosmoTextBox label="Discord Name (optional)" on_input={update_discord_name} value={(*discord_name_state).clone()} />
                 </CosmoInputGroup>
             </CosmoModal>
-            if *error_state {
-                <CosmoAlert alert_type={CosmoModalType::Negative} title="Fehler" message={(*error_message_state).clone()} close_label="Schließen" on_close={close_error} />
-            }
         </>
     )
 }
@@ -282,8 +394,20 @@ fn user_details(props: &UserDetailsProps) -> Html {
 
     let error_state = use_state_eq(|| false);
     let profile_edit_state = use_state_eq(|| false);
+    let unknown_error_state = use_state_eq(|| false);
+
+    let bamboo_error_state = use_state_eq(api::ApiError::default);
 
     let error_message_state = use_state_eq(|| AttrValue::from(""));
+    let error_header_state = use_state_eq(|| AttrValue::from(""));
+
+    {
+        let error_state = error_state.clone();
+
+        use_unmount(move || {
+            error_state.set(false);
+        })
+    }
 
     let users_query_state = use_query_value::<Users>(().into());
 
@@ -311,10 +435,29 @@ fn user_details(props: &UserDetailsProps) -> Html {
     let on_decline = use_callback(confirm_state.clone(), |_, state| {
         state.set(UserConfirmActions::Closed)
     });
+
+    let report_unknown_error = use_callback(
+        (bamboo_error_state.clone(), unknown_error_state.clone()),
+        |_, (bamboo_error_state, unknown_error_state)| {
+            error::report_unknown_error(
+                "bamboo_user",
+                "user_details",
+                bamboo_error_state.deref().clone(),
+            );
+            unknown_error_state.set(false);
+        },
+    );
+
     let on_confirm = {
         let confirm_state = confirm_state.clone();
+
         let error_state = error_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
+
         let error_message_state = error_message_state.clone();
+        let error_header_state = error_header_state.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
 
         let users_query_state = users_query_state.clone();
 
@@ -327,8 +470,12 @@ fn user_details(props: &UserDetailsProps) -> Html {
             let confirm_state = confirm_state.clone();
 
             let error_state = error_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
 
             let error_message_state = error_message_state.clone();
+            let error_header_state = error_header_state.clone();
+
+            let bamboo_error_state = bamboo_error_state.clone();
 
             let users_query_state = users_query_state.clone();
 
@@ -337,71 +484,88 @@ fn user_details(props: &UserDetailsProps) -> Html {
             yew::platform::spawn_local(async move {
                 let code = match confirm_state.deref() {
                     UserConfirmActions::MakeMod => match make_user_mod(id).await {
-                        Ok(_) => {
-                            confirm_state.set(UserConfirmActions::Closed);
-                            NO_CONTENT
-                        }
+                        Ok(_) => NO_CONTENT,
                         Err(err) => match err.code {
                             FORBIDDEN => {
                                 error_message_state
-                                    .set(AttrValue::from("Du musst Mod sein um Mods zu ernennen"));
+                                    .set("Du musst Mod sein um Mods zu ernennen".into());
+                                error_header_state.set("Fehler beim ändern des Modstatus".into());
+
                                 FORBIDDEN
                             }
                             CONFLICT => {
-                                error_message_state.set(AttrValue::from(
-                                    "Du kannst dich nicht selbst zum Mod machen",
-                                ));
+                                error_message_state
+                                    .set("Du kannst dich nicht selbst zum Mod machen".into());
+                                error_header_state.set("Fehler beim ändern des Modstatus".into());
+
                                 CONFLICT
                             }
                             _ => {
-                                error_message_state.set(AttrValue::from("Der Panda konnte nicht zum Mod gemacht werden, bitte wende dich an Azami"));
+                                error_message_state
+                                    .set("Der Panda konnte nicht zum Mod gemacht werden".into());
+                                error_header_state.set("Fehler beim ändern des Modstatus".into());
+                                bamboo_error_state.set(err.clone());
+
                                 INTERNAL_SERVER_ERROR
                             }
                         },
                     },
                     UserConfirmActions::RemoveMod => match remove_user_mod(id).await {
-                        Ok(_) => {
-                            confirm_state.set(UserConfirmActions::Closed);
-                            NO_CONTENT
-                        }
+                        Ok(_) => NO_CONTENT,
                         Err(err) => match err.code {
                             FORBIDDEN => {
-                                error_message_state.set(AttrValue::from(
-                                    "Du musst Mod sein um Pandas die Modrechte zu entziehen",
-                                ));
+                                error_message_state.set(
+                                    "Du musst Mod sein um Pandas die Modrechte zu entziehen".into(),
+                                );
+                                error_header_state.set("Fehler beim ändern des Modstatus".into());
+
                                 FORBIDDEN
                             }
                             CONFLICT => {
-                                error_message_state.set(AttrValue::from(
-                                    "Du kannst dir die Modrechte nicht entziehen",
-                                ));
+                                error_message_state
+                                    .set("Du kannst dir die Modrechte nicht entziehen".into());
+                                error_header_state.set("Fehler beim ändern des Modstatus".into());
+
                                 CONFLICT
                             }
                             _ => {
-                                error_message_state.set(AttrValue::from("Dem Panda konnten die Modrechte nicht entzogen werden, bitte wende dich an Azami"));
+                                error_message_state.set(
+                                    "Dem Panda konnten die Modrechte nicht entzogen werden".into(),
+                                );
+                                error_header_state.set("Fehler beim ändern des Modstatus".into());
+                                bamboo_error_state.set(err.clone());
+
                                 INTERNAL_SERVER_ERROR
                             }
                         },
                     },
                     UserConfirmActions::Delete => match delete_user(id).await {
                         Ok(_) => {
-                            confirm_state.set(UserConfirmActions::Closed);
                             on_delete.emit(());
                             NO_CONTENT
                         }
                         Err(err) => match err.code {
                             FORBIDDEN => {
-                                error_message_state.set(AttrValue::from(
-                                    "Du musst Mod sein um Pandas aus dem Hain zu werfen",
-                                ));
+                                error_message_state.set(
+                                    "Du musst Mod sein um Pandas aus dem Hain zu werfen".into(),
+                                );
+                                error_header_state.set("Fehler beim rauswerfen".into());
+
                                 FORBIDDEN
                             }
                             CONFLICT => {
-                                error_message_state.set(AttrValue::from("Du kannst dich nicht selbst aus dem Hain werfen, wenn du gehen möchtest, wende dich an einen Mod"));
+                                error_message_state.set("Du kannst dich nicht selbst aus dem Hain werfen, wenn du gehen möchtest, wende dich an einen Mod".into());
+                                error_header_state.set("Fehler beim rauswerfen".into());
+
                                 CONFLICT
                             }
                             _ => {
-                                error_message_state.set(AttrValue::from("Der Panda konnte nicht aus dem Hain geworfen werden, bitte wende dich an Azami"));
+                                error_message_state.set(
+                                    "Der Panda konnte nicht aus dem Hain geworfen werden".into(),
+                                );
+                                bamboo_error_state.set(err.clone());
+                                error_header_state.set("Fehler beim rauswerfen".into());
+
                                 INTERNAL_SERVER_ERROR
                             }
                         },
@@ -417,14 +581,23 @@ fn user_details(props: &UserDetailsProps) -> Html {
                                     error_message_state.set(
                                         "Du musst Mod sein um Passwörter zurückzusetzen".into(),
                                     );
+                                    error_header_state.set("Fehler beim zurücksetzen".into());
+
                                     FORBIDDEN
                                 }
                                 CONFLICT => {
                                     error_message_state.set("Wenn du dein Passwort ändern willst, mach das bitte über Passwort ändern".into());
+                                    error_header_state.set("Fehler beim zurücksetzen".into());
+
                                     CONFLICT
                                 }
                                 _ => {
-                                    error_message_state.set("Das Passwort konnte nicht zurückgesetzt werden, bitte wende dich an Azami".into());
+                                    error_message_state.set(
+                                        "Das Passwort konnte nicht zurückgesetzt werden".into(),
+                                    );
+                                    error_header_state.set("Fehler beim zurücksetzen".into());
+                                    bamboo_error_state.set(err.clone());
+
                                     INTERNAL_SERVER_ERROR
                                 }
                             },
@@ -433,6 +606,7 @@ fn user_details(props: &UserDetailsProps) -> Html {
                     UserConfirmActions::Closed => unreachable!(),
                 };
 
+                confirm_state.set(UserConfirmActions::Closed);
                 error_state.set(if code == NO_CONTENT {
                     log::debug!("Update was successful");
                     let _ = users_query_state.refresh().await;
@@ -442,16 +616,10 @@ fn user_details(props: &UserDetailsProps) -> Html {
                     log::warn!("{}", *error_message_state);
                     true
                 });
+                unknown_error_state.set(code == INTERNAL_SERVER_ERROR);
             });
         })
     };
-    let on_alert_close = use_callback(
-        (error_state.clone(), error_message_state.clone()),
-        |_, (error_state, error_message_state)| {
-            error_state.set(false);
-            error_message_state.set("".into());
-        },
-    );
     let on_update_profile_close = {
         let profile_edit_state = profile_edit_state.clone();
 
@@ -485,6 +653,13 @@ fn user_details(props: &UserDetailsProps) -> Html {
                         <CosmoButton enabled={props.user.id != current_user.profile.id} on_click={delete_click} label="Aus dem Hain werfen" />
                     </CosmoToolbarGroup>
                 </CosmoToolbar>
+            }
+            if *error_state {
+                if *unknown_error_state {
+                    <CosmoMessage header={(*error_header_state).clone()} message={(*error_message_state).clone()} message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
+                } else {
+                    <CosmoMessage header={(*error_header_state).clone()} message={(*error_message_state).clone()} message_type={CosmoMessageType::Negative} />
+                }
             }
             <CosmoKeyValueList>
                 <CosmoKeyValueListItem title="Name">
@@ -532,9 +707,6 @@ fn user_details(props: &UserDetailsProps) -> Html {
                 },
                 UserConfirmActions::Closed => html!(),
             }}
-            if *error_state {
-                <CosmoAlert alert_type={CosmoModalType::Negative} title="Ein Fehler ist aufgetreten" message={(*error_message_state).clone()} on_close={on_alert_close} close_label="Schließen" />
-            }
             if *profile_edit_state {
                 <UpdateProfileDialog on_close={on_update_profile_close} id={props.user.id} email={props.user.email.clone()} display_name={props.user.display_name.clone()} discord_name={props.user.discord_name.clone()} />
             }
@@ -554,14 +726,29 @@ pub fn users_page() -> Html {
 
     let open_create_user_modal_state = use_state_eq(|| false);
     let initial_loaded_state = use_state_eq(|| false);
+    let unknown_error_state = use_state_eq(|| false);
 
     let selected_user_state = use_state_eq(|| 0);
+
+    let bamboo_error_state = use_state_eq(api::ApiError::default);
 
     let open_create_user_modal_click = use_callback(
         open_create_user_modal_state.clone(),
         |_, open_create_user_modal_state| open_create_user_modal_state.set(true),
     );
     let on_user_select = use_callback(selected_user_state.clone(), |idx, state| state.set(idx));
+
+    let report_unknown_error = use_callback(
+        (bamboo_error_state.clone(), unknown_error_state.clone()),
+        |_, (bamboo_error_state, unknown_error_state)| {
+            error::report_unknown_error(
+                "bamboo_user",
+                "users_page",
+                bamboo_error_state.deref().clone(),
+            );
+            unknown_error_state.set(false);
+        },
+    );
 
     let on_delete = {
         let users_query_state = users_query_state.clone();
@@ -628,8 +815,18 @@ pub fn users_page() -> Html {
         }
         Some(Err(err)) => {
             log::warn!("Failed to load {err}");
+            bamboo_error_state.set(err.clone());
+            if !*initial_loaded_state {
+                unknown_error_state.set(true);
+            }
+            initial_loaded_state.set(true);
+
             return html!(
-                <CosmoMessage header="Fehler beim Laden" message="Die Pandas konnten nicht geladen werden, bitte wende dich an Azami" message_type={CosmoMessageType::Negative} />
+                if *unknown_error_state {
+                    <CosmoMessage header="Fehler beim Laden" message="Die Pandas konnten nicht geladen werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
+                } else {
+                    <CosmoMessage header="Fehler beim Laden" message="Die Pandas konnten nicht geladen werden" message_type={CosmoMessageType::Negative} />
+                }
             );
         }
     }

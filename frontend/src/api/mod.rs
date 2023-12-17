@@ -17,6 +17,7 @@ pub use custom_field::*;
 pub use event::*;
 pub use fighter::*;
 pub use my::*;
+pub use support::*;
 pub use user::*;
 
 pub mod authentication;
@@ -28,6 +29,7 @@ pub mod event;
 pub mod fighter;
 pub mod free_company;
 pub mod my;
+pub mod support;
 pub mod user;
 
 macro_rules! error_code {
@@ -36,7 +38,7 @@ macro_rules! error_code {
     };
 }
 
-#[derive(Ord, PartialOrd, Eq, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Ord, PartialOrd, Eq, PartialEq, Clone, Serialize, Deserialize, Default)]
 pub struct ErrorCode(i32);
 
 impl Debug for ErrorCode {
@@ -69,6 +71,15 @@ impl From<u16> for ErrorCode {
 pub struct ApiError {
     pub code: ErrorCode,
     pub bamboo_error: BambooError,
+}
+
+impl Default for ApiError {
+    fn default() -> Self {
+        Self {
+            code: ErrorCode::from(0),
+            bamboo_error: BambooError::default(),
+        }
+    }
 }
 
 impl ApiError {

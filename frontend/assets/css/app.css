@@ -10,8 +10,25 @@ body {
 
     --gradient-bottom-color: transparent !important;
     --menu-text-selected-color: rgb(204, 204, 204);
+    --list-items-width: 17rem;
 }
 
 body > div {
     background: rgba(var(--white-base) var(--white-base) var(--white-base) / 80%);
+}
+
+.login-page ::selection {
+    background: var(--primary-color);
+    color: #ffffff;
+}
+
+.login-page button:hover,
+.login-page button:active,
+.login-page button:focus {
+    --white: #ffffff;
+}
+
+.login-page button:last-child {
+    --control-border-color: var(--primary-color);
+    --white: #ffffff;
 }
