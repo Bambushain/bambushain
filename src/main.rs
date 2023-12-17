@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use actix_web::{middleware, App, HttpServer};
 use rand::distributions::Alphanumeric;
 use rand::prelude::*;
@@ -10,7 +12,8 @@ use bamboo_migration::{IntoSchemaManagerConnection, Migrator, MigratorTrait};
 use bamboo_services::prelude::DbConnection;
 
 fn main() -> std::io::Result<()> {
-    let mut log_builder = env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"));
+    let mut log_builder =
+        env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"));
     let logger = sentry::integrations::log::SentryLogger::with_dest(log_builder.build());
 
     log::set_boxed_logger(Box::new(logger)).unwrap();
@@ -19,7 +22,24 @@ fn main() -> std::io::Result<()> {
     log::info!("Configure glitchtip");
     let _sentry = sentry::init(sentry::ClientOptions {
         release: sentry::release_name!(),
-        ..Default::default()
+        before_send: Some(Arc::new(|mut event| {
+            if let Some(mut request) = event.request {
+                request.cookies = None;
+                let _ = request.headers.remove_entry("authorization");
+                let _ = request.headers.remove_entry("x-forwarded-for");
+                let _ = request.headers.remove_entry("x-forwarded-host");
+                let _ = request.headers.remove_entry("x-forwarded-proto");
+                let _ = request.headers.remove_entry("x-forwarded-server");
+                let _ = request.headers.remove_entry("x-real-ip");
+                let _ = request.headers.remove_entry("cookie");
+                event.request = Some(request);
+            };
+            Some(event)
+        })),
+        attach_stacktrace: true,
+        auto_session_tracking: true,
+        session_mode: sentry::SessionMode::Request,
+        ..sentry::ClientOptions::default()
     });
 
     actix_web::rt::System::new().block_on(async {
