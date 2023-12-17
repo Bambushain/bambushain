@@ -71,10 +71,11 @@ fn login_content() -> Html {
 
             yew::platform::spawn_local(async move {
                 if *forgot_password_state {
-                    if let Ok(_) = api::forgot_password(ForgotPassword {
+                    if api::forgot_password(ForgotPassword {
                         email: (*email_state).to_string(),
                     })
                     .await
+                    .is_ok()
                     {
                         error_message_state
                                 .set("Wir haben den Mods geschrieben, bitte warte bis sich jemand bei dir meldet".into());

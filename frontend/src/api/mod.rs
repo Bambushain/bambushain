@@ -38,7 +38,7 @@ macro_rules! error_code {
     };
 }
 
-#[derive(Ord, PartialOrd, Eq, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Ord, PartialOrd, Eq, PartialEq, Clone, Serialize, Deserialize, Default)]
 pub struct ErrorCode(i32);
 
 impl Debug for ErrorCode {
@@ -71,6 +71,15 @@ impl From<u16> for ErrorCode {
 pub struct ApiError {
     pub code: ErrorCode,
     pub bamboo_error: BambooError,
+}
+
+impl Default for ApiError {
+    fn default() -> Self {
+        Self {
+            code: ErrorCode::from(0),
+            bamboo_error: BambooError::default(),
+        }
+    }
 }
 
 impl ApiError {

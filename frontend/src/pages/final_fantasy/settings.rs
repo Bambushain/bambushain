@@ -1,8 +1,11 @@
+use std::ops::Deref;
+
 use bounce::helmet::Helmet;
 use bounce::query::use_query_value;
 use stylist::yew::use_style;
 use yew::prelude::*;
 use yew_cosmo::prelude::*;
+use yew_hooks::use_unmount;
 use yew_icons::Icon;
 
 use bamboo_entities::prelude::*;
@@ -13,6 +16,7 @@ use crate::api::{
     move_custom_field, update_custom_field, update_custom_field_option, CustomCharacterFields,
     CONFLICT,
 };
+use crate::{api, error};
 
 #[derive(PartialEq, Clone, Properties)]
 struct FieldsTabItemProps {
@@ -32,6 +36,9 @@ fn fields_tab_item(props: &FieldsTabItemProps) -> Html {
     let edit_option_open_state = use_state_eq(|| false);
     let delete_option_open_state = use_state_eq(|| false);
     let error_state = use_state_eq(|| false);
+    let delete_error_state = use_state_eq(|| false);
+    let move_error_state = use_state_eq(|| false);
+    let unknown_error_state = use_state_eq(|| false);
 
     let selected_option_id_state = use_state_eq(|| -1);
 
@@ -39,10 +46,47 @@ fn fields_tab_item(props: &FieldsTabItemProps) -> Html {
     let option_label_state = use_state_eq(|| AttrValue::from(""));
     let error_message_state = use_state_eq(|| AttrValue::from(""));
     let selected_option_label_state = use_state_eq(|| AttrValue::from(""));
+    let error_message_form_state = use_state_eq(|| AttrValue::from(""));
 
-    let on_error_close = use_callback(error_state.clone(), |_, state| state.set(false));
+    let bamboo_error_state = use_state_eq(api::ApiError::default);
 
-    let on_rename_open = use_callback(rename_open_state.clone(), |_, state| state.set(true));
+    {
+        let error_state = error_state.clone();
+        let delete_error_state = delete_error_state.clone();
+        let rename_name_state = rename_name_state.clone();
+        let option_label_state = option_label_state.clone();
+
+        use_unmount(move || {
+            error_state.set(false);
+            delete_error_state.set(false);
+            rename_name_state.set("".into());
+            option_label_state.set("".into());
+        })
+    }
+
+    let report_unknown_error = use_callback(
+        (
+            bamboo_error_state.clone(),
+            error_message_form_state.clone(),
+            unknown_error_state.clone(),
+        ),
+        |_, (bamboo_error_state, error_message_form_state, unknown_error_state)| {
+            error::report_unknown_error(
+                "final_fantasy_settings",
+                error_message_form_state.deref().to_string(),
+                bamboo_error_state.deref().clone(),
+            );
+            unknown_error_state.set(false);
+        },
+    );
+
+    let on_rename_open = use_callback(
+        (rename_open_state.clone(), error_state.clone()),
+        |_, (open_state, error_state)| {
+            open_state.set(true);
+            error_state.set(false);
+        },
+    );
     let on_rename_close = use_callback(
         (rename_open_state.clone(), error_state.clone()),
         |_, (open_state, error_state)| {
@@ -55,40 +99,73 @@ fn fields_tab_item(props: &FieldsTabItemProps) -> Html {
 
         let rename_name_state = rename_name_state.clone();
         let error_message_state = error_message_state.clone();
+        let error_message_form_state = error_message_form_state.clone();
 
         let rename_open_state = rename_open_state.clone();
         let error_state = error_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
 
         let on_change = props.on_change.clone();
 
         Callback::from(move |_| {
             let rename_name_state = rename_name_state.clone();
             let error_message_state = error_message_state.clone();
+            let error_message_form_state = error_message_form_state.clone();
 
             let rename_open_state = rename_open_state.clone();
             let error_state = error_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
+
+            let bamboo_error_state = bamboo_error_state.clone();
 
             let on_change = on_change.clone();
 
             yew::platform::spawn_local(async move {
-                error_state.set(match update_custom_field(id, (*rename_name_state).clone().to_string(), 0).await {
-                    Ok(_) => {
-                        on_change.emit(());
-                        rename_open_state.set(false);
-                        false
-                    }
-                    Err(err) => {
-                        log::error!("Failed to create new custom field {err}");
-                        error_message_state.set("Beim Umbennen des Felds ist ein Fehler aufgetreten, bitte wende dich an Azami".into());
-                        true
-                    }
-                });
+                error_state.set(
+                    match update_custom_field(id, (*rename_name_state).clone().to_string(), 0).await
+                    {
+                        Ok(_) => {
+                            on_change.emit(());
+                            rename_open_state.set(false);
+                            false
+                        }
+                        Err(err) => {
+                            log::error!("Failed to rename custom field {err}");
+                            if err.code == CONFLICT {
+                                error_message_state
+                                    .set("Ein Feld mit dem Namen existiert bereits".into());
+                                unknown_error_state.set(false);
+                            } else {
+                                error_message_state.set(
+                                    "Beim Umbennen des Felds ist ein Fehler aufgetreten".into(),
+                                );
+                                error_message_form_state.set("update_custom_field".into());
+                                bamboo_error_state.set(err.clone());
+                                unknown_error_state.set(true);
+                            }
+
+                            true
+                        }
+                    },
+                );
             })
         })
     };
 
-    let on_add_option_open =
-        use_callback(add_option_open_state.clone(), |_, state| state.set(true));
+    let on_add_option_open = use_callback(
+        (
+            add_option_open_state.clone(),
+            error_state.clone(),
+            option_label_state.clone(),
+        ),
+        |_, (open_state, error_state, option_label_state)| {
+            open_state.set(true);
+            error_state.set(false);
+            option_label_state.set("".into());
+        },
+    );
     let on_add_option_close = use_callback(
         (add_option_open_state.clone(), error_state.clone()),
         |_, (open_state, error_state)| {
@@ -101,54 +178,88 @@ fn fields_tab_item(props: &FieldsTabItemProps) -> Html {
 
         let option_label_state = option_label_state.clone();
         let error_message_state = error_message_state.clone();
+        let error_message_form_state = error_message_form_state.clone();
 
         let add_option_open_state = add_option_open_state.clone();
         let error_state = error_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
 
         let on_change = props.on_change.clone();
 
         Callback::from(move |_| {
             let option_label_state = option_label_state.clone();
             let error_message_state = error_message_state.clone();
+            let error_message_form_state = error_message_form_state.clone();
 
             let add_option_open_state = add_option_open_state.clone();
             let error_state = error_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
+
+            let bamboo_error_state = bamboo_error_state.clone();
 
             let on_change = on_change.clone();
 
             yew::platform::spawn_local(async move {
-                error_state.set(match add_custom_field_option(id, (*option_label_state).clone().to_string()).await {
-                    Ok(_) => {
-                        on_change.emit(());
-                        add_option_open_state.set(false);
-                        option_label_state.set("".into());
-                        false
-                    }
-                    Err(err) => {
-                        log::error!("Failed to add custom field option {err}");
-                        error_message_state.set("Die Option konnte nicht hinzugefügt werden, bitte wende dich an Azami".into());
-                        true
-                    }
-                });
+                error_state.set(
+                    match add_custom_field_option(id, (*option_label_state).clone().to_string())
+                        .await
+                    {
+                        Ok(_) => {
+                            on_change.emit(());
+                            add_option_open_state.set(false);
+                            unknown_error_state.set(false);
+                            option_label_state.set("".into());
+
+                            false
+                        }
+                        Err(err) => {
+                            log::error!("Failed to add custom field option {err}");
+                            if err.code == CONFLICT {
+                                error_message_state
+                                    .set("Eine Option mit dem Namen existiert bereits".into());
+                                unknown_error_state.set(false);
+                            } else {
+                                error_message_state
+                                    .set("Die Option konnte nicht hinzugefügt werden".into());
+                                error_message_form_state.set("add_custom_field_option".into());
+                                bamboo_error_state.set(err.clone());
+                                unknown_error_state.set(true);
+                            }
+
+                            true
+                        }
+                    },
+                );
             })
         })
     };
 
-    let on_edit_option_open = use_callback(
-        (
-            selected_option_id_state.clone(),
-            selected_option_label_state.clone(),
-            edit_option_open_state.clone(),
-            option_label_state.clone(),
-        ),
-        |(id, label): (i32, AttrValue),
-         (selected_id_state, selected_label_state, open_state, option_label_state)| {
-            selected_id_state.set(id);
-            selected_label_state.set(label.clone());
-            option_label_state.set(label);
-            open_state.set(true);
-        },
-    );
+    let on_edit_option_open =
+        use_callback(
+            (
+                selected_option_id_state.clone(),
+                selected_option_label_state.clone(),
+                edit_option_open_state.clone(),
+                option_label_state.clone(),
+                error_state.clone(),
+            ),
+            |(id, label): (i32, AttrValue),
+             (
+                selected_id_state,
+                selected_label_state,
+                open_state,
+                option_label_state,
+                error_state,
+            )| {
+                selected_id_state.set(id);
+                selected_label_state.set(label.clone());
+                option_label_state.set(label);
+                open_state.set(true);
+                error_state.set(false);
+            },
+        );
     let on_edit_option_close = use_callback(
         (edit_option_open_state.clone(), error_state.clone()),
         |_, (open_state, error_state)| {
@@ -161,74 +272,122 @@ fn fields_tab_item(props: &FieldsTabItemProps) -> Html {
 
         let option_label_state = option_label_state.clone();
         let error_message_state = error_message_state.clone();
+        let error_message_form_state = error_message_form_state.clone();
 
         let selected_option_id_state = selected_option_id_state.clone();
+
         let edit_option_open_state = edit_option_open_state.clone();
         let error_state = error_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
 
         let on_change = props.on_change.clone();
 
         Callback::from(move |_| {
             let option_label_state = option_label_state.clone();
             let error_message_state = error_message_state.clone();
+            let error_message_form_state = error_message_form_state.clone();
 
             let selected_option_id_state = selected_option_id_state.clone();
+
             let edit_option_open_state = edit_option_open_state.clone();
             let error_state = error_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
+
+            let bamboo_error_state = bamboo_error_state.clone();
 
             let on_change = on_change.clone();
 
             yew::platform::spawn_local(async move {
-                error_state.set(match update_custom_field_option(id, *selected_option_id_state, (*option_label_state).clone().to_string()).await {
-                    Ok(_) => {
-                        on_change.emit(());
-                        edit_option_open_state.set(false);
-                        option_label_state.set("".into());
-                        false
-                    }
-                    Err(err) => {
-                        log::error!("Failed to edit custom field option {err}");
-                        error_message_state.set("Die Option konnte nicht umbenannt werden, bitte wende dich an Azami".into());
-                        true
-                    }
-                });
+                error_state.set(
+                    match update_custom_field_option(
+                        id,
+                        *selected_option_id_state,
+                        (*option_label_state).clone().to_string(),
+                    )
+                    .await
+                    {
+                        Ok(_) => {
+                            on_change.emit(());
+                            edit_option_open_state.set(false);
+                            option_label_state.set("".into());
+                            unknown_error_state.set(false);
+
+                            false
+                        }
+                        Err(err) => {
+                            log::error!("Failed to edit custom field option {err}");
+                            if err.code == CONFLICT {
+                                error_message_state
+                                    .set("Eine Option mit dem Namen existiert bereits".into());
+                                unknown_error_state.set(false);
+                            } else {
+                                error_message_state
+                                    .set("Die Option konnte nicht umbenannt werden".into());
+                                error_message_form_state.set("update_custom_field_option".into());
+                                bamboo_error_state.set(err.clone());
+                                unknown_error_state.set(true);
+                            }
+
+                            true
+                        }
+                    },
+                );
             })
         })
     };
 
-    let on_delete_open = use_callback(delete_open_state.clone(), |_, state| state.set(true));
+    let on_delete_open = use_callback(
+        (delete_open_state.clone(), delete_error_state.clone()),
+        |_, (open_state, error_state)| {
+            open_state.set(true);
+            error_state.set(false);
+        },
+    );
     let on_delete_close = use_callback(delete_open_state.clone(), |_, state| state.set(false));
     let on_delete = {
         let id = props.field.id;
 
         let on_change = props.on_change.clone();
 
-        let error_state = error_state.clone();
+        let delete_error_state = delete_error_state.clone();
         let delete_open_state = delete_open_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
 
         let error_message_state = error_message_state.clone();
+        let error_message_form_state = error_message_form_state.clone();
 
         Callback::from(move |_| {
             let on_change = on_change.clone();
 
-            let error_state = error_state.clone();
+            let delete_error_state = delete_error_state.clone();
             let delete_open_state = delete_open_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
+
+            let bamboo_error_state = bamboo_error_state.clone();
 
             let error_message_state = error_message_state.clone();
+            let error_message_form_state = error_message_form_state.clone();
 
             yew::platform::spawn_local(async move {
-                error_state.set(match delete_custom_field(id).await {
+                delete_error_state.set(match delete_custom_field(id).await {
                     Ok(_) => {
                         delete_open_state.set(false);
                         on_change.emit(());
+                        unknown_error_state.set(false);
+
                         false
                     }
                     Err(err) => {
                         log::error!("Delete failed: {err}");
-                        error_message_state.set(
-                            "Das Feld konnte nicht gelöscht werden, bitte wende dich an Azami"
-                                .into(),
-                        );
+                        error_message_state.set("Das Feld konnte nicht gelöscht werden".into());
+                        error_message_form_state.set("delete_custom_field".into());
+                        bamboo_error_state.set(err.clone());
+                        unknown_error_state.set(true);
+
                         true
                     }
                 });
@@ -241,11 +400,13 @@ fn fields_tab_item(props: &FieldsTabItemProps) -> Html {
             selected_option_id_state.clone(),
             selected_option_label_state.clone(),
             delete_option_open_state.clone(),
+            delete_error_state.clone(),
         ),
-        |(id, label), (selected_id_state, selected_label_state, open_state)| {
+        |(id, label), (selected_id_state, selected_label_state, open_state, error_state)| {
             selected_id_state.set(id);
             selected_label_state.set(label);
             open_state.set(true);
+            error_state.set(false);
         },
     );
     let on_delete_option_close = use_callback(delete_option_open_state.clone(), |_, state| {
@@ -258,8 +419,12 @@ fn fields_tab_item(props: &FieldsTabItemProps) -> Html {
 
         let error_state = error_state.clone();
         let delete_option_open_state = delete_option_open_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
 
         let error_message_state = error_message_state.clone();
+        let error_message_form_state = error_message_form_state.clone();
 
         let selected_option_id_state = selected_option_id_state;
 
@@ -268,24 +433,37 @@ fn fields_tab_item(props: &FieldsTabItemProps) -> Html {
 
             let error_state = error_state.clone();
             let delete_option_open_state = delete_option_open_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
+
+            let bamboo_error_state = bamboo_error_state.clone();
 
             let error_message_state = error_message_state.clone();
+            let error_message_form_state = error_message_form_state.clone();
 
             let selected_option_id_state = selected_option_id_state.clone();
 
             yew::platform::spawn_local(async move {
-                error_state.set(match delete_custom_field_option(field_id, *selected_option_id_state).await {
-                    Ok(_) => {
-                        delete_option_open_state.set(false);
-                        on_change.emit(());
-                        false
-                    }
-                    Err(err) => {
-                        log::error!("Delete failed: {err}");
-                        error_message_state.set("Die Option konnte nicht gelöscht werden, bitte wende dich an Azami".into());
-                        true
-                    }
-                });
+                error_state.set(
+                    match delete_custom_field_option(field_id, *selected_option_id_state).await {
+                        Ok(_) => {
+                            delete_option_open_state.set(false);
+                            on_change.emit(());
+                            unknown_error_state.set(false);
+
+                            false
+                        }
+                        Err(err) => {
+                            log::error!("Delete failed: {err}");
+                            error_message_state
+                                .set("Die Option konnte nicht gelöscht werden".into());
+                            error_message_form_state.set("delete_custom_field_option".into());
+                            bamboo_error_state.set(err.clone());
+                            unknown_error_state.set(true);
+
+                            true
+                        }
+                    },
+                );
             })
         })
     };
@@ -300,13 +478,40 @@ fn fields_tab_item(props: &FieldsTabItemProps) -> Html {
 
         let position = props.position;
 
+        let move_error_state = move_error_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
+
+        let error_message_state = error_message_state.clone();
+        let error_message_form_state = error_message_form_state.clone();
+
         Callback::from(move |_| {
             let on_move = on_move.clone();
 
+            let move_error_state = move_error_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
+
+            let bamboo_error_state = bamboo_error_state.clone();
+
+            let error_message_state = error_message_state.clone();
+            let error_message_form_state = error_message_form_state.clone();
+
             yew::platform::spawn_local(async move {
                 match move_custom_field(id, position as usize + 1).await {
-                    Ok(_) => on_move.emit(position as usize + 1),
-                    Err(err) => log::error!("Move failed: {err}"),
+                    Ok(_) => {
+                        on_move.emit(position as usize + 1);
+                        unknown_error_state.set(false);
+                        move_error_state.set(false);
+                    }
+                    Err(err) => {
+                        log::error!("Move failed: {err}");
+                        bamboo_error_state.set(err.clone());
+                        unknown_error_state.set(true);
+                        move_error_state.set(true);
+                        error_message_state.set("Das Feld konnte nicht verschoben werden".into());
+                        error_message_form_state.set("move_custom_field".into());
+                    }
                 }
             })
         })
@@ -318,13 +523,40 @@ fn fields_tab_item(props: &FieldsTabItemProps) -> Html {
 
         let position = props.position;
 
+        let move_error_state = move_error_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
+
+        let error_message_state = error_message_state.clone();
+        let error_message_form_state = error_message_form_state.clone();
+
         Callback::from(move |_| {
             let on_move = on_move.clone();
 
+            let move_error_state = move_error_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
+
+            let bamboo_error_state = bamboo_error_state.clone();
+
+            let error_message_state = error_message_state.clone();
+            let error_message_form_state = error_message_form_state.clone();
+
             yew::platform::spawn_local(async move {
                 match move_custom_field(id, position as usize - 1).await {
-                    Ok(_) => on_move.emit(position as usize - 1),
-                    Err(err) => log::error!("Move failed: {err}"),
+                    Ok(_) => {
+                        on_move.emit(position as usize + 1);
+                        unknown_error_state.set(false);
+                        move_error_state.set(false);
+                    }
+                    Err(err) => {
+                        log::error!("Move failed: {err}");
+                        bamboo_error_state.set(err.clone());
+                        unknown_error_state.set(true);
+                        move_error_state.set(true);
+                        error_message_state.set("Das Feld konnte nicht verschoben werden".into());
+                        error_message_form_state.set("move_custom_field".into());
+                    }
                 }
             })
         })
@@ -366,6 +598,20 @@ align-items: center;
                 </CosmoToolbarGroup>
             </CosmoToolbar>
             <CosmoHeader level={CosmoHeaderLevel::H3} header="Optionen" />
+            if *delete_error_state {
+                if *unknown_error_state {
+                    <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message={(*error_message_state).clone()} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                } else {
+                    <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message={(*error_message_state).clone()} />
+                }
+            }
+            if *move_error_state {
+                if *unknown_error_state {
+                    <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Verschieben" message={(*error_message_state).clone()} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                } else {
+                    <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Verschieben" message={(*error_message_state).clone()} />
+                }
+            }
             <div class={list_style}>
                 {for options.iter().map(|option| {
                     let delete_option = option.clone();
@@ -391,7 +637,11 @@ align-items: center;
                     </>
                 )}>
                     if *error_state {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} />
+                        if *unknown_error_state {
+                            <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                        } else {
+                            <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} />
+                        }
                     }
                     <CosmoInputGroup>
                         <CosmoTextBox label="Name" on_input={update_rename_name} value={(*rename_name_state).clone()} required={true} />
@@ -406,7 +656,11 @@ align-items: center;
                     </>
                 )}>
                     if *error_state {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} />
+                        if *unknown_error_state {
+                            <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                        } else {
+                            <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} />
+                        }
                     }
                     <CosmoInputGroup>
                         <CosmoTextBox label="Name" on_input={update_option_label.clone()} value={(*option_label_state).clone()} required={true} />
@@ -421,7 +675,11 @@ align-items: center;
                     </>
                 )}>
                     if *error_state {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} />
+                        if *unknown_error_state {
+                            <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                        } else {
+                            <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} />
+                        }
                     }
                     <CosmoInputGroup>
                         <CosmoTextBox label="Name" on_input={update_option_label} value={(*option_label_state).clone()} required={true} />
@@ -430,15 +688,9 @@ align-items: center;
             }
             if *delete_open_state {
                 <CosmoConfirm confirm_type={CosmoModalType::Warning} title="Feld löschen" message={format!("Soll das Feld {} wirklich gelöscht werden?", props.field.label.clone())} confirm_label="Feld Löschen" decline_label="Nicht löschen"  on_decline={on_delete_close} on_confirm={on_delete} />
-                if *error_state {
-                    <CosmoAlert alert_type={CosmoModalType::Negative} title="Fehler beim Löschen" message={(*error_message_state).clone()} close_label="Schließen" on_close={on_error_close.clone()} />
-                }
             }
             if *delete_option_open_state {
                 <CosmoConfirm confirm_type={CosmoModalType::Warning} title="Option löschen" message={format!("Soll die Option {} wirklich gelöscht werden?", (*selected_option_label_state).clone())} confirm_label="Option Löschen" decline_label="Nicht löschen"  on_decline={on_delete_option_close} on_confirm={on_delete_option} />
-                if *error_state {
-                    <CosmoAlert alert_type={CosmoModalType::Negative} title="Fehler beim Löschen" message={(*error_message_state).clone()} close_label="Schließen" on_close={on_error_close} />
-                }
             }
         </>
     )
@@ -453,15 +705,56 @@ fn custom_field_page() -> Html {
     let initial_loaded_state = use_state_eq(|| false);
     let add_open_state = use_state_eq(|| false);
     let error_state = use_state_eq(|| false);
+    let unknown_error_state = use_state_eq(|| false);
 
     let add_name_state = use_state_eq(|| AttrValue::from(""));
     let error_message_state = use_state_eq(|| AttrValue::from(""));
+    let error_message_form_state = use_state_eq(|| AttrValue::from(""));
 
     let fields_state = use_state_eq(|| vec![] as Vec<CustomCharacterField>);
 
+    let bamboo_error_state = use_state_eq(api::ApiError::default);
+
     let selected_item_state = use_state(|| Some(0usize));
 
-    let on_add_open = use_callback(add_open_state.clone(), |_, state| state.set(true));
+    {
+        let error_state = error_state.clone();
+        let add_name_state = add_name_state.clone();
+
+        use_unmount(move || {
+            error_state.set(false);
+            add_name_state.set("".into());
+        })
+    }
+
+    let report_unknown_error = use_callback(
+        (
+            bamboo_error_state.clone(),
+            error_message_form_state.clone(),
+            unknown_error_state.clone(),
+        ),
+        |_, (bamboo_error_state, error_message_form_state, unknown_error_state)| {
+            error::report_unknown_error(
+                "final_fantasy_settings",
+                error_message_form_state.deref().to_string(),
+                bamboo_error_state.deref().clone(),
+            );
+            unknown_error_state.set(false);
+        },
+    );
+
+    let on_add_open = use_callback(
+        (
+            add_open_state.clone(),
+            error_state.clone(),
+            add_name_state.clone(),
+        ),
+        |_, (open_state, error_state, add_name_state)| {
+            open_state.set(true);
+            error_state.set(false);
+            add_name_state.set("".into());
+        },
+    );
     let on_change = {
         let fields_query_state = fields_query_state.clone();
 
@@ -492,35 +785,52 @@ fn custom_field_page() -> Html {
     let on_add_save = {
         let add_name_state = add_name_state.clone();
         let error_message_state = error_message_state.clone();
+        let error_message_form_state = error_message_form_state.clone();
 
         let add_open_state = add_open_state.clone();
         let error_state = error_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
 
         let fields_query_state = fields_query_state.clone();
 
         Callback::from(move |_| {
             let add_name_state = add_name_state.clone();
             let error_message_state = error_message_state.clone();
+            let error_message_form_state = error_message_form_state.clone();
 
             let add_open_state = add_open_state.clone();
             let error_state = error_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
 
             let fields_query_state = fields_query_state.clone();
 
             yew::platform::spawn_local(async move {
-                error_state.set(match create_custom_field((*add_name_state).clone().to_string(), 0).await {
-                    Ok(_) => {
-                        let _ = fields_query_state.refresh().await;
-                        add_open_state.set(false);
-                        add_name_state.set("".into());
-                        false
-                    }
-                    Err(err) => {
-                        log::error!("Failed to create new custom field {err}");
-                        error_message_state.set("Beim Erstellen des Felds ist ein Fehler aufgetreten, bitte wende dich an Azami".into());
-                        true
-                    }
-                });
+                error_state.set(
+                    match create_custom_field((*add_name_state).clone().to_string(), 0).await {
+                        Ok(_) => {
+                            let _ = fields_query_state.refresh().await;
+                            add_open_state.set(false);
+                            add_name_state.set("".into());
+                            false
+                        }
+                        Err(err) => {
+                            log::error!("Failed to create new custom field {err}");
+                            if err.code == CONFLICT {
+                                error_message_state
+                                    .set("Ein Feld mit dem Namen existiert bereits".into());
+                                unknown_error_state.set(false);
+                            } else {
+                                error_message_state.set(
+                                    "Beim Erstellen des Felds ist ein Fehler aufgetreten".into(),
+                                );
+                                error_message_form_state.set("create_custom_field".into());
+                                unknown_error_state.set(true);
+                            }
+
+                            true
+                        }
+                    },
+                );
             })
         })
     };
@@ -556,8 +866,17 @@ fn custom_field_page() -> Html {
         }
         Some(Err(err)) => {
             log::warn!("Failed to load {err}");
+            if !*initial_loaded_state {
+                unknown_error_state.set(true);
+            }
+            initial_loaded_state.set(true);
+
             return html!(
-                <CosmoMessage header="Fehler beim Laden" message="Deine eigenen Felder konnten nicht geladen werden, bitte wende dich an Azami" message_type={CosmoMessageType::Negative} />
+                if *unknown_error_state {
+                    <CosmoMessage header="Fehler beim Laden" message="Deine eigenen Felder konnten nicht geladen werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
+                } else {
+                    <CosmoMessage header="Fehler beim Laden" message="Deine eigenen Felder konnten nicht geladen werden" message_type={CosmoMessageType::Negative} />
+                }
             );
         }
     }
@@ -589,7 +908,11 @@ fn custom_field_page() -> Html {
                     </>
                 )}>
                     if *error_state {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} />
+                        if *unknown_error_state {
+                            <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                        } else {
+                            <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} />
+                        }
                     }
                     <CosmoInputGroup>
                         <CosmoTextBox label="Name" on_input={update_add_name} value={(*add_name_state).clone()} required={true} />
@@ -612,37 +935,70 @@ fn free_companies() -> Html {
     let edit_open_state = use_state_eq(|| false);
     let delete_open_state = use_state_eq(|| false);
     let error_state = use_state_eq(|| false);
+    let delete_error_state = use_state_eq(|| false);
+    let unknown_error_state = use_state_eq(|| false);
 
     let selected_id_state = use_state_eq(|| -1);
 
     let name_state = use_state_eq(|| AttrValue::from(""));
     let error_message_state = use_state_eq(|| AttrValue::from(""));
     let selected_name_state = use_state_eq(|| AttrValue::from(""));
+    let error_message_form_state = use_state_eq(|| AttrValue::from(""));
+
+    let bamboo_error_state = use_state_eq(api::ApiError::default);
 
     let free_companies_state = use_state_eq(Vec::<FreeCompany>::default);
 
-    let on_error_close = use_callback(error_state.clone(), |_, state| state.set(false));
+    {
+        let error_state = error_state.clone();
+        let delete_error_state = delete_error_state.clone();
+        let name_state = name_state.clone();
 
-    let on_add_open = use_callback(
-        (add_open_state.clone(), name_state.clone()),
-        |_, (open_state, name_state)| {
-            open_state.set(true);
+        use_unmount(move || {
+            error_state.set(false);
+            delete_error_state.set(false);
             name_state.set("".into());
+        })
+    }
+
+    let report_unknown_error = use_callback(
+        (
+            bamboo_error_state.clone(),
+            error_message_form_state.clone(),
+            unknown_error_state.clone(),
+        ),
+        |_, (bamboo_error_state, error_message_form_state, unknown_error_state)| {
+            error::report_unknown_error(
+                "final_fantasy_settings",
+                error_message_form_state.deref().to_string(),
+                bamboo_error_state.deref().clone(),
+            );
+            unknown_error_state.set(false);
         },
     );
-    let on_add_close = use_callback(
-        (add_open_state.clone(), error_state.clone()),
-        |_, (open_state, error_state)| {
-            open_state.set(false);
+
+    let on_add_open = use_callback(
+        (
+            add_open_state.clone(),
+            name_state.clone(),
+            error_state.clone(),
+        ),
+        |_, (open_state, name_state, error_state)| {
+            open_state.set(true);
+            name_state.set("".into());
             error_state.set(false);
         },
     );
+    let on_add_close = use_callback(add_open_state.clone(), |_, open_state| {
+        open_state.set(false)
+    });
     let on_add_save = {
         let name_state = name_state.clone();
         let error_message_state = error_message_state.clone();
 
         let add_open_state = add_open_state.clone();
         let error_state = error_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
 
         let free_companies_query_state = free_companies_query_state.clone();
 
@@ -652,6 +1008,7 @@ fn free_companies() -> Html {
 
             let add_open_state = add_open_state.clone();
             let error_state = error_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
 
             let free_companies_query_state = free_companies_query_state.clone();
 
@@ -661,13 +1018,17 @@ fn free_companies() -> Html {
                         let _ = free_companies_query_state.refresh().await;
                         add_open_state.set(false);
                         name_state.set("".into());
+                        unknown_error_state.set(false);
+
                         false
                     }
                     Err(err) => {
                         log::error!("Failed to add free company {err}");
                         error_message_state.set(if err.code == CONFLICT {
+                            unknown_error_state.set(false);
                             "Die Freie Gesellschaft existiert bereits"
                         } else {
+                            unknown_error_state.set(true);
                             "Die Freie Gesellschaft konnte nicht hinzugefügt werden, bitte wende dich an Azami"
                         }.into());
                         true
@@ -699,37 +1060,67 @@ fn free_companies() -> Html {
     let on_edit_save = {
         let name_state = name_state.clone();
         let error_message_state = error_message_state.clone();
+        let error_message_form_state = error_message_form_state.clone();
 
         let selected_id_state = selected_id_state.clone();
         let edit_open_state = edit_open_state.clone();
         let error_state = error_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
 
         let free_companies_query_state = free_companies_query_state.clone();
 
         Callback::from(move |_| {
             let name_state = name_state.clone();
             let error_message_state = error_message_state.clone();
+            let error_message_form_state = error_message_form_state.clone();
 
             let selected_id_state = selected_id_state.clone();
             let edit_open_state = edit_open_state.clone();
             let error_state = error_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
+
+            let bamboo_error_state = bamboo_error_state.clone();
 
             let free_companies_query_state = free_companies_query_state.clone();
 
             yew::platform::spawn_local(async move {
-                error_state.set(match update_free_company(*selected_id_state,FreeCompany::new((*name_state).clone().to_string())).await {
-                    Ok(_) => {
-                        let _ = free_companies_query_state.refresh().await;
-                        edit_open_state.set(false);
-                        name_state.set("".into());
-                        false
-                    }
-                    Err(err) => {
-                        log::error!("Failed to edit free company option {err}");
-                        error_message_state.set("Die Freie Gesellschaft konnte nicht umbenannt werden, bitte wende dich an Azami".into());
-                        true
-                    }
-                });
+                error_state.set(
+                    match update_free_company(
+                        *selected_id_state,
+                        FreeCompany::new((*name_state).clone().to_string()),
+                    )
+                    .await
+                    {
+                        Ok(_) => {
+                            let _ = free_companies_query_state.refresh().await;
+                            edit_open_state.set(false);
+                            name_state.set("".into());
+                            unknown_error_state.set(false);
+
+                            false
+                        }
+                        Err(err) => {
+                            log::error!("Failed to edit free company option {err}");
+                            if err.code == CONFLICT {
+                                error_message_state.set(
+                                    "Eine Freie Gesellschaft mit dem Namen existiert bereits"
+                                        .into(),
+                                );
+                                unknown_error_state.set(false);
+                            } else {
+                                error_message_state.set(
+                                    "Die Freie Gesellschaft konnte nicht umbenannt werden".into(),
+                                );
+                                bamboo_error_state.set(err.clone());
+                                error_message_form_state.set("update_free_company".into());
+                                unknown_error_state.set(true);
+                            }
+                            true
+                        }
+                    },
+                );
             })
         })
     };
@@ -739,47 +1130,65 @@ fn free_companies() -> Html {
             selected_id_state.clone(),
             selected_name_state.clone(),
             delete_open_state.clone(),
+            error_state.clone(),
         ),
-        |(id, name), (selected_id_state, selected_name_state, open_state)| {
+        |(id, name), (selected_id_state, selected_name_state, open_state, error_state)| {
             selected_id_state.set(id);
             selected_name_state.set(name);
             open_state.set(true);
+            error_state.set(false);
         },
     );
     let on_delete_close = use_callback(delete_open_state.clone(), |_, state| state.set(false));
     let on_delete = {
-        let error_state = error_state.clone();
+        let delete_error_state = delete_error_state.clone();
         let delete_option_open_state = delete_open_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
 
         let error_message_state = error_message_state.clone();
+        let error_message_form_state = error_message_form_state.clone();
 
         let selected_option_id_state = selected_id_state;
 
         let free_companies_query_state = free_companies_query_state.clone();
 
         Callback::from(move |_| {
-            let error_state = error_state.clone();
+            let delete_error_state = delete_error_state.clone();
             let delete_option_open_state = delete_option_open_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
+
+            let bamboo_error_state = bamboo_error_state.clone();
 
             let error_message_state = error_message_state.clone();
+            let error_message_form_state = error_message_form_state.clone();
 
             let selected_option_id_state = selected_option_id_state.clone();
 
             let free_companies_query_state = free_companies_query_state.clone();
 
             yew::platform::spawn_local(async move {
-                error_state.set(match delete_free_company(*selected_option_id_state).await {
-                    Ok(_) => {
-                        delete_option_open_state.set(false);
-                        let _ = free_companies_query_state.refresh().await;
-                        false
-                    }
-                    Err(err) => {
-                        log::error!("Delete failed: {err}");
-                        error_message_state.set("Die Freie Gesellschaft konnte nicht gelöscht werden, bitte wende dich an Azami".into());
-                        true
-                    }
-                });
+                delete_error_state.set(
+                    match delete_free_company(*selected_option_id_state).await {
+                        Ok(_) => {
+                            delete_option_open_state.set(false);
+                            let _ = free_companies_query_state.refresh().await;
+                            unknown_error_state.set(false);
+
+                            false
+                        }
+                        Err(err) => {
+                            log::error!("Delete failed: {err}");
+                            unknown_error_state.set(true);
+                            bamboo_error_state.set(err.clone());
+                            error_message_form_state.set("delete_free_company".into());
+                            error_message_state
+                                .set("Die Freie Gesellschaft konnte nicht gelöscht werden".into());
+                            true
+                        }
+                    },
+                );
             })
         })
     };
@@ -821,8 +1230,18 @@ align-items: center;
         }
         Some(Err(err)) => {
             log::warn!("Failed to load {err}");
+            bamboo_error_state.set(err.clone());
+            if !*initial_loaded_state {
+                unknown_error_state.set(true);
+            }
+            initial_loaded_state.set(true);
+
             return html!(
-                <CosmoMessage header="Fehler beim Laden" message="Deine Freien Gesellschaften konnten nicht geladen werden, bitte wende dich an Azami" message_type={CosmoMessageType::Negative} />
+                if *unknown_error_state {
+                    <CosmoMessage header="Fehler beim Laden" message="Deine Freien Gesellschaften konnten nicht geladen werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
+                } else {
+                    <CosmoMessage header="Fehler beim Laden" message="Deine Freien Gesellschaften konnten nicht geladen werden" message_type={CosmoMessageType::Negative} />
+                }
             );
         }
     }
@@ -835,6 +1254,13 @@ align-items: center;
                     <CosmoButton label="Freie Gesellschaft hinzufügen" on_click={on_add_open} />
                 </CosmoToolbarGroup>
             </CosmoToolbar>
+            if *delete_error_state {
+                if *unknown_error_state {
+                    <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message={(*error_message_state).clone()} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                } else {
+                    <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message={(*error_message_state).clone()} />
+                }
+            }
             <div class={list_style}>
                 {for (*free_companies_state).iter().map(|free_company| {
                     let delete_free_company = free_company.clone();
@@ -860,7 +1286,11 @@ align-items: center;
                     </>
                 )}>
                     if *error_state {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} />
+                        if *unknown_error_state {
+                            <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                        } else {
+                            <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} />
+                        }
                     }
                     <CosmoInputGroup>
                         <CosmoTextBox label="Name" on_input={update_name.clone()} value={(*name_state).clone()} required={true} />
@@ -875,7 +1305,11 @@ align-items: center;
                     </>
                 )}>
                     if *error_state {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} />
+                        if *unknown_error_state {
+                            <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                        } else {
+                            <CosmoMessage message_type={CosmoMessageType::Negative} message={(*error_message_state).clone()} />
+                        }
                     }
                     <CosmoInputGroup>
                         <CosmoTextBox label="Name" on_input={update_name.clone()} value={(*name_state).clone()} required={true} />
@@ -884,9 +1318,6 @@ align-items: center;
             }
             if *delete_open_state {
                 <CosmoConfirm confirm_type={CosmoModalType::Warning} title="Freie Gesellschaft löschen" message={format!("Soll die Freie Gesellschaft {} wirklich gelöscht werden?", (*selected_name_state).clone())} confirm_label="Freie Gesellschaft Löschen" decline_label="Nicht löschen"  on_decline={on_delete_close} on_confirm={on_delete} />
-                if *error_state {
-                    <CosmoAlert alert_type={CosmoAlertType::Negative} title="Fehler beim Löschen" message={(*error_message_state).clone()} close_label="Schließen" on_close={on_error_close.clone()} />
-                }
             }
         </>
     )

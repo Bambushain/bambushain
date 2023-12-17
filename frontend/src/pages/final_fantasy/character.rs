@@ -1,4 +1,5 @@
 use std::collections::{BTreeSet, HashMap, HashSet};
+use std::ops::Deref;
 use std::rc::Rc;
 
 use bounce::helmet::Helmet;
@@ -8,13 +9,15 @@ use stylist::yew::use_style;
 use yew::prelude::*;
 use yew::virtual_dom::{Key, VChild};
 use yew_cosmo::prelude::*;
-use yew_hooks::use_mount;
+use yew_hooks::{use_mount, use_unmount};
 
 use bamboo_entities::prelude::*;
 
+use crate::api;
 use crate::api::character::MyCharacters;
 use crate::api::free_company::get_free_companies;
 use crate::api::*;
+use crate::error;
 
 #[derive(Properties, PartialEq, Clone)]
 struct ModifyCharacterModalProps {
@@ -23,6 +26,7 @@ struct ModifyCharacterModalProps {
     save_label: AttrValue,
     error_message: AttrValue,
     has_error: bool,
+    has_unknown_error: bool,
     #[prop_or_default]
     character: Character,
     on_save: Callback<Character>,
@@ -57,10 +61,12 @@ struct FighterDetailsProps {
 #[derive(Properties, PartialEq, Clone)]
 struct ModifyHousingModalProps {
     on_close: Callback<()>,
+    on_error_close: Callback<()>,
     title: AttrValue,
     save_label: AttrValue,
     error_message: AttrValue,
     has_error: bool,
+    has_unknown_error: bool,
     #[prop_or_default]
     housing: CharacterHousing,
     character_id: i32,
@@ -71,10 +77,12 @@ struct ModifyHousingModalProps {
 #[derive(Properties, PartialEq, Clone)]
 struct ModifyCrafterModalProps {
     on_close: Callback<()>,
+    on_error_close: Callback<()>,
     title: AttrValue,
     save_label: AttrValue,
     error_message: AttrValue,
     has_error: bool,
+    has_unknown_error: bool,
     #[prop_or_default]
     crafter: Crafter,
     character_id: i32,
@@ -86,10 +94,12 @@ struct ModifyCrafterModalProps {
 #[derive(Properties, PartialEq, Clone)]
 struct ModifyFighterModalProps {
     on_close: Callback<()>,
+    on_error_close: Callback<()>,
     title: AttrValue,
     save_label: AttrValue,
     error_message: AttrValue,
     has_error: bool,
+    has_unknown_error: bool,
     #[prop_or_default]
     fighter: Fighter,
     character_id: i32,
@@ -368,7 +378,11 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
             </>
         )}>
             if props.has_error {
-                <CosmoMessage message_type={CosmoMessageType::Negative} message={props.error_message.clone()} />
+                if props.has_unknown_error {
+                    <CosmoMessage message_type={CosmoMessageType::Negative} message={props.error_message.clone()} actions={html!(<CosmoButton label="Fehler melden" on_click={props.on_error_close.clone()} />)} />
+                } else {
+                    <CosmoMessage message_type={CosmoMessageType::Negative} message={props.error_message.clone()} />
+                }
             }
             <CosmoInputGroup>
                 <CosmoTextBox label="Name" on_input={update_name} value={(*name_state).clone()} required={true} />
@@ -453,7 +467,11 @@ fn modify_housing_modal(props: &ModifyHousingModalProps) -> Html {
                 </>
             )}>
                 if props.has_error {
-                    <CosmoMessage message_type={CosmoMessageType::Negative} message={props.error_message.clone()} />
+                    if props.has_unknown_error {
+                        <CosmoMessage message_type={CosmoMessageType::Negative} message={props.error_message.clone()} actions={html!(<CosmoButton label="Fehler melden" on_click={props.on_error_close.clone()} />)} />
+                    } else {
+                        <CosmoMessage message_type={CosmoMessageType::Negative} message={props.error_message.clone()} />
+                    }
                 }
                 <CosmoInputGroup>
                     <CosmoModernSelect label="Gebiet" on_select={update_district} required={true} items={districts} />
@@ -529,7 +547,11 @@ fn modify_crafter_modal(props: &ModifyCrafterModalProps) -> Html {
                 </>
             )}>
                 if props.has_error {
-                    <CosmoMessage message_type={CosmoMessageType::Negative} message={props.error_message.clone()} />
+                    if props.has_unknown_error {
+                        <CosmoMessage message_type={CosmoMessageType::Negative} message={props.error_message.clone()} actions={html!(<CosmoButton label="Fehler melden" on_click={props.on_error_close.clone()} />)} />
+                    } else {
+                        <CosmoMessage message_type={CosmoMessageType::Negative} message={props.error_message.clone()} />
+                    }
                 }
                 <CosmoInputGroup>
                     <CosmoModernSelect readonly={props.is_edit} label="Job" on_select={update_job} required={true} items={jobs} />
@@ -612,7 +634,11 @@ fn modify_fighter_modal(props: &ModifyFighterModalProps) -> Html {
                 </>
             )}>
                 if props.has_error {
-                    <CosmoMessage message_type={CosmoMessageType::Negative} message={props.error_message.clone()} />
+                    if props.has_unknown_error {
+                        <CosmoMessage message_type={CosmoMessageType::Negative} message={props.error_message.clone()} actions={html!(<CosmoButton label="Fehler melden" on_click={props.on_error_close.clone()} />)} />
+                    } else {
+                        <CosmoMessage message_type={CosmoMessageType::Negative} message={props.error_message.clone()} />
+                    }
                 }
                 <CosmoInputGroup>
                     <CosmoModernSelect readonly={props.is_edit} label="Job" on_select={update_job} required={true} items={jobs} />
@@ -631,16 +657,37 @@ fn character_details(props: &CharacterDetailsProps) -> Html {
 
     let error_state = use_state_eq(|| ErrorState::None);
 
+    let unknown_error_state = use_state_eq(|| false);
+
+    let bamboo_error_state = use_state_eq(api::ApiError::default);
+
     let error_message_state = use_state_eq(|| AttrValue::from(""));
+    let error_message_form_state = use_state_eq(|| AttrValue::from(""));
 
     let character_query_state = use_query_value::<MyCharacters>(().into());
 
-    let edit_character_click = use_callback(action_state.clone(), |_, state| {
-        state.set(CharacterActions::Edit)
-    });
-    let delete_character_click = use_callback(action_state.clone(), |_, state| {
-        state.set(CharacterActions::Delete)
-    });
+    {
+        let error_state = error_state.clone();
+
+        use_unmount(move || {
+            error_state.set(ErrorState::None);
+        })
+    }
+
+    let edit_character_click = use_callback(
+        (action_state.clone(), error_state.clone()),
+        |_, (state, error_state)| {
+            state.set(CharacterActions::Edit);
+            error_state.set(ErrorState::None);
+        },
+    );
+    let delete_character_click = use_callback(
+        (action_state.clone(), error_state.clone()),
+        |_, (state, error_state)| {
+            state.set(CharacterActions::Delete);
+            error_state.set(ErrorState::None);
+        },
+    );
 
     let on_modal_close = {
         let action_state = action_state.clone();
@@ -668,8 +715,12 @@ fn character_details(props: &CharacterDetailsProps) -> Html {
         let action_state = action_state.clone();
 
         let error_state = error_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
 
         let error_message_state = error_message_state.clone();
+        let error_message_form_state = error_message_form_state.clone();
 
         let character_query_state = character_query_state.clone();
 
@@ -681,10 +732,14 @@ fn character_details(props: &CharacterDetailsProps) -> Html {
             log::debug!("Modal was confirmed lets execute the request");
 
             let error_state = error_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
+
+            let bamboo_error_state = bamboo_error_state.clone();
 
             let action_state = action_state.clone();
 
             let error_message_state = error_message_state.clone();
+            let error_message_form_state = error_message_form_state.clone();
 
             let character_query_state = character_query_state.clone();
 
@@ -696,18 +751,24 @@ fn character_details(props: &CharacterDetailsProps) -> Html {
                         on_delete.emit(());
                         ErrorState::None
                     }
-                    Err(err) => {
-                        match err.code {
-                            NOT_FOUND => {
-                                error_message_state.set("Der Charakter konnte nicht gefunden werden".into());
-                                ErrorState::Delete
-                            }
-                            _ => {
-                                error_message_state.set("Der Charakter konnte nicht gelöscht werden, bitte wende dich an Azami".into());
-                                ErrorState::Delete
-                            }
+                    Err(err) => match err.code {
+                        NOT_FOUND => {
+                            error_message_state
+                                .set("Der Charakter konnte nicht gefunden werden".into());
+                            unknown_error_state.set(false);
+
+                            ErrorState::Delete
                         }
-                    }
+                        _ => {
+                            error_message_state
+                                .set("Der Charakter konnte nicht gelöscht werden".into());
+                            unknown_error_state.set(true);
+                            error_message_form_state.set("delete_character".into());
+                            bamboo_error_state.set(err.clone());
+
+                            ErrorState::Delete
+                        }
+                    },
                 });
                 action_state.set(CharacterActions::Closed);
 
@@ -719,8 +780,12 @@ fn character_details(props: &CharacterDetailsProps) -> Html {
         let on_modal_close = on_modal_close.clone();
 
         let error_state = error_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
 
         let error_message_state = error_message_state.clone();
+        let error_message_form_state = error_message_form_state.clone();
 
         let action_state = action_state.clone();
 
@@ -731,8 +796,12 @@ fn character_details(props: &CharacterDetailsProps) -> Html {
             let on_modal_close = on_modal_close.clone();
 
             let error_state = error_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
+
+            let bamboo_error_state = bamboo_error_state.clone();
 
             let error_message_state = error_message_state.clone();
+            let error_message_form_state = error_message_form_state.clone();
 
             let action_state = action_state.clone();
 
@@ -744,29 +813,55 @@ fn character_details(props: &CharacterDetailsProps) -> Html {
                         let _ = character_query_state.refresh().await;
                         on_modal_close.emit(());
                         action_state.set(CharacterActions::Closed);
+                        unknown_error_state.set(false);
+
                         ErrorState::None
                     }
-                    Err(err) => {
-                        match err.code {
-                            CONFLICT => {
-                                error_message_state.set("Ein Charakter mit diesem Namen existiert bereits".into());
-                                ErrorState::Edit
-                            }
-                            NOT_FOUND => {
-                                error_message_state.set("Der Charakter konnte nicht gefunden werden".into());
-                                ErrorState::Edit
-                            }
-                            _ => {
-                                error_message_state.set("Der Charakter konnte nicht gespeichert werden, bitte wende dich an Azami".into());
-                                ErrorState::None
-                            }
+                    Err(err) => match err.code {
+                        CONFLICT => {
+                            error_message_state
+                                .set("Ein Charakter mit diesem Namen existiert bereits".into());
+                            unknown_error_state.set(false);
+
+                            ErrorState::Edit
                         }
-                    }
+                        NOT_FOUND => {
+                            error_message_state
+                                .set("Der Charakter konnte nicht gefunden werden".into());
+                            unknown_error_state.set(false);
+
+                            ErrorState::Edit
+                        }
+                        _ => {
+                            error_message_state
+                                .set("Der Charakter konnte nicht gespeichert werden".into());
+                            unknown_error_state.set(true);
+                            bamboo_error_state.set(err.clone());
+                            error_message_form_state.set("update_character".into());
+
+                            ErrorState::Edit
+                        }
+                    },
                 });
             })
         })
     };
-    let on_error_close = use_callback(error_state.clone(), |_, state| state.set(ErrorState::None));
+
+    let report_unknown_error = use_callback(
+        (
+            bamboo_error_state.clone(),
+            error_message_form_state.clone(),
+            unknown_error_state.clone(),
+        ),
+        |_, (bamboo_error_state, error_message_form_state, unknown_error_state)| {
+            error::report_unknown_error(
+                "final_fantasy_character",
+                error_message_form_state.deref().to_string(),
+                bamboo_error_state.deref().clone(),
+            );
+            unknown_error_state.set(false);
+        },
+    );
 
     html!(
         <>
@@ -776,6 +871,13 @@ fn character_details(props: &CharacterDetailsProps) -> Html {
                     <CosmoButton on_click={delete_character_click} label="Löschen" />
                 </CosmoToolbarGroup>
             </CosmoToolbar>
+            if *error_state == ErrorState::Delete {
+                if *unknown_error_state {
+                    <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message={(*error_message_state).clone()} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                } else {
+                    <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message={(*error_message_state).clone()} />
+                }
+            }
             <CosmoKeyValueList>
                 <CosmoKeyValueListItem title="Name">{props.character.name.clone()}</CosmoKeyValueListItem>
                 <CosmoKeyValueListItem title="Rasse">{props.character.race.to_string()}</CosmoKeyValueListItem>
@@ -791,7 +893,7 @@ fn character_details(props: &CharacterDetailsProps) -> Html {
             </CosmoKeyValueList>
             {match (*action_state).clone() {
                 CharacterActions::Edit => html!(
-                    <ModifyCharacterModal free_companies={props.free_companies.clone()} on_error_close={on_error_close.clone()} title={format!("Charakter {} bearbeiten", props.character.name.clone())} save_label="Character speichern" on_save={on_modal_save} on_close={on_modal_close} character={props.character.clone()} custom_fields={props.custom_fields.clone()} error_message={(*error_message_state).clone()} has_error={*error_state == ErrorState::Edit} />
+                    <ModifyCharacterModal has_unknown_error={*unknown_error_state} free_companies={props.free_companies.clone()} on_error_close={report_unknown_error.clone()} title={format!("Charakter {} bearbeiten", props.character.name.clone())} save_label="Character speichern" on_save={on_modal_save} on_close={on_modal_close} character={props.character.clone()} custom_fields={props.custom_fields.clone()} error_message={(*error_message_state).clone()} has_error={*error_state == ErrorState::Edit} />
                 ),
                 CharacterActions::Delete => {
                     let character = props.character.clone();
@@ -801,9 +903,6 @@ fn character_details(props: &CharacterDetailsProps) -> Html {
                 }
                 CharacterActions::Closed => html!(),
             }}
-            if *error_state == ErrorState::Delete {
-                <CosmoAlert alert_type={CosmoAlertType::Negative} close_label="Schließen" title="Ein Fehler ist aufgetreten" message={(*error_message_state).clone()} on_close={on_error_close} />
-            }
         </>
     )
 }
@@ -819,23 +918,37 @@ fn housing_details(props: &HousingDetailsProps) -> Html {
     let initial_loaded_state = use_state_eq(|| false);
     let open_create_housing_modal_state = use_state_eq(|| false);
     let error_state = use_state_eq(|| false);
+    let delete_error_state = use_state_eq(|| false);
+    let unknown_error_state = use_state_eq(|| false);
+
+    let bamboo_error_state = use_state_eq(api::ApiError::default);
 
     let error_message_state = use_state_eq(|| AttrValue::from(""));
+    let error_message_form_state = use_state_eq(|| AttrValue::from(""));
 
     let housing_state = use_state_eq(|| vec![] as Vec<CharacterHousing>);
 
-    let on_modal_create_close = use_callback(
-        (open_create_housing_modal_state.clone(), error_state.clone()),
-        |_, (state, error_state)| {
-            state.set(false);
+    {
+        let error_state = error_state.clone();
+
+        use_unmount(move || {
             error_state.set(false);
-        },
-    );
+        })
+    }
+
+    let on_modal_create_close =
+        use_callback(open_create_housing_modal_state.clone(), |_, state| {
+            state.set(false)
+        });
     let on_modal_create_save = {
         let error_state = error_state.clone();
         let open_create_housing_modal_state = open_create_housing_modal_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
 
         let error_message_state = error_message_state.clone();
+        let error_message_form_state = error_message_form_state.clone();
 
         let housing_query_state = housing_query_state.clone();
 
@@ -845,27 +958,42 @@ fn housing_details(props: &HousingDetailsProps) -> Html {
             log::debug!("Modal was confirmed lets execute the request");
             let error_state = error_state.clone();
             let open_create_housing_modal_state = open_create_housing_modal_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
+
+            let bamboo_error_state = bamboo_error_state.clone();
 
             let error_message_state = error_message_state.clone();
+            let error_message_form_state = error_message_form_state.clone();
 
             let housing_query_state = housing_query_state.clone();
 
             yew::platform::spawn_local(async move {
-                error_state.set(match create_character_housing(character_id, housing).await {
-                    Ok(_) => {
-                        open_create_housing_modal_state.clone().set(false);
-                        let _ = housing_query_state.refresh().await;
-                        false
-                    }
-                    Err(err) => {
-                        error_message_state.set(if err.code == CONFLICT {
-                            "Eine Unterkunft an dieser Adresse existiert bereits"
-                        } else {
-                            "Die Unterkunft konnte nicht hinzugefügt werden, bitte wende dich an Azami"
-                        }.into());
-                        true
-                    }
-                });
+                error_state.set(
+                    match create_character_housing(character_id, housing).await {
+                        Ok(_) => {
+                            open_create_housing_modal_state.clone().set(false);
+                            let _ = housing_query_state.refresh().await;
+                            unknown_error_state.set(false);
+
+                            false
+                        }
+                        Err(err) => {
+                            error_message_state.set(
+                                if err.code == CONFLICT {
+                                    unknown_error_state.set(false);
+                                    "Eine Unterkunft an dieser Adresse existiert bereits"
+                                } else {
+                                    unknown_error_state.set(true);
+                                    error_message_form_state.set("create_character_housing".into());
+                                    bamboo_error_state.set(err.clone());
+                                    "Die Unterkunft konnte nicht hinzugefügt werden"
+                                }
+                                .into(),
+                            );
+                            true
+                        }
+                    },
+                );
             });
         })
     };
@@ -875,8 +1003,12 @@ fn housing_details(props: &HousingDetailsProps) -> Html {
         let on_modal_close = on_modal_create_close.clone();
 
         let error_state = error_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
 
         let error_message_state = error_message_state.clone();
+        let error_message_form_state = error_message_form_state.clone();
 
         let action_state = action_state.clone();
 
@@ -887,8 +1019,12 @@ fn housing_details(props: &HousingDetailsProps) -> Html {
             let on_modal_close = on_modal_close.clone();
 
             let error_state = error_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
+
+            let bamboo_error_state = bamboo_error_state.clone();
 
             let error_message_state = error_message_state.clone();
+            let error_message_form_state = error_message_form_state.clone();
 
             let action_state = action_state.clone();
 
@@ -901,37 +1037,56 @@ fn housing_details(props: &HousingDetailsProps) -> Html {
             };
 
             yew::platform::spawn_local(async move {
-                error_state.set(match update_character_housing(character_id, id, housing).await {
-                    Ok(_) => {
-                        let _ = housing_query_state.refresh().await;
-                        on_modal_close.emit(());
-                        action_state.set(HousingActions::Closed);
-                        false
-                    }
-                    Err(err) => {
-                        match err.code {
-                            CONFLICT => {
-                                error_message_state.set("Eine Unterkunft an dieser Adresse existiert bereits".into());
-                            }
-                            NOT_FOUND => {
-                                error_message_state.set("Die Unterkunft konnte nicht gefunden werden".into());
-                            }
-                            _ => {
-                                error_message_state.set("Die Unterkunft konnte nicht gespeichert werden, bitte wende dich an Azami".into());
-                            }
-                        };
-                        true
-                    }
-                });
+                error_state.set(
+                    match update_character_housing(character_id, id, housing).await {
+                        Ok(_) => {
+                            let _ = housing_query_state.refresh().await;
+                            on_modal_close.emit(());
+                            unknown_error_state.set(false);
+
+                            false
+                        }
+                        Err(err) => {
+                            match err.code {
+                                CONFLICT => {
+                                    error_message_state.set(
+                                        "Eine Unterkunft an dieser Adresse existiert bereits"
+                                            .into(),
+                                    );
+                                    unknown_error_state.set(false);
+                                }
+                                NOT_FOUND => {
+                                    error_message_state
+                                        .set("Die Unterkunft konnte nicht gefunden werden".into());
+                                    unknown_error_state.set(false);
+                                }
+                                _ => {
+                                    error_message_state.set(
+                                        "Die Unterkunft konnte nicht gespeichert werden".into(),
+                                    );
+                                    unknown_error_state.set(true);
+                                    error_message_form_state.set("update_character_housing".into());
+                                    bamboo_error_state.set(err.clone());
+                                }
+                            };
+                            true
+                        }
+                    },
+                );
+                action_state.set(HousingActions::Closed);
             })
         })
     };
     let on_modal_delete = {
         let housing_query_state = housing_query_state.clone();
 
-        let error_message_state = error_message_state.clone();
+        let delete_error_state = delete_error_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
 
-        let error_state = error_state.clone();
+        let bamboo_error_state = bamboo_error_state.clone();
+
+        let error_message_state = error_message_state.clone();
+        let error_message_form_state = error_message_form_state.clone();
 
         let action_state = action_state.clone();
 
@@ -940,32 +1095,44 @@ fn housing_details(props: &HousingDetailsProps) -> Html {
         Callback::from(move |id: i32| {
             let housing_query_state = housing_query_state.clone();
 
-            let error_message_state = error_message_state.clone();
+            let delete_error_state = delete_error_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
 
-            let error_state = error_state.clone();
+            let bamboo_error_state = bamboo_error_state.clone();
+
+            let error_message_state = error_message_state.clone();
+            let error_message_form_state = error_message_form_state.clone();
 
             let action_state = action_state.clone();
 
             yew::platform::spawn_local(async move {
-                error_state.set(match delete_character_housing(character_id, id).await {
+                delete_error_state.set(match delete_character_housing(character_id, id).await {
                     Ok(_) => {
                         let _ = housing_query_state.refresh().await;
-                        action_state.set(HousingActions::Closed);
+                        unknown_error_state.set(false);
+
                         false
                     }
-                    Err(err) => {
-                        match err.code {
-                            NOT_FOUND => {
-                                error_message_state.set("Die Unterkunft konnte nicht gefunden werden".into());
-                                true
-                            }
-                            _ => {
-                                error_message_state.set("Die Unterkunft konnte nicht gelöscht werden, bitte wende dich an Azami".into());
-                                true
-                            }
+                    Err(err) => match err.code {
+                        NOT_FOUND => {
+                            error_message_state
+                                .set("Die Unterkunft konnte nicht gefunden werden".into());
+                            unknown_error_state.set(false);
+
+                            true
                         }
-                    }
-                })
+                        _ => {
+                            error_message_state
+                                .set("Die Unterkunft konnte nicht gelöscht werden".into());
+                            unknown_error_state.set(true);
+                            error_message_form_state.set("delete_character_housing".into());
+                            bamboo_error_state.set(err.clone());
+
+                            true
+                        }
+                    },
+                });
+                action_state.set(HousingActions::Closed);
             })
         })
     };
@@ -976,16 +1143,43 @@ fn housing_details(props: &HousingDetailsProps) -> Html {
             error_state.set(false);
         },
     );
-    let on_error_close = use_callback(error_state.clone(), |_, state| state.set(false));
-    let on_create_open = use_callback(open_create_housing_modal_state.clone(), |_, state| {
-        state.set(true)
-    });
-    let on_edit_open = use_callback(action_state.clone(), |housing, action_state| {
-        action_state.set(HousingActions::Edit(housing))
-    });
-    let on_delete_open = use_callback(action_state.clone(), |housing, action_state| {
-        action_state.set(HousingActions::Delete(housing))
-    });
+    let on_create_open = use_callback(
+        (open_create_housing_modal_state.clone(), error_state.clone()),
+        |_, (open_state, error_state)| {
+            open_state.set(true);
+            error_state.set(false);
+        },
+    );
+    let on_edit_open = use_callback(
+        (action_state.clone(), error_state.clone()),
+        |housing, (action_state, error_state)| {
+            action_state.set(HousingActions::Edit(housing));
+            error_state.set(false);
+        },
+    );
+    let on_delete_open = use_callback(
+        (action_state.clone(), error_state.clone()),
+        |housing, (action_state, error_state)| {
+            action_state.set(HousingActions::Delete(housing));
+            error_state.set(false);
+        },
+    );
+
+    let report_unknown_error = use_callback(
+        (
+            bamboo_error_state.clone(),
+            error_message_form_state.clone(),
+            unknown_error_state.clone(),
+        ),
+        |_, (bamboo_error_state, error_message_form_state, unknown_error_state)| {
+            error::report_unknown_error(
+                "final_fantasy_character",
+                error_message_form_state.deref().to_string(),
+                bamboo_error_state.deref().clone(),
+            );
+            unknown_error_state.set(false);
+        },
+    );
 
     let housing_list_style = use_style!(
         r#"
@@ -1041,8 +1235,15 @@ font-style: normal;
         }
         Some(Err(err)) => {
             log::warn!("Failed to load {err}");
+            bamboo_error_state.set(err.clone());
+            unknown_error_state.set(true);
+
             return html!(
-                <CosmoMessage header="Fehler beim Laden" message="Die Unterkünfte konnten nicht geladen werden, bitte wende dich an Azami" message_type={CosmoMessageType::Negative} />
+                if *unknown_error_state {
+                    <CosmoMessage header="Fehler beim Laden" message="Die Unterkünfte konnten nicht geladen werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                } else {
+                    <CosmoMessage header="Fehler beim Laden" message="Die Unterkünfte konnten nicht geladen werden" message_type={CosmoMessageType::Negative} />
+                }
             );
         }
     }
@@ -1054,6 +1255,13 @@ font-style: normal;
                     <CosmoButton label="Unterkunft hinzufügen" on_click={on_create_open} />
                 </CosmoToolbarGroup>
             </CosmoToolbar>
+            if *delete_error_state {
+                if *unknown_error_state {
+                    <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message={(*error_message_state).clone()} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                } else {
+                    <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message={(*error_message_state).clone()} />
+                }
+            }
             <div class={housing_list_style}>
                 {for (*housing_state).clone().into_iter().map(|housing| {
                     let edit_housing = housing.clone();
@@ -1077,23 +1285,18 @@ font-style: normal;
                     )
                 })}
             </div>
+            if *open_create_housing_modal_state {
+                <ModifyHousingModal has_unknown_error={*unknown_error_state} on_error_close={report_unknown_error.clone()} housing={CharacterHousing::new(props.character.id, HousingDistrict::TheLavenderBeds, 1, 1)} character_id={props.character.id} is_edit={false} error_message={(*error_message_state).clone()} has_error={*error_state} on_close={on_modal_create_close} title="Unterkunft hinzufügen" save_label="Unterkunft hinzufügen" on_save={on_modal_create_save} />
+            }
             {match (*action_state).clone() {
                 HousingActions::Edit(housing) => html!(
-                    <ModifyHousingModal character_id={props.character.id} is_edit={true} title="Unterkunft bearbeiten" save_label="Unterkunft speichern" on_save={on_modal_update_save} on_close={on_modal_action_close} housing={housing} error_message={(*error_message_state).clone()} has_error={*error_state} />
+                    <ModifyHousingModal has_unknown_error={*unknown_error_state} on_error_close={report_unknown_error.clone()} character_id={props.character.id} is_edit={true} title="Unterkunft bearbeiten" save_label="Unterkunft speichern" on_save={on_modal_update_save} on_close={on_modal_action_close} housing={housing} error_message={(*error_message_state).clone()} has_error={*error_state} />
                 ),
                 HousingActions::Delete(housing) => html!(
-                    <>
-                        <CosmoConfirm confirm_type={CosmoModalType::Warning} on_confirm={move |_| on_modal_delete.emit(housing.id)} on_decline={on_modal_action_close} confirm_label="Unterkunft löschen" decline_label="Unterkunft behalten" title="Unterkunft löschen" message={format!("Soll die Unterkunft in {} im Bezirk {} mit der Nummer {} wirklich gelöscht werden?", housing.district.to_string(), housing.ward, housing.plot)} />
-                        if *error_state {
-                            <CosmoAlert alert_type={CosmoAlertType::Negative} close_label="Schließen" title="Ein Fehler ist aufgetreten" message={(*error_message_state).clone()} on_close={on_error_close} />
-                        }
-                    </>
+                    <CosmoConfirm confirm_type={CosmoModalType::Warning} on_confirm={move |_| on_modal_delete.emit(housing.id)} on_decline={on_modal_action_close} confirm_label="Unterkunft löschen" decline_label="Unterkunft behalten" title="Unterkunft löschen" message={format!("Soll die Unterkunft in {} im Bezirk {} mit der Nummer {} wirklich gelöscht werden?", housing.district.to_string(), housing.ward, housing.plot)} />
                 ),
                 HousingActions::Closed => html!(),
             }}
-            if *open_create_housing_modal_state {
-                <ModifyHousingModal housing={CharacterHousing::new(props.character.id, HousingDistrict::TheLavenderBeds, 1, 1)} character_id={props.character.id} is_edit={false} error_message={(*error_message_state).clone()} has_error={*error_state} on_close={on_modal_create_close} title="Unterkunft hinzufügen" save_label="Unterkunft hinzufügen" on_save={on_modal_create_save} />
-            }
         </>
     )
 }
@@ -1108,12 +1311,25 @@ fn crafter_details(props: &CrafterDetailsProps) -> Html {
     let initial_loaded_state = use_state_eq(|| false);
     let open_create_crafter_modal_state = use_state_eq(|| false);
     let error_state = use_state_eq(|| false);
+    let delete_error_state = use_state_eq(|| false);
+    let unknown_error_state = use_state_eq(|| false);
+
+    let bamboo_error_state = use_state_eq(api::ApiError::default);
 
     let error_message_state = use_state_eq(|| AttrValue::from(""));
+    let error_message_form_state = use_state_eq(|| AttrValue::from(""));
 
     let crafter_state = use_state_eq(|| vec![] as Vec<Crafter>);
 
     let jobs_state = use_state_eq(|| CrafterJob::iter().collect::<Vec<CrafterJob>>());
+
+    {
+        let error_state = error_state.clone();
+
+        use_unmount(move || {
+            error_state.set(false);
+        })
+    }
 
     let on_modal_create_close = use_callback(
         (open_create_crafter_modal_state.clone(), error_state.clone()),
@@ -1122,11 +1338,32 @@ fn crafter_details(props: &CrafterDetailsProps) -> Html {
             error_state.set(false);
         },
     );
+
+    let report_unknown_error = use_callback(
+        (
+            bamboo_error_state.clone(),
+            error_message_form_state.clone(),
+            unknown_error_state.clone(),
+        ),
+        |_, (bamboo_error_state, error_message_form_state, unknown_error_state)| {
+            error::report_unknown_error(
+                "final_fantasy_character",
+                error_message_form_state.deref().to_string(),
+                bamboo_error_state.deref().clone(),
+            );
+            unknown_error_state.set(false);
+        },
+    );
+
     let on_modal_create_save = {
         let error_state = error_state.clone();
         let open_create_crafter_modal_state = open_create_crafter_modal_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
 
         let error_message_state = error_message_state.clone();
+        let error_message_form_state = error_message_form_state.clone();
 
         let crafter_query_state = crafter_query_state.clone();
 
@@ -1136,8 +1373,12 @@ fn crafter_details(props: &CrafterDetailsProps) -> Html {
             log::debug!("Modal was confirmed lets execute the request");
             let error_state = error_state.clone();
             let open_create_crafter_modal_state = open_create_crafter_modal_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
+
+            let bamboo_error_state = bamboo_error_state.clone();
 
             let error_message_state = error_message_state.clone();
+            let error_message_form_state = error_message_form_state.clone();
 
             let crafter_query_state = crafter_query_state.clone();
 
@@ -1146,14 +1387,22 @@ fn crafter_details(props: &CrafterDetailsProps) -> Html {
                     Ok(_) => {
                         open_create_crafter_modal_state.clone().set(false);
                         let _ = crafter_query_state.refresh().await;
+                        unknown_error_state.set(false);
                         false
                     }
                     Err(err) => {
-                        error_message_state.set(if err.code == CONFLICT {
-                            "Ein Crafter mit diesem Job existiert bereits"
-                        } else {
-                            "Der Crafter konnte nicht hinzugefügt werden, bitte wende dich an Azami"
-                        }.into());
+                        error_message_state.set(
+                            if err.code == CONFLICT {
+                                unknown_error_state.set(false);
+                                "Ein Crafter mit diesem Job existiert bereits"
+                            } else {
+                                bamboo_error_state.set(err.clone());
+                                error_message_form_state.set("create_crafter".into());
+                                unknown_error_state.set(true);
+                                "Der Crafter konnte nicht hinzugefügt werden"
+                            }
+                            .into(),
+                        );
                         true
                     }
                 });
@@ -1166,8 +1415,12 @@ fn crafter_details(props: &CrafterDetailsProps) -> Html {
         let on_modal_close = on_modal_create_close.clone();
 
         let error_state = error_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
 
         let error_message_state = error_message_state.clone();
+        let error_message_form_state = error_message_form_state.clone();
 
         let action_state = action_state.clone();
 
@@ -1178,8 +1431,12 @@ fn crafter_details(props: &CrafterDetailsProps) -> Html {
             let on_modal_close = on_modal_close.clone();
 
             let error_state = error_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
+
+            let bamboo_error_state = bamboo_error_state.clone();
 
             let error_message_state = error_message_state.clone();
+            let error_message_form_state = error_message_form_state.clone();
 
             let action_state = action_state.clone();
 
@@ -1197,18 +1454,27 @@ fn crafter_details(props: &CrafterDetailsProps) -> Html {
                         let _ = crafter_query_state.refresh().await;
                         on_modal_close.emit(());
                         action_state.set(CrafterActions::Closed);
+                        unknown_error_state.set(false);
                         false
                     }
                     Err(err) => {
                         match err.code {
                             CONFLICT => {
-                                error_message_state.set("Ein Crafter mit diesem Job existiert bereits".into());
+                                error_message_state
+                                    .set("Ein Crafter mit diesem Job existiert bereits".into());
+                                unknown_error_state.set(false);
                             }
                             NOT_FOUND => {
-                                error_message_state.set("Der Crafter konnte nicht gefunden werden".into());
+                                error_message_state
+                                    .set("Der Crafter konnte nicht gefunden werden".into());
+                                unknown_error_state.set(false);
                             }
                             _ => {
-                                error_message_state.set("Der Crafter konnte nicht gespeichert werden, bitte wende dich an Azami".into());
+                                bamboo_error_state.set(err.clone());
+                                error_message_form_state.set("update_crafter".into());
+                                unknown_error_state.set(true);
+                                error_message_state
+                                    .set("Der Crafter konnte nicht gespeichert werden".into());
                             }
                         };
                         true
@@ -1220,9 +1486,13 @@ fn crafter_details(props: &CrafterDetailsProps) -> Html {
     let on_modal_delete = {
         let crafter_query_state = crafter_query_state.clone();
 
-        let error_message_state = error_message_state.clone();
+        let delete_error_state = delete_error_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
 
-        let error_state = error_state.clone();
+        let bamboo_error_state = bamboo_error_state.clone();
+
+        let error_message_state = error_message_state.clone();
+        let error_message_form_state = error_message_form_state.clone();
 
         let action_state = action_state.clone();
 
@@ -1231,32 +1501,41 @@ fn crafter_details(props: &CrafterDetailsProps) -> Html {
         Callback::from(move |id: i32| {
             let crafter_query_state = crafter_query_state.clone();
 
-            let error_message_state = error_message_state.clone();
+            let delete_error_state = delete_error_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
 
-            let error_state = error_state.clone();
+            let bamboo_error_state = bamboo_error_state.clone();
+
+            let error_message_state = error_message_state.clone();
+            let error_message_form_state = error_message_form_state.clone();
 
             let action_state = action_state.clone();
 
             yew::platform::spawn_local(async move {
-                error_state.set(match delete_crafter(character_id, id).await {
+                delete_error_state.set(match delete_crafter(character_id, id).await {
                     Ok(_) => {
                         let _ = crafter_query_state.refresh().await;
-                        action_state.set(CrafterActions::Closed);
+                        unknown_error_state.set(false);
                         false
                     }
-                    Err(err) => {
-                        match err.code {
-                            NOT_FOUND => {
-                                error_message_state.set("Der Crafter konnte nicht gefunden werden".into());
-                                true
-                            }
-                            _ => {
-                                error_message_state.set("Der Crafter konnte nicht gelöscht werden, bitte wende dich an Azami".into());
-                                true
-                            }
+                    Err(err) => match err.code {
+                        NOT_FOUND => {
+                            error_message_state
+                                .set("Der Crafter konnte nicht gefunden werden".into());
+                            unknown_error_state.set(false);
+                            true
                         }
-                    }
-                })
+                        _ => {
+                            error_message_state
+                                .set("Der Crafter konnte nicht gelöscht werden".into());
+                            bamboo_error_state.set(err.clone());
+                            error_message_form_state.set("delete_crafter".into());
+                            unknown_error_state.set(true);
+                            true
+                        }
+                    },
+                });
+                action_state.set(CrafterActions::Closed);
             })
         })
     };
@@ -1267,16 +1546,27 @@ fn crafter_details(props: &CrafterDetailsProps) -> Html {
             error_state.set(false);
         },
     );
-    let on_error_close = use_callback(error_state.clone(), |_, state| state.set(false));
-    let on_create_open = use_callback(open_create_crafter_modal_state.clone(), |_, state| {
-        state.set(true)
-    });
-    let on_edit_open = use_callback(action_state.clone(), |crafter, action_state| {
-        action_state.set(CrafterActions::Edit(crafter))
-    });
-    let on_delete_open = use_callback(action_state.clone(), |crafter, action_state| {
-        action_state.set(CrafterActions::Delete(crafter))
-    });
+    let on_create_open = use_callback(
+        (open_create_crafter_modal_state.clone(), error_state.clone()),
+        |_, (open_state, error_state)| {
+            open_state.set(true);
+            error_state.set(false);
+        },
+    );
+    let on_edit_open = use_callback(
+        (action_state.clone(), error_state.clone()),
+        |crafter, (action_state, error_state)| {
+            action_state.set(CrafterActions::Edit(crafter));
+            error_state.set(false);
+        },
+    );
+    let on_delete_open = use_callback(
+        (action_state.clone(), error_state.clone()),
+        |crafter, (action_state, error_state)| {
+            action_state.set(CrafterActions::Delete(crafter));
+            error_state.set(false);
+        },
+    );
 
     match crafter_query_state.result() {
         None => {
@@ -1305,8 +1595,18 @@ fn crafter_details(props: &CrafterDetailsProps) -> Html {
         }
         Some(Err(err)) => {
             log::warn!("Failed to load {err}");
+            bamboo_error_state.set(err.clone());
+            if !*initial_loaded_state {
+                unknown_error_state.set(true);
+            }
+            initial_loaded_state.set(true);
+
             return html!(
-                <CosmoMessage header="Fehler beim Laden" message="Die Crafter konnten nicht geladen werden, bitte wende dich an Azami" message_type={CosmoMessageType::Negative} />
+                if *unknown_error_state {
+                    <CosmoMessage header="Fehler beim Laden" message="Die Crafter konnten nicht geladen werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                } else {
+                    <CosmoMessage header="Fehler beim Laden" message="Die Crafter konnten nicht geladen werden" message_type={CosmoMessageType::Negative} />
+                }
             );
         }
     }
@@ -1324,6 +1624,13 @@ fn crafter_details(props: &CrafterDetailsProps) -> Html {
                         <CosmoButton label="Crafter hinzufügen" on_click={on_create_open} />
                     </CosmoToolbarGroup>
                 </CosmoToolbar>
+            }
+            if *delete_error_state {
+                if *unknown_error_state {
+                    <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message={(*error_message_state).clone()} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                } else {
+                    <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message={(*error_message_state).clone()} />
+                }
             }
             <CosmoTable headers={vec![AttrValue::from(""), AttrValue::from("Job"), AttrValue::from("Level"), AttrValue::from("Aktionen")]}>
                 {for (*crafter_state).clone().into_iter().map(|crafter| {
@@ -1348,23 +1655,18 @@ fn crafter_details(props: &CrafterDetailsProps) -> Html {
                     ], Some(crafter.id.into()))
                 })}
             </CosmoTable>
+            if *open_create_crafter_modal_state {
+                <ModifyCrafterModal on_error_close={report_unknown_error.clone()} has_unknown_error={*unknown_error_state} crafter={new_crafter.unwrap_or(Crafter::default())} character_id={props.character.id} jobs={(*jobs_state).clone()} is_edit={false} error_message={(*error_message_state).clone()} has_error={*error_state} on_close={on_modal_create_close} title="Crafter hinzufügen" save_label="Crafter hinzufügen" on_save={on_modal_create_save} />
+            }
             {match (*action_state).clone() {
                 CrafterActions::Edit(crafter) => html!(
-                    <ModifyCrafterModal character_id={props.character.id} is_edit={true} jobs={(*jobs_state).clone()} title={format!("Crafter {} bearbeiten", crafter.job.to_string())} save_label="Crafter speichern" on_save={on_modal_update_save} on_close={on_modal_action_close} crafter={crafter} error_message={(*error_message_state).clone()} has_error={*error_state} />
+                    <ModifyCrafterModal on_error_close={report_unknown_error.clone()} has_unknown_error={*unknown_error_state} character_id={props.character.id} is_edit={true} jobs={(*jobs_state).clone()} title={format!("Crafter {} bearbeiten", crafter.job.to_string())} save_label="Crafter speichern" on_save={on_modal_update_save} on_close={on_modal_action_close} crafter={crafter} error_message={(*error_message_state).clone()} has_error={*error_state} />
                 ),
                 CrafterActions::Delete(crafter) => html!(
-                    <>
-                        <CosmoConfirm confirm_type={CosmoModalType::Warning} on_confirm={move |_| on_modal_delete.emit(crafter.id)} on_decline={on_modal_action_close} confirm_label="Crafter löschen" decline_label="Crafter behalten" title="Crafter löschen" message={format!("Soll der Crafter {} auf Level {} wirklich gelöscht werden?", crafter.job.to_string(), crafter.level.unwrap_or_default())} />
-                        if *error_state {
-                            <CosmoAlert alert_type={CosmoAlertType::Negative} close_label="Schließen" title="Ein Fehler ist aufgetreten" message={(*error_message_state).clone()} on_close={on_error_close} />
-                        }
-                    </>
+                    <CosmoConfirm confirm_type={CosmoModalType::Warning} on_confirm={move |_| on_modal_delete.emit(crafter.id)} on_decline={on_modal_action_close} confirm_label="Crafter löschen" decline_label="Crafter behalten" title="Crafter löschen" message={format!("Soll der Crafter {} auf Level {} wirklich gelöscht werden?", crafter.job.to_string(), crafter.level.unwrap_or_default())} />
                 ),
                 CrafterActions::Closed => html!(),
             }}
-            if *open_create_crafter_modal_state {
-                <ModifyCrafterModal crafter={new_crafter.unwrap_or(Crafter::default())} character_id={props.character.id} jobs={(*jobs_state).clone()} is_edit={false} error_message={(*error_message_state).clone()} has_error={*error_state} on_close={on_modal_create_close} title="Crafter hinzufügen" save_label="Crafter hinzufügen" on_save={on_modal_create_save} />
-            }
         </>
     )
 }
@@ -1379,12 +1681,41 @@ fn fighter_details(props: &FighterDetailsProps) -> Html {
     let initial_loaded_state = use_state_eq(|| false);
     let open_create_fighter_modal_state = use_state_eq(|| false);
     let error_state = use_state_eq(|| false);
+    let delete_error_state = use_state_eq(|| false);
+    let unknown_error_state = use_state_eq(|| false);
+
+    let bamboo_error_state = use_state_eq(api::ApiError::default);
 
     let error_message_state = use_state_eq(|| AttrValue::from(""));
+    let error_message_form_state = use_state_eq(|| AttrValue::from(""));
 
     let fighter_state = use_state_eq(|| vec![] as Vec<Fighter>);
 
     let jobs_state = use_state_eq(|| FighterJob::iter().collect::<Vec<FighterJob>>());
+
+    {
+        let error_state = error_state.clone();
+
+        use_unmount(move || {
+            error_state.set(false);
+        })
+    }
+
+    let report_unknown_error = use_callback(
+        (
+            bamboo_error_state.clone(),
+            error_message_form_state.clone(),
+            unknown_error_state.clone(),
+        ),
+        |_, (bamboo_error_state, error_message_form_state, unknown_error_state)| {
+            error::report_unknown_error(
+                "final_fantasy_character",
+                error_message_form_state.deref().to_string(),
+                bamboo_error_state.deref().clone(),
+            );
+            unknown_error_state.set(false);
+        },
+    );
 
     let on_modal_create_close = use_callback(
         (open_create_fighter_modal_state.clone(), error_state.clone()),
@@ -1396,8 +1727,12 @@ fn fighter_details(props: &FighterDetailsProps) -> Html {
     let on_modal_create_save = {
         let error_state = error_state.clone();
         let open_create_fighter_modal_state = open_create_fighter_modal_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
 
         let error_message_state = error_message_state.clone();
+        let error_message_form_state = error_message_form_state.clone();
 
         let fighter_query_state = fighter_query_state.clone();
 
@@ -1407,8 +1742,12 @@ fn fighter_details(props: &FighterDetailsProps) -> Html {
             log::debug!("Modal was confirmed lets execute the request");
             let error_state = error_state.clone();
             let open_create_fighter_modal_state = open_create_fighter_modal_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
+
+            let bamboo_error_state = bamboo_error_state.clone();
 
             let error_message_state = error_message_state.clone();
+            let error_message_form_state = error_message_form_state.clone();
 
             let fighter_query_state = fighter_query_state.clone();
 
@@ -1417,14 +1756,23 @@ fn fighter_details(props: &FighterDetailsProps) -> Html {
                     Ok(_) => {
                         open_create_fighter_modal_state.clone().set(false);
                         let _ = fighter_query_state.refresh().await;
+                        unknown_error_state.set(false);
+
                         false
                     }
                     Err(err) => {
-                        error_message_state.set(if err.code == CONFLICT {
-                            "Ein Kämpfer mit diesem Job existiert bereits"
-                        } else {
-                            "Der Kämpfer konnte nicht hinzugefügt werden, bitte wende dich an Azami"
-                        }.into());
+                        error_message_state.set(
+                            if err.code == CONFLICT {
+                                unknown_error_state.set(false);
+                                "Ein Kämpfer mit diesem Job existiert bereits"
+                            } else {
+                                bamboo_error_state.set(err.clone());
+                                error_message_form_state.set("create_fighter".into());
+                                unknown_error_state.set(true);
+                                "Der Kämpfer konnte nicht hinzugefügt werden"
+                            }
+                            .into(),
+                        );
                         true
                     }
                 });
@@ -1437,8 +1785,12 @@ fn fighter_details(props: &FighterDetailsProps) -> Html {
         let on_modal_close = on_modal_create_close.clone();
 
         let error_state = error_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
 
         let error_message_state = error_message_state.clone();
+        let error_message_form_state = error_message_form_state.clone();
 
         let action_state = action_state.clone();
 
@@ -1449,8 +1801,12 @@ fn fighter_details(props: &FighterDetailsProps) -> Html {
             let on_modal_close = on_modal_close.clone();
 
             let error_state = error_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
+
+            let bamboo_error_state = bamboo_error_state.clone();
 
             let error_message_state = error_message_state.clone();
+            let error_message_form_state = error_message_form_state.clone();
 
             let action_state = action_state.clone();
 
@@ -1468,18 +1824,28 @@ fn fighter_details(props: &FighterDetailsProps) -> Html {
                         let _ = fighter_query_state.refresh().await;
                         on_modal_close.emit(());
                         action_state.set(FighterActions::Closed);
+                        unknown_error_state.set(false);
+
                         false
                     }
                     Err(err) => {
                         match err.code {
                             CONFLICT => {
-                                error_message_state.set("Ein Kämpfer mit diesem Job existiert bereits".into());
+                                error_message_state
+                                    .set("Ein Kämpfer mit diesem Job existiert bereits".into());
+                                unknown_error_state.set(false);
                             }
                             NOT_FOUND => {
-                                error_message_state.set("Der Kämpfer konnte nicht gefunden werden".into());
+                                error_message_state
+                                    .set("Der Kämpfer konnte nicht gefunden werden".into());
+                                unknown_error_state.set(false);
                             }
                             _ => {
-                                error_message_state.set("Der Kämpfer konnte nicht gespeichert werden, bitte wende dich an Azami".into());
+                                bamboo_error_state.set(err.clone());
+                                error_message_form_state.set("update_fighter".into());
+                                unknown_error_state.set(true);
+                                error_message_state
+                                    .set("Der Kämpfer konnte nicht gespeichert werden".into());
                             }
                         };
                         true
@@ -1491,9 +1857,13 @@ fn fighter_details(props: &FighterDetailsProps) -> Html {
     let on_modal_delete = {
         let fighter_query_state = fighter_query_state.clone();
 
-        let error_message_state = error_message_state.clone();
+        let delete_error_state = delete_error_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
 
-        let error_state = error_state.clone();
+        let bamboo_error_state = bamboo_error_state.clone();
+
+        let error_message_state = error_message_state.clone();
+        let error_message_form_state = error_message_form_state.clone();
 
         let action_state = action_state.clone();
 
@@ -1502,32 +1872,43 @@ fn fighter_details(props: &FighterDetailsProps) -> Html {
         Callback::from(move |id: i32| {
             let fighter_query_state = fighter_query_state.clone();
 
-            let error_message_state = error_message_state.clone();
+            let delete_error_state = delete_error_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
 
-            let error_state = error_state.clone();
+            let bamboo_error_state = bamboo_error_state.clone();
+
+            let error_message_state = error_message_state.clone();
+            let error_message_form_state = error_message_form_state.clone();
 
             let action_state = action_state.clone();
 
             yew::platform::spawn_local(async move {
-                error_state.set(match delete_fighter(character_id, id).await {
+                delete_error_state.set(match delete_fighter(character_id, id).await {
                     Ok(_) => {
                         let _ = fighter_query_state.refresh().await;
-                        action_state.set(FighterActions::Closed);
+                        unknown_error_state.set(false);
+
                         false
                     }
-                    Err(err) => {
-                        match err.code {
-                            NOT_FOUND => {
-                                error_message_state.set("Der Kämpfer konnte nicht gefunden werden".into());
-                                true
-                            }
-                            _ => {
-                                error_message_state.set("Der Kämpfer konnte nicht gelöscht werden, bitte wende dich an Azami".into());
-                                true
-                            }
+                    Err(err) => match err.code {
+                        NOT_FOUND => {
+                            error_message_state
+                                .set("Der Kämpfer konnte nicht gefunden werden".into());
+                            unknown_error_state.set(false);
+
+                            true
                         }
-                    }
-                })
+                        _ => {
+                            bamboo_error_state.set(err.clone());
+                            error_message_form_state.set("delete_fighter".into());
+                            unknown_error_state.set(true);
+                            error_message_state
+                                .set("Der Kämpfer konnte nicht gelöscht werden".into());
+                            true
+                        }
+                    },
+                });
+                action_state.set(FighterActions::Closed);
             })
         })
     };
@@ -1538,16 +1919,27 @@ fn fighter_details(props: &FighterDetailsProps) -> Html {
             error_state.set(false);
         },
     );
-    let on_error_close = use_callback(error_state.clone(), |_, state| state.set(false));
-    let on_create_open = use_callback(open_create_fighter_modal_state.clone(), |_, state| {
-        state.set(true)
-    });
-    let on_edit_open = use_callback(action_state.clone(), |fighter, action_state| {
-        action_state.set(FighterActions::Edit(fighter))
-    });
-    let on_delete_open = use_callback(action_state.clone(), |fighter, action_state| {
-        action_state.set(FighterActions::Delete(fighter))
-    });
+    let on_create_open = use_callback(
+        (open_create_fighter_modal_state.clone(), error_state.clone()),
+        |_, (open_state, error_state)| {
+            open_state.set(true);
+            error_state.set(false);
+        },
+    );
+    let on_edit_open = use_callback(
+        (action_state.clone(), error_state.clone()),
+        |fighter, (action_state, error_state)| {
+            action_state.set(FighterActions::Edit(fighter));
+            error_state.set(false);
+        },
+    );
+    let on_delete_open = use_callback(
+        (action_state.clone(), error_state.clone()),
+        |fighter, (action_state, error_state)| {
+            action_state.set(FighterActions::Delete(fighter));
+            error_state.set(false);
+        },
+    );
 
     match fighter_query_state.result() {
         None => {
@@ -1576,8 +1968,18 @@ fn fighter_details(props: &FighterDetailsProps) -> Html {
         }
         Some(Err(err)) => {
             log::warn!("Failed to load {err}");
+            bamboo_error_state.set(err.clone());
+            if !*initial_loaded_state {
+                unknown_error_state.set(true);
+            }
+            initial_loaded_state.set(true);
+
             return html!(
-                <CosmoMessage header="Fehler beim Laden" message="Die Kämpfer konnten nicht geladen werden, bitte wende dich an Azami" message_type={CosmoMessageType::Negative} />
+                if *unknown_error_state {
+                    <CosmoMessage header="Fehler beim Laden" message="Die Kämpfer konnten nicht geladen werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                } else {
+                    <CosmoMessage header="Fehler beim Laden" message="Die Kämpfer konnten nicht geladen werden" message_type={CosmoMessageType::Negative} />
+                }
             );
         }
     }
@@ -1595,6 +1997,13 @@ fn fighter_details(props: &FighterDetailsProps) -> Html {
                         <CosmoButton label="Kämpfer hinzufügen" on_click={on_create_open} />
                     </CosmoToolbarGroup>
                 </CosmoToolbar>
+            }
+            if *delete_error_state {
+                if *unknown_error_state {
+                    <CosmoMessage header="Fehler beim Löschen" message={(*error_message_state).clone()} message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                } else {
+                    <CosmoMessage header="Fehler beim Löschen" message={(*error_message_state).clone()} message_type={CosmoMessageType::Negative} />
+                }
             }
             <CosmoTable headers={vec![AttrValue::from(""), AttrValue::from("Job"), AttrValue::from("Level"), AttrValue::from("Gear Score"), AttrValue::from("Aktionen")]}>
                 {for (*fighter_state).clone().into_iter().map(|fighter| {
@@ -1620,23 +2029,20 @@ fn fighter_details(props: &FighterDetailsProps) -> Html {
                     ], Some(fighter.id.into()))
                 })}
             </CosmoTable>
+            if *open_create_fighter_modal_state {
+                <ModifyFighterModal has_unknown_error={*unknown_error_state} on_error_close={report_unknown_error.clone()} fighter={new_fighter.unwrap_or(Fighter::default())} character_id={props.character.id} jobs={(*jobs_state).clone()} is_edit={false} error_message={(*error_message_state).clone()} has_error={*error_state} on_close={on_modal_create_close} title="Kämpfer hinzufügen" save_label="Kämpfer hinzufügen" on_save={on_modal_create_save} />
+            }
             {match (*action_state).clone() {
                 FighterActions::Edit(fighter) => html!(
-                    <ModifyFighterModal character_id={props.character.id} is_edit={true} jobs={(*jobs_state).clone()} title={format!("Kämpfer {} bearbeiten", fighter.job.to_string())} save_label="Kämpfer speichern" on_save={on_modal_update_save} on_close={on_modal_action_close} fighter={fighter} error_message={(*error_message_state).clone()} has_error={*error_state} />
+                    <ModifyFighterModal has_unknown_error={*unknown_error_state} on_error_close={report_unknown_error.clone()} character_id={props.character.id} is_edit={true} jobs={(*jobs_state).clone()} title={format!("Kämpfer {} bearbeiten", fighter.job.to_string())} save_label="Kämpfer speichern" on_save={on_modal_update_save} on_close={on_modal_action_close} fighter={fighter} error_message={(*error_message_state).clone()} has_error={*error_state} />
                 ),
                 FighterActions::Delete(fighter) => html!(
                     <>
                         <CosmoConfirm confirm_type={CosmoModalType::Warning} on_confirm={move |_| on_modal_delete.emit(fighter.id)} on_decline={on_modal_action_close} confirm_label="Kämpfer löschen" decline_label="Kämpfer behalten" title="Kämpfer löschen" message={format!("Soll der Kämpfer {} auf Level {} wirklich gelöscht werden?", fighter.job.to_string(), fighter.level.unwrap_or_default())} />
-                        if *error_state {
-                            <CosmoAlert alert_type={CosmoAlertType::Negative} close_label="Schließen" title="Ein Fehler ist aufgetreten" message={(*error_message_state).clone()} on_close={on_error_close} />
-                        }
                     </>
                 ),
                 FighterActions::Closed => html!(),
             }}
-            if *open_create_fighter_modal_state {
-                <ModifyFighterModal fighter={new_fighter.unwrap_or(Fighter::default())} character_id={props.character.id} jobs={(*jobs_state).clone()} is_edit={false} error_message={(*error_message_state).clone()} has_error={*error_state} on_close={on_modal_create_close} title="Kämpfer hinzufügen" save_label="Kämpfer hinzufügen" on_save={on_modal_create_save} />
-            }
         </>
     )
 }
@@ -1650,6 +2056,11 @@ pub fn character_page() -> Html {
     let open_create_character_modal_state = use_state_eq(|| false);
     let error_state = use_state_eq(|| false);
     let initial_loaded_state = use_state_eq(|| false);
+    let unknown_error_state = use_state_eq(|| false);
+
+    let bamboo_error_state = use_state_eq(api::ApiError::default);
+
+    let error_message_form_state = use_state_eq(|| AttrValue::from(""));
 
     let character_state = use_state_eq(|| vec![] as Vec<Character>);
 
@@ -1661,21 +2072,51 @@ pub fn character_page() -> Html {
 
     let error_message_state = use_state_eq(|| AttrValue::from(""));
 
-    let open_create_character_modal_click = use_callback(
-        open_create_character_modal_state.clone(),
-        |_, open_create_character_modal_state| open_create_character_modal_state.set(true),
+    let report_unknown_error = use_callback(
+        (
+            bamboo_error_state.clone(),
+            error_message_form_state.clone(),
+            unknown_error_state.clone(),
+        ),
+        |_, (bamboo_error_state, error_message_form_state, unknown_error_state)| {
+            error::report_unknown_error(
+                "final_fantasy_character",
+                error_message_form_state.deref().to_string(),
+                bamboo_error_state.deref().clone(),
+            );
+            unknown_error_state.set(false);
+        },
     );
-    let on_character_select = use_callback(selected_character_state.clone(), |idx, state| {
-        state.set(idx)
-    });
+
+    let open_create_character_modal_click = use_callback(
+        (
+            open_create_character_modal_state.clone(),
+            error_state.clone(),
+        ),
+        |_, (open_create_character_modal_state, error_state)| {
+            open_create_character_modal_state.set(true);
+            error_state.set(false);
+        },
+    );
+    let on_character_select = use_callback(
+        (selected_character_state.clone(), error_state.clone()),
+        |idx, (state, error_state)| {
+            state.set(idx);
+            error_state.set(false);
+        },
+    );
     let on_modal_close = use_callback(open_create_character_modal_state.clone(), |_, state| {
         state.set(false)
     });
     let on_modal_save = {
         let error_state = error_state.clone();
         let open_create_character_modal_state = open_create_character_modal_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
 
         let error_message_state = error_message_state.clone();
+        let error_message_form_state = error_message_form_state.clone();
 
         let character_query_state = character_query_state.clone();
 
@@ -1685,9 +2126,14 @@ pub fn character_page() -> Html {
             log::debug!("Modal was confirmed lets execute the request");
             let error_state = error_state.clone();
             let open_create_character_modal_state = open_create_character_modal_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
+
+            let bamboo_error_state = bamboo_error_state.clone();
+
+            let error_message_state = error_message_state.clone();
+            let error_message_form_state = error_message_form_state.clone();
 
             let selected_character_state = selected_character_state.clone();
-            let error_message_state = error_message_state.clone();
 
             let character_query_state = character_query_state.clone();
 
@@ -1697,16 +2143,27 @@ pub fn character_page() -> Html {
                         let id = character.id;
                         open_create_character_modal_state.clone().set(false);
                         if let Ok(res) = character_query_state.refresh().await {
-                            selected_character_state.set(res.character.iter().position(move |character| character.id.eq(&id)).unwrap_or(0));
+                            selected_character_state.set(
+                                res.character
+                                    .iter()
+                                    .position(move |character| character.id.eq(&id))
+                                    .unwrap_or(0),
+                            );
                         }
                         false
                     }
                     Err(err) => {
-                        error_message_state.set(if err.code == CONFLICT {
-                            "Ein Charakter mit diesem Namen existiert bereits"
-                        } else {
-                            "Der Charakter konnte nicht hinzugefügt werden, bitte wende dich an Azami"
-                        }.into());
+                        error_message_state.set(
+                            if err.code == CONFLICT {
+                                "Ein Charakter mit diesem Namen existiert bereits"
+                            } else {
+                                bamboo_error_state.set(err.clone());
+                                error_message_form_state.set("character_page".into());
+                                unknown_error_state.set(true);
+                                "Der Charakter konnte nicht hinzugefügt werden"
+                            }
+                            .into(),
+                        );
                         true
                     }
                 });
@@ -1729,7 +2186,6 @@ pub fn character_page() -> Html {
             })
         })
     };
-    let on_error_close = use_callback(error_state.clone(), |_, state| state.set(false));
 
     {
         let custom_fields_state = custom_fields_state.clone();
@@ -1768,8 +2224,18 @@ pub fn character_page() -> Html {
         }
         Some(Err(err)) => {
             log::warn!("Failed to load {err}");
+            bamboo_error_state.set(err.clone());
+            if !*initial_loaded_state {
+                unknown_error_state.set(true);
+            }
+            initial_loaded_state.set(true);
+
             return html!(
-                <CosmoMessage header="Fehler beim Laden" message="Deine Charaktere konnten nicht geladen werden, bitte wende dich an Azami" message_type={CosmoMessageType::Negative} />
+                if *unknown_error_state {
+                    <CosmoMessage header="Fehler beim Laden" message="Deine Charaktere konnten nicht geladen werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
+                } else {
+                    <CosmoMessage header="Fehler beim Laden" message="Deine Charaktere konnten nicht geladen werden" message_type={CosmoMessageType::Negative} />
+                }
             );
         }
     }
@@ -1803,7 +2269,7 @@ pub fn character_page() -> Html {
                 })}
             </CosmoSideList>
             if *open_create_character_modal_state {
-                <ModifyCharacterModal free_companies={(*free_companies_state).clone()} on_error_close={on_error_close} error_message={(*error_message_state).clone()} has_error={*error_state} on_close={on_modal_close} title="Charakter hinzufügen" save_label="Charakter hinzufügen" on_save={on_modal_save} custom_fields={(*custom_fields_state).clone()} />
+                <ModifyCharacterModal has_unknown_error={*unknown_error_state} on_error_close={report_unknown_error.clone()} free_companies={(*free_companies_state).clone()} error_message={(*error_message_state).clone()} has_error={*error_state} on_close={on_modal_close} title="Charakter hinzufügen" save_label="Charakter hinzufügen" on_save={on_modal_save} custom_fields={(*custom_fields_state).clone()} />
             }
         </>
     )

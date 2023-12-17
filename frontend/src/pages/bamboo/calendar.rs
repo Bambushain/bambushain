@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use bounce::query::use_query_value;
 use chrono::prelude::*;
 use chrono::{Days, Months};
@@ -15,6 +17,7 @@ use bamboo_entities::prelude::Event;
 
 use crate::api;
 use crate::api::event::EventRange;
+use crate::error;
 
 #[derive(Properties, PartialEq, Clone, Default)]
 struct DayProps {
@@ -152,12 +155,45 @@ fn add_event_dialog(props: &AddEventDialogProps) -> Html {
     let color_state = use_state_eq(Color::random);
 
     let error_state = use_state_eq(|| false);
+    let unknown_error_state = use_state_eq(|| false);
+
+    let bamboo_error_state = use_state_eq(api::ApiError::default);
+
+    {
+        let error_state = error_state.clone();
+
+        let title_state = title_state.clone();
+        let description_state = description_state.clone();
+
+        let color_state = color_state.clone();
+
+        use_unmount(move || {
+            error_state.set(false);
+
+            title_state.set("".into());
+            description_state.set("".into());
+
+            color_state.set(Color::random())
+        })
+    }
 
     let title_input = use_callback(title_state.clone(), |value, state| state.set(value));
     let description_input =
         use_callback(description_state.clone(), |value, state| state.set(value));
     let end_date_input = use_callback(end_date_state.clone(), |value, state| state.set(value));
     let color_input = use_callback(color_state.clone(), |value, state| state.set(value));
+
+    let report_unknown_error = use_callback(
+        (bamboo_error_state.clone(), unknown_error_state.clone()),
+        |_, (bamboo_error_state, unknown_error_state)| {
+            error::report_unknown_error(
+                "bamboo_calendar",
+                "add_event_dialog",
+                bamboo_error_state.deref().clone(),
+            );
+            unknown_error_state.set(false);
+        },
+    );
 
     let on_form_submit = {
         let title_state = title_state.clone();
@@ -168,6 +204,9 @@ fn add_event_dialog(props: &AddEventDialogProps) -> Html {
         let color_state = color_state.clone();
 
         let error_state = error_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
 
         let start_date = props.start_date;
 
@@ -182,6 +221,9 @@ fn add_event_dialog(props: &AddEventDialogProps) -> Html {
             let color_state = color_state.clone();
 
             let error_state = error_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
+
+            let bamboo_error_state = bamboo_error_state.clone();
 
             let on_added = on_added.clone();
 
@@ -195,10 +237,15 @@ fn add_event_dialog(props: &AddEventDialogProps) -> Html {
                 ))
                 .await
                 {
-                    Ok(evt) => on_added.emit(evt),
+                    Ok(evt) => {
+                        on_added.emit(evt);
+                        unknown_error_state.set(false);
+                    }
                     Err(err) => {
                         log::error!("Failed to create event {err}");
                         error_state.set(true);
+                        unknown_error_state.set(true);
+                        bamboo_error_state.set(err.clone());
                     }
                 }
             })
@@ -213,6 +260,13 @@ fn add_event_dialog(props: &AddEventDialogProps) -> Html {
                     <CosmoButton label="Event speichern" is_submit={true} />
                 </>
             )}>
+                if *error_state {
+                    if *unknown_error_state {
+                        <CosmoMessage message_type={CosmoMessageType::Negative} message="Das Event konnte leider nicht erstellt werden" header="Fehler beim Speichern" actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
+                    } else {
+                        <CosmoMessage message_type={CosmoMessageType::Negative} message="Das Event konnte leider nicht erstellt werden" header="Fehler beim Speichern" />
+                    }
+                }
                 <CosmoInputGroup>
                     <CosmoTextBox width={CosmoInputWidth::Medium} label="Titel" value={(*title_state).clone()} on_input={title_input} />
                     <CosmoTextArea width={CosmoInputWidth::Medium} label="Beschreibung" value={(*description_state).clone()} on_input={description_input} />
@@ -221,9 +275,6 @@ fn add_event_dialog(props: &AddEventDialogProps) -> Html {
                     <CosmoDatePicker width={CosmoInputWidth::Medium} label="Bis" min={props.start_date} value={*end_date_state} on_input={end_date_input} />
                 </CosmoInputGroup>
             </CosmoModal>
-            if *error_state {
-                <CosmoAlert alert_type={CosmoModalType::Negative} title="Fehler beim Speichern" message="Das Event konnte leider nicht erstellt werden, bitte wende dich an Azami" close_label="Schließen" on_close={move |_| error_state.set(false)} alert_type={CosmoAlertType::Negative} />
-            }
         </>
     )
 }
@@ -240,12 +291,41 @@ fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
     let delete_event_open_state = use_state_eq(|| false);
     let error_state = use_state_eq(|| false);
     let delete_error_state = use_state_eq(|| false);
+    let unknown_error_state = use_state_eq(|| false);
+
+    let bamboo_error_state = use_state_eq(api::ApiError::default);
+
+    {
+        let error_state = error_state.clone();
+
+        let title_state = title_state.clone();
+        let description_state = description_state.clone();
+
+        use_unmount(move || {
+            error_state.set(false);
+
+            title_state.set("".into());
+            description_state.set("".into());
+        })
+    }
 
     let title_input = use_callback(title_state.clone(), |value, state| state.set(value));
     let end_date_input = use_callback(end_date_state.clone(), |value, state| state.set(value));
     let description_input =
         use_callback(description_state.clone(), |value, state| state.set(value));
     let color_input = use_callback(color_state.clone(), |value, state| state.set(value));
+
+    let report_unknown_error = use_callback(
+        (bamboo_error_state.clone(), unknown_error_state.clone()),
+        |_, (bamboo_error_state, unknown_error_state)| {
+            error::report_unknown_error(
+                "bamboo_calendar",
+                "edit_event_dialog",
+                bamboo_error_state.deref().clone(),
+            );
+            unknown_error_state.set(false);
+        },
+    );
 
     let on_form_submit = {
         let title_state = title_state.clone();
@@ -256,6 +336,9 @@ fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
         let end_date_state = end_date_state.clone();
 
         let error_state = error_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
 
         let event = props.event.clone();
 
@@ -270,6 +353,9 @@ fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
             let end_date_state = end_date_state.clone();
 
             let error_state = error_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
+
+            let bamboo_error_state = bamboo_error_state.clone();
 
             let event = event.clone();
 
@@ -286,10 +372,15 @@ fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
                 evt.id = event.id;
 
                 match api::update_event(event.id, evt.clone()).await {
-                    Ok(_) => on_updated.emit(evt),
+                    Ok(_) => {
+                        on_updated.emit(evt);
+                        unknown_error_state.set(false);
+                    }
                     Err(err) => {
                         log::error!("Failed to update event {} {err}", event.id);
                         error_state.set(true);
+                        unknown_error_state.set(true);
+                        bamboo_error_state.set(err.clone());
                     }
                 }
             })
@@ -301,21 +392,32 @@ fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
         let event = props.event.clone();
 
         let delete_error_state = delete_error_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
 
         let on_deleted = props.on_deleted.clone();
 
         Callback::from(move |_| {
             let delete_error_state = delete_error_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
+
+            let bamboo_error_state = bamboo_error_state.clone();
 
             let event = event.clone();
             let on_deleted = on_deleted.clone();
 
             yew::platform::spawn_local(async move {
                 match api::delete_event(id).await {
-                    Ok(_) => on_deleted.emit(event),
+                    Ok(_) => {
+                        on_deleted.emit(event);
+                        unknown_error_state.set(false);
+                    }
                     Err(err) => {
                         log::error!("Failed to update event {id} {err}");
                         delete_error_state.set(true);
+                        unknown_error_state.set(true);
+                        bamboo_error_state.set(err.clone());
                     }
                 }
             })
@@ -338,6 +440,20 @@ fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
                     <CosmoButton label="Event speichern" is_submit={true} />
                 </>
             )}>
+                if *error_state {
+                    if *unknown_error_state {
+                        <CosmoMessage message_type={CosmoMessageType::Negative} message="Das Event konnte leider nicht geändert werden" header="Fehler beim Speichern" actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                    } else {
+                        <CosmoMessage message_type={CosmoMessageType::Negative} message="Das Event konnte leider nicht geändert werden" header="Fehler beim Speichern" />
+                    }
+                }
+                if *delete_error_state {
+                    if *unknown_error_state {
+                        <CosmoMessage message_type={CosmoMessageType::Negative} message="Das Event konnte leider nicht gelöscht werden" header="Fehler beim Löschen" actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
+                    } else {
+                        <CosmoMessage message_type={CosmoMessageType::Negative} message="Das Event konnte leider nicht gelöscht werden" header="Fehler beim Löschen" />
+                    }
+                }
                 <CosmoInputGroup>
                     <CosmoTextBox width={CosmoInputWidth::Medium} label="Titel" value={(*title_state).clone()} on_input={title_input} />
                     <CosmoTextArea width={CosmoInputWidth::Medium} label="Beschreibung" value={(*description_state).clone()} on_input={description_input} />
@@ -348,12 +464,6 @@ fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
             </CosmoModal>
             if *delete_event_open_state {
                 <CosmoConfirm confirm_type={CosmoModalType::Warning} title="Event löschen" message={format!("Soll das Event {} wirklich gelöscht werden?", props.event.title.clone())} confirm_label="Event löschen" decline_label="Nicht löschen" on_confirm={on_delete_confirm} on_decline={on_delete_decline} />
-            }
-            if *error_state {
-                <CosmoAlert alert_type={CosmoModalType::Negative} title="Fehler beim Speichern" message="Das Event konnte leider nicht geändert werden, bitte wende dich an Azami" close_label="Schließen" on_close={move |_| error_state.set(false)} alert_type={CosmoAlertType::Negative} />
-            }
-            if *delete_error_state {
-                <CosmoAlert alert_type={CosmoModalType::Negative} title="Fehler beim Löschen" message="Das Event konnte leider nicht gelöscht werden, bitte wende dich an Azami" close_label="Schließen" on_close={move |_| delete_error_state.set(false)} alert_type={CosmoAlertType::Negative} />
             }
         </>
     )
@@ -630,6 +740,9 @@ fn calendar_data(props: &CalendarProps) -> Html {
     let initial_loaded_toggle = use_bool_toggle(false);
     let loaded_toggle = use_bool_toggle(false);
     let event_source_connected_toggle = use_bool_toggle(false);
+    let unknown_error_state = use_state_eq(|| false);
+
+    let bamboo_error_state = use_state_eq(api::ApiError::default);
 
     let events_list = use_list(vec![] as Vec<Event>);
     let calendar_event_source_state = use_mut_ref(CalendarEventSource::new);
@@ -734,21 +847,42 @@ grid-row: 3/4;
         })
     }
 
-    let on_created = use_callback((event_created.clone(), *event_source_connected_toggle), |event, (cb, connected)| {
-        if !connected {
-            cb.emit(event);
-        }
-    });
-    let on_updated = use_callback((event_updated.clone(), *event_source_connected_toggle), |event, (cb, connected)| {
-        if !connected {
-            cb.emit(event);
-        }
-    });
-    let on_deleted = use_callback((event_deleted.clone(), *event_source_connected_toggle), |event, (cb, connected)| {
-        if !connected {
-            cb.emit(event);
-        }
-    });
+    let on_created = use_callback(
+        (event_created.clone(), *event_source_connected_toggle),
+        |event, (cb, connected)| {
+            if !connected {
+                cb.emit(event);
+            }
+        },
+    );
+    let on_updated = use_callback(
+        (event_updated.clone(), *event_source_connected_toggle),
+        |event, (cb, connected)| {
+            if !connected {
+                cb.emit(event);
+            }
+        },
+    );
+    let on_deleted = use_callback(
+        (event_deleted.clone(), *event_source_connected_toggle),
+        |event, (cb, connected)| {
+            if !connected {
+                cb.emit(event);
+            }
+        },
+    );
+
+    let report_unknown_error = use_callback(
+        (bamboo_error_state.clone(), unknown_error_state.clone()),
+        |_, (bamboo_error_state, unknown_error_state)| {
+            error::report_unknown_error(
+                "bamboo_calendar",
+                "calendar_data",
+                bamboo_error_state.deref().clone(),
+            );
+            unknown_error_state.set(false);
+        },
+    );
 
     if !*loaded_toggle {
         match event_query_state.result() {
@@ -779,9 +913,19 @@ grid-row: 3/4;
             }
             Some(Err(err)) => {
                 log::warn!("Failed to load {err}");
+                bamboo_error_state.set(err.clone());
+                if !*initial_loaded_toggle {
+                    unknown_error_state.set(true);
+                }
+                initial_loaded_toggle.set(true);
+
                 return html!(
                     <div class={error_message_style}>
-                        <CosmoMessage header="Fehler beim Laden" message="Der Event Kalender konnte nicht geladen werden, bitte wende dich an Azami" message_type={CosmoMessageType::Negative} />
+                        if *unknown_error_state {
+                            <CosmoMessage header="Fehler beim Laden" message="Der Event Kalender konnte nicht geladen werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
+                        } else {
+                            <CosmoMessage header="Fehler beim Laden" message="Der Event Kalender konnte nicht geladen werden" message_type={CosmoMessageType::Negative} />
+                        }
                     </div>
                 );
             }
