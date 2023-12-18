@@ -42,6 +42,8 @@ pub enum Relation {
     Character,
     #[sea_orm(has_many = "super::token::Entity")]
     Token,
+    #[sea_orm(has_many = "super::event::Entity")]
+    Event,
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -55,6 +57,13 @@ impl Related<super::character::Entity> for Entity {
 impl Related<super::token::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Token.def()
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl Related<super::event::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Event.def()
     }
 }
 

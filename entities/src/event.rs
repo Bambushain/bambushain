@@ -9,6 +9,8 @@ use serde::{Deserialize, Serialize};
 #[cfg(not(target_arch = "wasm32"))]
 use bamboo_macros::*;
 
+use crate::prelude::WebUser;
+
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 #[cfg_attr(
     not(target_arch = "wasm32"),
@@ -24,11 +26,32 @@ pub struct Model {
     pub start_date: NaiveDate,
     pub end_date: NaiveDate,
     pub color: String,
+    pub is_private: bool,
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(ignore))]
+    pub user: Option<WebUser>,
+    #[serde(skip)]
+    pub user_id: Option<i32>,
 }
 
 #[cfg(not(target_arch = "wasm32"))]
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
-pub enum Relation {}
+pub enum Relation {
+    #[sea_orm(
+        belongs_to = "super::user::Entity",
+        from = "Column::UserId",
+        to = "super::user::Column::Id",
+        on_update = "Cascade",
+        on_delete = "Cascade"
+    )]
+    User,
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl Related<super::user::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::User.def()
+    }
+}
 
 #[cfg(not(target_arch = "wasm32"))]
 impl ActiveModelBehavior for ActiveModel {}
@@ -40,6 +63,8 @@ impl Model {
         start_date: NaiveDate,
         end_date: NaiveDate,
         color: Color,
+        is_private: bool,
+        user: Option<WebUser>,
     ) -> Self {
         Self {
             id: i32::default(),
@@ -48,6 +73,9 @@ impl Model {
             start_date,
             end_date,
             color: color.hex(),
+            is_private,
+            user_id: user.clone().map(|u| u.id),
+            user,
         }
     }
 
