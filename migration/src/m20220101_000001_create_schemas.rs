@@ -45,7 +45,9 @@ impl MigrationTrait for Migration {
 
 #[derive(Iden)]
 pub enum Schemas {
+    #[deprecated]
     PandaParty,
+    Bamboo,
     FinalFantasy,
     Authentication,
 }

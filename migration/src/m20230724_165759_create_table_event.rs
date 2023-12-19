@@ -7,6 +7,7 @@ pub struct Migration;
 
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
+    #[allow(deprecated)]
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
             .create_table(
@@ -36,6 +37,7 @@ impl MigrationTrait for Migration {
             .await
     }
 
+    #[allow(deprecated)]
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
             .drop_table(

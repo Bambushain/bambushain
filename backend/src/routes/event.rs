@@ -9,6 +9,7 @@ use bamboo_error::*;
 use bamboo_services::prelude::DbConnection;
 
 use crate::middleware::authenticate_user::authenticate;
+use crate::middleware::authenticate_user::Authentication;
 use crate::notifier;
 use crate::path;
 use crate::response::macros::*;
@@ -22,6 +23,7 @@ pub struct GetEventsQuery {
 #[get("/api/bamboo-grove/event", wrap = "authenticate!()")]
 pub async fn get_events(
     query: Option<web::Query<GetEventsQuery>>,
+    authentication: Authentication,
     db: DbConnection,
 ) -> BambooApiResponseResult {
     let query = check_invalid_query!(query, "event")?;
@@ -30,18 +32,21 @@ pub async fn get_events(
         BambooError::invalid_data("event", "The start date cannot be after the end date")
     })?;
 
-    dbal::get_events(range, &db).await.map(|data| list!(data))
+    dbal::get_events(range, authentication.user.id, &db)
+        .await
+        .map(|data| list!(data))
 }
 
 #[post("/api/bamboo-grove/event", wrap = "authenticate!()")]
 pub async fn create_event(
     body: Option<web::Json<Event>>,
     notifier: notifier::Notifier,
+    authentication: Authentication,
     db: DbConnection,
 ) -> BambooApiResult<Event> {
     let body = check_missing_fields!(body, "event")?;
 
-    let data = dbal::create_event(body.into_inner(), &db).await?;
+    let data = dbal::create_event(body.into_inner(), authentication.user.id, &db).await?;
     notifier.notify_event_create(data.clone());
 
     Ok(created!(data))
@@ -52,6 +57,7 @@ pub async fn update_event(
     path: Option<path::EventPath>,
     body: Option<web::Json<Event>>,
     notifier: notifier::Notifier,
+    authentication: Authentication,
     db: DbConnection,
 ) -> BambooApiResponseResult {
     let path = check_invalid_path!(path, "event")?;
@@ -59,7 +65,7 @@ pub async fn update_event(
 
     dbal::update_event(path.event_id, body.into_inner(), &db).await?;
 
-    let event = dbal::get_event(path.event_id, &db).await?;
+    let event = dbal::get_event(path.event_id, authentication.user.id, &db).await?;
     notifier.notify_event_update(event);
 
     Ok(no_content!())
@@ -69,11 +75,12 @@ pub async fn update_event(
 pub async fn delete_event(
     path: Option<path::EventPath>,
     notifier: notifier::Notifier,
+    authentication: Authentication,
     db: DbConnection,
 ) -> BambooApiResponseResult {
     let path = check_invalid_path!(path, "event")?;
 
-    let event = dbal::get_event(path.event_id, &db).await?;
+    let event = dbal::get_event(path.event_id, authentication.user.id, &db).await?;
     dbal::delete_event(path.event_id, &db).await?;
     notifier.notify_event_delete(event);
 

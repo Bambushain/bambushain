@@ -1,12 +1,16 @@
 use date_range::DateRange;
 use sea_orm::prelude::*;
-use sea_orm::{Condition, IntoActiveModel, NotSet, QueryOrder};
+use sea_orm::{Condition, IntoActiveModel, NotSet, QueryOrder, Set};
 
 use bamboo_entities::event;
 use bamboo_entities::prelude::*;
 use bamboo_error::*;
 
-pub async fn get_events(range: DateRange, db: &DatabaseConnection) -> BambooResult<Vec<Event>> {
+pub async fn get_events(
+    range: DateRange,
+    user_id: i32,
+    db: &DatabaseConnection,
+) -> BambooResult<Vec<Event>> {
     event::Entity::find()
         .filter(
             Condition::any()
@@ -21,6 +25,15 @@ pub async fn get_events(range: DateRange, db: &DatabaseConnection) -> BambooResu
                         .add(event::Column::EndDate.lte(range.until())),
                 ),
         )
+        .filter(
+            Condition::any()
+                .add(event::Column::IsPrivate.eq(false))
+                .add(
+                    Condition::all()
+                        .add(event::Column::IsPrivate.eq(true))
+                        .add(event::Column::UserId.eq(user_id)),
+                ),
+        )
         .order_by_asc(event::Column::Id)
         .all(db)
         .await
@@ -30,7 +43,7 @@ pub async fn get_events(range: DateRange, db: &DatabaseConnection) -> BambooResu
         })
 }
 
-pub async fn get_event(id: i32, db: &DatabaseConnection) -> BambooResult<Event> {
+pub async fn get_event(id: i32, user_id: i32, db: &DatabaseConnection) -> BambooResult<Event> {
     event::Entity::find_by_id(id)
         .one(db)
         .await
@@ -40,16 +53,27 @@ pub async fn get_event(id: i32, db: &DatabaseConnection) -> BambooResult<Event> 
         })
         .map(|data| {
             if let Some(data) = data {
-                Ok(data)
+                if data.is_private && data.user_id != Some(user_id) {
+                    Err(BambooError::not_found("event", "The event was not found"))
+                } else {
+                    Ok(data)
+                }
             } else {
                 Err(BambooError::not_found("event", "The event was not found"))
             }
         })?
 }
 
-pub async fn create_event(event: Event, db: &DatabaseConnection) -> BambooResult<Event> {
-    let mut model = event.into_active_model();
+pub async fn create_event(
+    event: Event,
+    user_id: i32,
+    db: &DatabaseConnection,
+) -> BambooResult<Event> {
+    let mut model = event.clone().into_active_model();
     model.id = NotSet;
+    if event.is_private {
+        model.user_id = Set(Some(user_id));
+    }
 
     model.insert(db).await.map_err(|err| {
         log::error!("Failed to create event {err}");
