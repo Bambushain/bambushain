@@ -9,8 +9,6 @@ use serde::{Deserialize, Serialize};
 #[cfg(not(target_arch = "wasm32"))]
 use bamboo_macros::*;
 
-use crate::prelude::WebUser;
-
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 #[cfg_attr(
     not(target_arch = "wasm32"),
@@ -27,8 +25,6 @@ pub struct Model {
     pub end_date: NaiveDate,
     pub color: String,
     pub is_private: bool,
-    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(ignore))]
-    pub user: Option<WebUser>,
     #[serde(skip)]
     pub user_id: Option<i32>,
 }
@@ -64,7 +60,6 @@ impl Model {
         end_date: NaiveDate,
         color: Color,
         is_private: bool,
-        user: Option<WebUser>,
     ) -> Self {
         Self {
             id: i32::default(),
@@ -74,8 +69,7 @@ impl Model {
             end_date,
             color: color.hex(),
             is_private,
-            user_id: user.clone().map(|u| u.id),
-            user,
+            user_id: None,
         }
     }
 

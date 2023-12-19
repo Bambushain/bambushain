@@ -41,11 +41,12 @@ pub async fn get_events(
 pub async fn create_event(
     body: Option<web::Json<Event>>,
     notifier: notifier::Notifier,
+    authentication: Authentication,
     db: DbConnection,
 ) -> BambooApiResult<Event> {
     let body = check_missing_fields!(body, "event")?;
 
-    let data = dbal::create_event(body.into_inner(), &db).await?;
+    let data = dbal::create_event(body.into_inner(), authentication.user.id, &db).await?;
     notifier.notify_event_create(data.clone());
 
     Ok(created!(data))

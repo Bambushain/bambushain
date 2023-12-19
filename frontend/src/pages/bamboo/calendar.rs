@@ -154,6 +154,7 @@ fn add_event_dialog(props: &AddEventDialogProps) -> Html {
 
     let color_state = use_state_eq(Color::random);
 
+    let is_private_state = use_state_eq(|| false);
     let error_state = use_state_eq(|| false);
     let unknown_error_state = use_state_eq(|| false);
 
@@ -161,6 +162,7 @@ fn add_event_dialog(props: &AddEventDialogProps) -> Html {
 
     {
         let error_state = error_state.clone();
+        let is_private_state = is_private_state.clone();
 
         let title_state = title_state.clone();
         let description_state = description_state.clone();
@@ -169,6 +171,7 @@ fn add_event_dialog(props: &AddEventDialogProps) -> Html {
 
         use_unmount(move || {
             error_state.set(false);
+            is_private_state.set(false);
 
             title_state.set("".into());
             description_state.set("".into());
@@ -182,6 +185,8 @@ fn add_event_dialog(props: &AddEventDialogProps) -> Html {
         use_callback(description_state.clone(), |value, state| state.set(value));
     let end_date_input = use_callback(end_date_state.clone(), |value, state| state.set(value));
     let color_input = use_callback(color_state.clone(), |value, state| state.set(value));
+    let is_private_checked =
+        use_callback(is_private_state.clone(), |value, state| state.set(value));
 
     let report_unknown_error = use_callback(
         (bamboo_error_state.clone(), unknown_error_state.clone()),
@@ -203,6 +208,7 @@ fn add_event_dialog(props: &AddEventDialogProps) -> Html {
 
         let color_state = color_state.clone();
 
+        let is_private_state = is_private_state.clone();
         let error_state = error_state.clone();
         let unknown_error_state = unknown_error_state.clone();
 
@@ -220,6 +226,7 @@ fn add_event_dialog(props: &AddEventDialogProps) -> Html {
 
             let color_state = color_state.clone();
 
+            let is_private_state = is_private_state.clone();
             let error_state = error_state.clone();
             let unknown_error_state = unknown_error_state.clone();
 
@@ -234,6 +241,7 @@ fn add_event_dialog(props: &AddEventDialogProps) -> Html {
                     start_date,
                     *end_date_state,
                     *color_state,
+                    *is_private_state,
                 ))
                 .await
                 {
@@ -273,6 +281,7 @@ fn add_event_dialog(props: &AddEventDialogProps) -> Html {
                     <CosmoColorPicker width={CosmoInputWidth::Medium} label="Farbe" value={*color_state} on_input={color_input} />
                     <CosmoDatePicker width={CosmoInputWidth::Medium} label="Von" value={props.start_date} readonly={true} on_input={|_| {}} />
                     <CosmoDatePicker width={CosmoInputWidth::Medium} label="Bis" min={props.start_date} value={*end_date_state} on_input={end_date_input} />
+                    <CosmoSwitch label="Nur für mich" checked={*is_private_state} on_check={is_private_checked} />
                 </CosmoInputGroup>
             </CosmoModal>
         </>
@@ -368,6 +377,7 @@ fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
                     event.start_date,
                     *end_date_state,
                     *color_state,
+                    event.is_private,
                 );
                 evt.id = event.id;
 

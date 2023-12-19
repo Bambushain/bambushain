@@ -43,11 +43,7 @@ pub async fn get_events(
         })
 }
 
-pub async fn get_event(
-    id: i32,
-    user_id: i32,
-    db: &DatabaseConnection,
-) -> BambooResult<Event> {
+pub async fn get_event(id: i32, user_id: i32, db: &DatabaseConnection) -> BambooResult<Event> {
     event::Entity::find_by_id(id)
         .one(db)
         .await
@@ -68,15 +64,15 @@ pub async fn get_event(
         })?
 }
 
-pub async fn create_event(event: Event, db: &DatabaseConnection) -> BambooResult<Event> {
+pub async fn create_event(
+    event: Event,
+    user_id: i32,
+    db: &DatabaseConnection,
+) -> BambooResult<Event> {
     let mut model = event.clone().into_active_model();
     model.id = NotSet;
-    if let Some(user) = event.user {
-        if event.is_private {
-            model.user_id = Set(Some(user.id));
-        }
-    } else {
-        model.is_private = Set(false);
+    if event.is_private {
+        model.user_id = Set(Some(user_id));
     }
 
     model.insert(db).await.map_err(|err| {
