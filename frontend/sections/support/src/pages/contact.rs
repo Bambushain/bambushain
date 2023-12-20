@@ -1,4 +1,3 @@
-use bounce::helmet::Helmet;
 use stylist::yew::use_style;
 use yew::prelude::*;
 use yew_cosmo::prelude::*;
@@ -102,27 +101,22 @@ flex-flow: column;
 #[function_component(ContactPage)]
 pub fn contact_page() -> Html {
     html!(
-        <>
-            <Helmet>
-                <title>{"Kontakt"}</title>
-            </Helmet>
-            <CosmoSideList has_add_button={false}>
-                <CosmoSideListItem label="Ich habe einen Fehler gefunden">
-                    <SupportSection header="Melde uns einen Fehler" submit_label="Fehler melden">
-                        <CosmoMessage message_type={CosmoMessageType::Information} message="Du hast einen Fehler gefunden? Kein Problem, schreib bitte genau auf wie wir diesen Fehler nachstellen können und wir kümmern uns um einen Fix. Du bekommst eine Email mit Infos zum Status" />
-                    </SupportSection>
-                </CosmoSideListItem>
-                <CosmoSideListItem label="Ich habe eine Frage">
-                    <SupportSection header="Frag uns was" submit_label="Frage stellen">
-                        <CosmoMessage message_type={CosmoMessageType::Information} message="Du hast eine Frage an uns? Kein Problem, schreib einfach was du von uns wissen willst, wir werden unser Bestes geben deine Frage zu beantworten. Die Antwort bekommst du an die Emailadresse die in deinem Account eingerichtet ist" />
-                    </SupportSection>
-                </CosmoSideListItem>
-                <CosmoSideListItem label="Hallo 👋">
-                    <SupportSection header="Hallo auch an dich 🐼" submit_label="Nachricht senden">
-                        <CosmoMessage message_type={CosmoMessageType::Information} message="Du willst einfach mit uns reden und Hallo sagen? Dann schreib uns einfach deine Nachricht wir freuen uns immer von den Pandas im Bambushain zu hören" />
-                    </SupportSection>
-                </CosmoSideListItem>
-            </CosmoSideList>
-        </>
+        <CosmoSideList has_add_button={false}>
+            <CosmoSideListItem label="Ich habe einen Fehler gefunden">
+                <SupportSection header="Melde uns einen Fehler" submit_label="Fehler melden">
+                    <CosmoMessage message_type={CosmoMessageType::Information} message="Du hast einen Fehler gefunden? Kein Problem, schreib bitte genau auf wie wir diesen Fehler nachstellen können und wir kümmern uns um einen Fix. Du bekommst eine Email mit Infos zum Status" />
+                </SupportSection>
+            </CosmoSideListItem>
+            <CosmoSideListItem label="Ich habe eine Frage">
+                <SupportSection header="Frag uns was" submit_label="Frage stellen">
+                    <CosmoMessage message_type={CosmoMessageType::Information} message="Du hast eine Frage an uns? Kein Problem, schreib einfach was du von uns wissen willst, wir werden unser Bestes geben deine Frage zu beantworten. Die Antwort bekommst du an die Emailadresse die in deinem Account eingerichtet ist" />
+                </SupportSection>
+            </CosmoSideListItem>
+            <CosmoSideListItem label="Hallo 👋">
+                <SupportSection header="Hallo auch an dich 🐼" submit_label="Nachricht senden">
+                    <CosmoMessage message_type={CosmoMessageType::Information} message="Du willst einfach mit uns reden und Hallo sagen? Dann schreib uns einfach deine Nachricht wir freuen uns immer von den Pandas im Bambushain zu hören" />
+                </SupportSection>
+            </CosmoSideListItem>
+        </CosmoSideList>
     )
 }

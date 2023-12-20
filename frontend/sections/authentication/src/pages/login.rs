@@ -1,4 +1,3 @@
-use bounce::helmet::Helmet;
 use bounce::query::use_query_value;
 use stylist::yew::use_style;
 use yew::prelude::*;
@@ -236,11 +235,6 @@ align-items: center;
 #[function_component(LoginPage)]
 pub fn login_page() -> Html {
     html!(
-        <>
-            <Helmet>
-                <title>{"Anmelden"}</title>
-            </Helmet>
-            <LoginContent />
-        </>
+        <LoginContent />
     )
 }

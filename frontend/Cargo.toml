@@ -13,6 +13,7 @@ members = [
     "sections/authentication",
     "sections/bamboo",
     "sections/final-fantasy",
+    "sections/legal",
     "sections/layout",
     "sections/support"
 ]
@@ -46,6 +47,7 @@ bamboo-frontend-section-authentication = { path = "sections/authentication" }
 bamboo-frontend-section-bamboo = { path = "sections/bamboo" }
 bamboo-frontend-section-final-fantasy = { path = "sections/final-fantasy" }
 bamboo-frontend-section-layout = { path = "sections/layout" }
+bamboo-frontend-section-legal = { path = "sections/legal" }
 bamboo-frontend-section-support = { path = "sections/support" }
 
 async-trait = "0.1.74"

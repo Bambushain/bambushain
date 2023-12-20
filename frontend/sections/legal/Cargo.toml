@@ -1,14 +1,10 @@
 [package]
-name = "bamboo-frontend-section-support"
+name = "bamboo-frontend-section-legal"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [dependencies]
-bamboo-frontend-base-api = { workspace = true }
-
-bamboo-entities = { workspace = true }
-log = { workspace = true }
 stylist = { workspace = true }
 yew = { workspace = true }
 yew-cosmo = { workspace = true }

@@ -1,6 +1,5 @@
 use std::ops::Deref;
 
-use bounce::helmet::Helmet;
 use bounce::query::use_query_value;
 use stylist::yew::use_style;
 use yew::prelude::*;
@@ -1318,18 +1317,13 @@ align-items: center;
 #[function_component(SettingsPage)]
 pub fn settings_page() -> Html {
     html!(
-        <>
-            <Helmet>
-                <title>{"Personalisierung"}</title>
-            </Helmet>
-            <CosmoSideList>
-                <CosmoSideListItem label="Eigene Felder">
-                    <CustomFieldPage />
-                </CosmoSideListItem>
-                <CosmoSideListItem label="Freie Gesellschaften">
-                    <FreeCompaniesPage />
-                </CosmoSideListItem>
-            </CosmoSideList>
-        </>
+        <CosmoSideList>
+            <CosmoSideListItem label="Eigene Felder">
+                <CustomFieldPage />
+            </CosmoSideListItem>
+            <CosmoSideListItem label="Freie Gesellschaften">
+                <FreeCompaniesPage />
+            </CosmoSideListItem>
+        </CosmoSideList>
     )
 }

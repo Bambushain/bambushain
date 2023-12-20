@@ -1,7 +1,6 @@
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::ops::Deref;
 
-use bounce::helmet::Helmet;
 use bounce::query::use_query_value;
 use strum::IntoEnumIterator;
 use yew::prelude::*;
@@ -739,9 +738,6 @@ pub fn character_page() -> Html {
 
     html!(
         <>
-            <Helmet>
-                <title>{"Meine Charaktere"}</title>
-            </Helmet>
             <CosmoSideList on_select_item={on_character_select} selected_index={*selected_character_state} has_add_button={true} add_button_on_click={open_create_character_modal_click} add_button_label="Charakter hinzufügen">
                 {for (*character_state).clone().into_iter().map(|character| {
                     CosmoSideListItem::from_label_and_children(character.name.clone().into(), html!(

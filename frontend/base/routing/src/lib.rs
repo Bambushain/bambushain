@@ -1,5 +1,3 @@
-use std::fmt::{Display, Formatter};
-
 use yew_router::Routable;
 
 #[derive(Clone, Routable, PartialEq)]
@@ -19,19 +17,17 @@ pub enum AppRoute {
     SupportRoot,
     #[at("/support/*")]
     Support,
+    #[at("/legal")]
+    LegalRoot,
+    #[at("/legal/*")]
+    Legal,
     #[at("/login")]
     Login,
 }
 
-impl Display for AppRoute {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.to_path().as_str())
-    }
-}
-
 #[derive(Clone, Routable, PartialEq)]
 pub enum FinalFantasyRoute {
-    #[at("/final-fantasy/character")]
+    #[at("/final-fantasy")]
     Characters,
     #[at("/final-fantasy/settings")]
     Settings,
@@ -39,20 +35,20 @@ pub enum FinalFantasyRoute {
 
 #[derive(Clone, Routable, PartialEq)]
 pub enum SupportRoute {
-    #[at("/support/contact")]
+    #[at("/support")]
     Contact,
 }
 
 #[derive(Clone, Routable, PartialEq)]
 pub enum BambooGroveRoute {
-    #[at("/bamboo/calendar")]
+    #[at("/bamboo")]
     Calendar,
     #[at("/bamboo/user")]
     User,
 }
 
-impl Display for FinalFantasyRoute {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.to_path().as_str())
-    }
+#[derive(Clone, Routable, PartialEq)]
+pub enum LegalRoute {
+    #[at("/legal")]
+    Imprint,
 }

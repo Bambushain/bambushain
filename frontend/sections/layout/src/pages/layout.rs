@@ -12,7 +12,9 @@ use yew_router::prelude::*;
 use bamboo_entities::user::UpdateProfile;
 use bamboo_frontend_base_api::{ApiError, ErrorCode, FORBIDDEN, NOT_FOUND};
 use bamboo_frontend_base_error as error;
-use bamboo_frontend_base_routing::{AppRoute, BambooGroveRoute, FinalFantasyRoute, SupportRoute};
+use bamboo_frontend_base_routing::{
+    AppRoute, BambooGroveRoute, FinalFantasyRoute, LegalRoute, SupportRoute,
+};
 use bamboo_frontend_base_storage as storage;
 use bamboo_frontend_section_authentication::models as authentication;
 use bamboo_frontend_section_authentication::LoginPage;
@@ -21,29 +23,22 @@ use bamboo_frontend_section_bamboo::CalendarPage;
 use bamboo_frontend_section_bamboo::UsersPage;
 use bamboo_frontend_section_final_fantasy::CharacterPage;
 use bamboo_frontend_section_final_fantasy::SettingsPage;
-use bamboo_frontend_section_support::contact::ContactPage;
+use bamboo_frontend_section_legal::ImprintPage;
+use bamboo_frontend_section_support::ContactPage;
 
 use crate::api::{change_my_password, enable_totp, logout, update_my_profile, validate_totp};
-
-#[derive(Properties, Clone, PartialEq)]
-struct ChangePasswordDialogProps {
-    on_close: Callback<()>,
-    mods: Vec<AttrValue>,
-}
-
-#[derive(Properties, Clone, PartialEq)]
-struct UpdateMyProfileDialogProps {
-    on_close: Callback<()>,
-}
-
-#[derive(Properties, Clone, PartialEq)]
-struct EnableTotpDialogProps {
-    on_close: Callback<()>,
-}
+use crate::props::*;
 
 pub fn switch(route: AppRoute) -> Html {
     match route {
-        AppRoute::Login => html!(<LoginPage />),
+        AppRoute::Login => html!(
+            <>
+                <Helmet>
+                    <title>{"Anmelden"}</title>
+                </Helmet>
+                <LoginPage />
+            </>
+        ),
         _ => html!(<Layout />),
     }
 }
@@ -95,7 +90,7 @@ fn switch_final_fantasy(route: FinalFantasyRoute) -> Html {
     }
 }
 
-fn switch_panda_party(route: BambooGroveRoute) -> Html {
+fn switch_bamboo_grove(route: BambooGroveRoute) -> Html {
     match route {
         BambooGroveRoute::Calendar => html!(
             <>
@@ -129,26 +124,33 @@ fn switch_support(route: SupportRoute) -> Html {
     }
 }
 
+fn switch_legal(route: LegalRoute) -> Html {
+    match route {
+        LegalRoute::Imprint => html!(
+            <>
+                <Helmet>
+                    <title>{"Impressum"}</title>
+                </Helmet>
+                <ImprintPage />
+            </>
+        ),
+    }
+}
+
 fn switch_app(route: AppRoute) -> Html {
     match route {
         AppRoute::Home => html!(
             <Redirect<AppRoute> to={AppRoute::BambooGroveRoot} />
         ),
-        AppRoute::BambooGroveRoot => html!(
-            <Redirect<BambooGroveRoute> to={BambooGroveRoute::Calendar} />
-        ),
-        AppRoute::BambooGrove => html!(
+        AppRoute::BambooGroveRoot | AppRoute::BambooGrove => html!(
             <>
                 <Helmet>
                     <title>{"Bambushain"}</title>
                 </Helmet>
-                <Switch<BambooGroveRoute> render={switch_panda_party} />
+                <Switch<BambooGroveRoute> render={switch_bamboo_grove} />
             </>
         ),
-        AppRoute::FinalFantasyRoot => html!(
-            <Redirect<FinalFantasyRoute> to={FinalFantasyRoute::Characters} />
-        ),
-        AppRoute::FinalFantasy => html!(
+        AppRoute::FinalFantasyRoot | AppRoute::FinalFantasy => html!(
             <>
                 <Helmet>
                     <title>{"Final Fantasy"}</title>
@@ -156,15 +158,20 @@ fn switch_app(route: AppRoute) -> Html {
                 <Switch<FinalFantasyRoute> render={switch_final_fantasy} />
             </>
         ),
-        AppRoute::SupportRoot => html!(
-            <Redirect<SupportRoute> to={SupportRoute::Contact} />
-        ),
-        AppRoute::Support => html!(
+        AppRoute::SupportRoot | AppRoute::Support => html!(
             <>
                 <Helmet>
                     <title>{"Bambussupport"}</title>
                 </Helmet>
                 <Switch<SupportRoute> render={switch_support} />
+            </>
+        ),
+        AppRoute::LegalRoot | AppRoute::Legal => html!(
+            <>
+                <Helmet>
+                    <title>{"Rechtliches"}</title>
+                </Helmet>
+                <Switch<LegalRoute> render={switch_legal} />
             </>
         ),
         AppRoute::Login => html!(),
@@ -177,7 +184,7 @@ fn render_main_menu_entry(
     active: AppRoute,
 ) -> impl Fn(AppRoute) -> Html {
     move |route| {
-        let is_active = route.eq(&active);
+        let is_active = route.eq(&active) || route.eq(&to);
 
         html!(
             <CosmoMainMenuItemLink<AppRoute> to={to.clone()} label={label.clone().into()} is_active={is_active} />
@@ -207,6 +214,13 @@ fn switch_top_bar(route: AppRoute) -> Html {
     }
 }
 
+fn switch_layout(route: AppRoute) -> Html {
+    match route {
+        AppRoute::LegalRoot | AppRoute::Legal => html!(<LegalLayout />),
+        _ => html!(<AppLayout />),
+    }
+}
+
 #[function_component(AppLayout)]
 fn app_layout() -> Html {
     log::debug!("Render app layout");
@@ -232,6 +246,46 @@ fn app_layout() -> Html {
                             <Switch<AppRoute> render={render_main_menu_entry("Bambussupport", AppRoute::SupportRoot, AppRoute::Support)} />
                         </CosmoMainMenu>
                         <Switch<AppRoute> render={switch_sub_menu} />
+                    </CosmoMenuBar>
+                    <CosmoPageBody>
+                        <Switch<AppRoute> render={switch_app} />
+                   </CosmoPageBody>
+                </>
+            )
+        }
+        Some(Err(_)) => {
+            html!(
+                <Redirect<AppRoute> to={AppRoute::Login} />
+            )
+        }
+    }
+}
+
+#[function_component(LegalLayout)]
+fn legal_layout() -> Html {
+    log::debug!("Render legal layout");
+    let initial_loaded_state = use_state_eq(|| false);
+
+    let profile_query = use_query_value::<authentication::Profile>(().into());
+    let profile_atom = use_atom_setter::<storage::CurrentUser>();
+
+    log::debug!("First render, so lets send the request to check if the token is valid and see");
+    match profile_query.result() {
+        None => html!(),
+        Some(Ok(res)) => {
+            initial_loaded_state.set(true);
+            log::debug!("Got user {:?}", res.user.clone());
+            profile_atom(res.user.clone().into());
+            html!(
+                <>
+                    <Switch<AppRoute> render={switch_top_bar}/>
+                    <CosmoMenuBar>
+                        <CosmoMainMenu>
+                            <Switch<AppRoute> render={render_main_menu_entry("Rechtliches", AppRoute::LegalRoot, AppRoute::Legal)} />
+                        </CosmoMainMenu>
+                        <CosmoSubMenuBar>
+                            <Switch<LegalRoute> render={render_sub_menu_entry("Impressum", LegalRoute::Imprint)} />
+                        </CosmoSubMenuBar>
                     </CosmoMenuBar>
                     <CosmoPageBody>
                         <Switch<AppRoute> render={switch_app} />
@@ -778,6 +832,7 @@ fn top_bar() -> Html {
     html!(
         <>
             <CosmoTopBar profile_picture="/static/logo.webp" has_right_item={true} right_item_on_click={logout} right_item_label="Abmelden">
+                <CosmoTopBarItemLink<AppRoute> label="Rechtliches" to={AppRoute::LegalRoot} />
                 <CosmoTopBarItem label="Mein Profil" on_click={update_my_profile_click} />
                 <CosmoTopBarItem label="Passwort ändern" on_click={change_password_click} />
                 if !profile_atom.profile.app_totp_enabled {
@@ -801,6 +856,6 @@ fn top_bar() -> Html {
 fn layout() -> Html {
     log::info!("Run layout");
     html!(
-        <AppLayout />
+        <Switch<AppRoute> render={switch_layout} />
     )
 }

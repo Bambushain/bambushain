@@ -1,6 +1,5 @@
 use std::ops::Deref;
 
-use bounce::helmet::Helmet;
 use bounce::prelude::*;
 use bounce::query::use_query_value;
 use rand::distributions::Alphanumeric;
@@ -814,9 +813,6 @@ pub fn users_page() -> Html {
 
     html!(
         <>
-            <Helmet>
-                <title>{"Pandas"}</title>
-            </Helmet>
             <CosmoSideList on_select_item={on_user_select} selected_index={*selected_user_state} has_add_button={current_user.profile.is_mod} add_button_on_click={open_create_user_modal_click} add_button_label="Panda hinzufügen">
                 {for (*users_state).clone().into_iter().map(|user| {
                     CosmoSideListItem::from_label_and_children(user.display_name.clone().into(), html!(
