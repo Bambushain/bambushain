@@ -65,4 +65,6 @@ pub enum LicensesRoute {
     BambooGrove,
     #[at("/licenses/images")]
     Images,
+    #[at("/licenses/fonts")]
+    Fonts,
 }

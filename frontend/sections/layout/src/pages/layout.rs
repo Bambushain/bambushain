@@ -1,6 +1,5 @@
 use std::ops::Deref;
 
-use bamboo_frontend_section_licenses::pages::images::ImagesPage;
 use bounce::helmet::Helmet;
 use bounce::query::use_query_value;
 use bounce::{use_atom_setter, use_atom_value};
@@ -25,7 +24,7 @@ use bamboo_frontend_section_bamboo::UsersPage;
 use bamboo_frontend_section_final_fantasy::CharacterPage;
 use bamboo_frontend_section_final_fantasy::SettingsPage;
 use bamboo_frontend_section_legal::{DataProtectionPage, ImprintPage};
-use bamboo_frontend_section_licenses::BambooGrovePage;
+use bamboo_frontend_section_licenses::{BambooGrovePage, FontsPage, ImagesPage};
 use bamboo_frontend_section_support::ContactPage;
 
 use crate::api::{change_my_password, enable_totp, logout, update_my_profile, validate_totp};
@@ -74,6 +73,7 @@ fn switch_sub_menu(route: AppRoute) -> Html {
             <CosmoSubMenuBar>
                 <Switch<LicensesRoute> render={render_sub_menu_entry("Bambushain Lizenz", LicensesRoute::BambooGrove)} />
                 <Switch<LicensesRoute> render={render_sub_menu_entry("Bildlizenzen", LicensesRoute::Images)} />
+                <Switch<LicensesRoute> render={render_sub_menu_entry("Schriftlizenzen", LicensesRoute::Fonts)} />
             </CosmoSubMenuBar>
         ),
         _ => {
@@ -175,6 +175,14 @@ fn switch_licenses(route: LicensesRoute) -> Html {
                     <title>{"Bildlizenzen"}</title>
                 </Helmet>
                 <ImagesPage />
+            </>
+        ),
+        LicensesRoute::Fonts => html!(
+            <>
+                <Helmet>
+                    <title>{"Schriftlizenzen"}</title>
+                </Helmet>
+                <FontsPage />
             </>
         ),
     }
