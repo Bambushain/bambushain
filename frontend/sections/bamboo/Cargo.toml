@@ -1,0 +1,26 @@
+[package]
+name = "bamboo-frontend-section-bamboo"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bamboo-frontend-base-api = { workspace = true }
+bamboo-frontend-base-error = { workspace = true }
+bamboo-frontend-base-storage = { workspace = true }
+
+async-trait = { workspace = true }
+bamboo-entities = { workspace = true }
+bounce = { workspace = true }
+chrono = { workspace = true }
+date-range = { workspace = true }
+log = { workspace = true }
+rand = { workspace = true }
+serde_json = { workspace = true }
+stylist = { workspace = true }
+wasm-bindgen = { workspace = true }
+web-sys = { workspace = true }
+yew = { workspace = true }
+yew-cosmo = { workspace = true }
+yew_icons = { workspace = true }
+yew-hooks = { workspace = true }

@@ -1,15 +1,12 @@
+mod app;
+
 use std::str::FromStr;
 
 use log::Level;
 
-use crate::pages::app::App;
-use crate::storage::get_log_level;
+use bamboo_frontend_base_storage::get_log_level;
 
-mod api;
-mod error;
-mod pages;
-mod routing;
-mod storage;
+use crate::app::App;
 
 fn main() {
     wasm_logger::init(wasm_logger::Config::new(

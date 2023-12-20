@@ -1,16 +1,52 @@
 [package]
 name = "bamboo-frontend"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[workspace]
+members = [
+    "base/api",
+    "base/error",
+    "base/routing",
+    "base/storage",
+    "sections/authentication",
+    "sections/bamboo",
+    "sections/final-fantasy",
+    "sections/layout",
+    "sections/support"
+]
+
+[workspace.package]
 version = "1.5.0"
 edition = "2021"
 license = "MIT"
 
-[workspace]
-
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+bamboo-frontend-base-routing = { workspace = true }
+bamboo-frontend-base-storage = { workspace = true }
+bamboo-frontend-section-layout = { workspace = true }
+
+log = { workspace = true }
+wasm-logger = { workspace = true }
+yew = { workspace = true }
+yew-cosmo = { workspace = true }
+yew-router = { workspace = true }
+
+[workspace.dependencies]
 bamboo-entities = { path = "../entities" }
 bamboo-error = { path = "../error" }
+bamboo-frontend-base-api = { path = "base/api" }
+bamboo-frontend-base-error = { path = "base/error" }
+bamboo-frontend-base-routing = { path = "base/routing" }
+bamboo-frontend-base-storage = { path = "base/storage" }
+bamboo-frontend-section-authentication = { path = "sections/authentication" }
+bamboo-frontend-section-bamboo = { path = "sections/bamboo" }
+bamboo-frontend-section-final-fantasy = { path = "sections/final-fantasy" }
+bamboo-frontend-section-layout = { path = "sections/layout" }
+bamboo-frontend-section-support = { path = "sections/support" }
 
 async-trait = "0.1.74"
 bounce = { version = "0.9.0", features = ["query", "helmet"] }
@@ -18,7 +54,10 @@ chrono = { version = "0.4.31", features = ["serde", "unstable-locales"] }
 date-range = "0.3.0"
 either = "1.9.0"
 futures = "0.3.29"
-gloo = { version = "0.11.0", default-features = false, features = ["storage", "net", "utils", "events"] }
+gloo-events = "0.2.0"
+gloo-net = "0.5.0"
+gloo-storage = "0.3.0"
+gloo-utils = "0.2.0"
 log = "0.4.20"
 rand = "0.8.5"
 serde = { version = "1.0.193", features = ["derive"] }

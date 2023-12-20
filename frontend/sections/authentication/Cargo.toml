@@ -1,0 +1,22 @@
+[package]
+name = "bamboo-frontend-section-authentication"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bamboo-frontend-base-api = { workspace = true }
+bamboo-frontend-base-routing = { workspace = true }
+bamboo-frontend-base-storage = { workspace = true }
+
+async-trait = { workspace = true }
+bamboo-entities = { workspace = true }
+bounce = { workspace = true }
+either = { workspace = true }
+log = { workspace = true }
+serde = { workspace = true }
+stylist = { workspace = true }
+yew = { workspace = true }
+yew-cosmo = { workspace = true }
+yew_icons = { workspace = true }
+yew-router = { workspace = true }
