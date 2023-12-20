@@ -18,45 +18,7 @@ use bamboo_frontend_base_error as error;
 
 use crate::api;
 use crate::models;
-
-#[derive(Properties, PartialEq, Clone, Default)]
-struct DayProps {
-    day: u32,
-    month: u32,
-    year: i32,
-    selected_month: u32,
-    events: Vec<Event>,
-    on_added: Callback<Event>,
-    on_updated: Callback<Event>,
-    on_deleted: Callback<Event>,
-}
-
-#[derive(Properties, PartialEq, Clone, Default)]
-struct EventEntryProps {
-    event: Event,
-    on_updated: Callback<Event>,
-    on_deleted: Callback<Event>,
-}
-
-#[derive(Properties, PartialEq, Clone)]
-struct CalendarProps {
-    date: NaiveDate,
-}
-
-#[derive(Properties, PartialEq, Clone)]
-struct AddEventDialogProps {
-    start_date: NaiveDate,
-    on_added: Callback<Event>,
-    on_cancel: Callback<()>,
-}
-
-#[derive(Properties, PartialEq, Clone)]
-struct EditEventDialogProps {
-    event: Event,
-    on_updated: Callback<Event>,
-    on_deleted: Callback<Event>,
-    on_cancel: Callback<()>,
-}
+use crate::props::calendar::*;
 
 enum ColorYiqResult {
     Light,

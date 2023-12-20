@@ -19,16 +19,7 @@ use crate::api::{
     move_custom_field, update_custom_field, update_custom_field_option,
 };
 use crate::models::{CustomCharacterFields, FreeCompanies};
-
-#[derive(PartialEq, Clone, Properties)]
-struct FieldsTabItemProps {
-    field: CustomCharacterField,
-    on_change: Callback<()>,
-    on_move: Callback<usize>,
-    is_last: bool,
-    is_first: bool,
-    position: i32,
-}
+use crate::props::settings::*;
 
 #[function_component(FieldsTabItem)]
 fn fields_tab_item(props: &FieldsTabItemProps) -> Html {

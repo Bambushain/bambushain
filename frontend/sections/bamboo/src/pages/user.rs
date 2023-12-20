@@ -16,18 +16,7 @@ use bamboo_frontend_base_storage::CurrentUser;
 
 use crate::api::*;
 use crate::models::*;
-
-#[derive(Properties, PartialEq, Clone)]
-struct UserDetailsProps {
-    user: WebUser,
-    on_delete: Callback<()>,
-}
-
-#[derive(Properties, PartialEq, Clone)]
-struct CreateUserModalProps {
-    on_saved: Callback<WebUser>,
-    on_close: Callback<()>,
-}
+use crate::props::user::*;
 
 #[derive(PartialEq, Clone)]
 enum UserConfirmActions {
@@ -36,15 +25,6 @@ enum UserConfirmActions {
     Delete,
     ChangePassword(String),
     Closed,
-}
-
-#[derive(Properties, Clone, PartialEq)]
-struct UpdateProfileDialogProps {
-    on_close: Callback<()>,
-    display_name: AttrValue,
-    email: AttrValue,
-    discord_name: AttrValue,
-    id: i32,
 }
 
 #[function_component(CreateUserModal)]
