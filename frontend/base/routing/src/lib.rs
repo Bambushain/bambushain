@@ -51,4 +51,6 @@ pub enum BambooGroveRoute {
 pub enum LegalRoute {
     #[at("/legal")]
     Imprint,
+    #[at("/legal/data-protection")]
+    DataProtection,
 }

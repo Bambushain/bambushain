@@ -23,7 +23,7 @@ use bamboo_frontend_section_bamboo::CalendarPage;
 use bamboo_frontend_section_bamboo::UsersPage;
 use bamboo_frontend_section_final_fantasy::CharacterPage;
 use bamboo_frontend_section_final_fantasy::SettingsPage;
-use bamboo_frontend_section_legal::ImprintPage;
+use bamboo_frontend_section_legal::{DataProtectionPage, ImprintPage};
 use bamboo_frontend_section_support::ContactPage;
 
 use crate::api::{change_my_password, enable_totp, logout, update_my_profile, validate_totp};
@@ -132,6 +132,14 @@ fn switch_legal(route: LegalRoute) -> Html {
                     <title>{"Impressum"}</title>
                 </Helmet>
                 <ImprintPage />
+            </>
+        ),
+        LegalRoute::DataProtection => html!(
+            <>
+                <Helmet>
+                    <title>{"Datenschutzerklärung"}</title>
+                </Helmet>
+                <DataProtectionPage />
             </>
         ),
     }
@@ -285,6 +293,7 @@ fn legal_layout() -> Html {
                         </CosmoMainMenu>
                         <CosmoSubMenuBar>
                             <Switch<LegalRoute> render={render_sub_menu_entry("Impressum", LegalRoute::Imprint)} />
+                            <Switch<LegalRoute> render={render_sub_menu_entry("Datenschutzerklärung", LegalRoute::DataProtection)} />
                         </CosmoSubMenuBar>
                     </CosmoMenuBar>
                     <CosmoPageBody>
