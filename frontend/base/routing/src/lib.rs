@@ -63,4 +63,6 @@ pub enum LegalRoute {
 pub enum LicensesRoute {
     #[at("/licenses")]
     BambooGrove,
+    #[at("/licenses/images")]
+    Images,
 }

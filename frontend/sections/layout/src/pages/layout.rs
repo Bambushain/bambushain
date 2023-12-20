@@ -1,5 +1,6 @@
 use std::ops::Deref;
 
+use bamboo_frontend_section_licenses::pages::images::ImagesPage;
 use bounce::helmet::Helmet;
 use bounce::query::use_query_value;
 use bounce::{use_atom_setter, use_atom_value};
@@ -72,6 +73,7 @@ fn switch_sub_menu(route: AppRoute) -> Html {
         AppRoute::LicensesRoot | AppRoute::Licenses => html!(
             <CosmoSubMenuBar>
                 <Switch<LicensesRoute> render={render_sub_menu_entry("Bambushain Lizenz", LicensesRoute::BambooGrove)} />
+                <Switch<LicensesRoute> render={render_sub_menu_entry("Bildlizenzen", LicensesRoute::Images)} />
             </CosmoSubMenuBar>
         ),
         _ => {
@@ -165,6 +167,14 @@ fn switch_licenses(route: LicensesRoute) -> Html {
                     <title>{"Bambushain Lizenz"}</title>
                 </Helmet>
                 <BambooGrovePage />
+            </>
+        ),
+        LicensesRoute::Images => html!(
+            <>
+                <Helmet>
+                    <title>{"Bildlizenzen"}</title>
+                </Helmet>
+                <ImagesPage />
             </>
         ),
     }
