@@ -13,6 +13,7 @@ bamboo-frontend-section-authentication = { workspace = true }
 bamboo-frontend-section-bamboo = { workspace = true }
 bamboo-frontend-section-final-fantasy = { workspace = true }
 bamboo-frontend-section-legal = { workspace = true }
+bamboo-frontend-section-licenses = { workspace = true }
 bamboo-frontend-section-support = { workspace = true }
 
 bamboo-entities = { workspace = true }

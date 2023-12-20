@@ -21,6 +21,10 @@ pub enum AppRoute {
     LegalRoot,
     #[at("/legal/*")]
     Legal,
+    #[at("/licenses")]
+    LicensesRoot,
+    #[at("/licenses/*")]
+    Licenses,
     #[at("/login")]
     Login,
 }
@@ -53,4 +57,10 @@ pub enum LegalRoute {
     Imprint,
     #[at("/legal/data-protection")]
     DataProtection,
+}
+
+#[derive(Clone, Routable, PartialEq)]
+pub enum LicensesRoute {
+    #[at("/licenses")]
+    BambooGrove,
 }

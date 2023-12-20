@@ -13,7 +13,7 @@ use bamboo_entities::user::UpdateProfile;
 use bamboo_frontend_base_api::{ApiError, ErrorCode, FORBIDDEN, NOT_FOUND};
 use bamboo_frontend_base_error as error;
 use bamboo_frontend_base_routing::{
-    AppRoute, BambooGroveRoute, FinalFantasyRoute, LegalRoute, SupportRoute,
+    AppRoute, BambooGroveRoute, FinalFantasyRoute, LegalRoute, LicensesRoute, SupportRoute,
 };
 use bamboo_frontend_base_storage as storage;
 use bamboo_frontend_section_authentication::models as authentication;
@@ -24,6 +24,7 @@ use bamboo_frontend_section_bamboo::UsersPage;
 use bamboo_frontend_section_final_fantasy::CharacterPage;
 use bamboo_frontend_section_final_fantasy::SettingsPage;
 use bamboo_frontend_section_legal::{DataProtectionPage, ImprintPage};
+use bamboo_frontend_section_licenses::BambooGrovePage;
 use bamboo_frontend_section_support::ContactPage;
 
 use crate::api::{change_my_password, enable_totp, logout, update_my_profile, validate_totp};
@@ -60,6 +61,17 @@ fn switch_sub_menu(route: AppRoute) -> Html {
         AppRoute::SupportRoot | AppRoute::Support => html!(
             <CosmoSubMenuBar>
                 <Switch<SupportRoute> render={render_sub_menu_entry("Kontakt", SupportRoute::Contact)} />
+            </CosmoSubMenuBar>
+        ),
+        AppRoute::LegalRoot | AppRoute::Legal => html!(
+            <CosmoSubMenuBar>
+                <Switch<LegalRoute> render={render_sub_menu_entry("Impressum", LegalRoute::Imprint)} />
+                <Switch<LegalRoute> render={render_sub_menu_entry("Datenschutzerklärung", LegalRoute::DataProtection)} />
+            </CosmoSubMenuBar>
+        ),
+        AppRoute::LicensesRoot | AppRoute::Licenses => html!(
+            <CosmoSubMenuBar>
+                <Switch<LicensesRoute> render={render_sub_menu_entry("Bambushain Lizenz", LicensesRoute::BambooGrove)} />
             </CosmoSubMenuBar>
         ),
         _ => {
@@ -145,6 +157,19 @@ fn switch_legal(route: LegalRoute) -> Html {
     }
 }
 
+fn switch_licenses(route: LicensesRoute) -> Html {
+    match route {
+        LicensesRoute::BambooGrove => html!(
+            <>
+                <Helmet>
+                    <title>{"Bambushain Lizenz"}</title>
+                </Helmet>
+                <BambooGrovePage />
+            </>
+        ),
+    }
+}
+
 fn switch_app(route: AppRoute) -> Html {
     match route {
         AppRoute::Home => html!(
@@ -182,6 +207,14 @@ fn switch_app(route: AppRoute) -> Html {
                 <Switch<LegalRoute> render={switch_legal} />
             </>
         ),
+        AppRoute::LicensesRoot | AppRoute::Licenses => html!(
+            <>
+                <Helmet>
+                    <title>{"Lizenz"}</title>
+                </Helmet>
+                <Switch<LicensesRoute> render={switch_licenses} />
+            </>
+        ),
         AppRoute::Login => html!(),
     }
 }
@@ -216,6 +249,11 @@ fn render_sub_menu_entry<Route: Routable + Clone + 'static>(
 fn switch_top_bar(route: AppRoute) -> Html {
     match route {
         AppRoute::Login => html!(),
+        AppRoute::LegalRoot | AppRoute::Legal | AppRoute::LicensesRoot | AppRoute::Licenses => {
+            html!(
+                <TopBarLegal />
+            )
+        }
         _ => html!(
             <TopBar />
         ),
@@ -224,7 +262,9 @@ fn switch_top_bar(route: AppRoute) -> Html {
 
 fn switch_layout(route: AppRoute) -> Html {
     match route {
-        AppRoute::LegalRoot | AppRoute::Legal => html!(<LegalLayout />),
+        AppRoute::LegalRoot | AppRoute::Legal | AppRoute::LicensesRoot | AppRoute::Licenses => {
+            html!(<LegalLayout />)
+        }
         _ => html!(<AppLayout />),
     }
 }
@@ -290,11 +330,9 @@ fn legal_layout() -> Html {
                     <CosmoMenuBar>
                         <CosmoMainMenu>
                             <Switch<AppRoute> render={render_main_menu_entry("Rechtliches", AppRoute::LegalRoot, AppRoute::Legal)} />
+                            <Switch<AppRoute> render={render_main_menu_entry("Lizenzen", AppRoute::LicensesRoot, AppRoute::Licenses)} />
                         </CosmoMainMenu>
-                        <CosmoSubMenuBar>
-                            <Switch<LegalRoute> render={render_sub_menu_entry("Impressum", LegalRoute::Imprint)} />
-                            <Switch<LegalRoute> render={render_sub_menu_entry("Datenschutzerklärung", LegalRoute::DataProtection)} />
-                        </CosmoSubMenuBar>
+                        <Switch<AppRoute> render={switch_sub_menu} />
                     </CosmoMenuBar>
                     <CosmoPageBody>
                         <Switch<AppRoute> render={switch_app} />
@@ -858,6 +896,22 @@ fn top_bar() -> Html {
                 <EnableTotpDialog on_close={move |_| app_two_factor_open_state.set(false)} />
             }
         </>
+    )
+}
+
+#[function_component(TopBarLegal)]
+fn top_bar_legal() -> Html {
+    log::debug!("Render top bar");
+    let navigator = use_navigator().expect("Navigator should be available");
+
+    let back = use_callback(navigator, |_: (), navigator| {
+        navigator.push(&AppRoute::BambooGroveRoot);
+    });
+
+    html!(
+        <CosmoTopBar profile_picture="/static/logo.webp" has_right_item={true} right_item_on_click={back} right_item_label="Zum Hain">
+            <CosmoTopBarItemLink<AppRoute> label="" to={AppRoute::BambooGroveRoot} />
+        </CosmoTopBar>
     )
 }
 

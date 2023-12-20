@@ -1,0 +1,11 @@
+[package]
+name = "bamboo-frontend-section-licenses"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+chrono = { workspace = true }
+stylist = { workspace = true }
+yew = { workspace = true }
+yew-cosmo = { workspace = true }
