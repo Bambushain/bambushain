@@ -27,3 +27,10 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
 totp-rs = { workspace = true }
+
+[build-dependencies]
+bamboo-entities = { path = "../entities" }
+
+cargo_metadata = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }

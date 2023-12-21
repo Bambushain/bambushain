@@ -6,6 +6,7 @@ mod custom_field;
 mod event;
 mod fighter;
 mod free_company;
+mod licenses;
 mod my;
 mod support;
 mod user;
@@ -86,6 +87,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
         .service(character_housing::delete_character_housing)
         .service(support::send_support_request)
         .service(support::report_glitchtip_error)
+        .service(licenses::get_licenses)
         .service(crate::sse::event::event_sse_client)
         .service(
             actix_web_lab::web::spa()

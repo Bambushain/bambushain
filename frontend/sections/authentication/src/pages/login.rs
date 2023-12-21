@@ -1,3 +1,4 @@
+use bamboo_frontend_base_routing::LegalRoute;
 use bounce::query::use_query_value;
 use stylist::yew::use_style;
 use yew::prelude::*;
@@ -227,6 +228,10 @@ align-items: center;
                         <CosmoTextBox required={true} id="twofactor" value={(*two_factor_code_state).clone()} on_input={on_two_factor_code_update} label="Zwei Faktor Code" />
                     </CosmoForm>
                 }
+                <div style="display: flex; gap: 1rem">
+                    <CosmoAnchorLink<AppRoute> to={AppRoute::LegalRoot}>{"Impressum"}</CosmoAnchorLink<AppRoute>>
+                    <CosmoAnchorLink<LegalRoute> to={LegalRoute::DataProtection}>{"Datenschutzerklärung"}</CosmoAnchorLink<LegalRoute>>
+                </div>
             </div>
         </div>
     )

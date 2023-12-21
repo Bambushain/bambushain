@@ -24,7 +24,9 @@ use bamboo_frontend_section_bamboo::UsersPage;
 use bamboo_frontend_section_final_fantasy::CharacterPage;
 use bamboo_frontend_section_final_fantasy::SettingsPage;
 use bamboo_frontend_section_legal::{DataProtectionPage, ImprintPage};
-use bamboo_frontend_section_licenses::{BambooGrovePage, FontsPage, ImagesPage};
+use bamboo_frontend_section_licenses::{
+    BambooGrovePage, FontsPage, ImagesPage, SoftwareLicensesPage,
+};
 use bamboo_frontend_section_support::ContactPage;
 
 use crate::api::{change_my_password, enable_totp, logout, update_my_profile, validate_totp};
@@ -74,6 +76,7 @@ fn switch_sub_menu(route: AppRoute) -> Html {
                 <Switch<LicensesRoute> render={render_sub_menu_entry("Bambushain Lizenz", LicensesRoute::BambooGrove)} />
                 <Switch<LicensesRoute> render={render_sub_menu_entry("Bildlizenzen", LicensesRoute::Images)} />
                 <Switch<LicensesRoute> render={render_sub_menu_entry("Schriftlizenzen", LicensesRoute::Fonts)} />
+                <Switch<LicensesRoute> render={render_sub_menu_entry("Softwarelizenzen", LicensesRoute::Software)} />
             </CosmoSubMenuBar>
         ),
         _ => {
@@ -183,6 +186,14 @@ fn switch_licenses(route: LicensesRoute) -> Html {
                     <title>{"Schriftlizenzen"}</title>
                 </Helmet>
                 <FontsPage />
+            </>
+        ),
+        LicensesRoute::Software => html!(
+            <>
+                <Helmet>
+                    <title>{"Softwarelizenzen"}</title>
+                </Helmet>
+                <SoftwareLicensesPage />
             </>
         ),
     }
@@ -330,40 +341,21 @@ fn app_layout() -> Html {
 #[function_component(LegalLayout)]
 fn legal_layout() -> Html {
     log::debug!("Render legal layout");
-    let initial_loaded_state = use_state_eq(|| false);
-
-    let profile_query = use_query_value::<authentication::Profile>(().into());
-    let profile_atom = use_atom_setter::<storage::CurrentUser>();
-
-    log::debug!("First render, so lets send the request to check if the token is valid and see");
-    match profile_query.result() {
-        None => html!(),
-        Some(Ok(res)) => {
-            initial_loaded_state.set(true);
-            log::debug!("Got user {:?}", res.user.clone());
-            profile_atom(res.user.clone().into());
-            html!(
-                <>
-                    <Switch<AppRoute> render={switch_top_bar}/>
-                    <CosmoMenuBar>
-                        <CosmoMainMenu>
-                            <Switch<AppRoute> render={render_main_menu_entry("Rechtliches", AppRoute::LegalRoot, AppRoute::Legal)} />
-                            <Switch<AppRoute> render={render_main_menu_entry("Lizenzen", AppRoute::LicensesRoot, AppRoute::Licenses)} />
-                        </CosmoMainMenu>
-                        <Switch<AppRoute> render={switch_sub_menu} />
-                    </CosmoMenuBar>
-                    <CosmoPageBody>
-                        <Switch<AppRoute> render={switch_app} />
-                   </CosmoPageBody>
-                </>
-            )
-        }
-        Some(Err(_)) => {
-            html!(
-                <Redirect<AppRoute> to={AppRoute::Login} />
-            )
-        }
-    }
+    html!(
+        <>
+            <Switch<AppRoute> render={switch_top_bar}/>
+            <CosmoMenuBar>
+                <CosmoMainMenu>
+                    <Switch<AppRoute> render={render_main_menu_entry("Rechtliches", AppRoute::LegalRoot, AppRoute::Legal)} />
+                    <Switch<AppRoute> render={render_main_menu_entry("Lizenzen", AppRoute::LicensesRoot, AppRoute::Licenses)} />
+                </CosmoMainMenu>
+                <Switch<AppRoute> render={switch_sub_menu} />
+            </CosmoMenuBar>
+            <CosmoPageBody>
+                <Switch<AppRoute> render={switch_app} />
+           </CosmoPageBody>
+        </>
+    )
 }
 
 #[function_component(ChangePasswordDialog)]

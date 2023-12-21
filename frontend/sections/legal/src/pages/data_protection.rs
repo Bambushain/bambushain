@@ -18,13 +18,13 @@ font-style: normal;
             </CosmoParagraph>
             <CosmoHeader level={CosmoHeaderLevel::H2} header="Wer bei uns für die Datenverarbeitung verantwortlich ist" />
             <CosmoParagraph>{"Verantwortlich für die Datenverarbeitung ist:"}</CosmoParagraph>
-                    <address class={address_style}>
-                        {"Imanuel Ulbricht"}<br />
-                        {"Dingworthstr. 15"}<br />
-                        {"31137 Hildesheim"}<br />
-                        {"Telefon: +49 1525 5709066"}<br />
-                        {"E-Mail: "}<CosmoAnchor href="mailto:panda.helferlein@bambushain.app">{"panda.helferlein@bambushain.app"}</CosmoAnchor>
-                    </address>
+            <address class={address_style}>
+                {"Imanuel Ulbricht"}<br />
+                {"Dingworthstr. 15"}<br />
+                {"31137 Hildesheim"}<br />
+                {"Telefon: +49 1525 5709066"}<br />
+                {"E-Mail: "}<CosmoAnchor href="mailto:panda.helferlein@bambushain.app">{"panda.helferlein@bambushain.app"}</CosmoAnchor>
+            </address>
             <CosmoParagraph>
                 {"Nach der DSGVO stehen Ihnen die nachfolgend aufgeführten Rechte zu, die Sie jederzeit bei dem in Ziffer 1. dieser Datenschutzerklärung genannten Verantwortlichen geltend machen können:"}
             </CosmoParagraph>

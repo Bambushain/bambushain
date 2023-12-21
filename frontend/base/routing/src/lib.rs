@@ -67,4 +67,6 @@ pub enum LicensesRoute {
     Images,
     #[at("/licenses/fonts")]
     Fonts,
+    #[at("/licenses/software")]
+    Software,
 }

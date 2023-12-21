@@ -5,6 +5,7 @@ pub mod crafter;
 pub mod custom_character_field;
 pub mod custom_character_field_option;
 pub mod custom_character_field_value;
+pub mod dependency;
 pub mod event;
 pub mod fighter;
 pub mod free_company;
@@ -31,6 +32,7 @@ pub mod prelude {
     pub use crate::custom_character_field_option::Model as CustomCharacterFieldOption;
     pub use crate::custom_character_field_value;
     pub use crate::custom_character_field_value::Model as CustomCharacterFieldValue;
+    pub use crate::dependency::*;
     pub use crate::event;
     pub use crate::event::Model as Event;
     pub use crate::fighter;
