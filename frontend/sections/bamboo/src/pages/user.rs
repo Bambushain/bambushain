@@ -21,6 +21,7 @@ use crate::props::user::*;
 enum UserConfirmActions {
     MakeMod,
     RemoveMod,
+    DisableTotp,
     Delete,
     ChangePassword(String),
     Closed,
@@ -400,6 +401,9 @@ fn user_details(props: &UserDetailsProps) -> Html {
     let delete_click = use_callback(confirm_state.clone(), |_, state| {
         state.set(UserConfirmActions::Delete)
     });
+    let disable_totp_click = use_callback(confirm_state.clone(), |_, state| {
+        state.set(UserConfirmActions::DisableTotp)
+    });
     let update_profile_click = use_callback(profile_edit_state.clone(), |_, profile_edit_state| {
         profile_edit_state.set(true)
     });
@@ -550,6 +554,34 @@ fn user_details(props: &UserDetailsProps) -> Html {
                             }
                         },
                     },
+                    UserConfirmActions::DisableTotp => match disable_totp(id).await {
+                        Ok(_) => NO_CONTENT,
+                        Err(err) => match err.code {
+                            FORBIDDEN => {
+                                error_message_state.set(
+                                    "Du musst Mod sein um die Zwei Faktor Authentifizierung von Pandas zu deaktivieren".into(),
+                                );
+                                error_header_state.set("Fehler beim Deaktivieren".into());
+
+                                FORBIDDEN
+                            }
+                            CONFLICT => {
+                                error_message_state.set("Du kannst deine eigene Zwei Faktor Authentifizierung über dein Profil deaktivieren".into());
+                                error_header_state.set("Fehler beim Deaktivieren".into());
+
+                                CONFLICT
+                            }
+                            _ => {
+                                error_message_state.set(
+                                    "Die Zwei Faktor Authentifizierung konnte nicht deaktiviert werden".into(),
+                                );
+                                bamboo_error_state.set(err.clone());
+                                error_header_state.set("Fehler beim Deaktivieren".into());
+
+                                INTERNAL_SERVER_ERROR
+                            }
+                        },
+                    },
                     UserConfirmActions::ChangePassword(new_password) => {
                         match change_user_password(id, new_password.clone()).await {
                             Ok(_) => {
@@ -627,9 +659,10 @@ fn user_details(props: &UserDetailsProps) -> Html {
                             <CosmoButton enabled={props.user.id != current_user.profile.id} on_click={make_mod_click} label="Zum Mod machen" />
                         }
                         <CosmoButton enabled={props.user.id != current_user.profile.id} on_click={update_profile_click} label="Panda bearbeiten" />
-                        <CosmoButton enabled={props.user.id != current_user.profile.id} on_click={change_password_click} label="Passwort ändern" />
                     </CosmoToolbarGroup>
                     <CosmoToolbarGroup>
+                        <CosmoButton enabled={props.user.id != current_user.profile.id} on_click={change_password_click} label="Passwort ändern" />
+                        <CosmoButton enabled={props.user.id != current_user.profile.id && props.user.app_totp_enabled} on_click={disable_totp_click} label="Zwei Faktor deaktivieren" />
                         <CosmoButton enabled={props.user.id != current_user.profile.id} on_click={delete_click} label="Aus dem Hain werfen" />
                     </CosmoToolbarGroup>
                 </CosmoToolbar>
@@ -665,13 +698,16 @@ fn user_details(props: &UserDetailsProps) -> Html {
             </CosmoKeyValueList>
             {match (*confirm_state).clone() {
                 UserConfirmActions::MakeMod => html!(
-                    <CosmoConfirm message={format!("Soll der Panda {} zum Mod gemacht werden?", props.user.email.clone())} title="Zum Mod machen" on_decline={on_decline} on_confirm={on_confirm} decline_label="Abbrechen" confirm_label="Zum Mod machen" />
+                    <CosmoConfirm message={format!("Soll der Panda {} zum Mod gemacht werden?", props.user.display_name.clone())} title="Zum Mod machen" on_decline={on_decline} on_confirm={on_confirm} decline_label="Abbrechen" confirm_label="Zum Mod machen" />
                 ),
                 UserConfirmActions::RemoveMod => html!(
-                    <CosmoConfirm message={format!("Sollen dem Panda {} wirklich die Modrechte entzogen werden?", props.user.email.clone())} title="Modrechte entziehen" on_decline={on_decline} on_confirm={on_confirm} confirm_label="Modrechte entziehen" decline_label="Abbrechen" />
+                    <CosmoConfirm message={format!("Sollen dem Panda {} wirklich die Modrechte entzogen werden?", props.user.display_name.clone())} title="Modrechte entziehen" on_decline={on_decline} on_confirm={on_confirm} confirm_label="Modrechte entziehen" decline_label="Abbrechen" />
                 ),
                 UserConfirmActions::Delete => html!(
-                    <CosmoConfirm confirm_type={CosmoModalType::Warning} message={format!("Soll der Panda {} wirklich aus dem Hain geworfen werden?", props.user.email.clone())} title="Panda rauswerfen" on_decline={on_decline} on_confirm={on_confirm} confirm_label="Panda rauswerfen" decline_label="Panda behalten" />
+                    <CosmoConfirm confirm_type={CosmoModalType::Warning} message={format!("Soll der Panda {} wirklich aus dem Hain geworfen werden?", props.user.display_name.clone())} title="Panda rauswerfen" on_decline={on_decline} on_confirm={on_confirm} confirm_label="Panda rauswerfen" decline_label="Panda behalten" />
+                ),
+                UserConfirmActions::DisableTotp => html!(
+                    <CosmoConfirm confirm_type={CosmoModalType::Warning} message={format!("Soll die Zwei Faktor Authentifizierung von {} wirklich deaktiviert werden?", props.user.display_name.clone())} title="Zwei Faktor Authentifizierung deaktivieren" on_decline={on_decline} on_confirm={on_confirm} confirm_label="Deaktivieren" decline_label="Nicht deaktivieren" />
                 ),
                 UserConfirmActions::ChangePassword(password) => {
                     html!(

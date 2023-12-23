@@ -42,7 +42,7 @@ pub async fn remove_user_mod(id: i32) -> BambooApiResult<()> {
 }
 
 pub async fn delete_user(id: i32) -> BambooApiResult<()> {
-    log::debug!("Remove user {id} main");
+    log::debug!("Delete user {id}");
     delete(format!("/api/user/{id}")).await
 }
 
@@ -61,4 +61,9 @@ pub async fn update_profile(id: i32, profile: UpdateProfile) -> BambooApiResult<
         profile
     );
     put_no_content(format!("/api/user/{id}/profile"), &profile).await
+}
+
+pub async fn disable_totp(id: i32) -> BambooApiResult<()> {
+    log::debug!("Disable totp for user {id}");
+    delete(format!("/api/user/{id}/totp")).await
 }
