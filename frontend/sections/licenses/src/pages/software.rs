@@ -18,7 +18,7 @@ pub fn licenses() -> Html {
     } else if let Some(licenses) = &licenses.data {
         html!(
             <CosmoSideList>
-                {for licenses.into_iter().map(|license| {
+                {for licenses.iter().map(|license| {
                     CosmoSideListItem::from_label_and_children(license.name.clone().into(), html!(
                         <>
                             <CosmoTitle title={license.name.clone()} />
