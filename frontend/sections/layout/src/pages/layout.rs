@@ -16,6 +16,7 @@ use bamboo_frontend_base_routing::{
     AppRoute, BambooGroveRoute, FinalFantasyRoute, LegalRoute, LicensesRoute, SupportRoute,
 };
 use bamboo_frontend_base_storage as storage;
+use bamboo_frontend_section_authentication::api::get_my_profile;
 use bamboo_frontend_section_authentication::models as authentication;
 use bamboo_frontend_section_authentication::LoginPage;
 use bamboo_frontend_section_bamboo::get_users;
@@ -29,7 +30,9 @@ use bamboo_frontend_section_licenses::{
 };
 use bamboo_frontend_section_support::ContactPage;
 
-use crate::api::{change_my_password, enable_totp, logout, update_my_profile, validate_totp};
+use crate::api::{
+    change_my_password, disable_totp, enable_totp, logout, update_my_profile, validate_totp,
+};
 use crate::props::*;
 
 pub fn switch(route: AppRoute) -> Html {
@@ -498,21 +501,24 @@ fn change_password_dialog(props: &ChangePasswordDialogProps) -> Html {
 #[function_component(UpdateMyProfileDialog)]
 fn update_my_profile_dialog(props: &UpdateMyProfileDialogProps) -> Html {
     log::debug!("Open dialog to update profile");
+    let profile_atom_setter = use_atom_setter::<storage::CurrentUser>();
     let authentication_state_query = use_query_value::<authentication::Profile>(().into());
 
-    let user_atom = use_atom_value::<storage::CurrentUser>();
+    let profile_atom = use_atom_value::<storage::CurrentUser>();
 
+    let disable_totp_open_state = use_state_eq(|| false);
+    let app_two_factor_open_state = use_state_eq(|| false);
     let error_state = use_state_eq(|| false);
     let unknown_error_state = use_state_eq(|| false);
 
     let bamboo_error_state = use_state_eq(ApiError::default);
 
     let error_message_state = use_state_eq(|| AttrValue::from(""));
-    let email_state = use_state_eq(|| AttrValue::from(user_atom.profile.email.clone()));
+    let email_state = use_state_eq(|| AttrValue::from(profile_atom.profile.email.clone()));
     let display_name_state =
-        use_state_eq(|| AttrValue::from(user_atom.profile.display_name.clone()));
+        use_state_eq(|| AttrValue::from(profile_atom.profile.display_name.clone()));
     let discord_name_state =
-        use_state_eq(|| AttrValue::from(user_atom.profile.discord_name.clone()));
+        use_state_eq(|| AttrValue::from(profile_atom.profile.discord_name.clone()));
 
     {
         let error_state = error_state.clone();
@@ -540,6 +546,10 @@ fn update_my_profile_dialog(props: &UpdateMyProfileDialogProps) -> Html {
         },
     );
 
+    let on_open_disable_totp =
+        use_callback(disable_totp_open_state.clone(), |_, state| state.set(true));
+    let on_close_disable_totp =
+        use_callback(disable_totp_open_state.clone(), |_, state| state.set(false));
     let on_close = props.on_close.clone();
     let on_save = {
         let authentication_state_query = authentication_state_query;
@@ -604,6 +614,67 @@ fn update_my_profile_dialog(props: &UpdateMyProfileDialogProps) -> Html {
             });
         })
     };
+    let on_enable_app_two_factor = use_callback(
+        app_two_factor_open_state.clone(),
+        |_, app_two_factor_open_state| app_two_factor_open_state.set(true),
+    );
+    let on_disable_totp = {
+        let disable_totp_open_state = disable_totp_open_state.clone();
+        let error_state = error_state.clone();
+        let unknown_error_state = unknown_error_state.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
+
+        let error_message_state = error_message_state.clone();
+
+        let profile_atom_setter = profile_atom_setter.clone();
+
+        Callback::from(move |_| {
+            log::debug!("Perform profile update");
+            let disable_totp_open_state = disable_totp_open_state.clone();
+            let error_state = error_state.clone();
+            let unknown_error_state = unknown_error_state.clone();
+
+            let bamboo_error_state = bamboo_error_state.clone();
+
+            let error_message_state = error_message_state.clone();
+
+            let profile_atom_setter = profile_atom_setter.clone();
+
+            yew::platform::spawn_local(async move {
+                error_state.set(match disable_totp().await {
+                    Ok(_) => {
+                        log::debug!("Totp disabled successfully");
+                        unknown_error_state.set(false);
+                        disable_totp_open_state.set(false);
+
+                        if let Ok(profile) = get_my_profile().await {
+                            profile_atom_setter(profile.into());
+                        }
+
+                        false
+                    }
+                    Err(err) => match err.code {
+                        NOT_FOUND => {
+                            log::warn!("The user was not found");
+                            error_message_state.set("Du wurdest scheinbar gelöscht, bitte versuch es erneut um einen Fehler auszuschließen".into());
+                            unknown_error_state.set(false);
+
+                            true
+                        }
+                        _ => {
+                            log::warn!("Failed to update the profile {err}");
+                            error_message_state.set("Zwei Faktor per App konnte leider nicht deaktiviert werden".into());
+                            unknown_error_state.set(true);
+                            bamboo_error_state.set(err.clone());
+
+                            true
+                        }
+                    }
+                });
+            });
+        })
+    };
 
     html!(
         <>
@@ -612,7 +683,12 @@ fn update_my_profile_dialog(props: &UpdateMyProfileDialogProps) -> Html {
             </Helmet>
             <CosmoModal title="Profil bearbeiten" is_form={true} on_form_submit={on_save} buttons={html!(
                 <>
-                    <CosmoButton on_click={on_close} label="Abbrechen" />
+                    <CosmoButton on_click={on_close} label="Schließen" />
+                    if profile_atom.profile.app_totp_enabled {
+                        <CosmoButton on_click={on_open_disable_totp} label="App Zwei Faktor deaktivieren" />
+                    } else {
+                        <CosmoButton on_click={on_enable_app_two_factor} label="App Zwei Faktor aktivieren" />
+                    }
                     <CosmoButton is_submit={true} label="Profil speichern" />
                 </>
             )}>
@@ -629,6 +705,12 @@ fn update_my_profile_dialog(props: &UpdateMyProfileDialogProps) -> Html {
                     <CosmoTextBox label="Discord Name (optional)" on_input={update_discord_name} value={(*discord_name_state).clone()} />
                 </CosmoInputGroup>
             </CosmoModal>
+            if *disable_totp_open_state {
+                <CosmoConfirm confirm_type={CosmoModalType::Warning} message={"Möchtest du deine Zwei Faktor Authentifizierung per App deaktivieren? Du bekommst dann wieder eine Email."} title="Zwei Faktor Authentifizierung deaktivieren" on_decline={on_close_disable_totp} on_confirm={on_disable_totp} confirm_label="Deaktivieren" decline_label="Nicht deaktivieren" />
+            }
+            if *app_two_factor_open_state {
+                <EnableTotpDialog on_close={move |_| app_two_factor_open_state.set(false)} />
+            }
         </>
     )
 }
@@ -642,7 +724,6 @@ fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
 
     let bamboo_error_state = use_state_eq(ApiError::default);
 
-    let profile_query = use_query_value::<authentication::Profile>(().into());
     let profile_atom = use_atom_setter::<storage::CurrentUser>();
 
     let error_message_state = use_state_eq(|| AttrValue::from(""));
@@ -687,9 +768,6 @@ fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
         let secret_state = secret_state.clone();
         let error_message_state = error_message_state.clone();
 
-        let profile_query = profile_query;
-        let profile_atom = profile_atom.clone();
-
         Callback::from(move |_: ()| {
             let enable_start_state = enable_start_state.clone();
             let error_state = error_state.clone();
@@ -701,9 +779,6 @@ fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
             let secret_state = secret_state.clone();
             let error_message_state = error_message_state.clone();
 
-            let profile_query = profile_query.clone();
-            let profile_atom = profile_atom.clone();
-
             yew::platform::spawn_local(async move {
                 match enable_totp().await {
                     Ok(data) => {
@@ -712,11 +787,6 @@ fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
                         unknown_error_state.set(false);
                         secret_state.set(data.secret.clone().into());
                         log::info!("Here is the secret: {}", data.secret);
-                        let _ = profile_query.refresh().await.map(|res| {
-                            profile_atom(storage::CurrentUser {
-                                profile: res.user.clone(),
-                            })
-                        });
                     }
                     Err(err) => {
                         log::error!("Failed to enable totp: {err}");
@@ -743,6 +813,8 @@ fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
 
         let on_close = props.on_close.clone();
 
+        let profile_atom = profile_atom.clone();
+
         Callback::from(move |_: ()| {
             let error_state = error_state.clone();
             let unknown_error_state = unknown_error_state.clone();
@@ -754,6 +826,8 @@ fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
             let current_password_state = current_password_state.clone();
 
             let on_close = on_close.clone();
+
+            let profile_atom = profile_atom.clone();
 
             yew::platform::spawn_local(async move {
                 unknown_error_state.set(false);
@@ -767,6 +841,9 @@ fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
                     Ok(_) => {
                         on_close.emit(());
                         unknown_error_state.set(false);
+                        if let Ok(profile) = get_my_profile().await {
+                            profile_atom(profile.into())
+                        }
                     }
                     Err(err) => {
                         log::error!("Failed to validate token: {err}");
@@ -834,12 +911,10 @@ Anschließend kommt ein QR Code, den musst du scannen und danach einen Code aus 
 #[function_component(TopBar)]
 fn top_bar() -> Html {
     log::debug!("Render top bar");
-    let profile_atom = use_atom_value::<storage::CurrentUser>();
     let navigator = use_navigator().expect("Navigator should be available");
 
     let mods_state = use_state_eq(|| vec![] as Vec<AttrValue>);
 
-    let app_two_factor_open_state = use_state_eq(|| false);
     let profile_open_state = use_state_eq(|| false);
     let password_open_state = use_state_eq(|| false);
 
@@ -851,10 +926,6 @@ fn top_bar() -> Html {
         use_callback(profile_open_state.clone(), |_, profile_open_state| {
             profile_open_state.set(true)
         });
-    let enable_app_two_factor_click = use_callback(
-        app_two_factor_open_state.clone(),
-        |_, app_two_factor_open_state| app_two_factor_open_state.set(true),
-    );
     let change_password_click = {
         let password_open_state = password_open_state.clone();
 
@@ -892,18 +963,12 @@ fn top_bar() -> Html {
                 <CosmoTopBarItemLink<AppRoute> label="Rechtliches" to={AppRoute::LegalRoot} />
                 <CosmoTopBarItem label="Mein Profil" on_click={update_my_profile_click} />
                 <CosmoTopBarItem label="Passwort ändern" on_click={change_password_click} />
-                if !profile_atom.profile.app_totp_enabled {
-                    <CosmoTopBarItem label="App Zwei Faktor einrichten" on_click={enable_app_two_factor_click} />
-                }
             </CosmoTopBar>
             if *profile_open_state {
                 <UpdateMyProfileDialog on_close={move |_| profile_open_state.set(false)} />
             }
             if *password_open_state {
                 <ChangePasswordDialog on_close={move |_| password_open_state.set(false)} mods={(*mods_state).clone()} />
-            }
-            if *app_two_factor_open_state {
-                <EnableTotpDialog on_close={move |_| app_two_factor_open_state.set(false)} />
             }
         </>
     )

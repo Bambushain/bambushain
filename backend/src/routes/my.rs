@@ -1,4 +1,4 @@
-use actix_web::{get,  post, put, web};
+use actix_web::{delete, get, post, put, web};
 
 use bamboo_dbal::prelude::dbal;
 use bamboo_entities::prelude::*;
@@ -9,7 +9,7 @@ use crate::middleware::authenticate_user::{authenticate, Authentication};
 use crate::response::macros::*;
 
 #[put("/api/my/password", wrap = "authenticate!()")]
-pub async fn change_my_password(
+pub async fn change_password(
     body: Option<web::Json<ChangeMyPassword>>,
     authentication: Authentication,
     db: DbConnection,
@@ -108,4 +108,14 @@ pub async fn validate_totp(
 #[get("/api/my/profile", wrap = "authenticate!()")]
 pub async fn get_profile(authentication: Authentication) -> BambooApiResult<WebUser> {
     Ok(ok!(authentication.user.clone().into()))
+}
+
+#[delete("/api/my/totp", wrap = "authenticate!()")]
+pub async fn disable_totp(
+    authentication: Authentication,
+    db: DbConnection,
+) -> BambooApiResponseResult {
+    dbal::disable_totp(authentication.user.id, &db)
+        .await
+        .map(|_| no_content!())
 }

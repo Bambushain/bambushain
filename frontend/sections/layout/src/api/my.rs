@@ -27,6 +27,11 @@ pub async fn enable_totp() -> api::BambooApiResult<TotpQrCode> {
     api::post_no_body("/api/my/totp").await
 }
 
+pub async fn disable_totp() -> api::BambooApiResult<()> {
+    log::debug!("Disable totp for current user");
+    api::delete("/api/my/totp").await
+}
+
 pub async fn validate_totp(code: String, password: String) -> api::BambooApiResult<()> {
     log::debug!("Validate totp for current user");
     api::put_no_content("/api/my/totp/validate", &ValidateTotp { code, password }).await

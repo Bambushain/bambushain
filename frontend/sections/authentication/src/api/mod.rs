@@ -27,7 +27,7 @@ impl Query for models::Profile {
     }
 }
 
-async fn get_my_profile() -> api::BambooApiResult<WebUser> {
+pub async fn get_my_profile() -> api::BambooApiResult<WebUser> {
     log::debug!("Get my profile");
     api::get::<WebUser>("/api/my/profile").await
 }
