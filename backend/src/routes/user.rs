@@ -55,7 +55,9 @@ pub async fn delete_user(
         ));
     }
 
-    dbal::delete_user(path.user_id, &db).await.map(|_| no_content!())
+    dbal::delete_user(path.user_id, &db)
+        .await
+        .map(|_| no_content!())
 }
 
 #[put(
@@ -151,4 +153,27 @@ pub async fn update_user_profile(
     )
     .await
     .map(|_| no_content!())
+}
+
+#[delete(
+    "/api/user/{user_id}/totp",
+    wrap = "authenticate!()",
+    wrap = "is_mod!()"
+)]
+pub async fn disable_totp(
+    path: Option<path::UserPath>,
+    authentication: Authentication,
+    db: DbConnection,
+) -> BambooApiResponseResult {
+    let path = check_invalid_path!(path, "user")?;
+    if path.user_id == authentication.user.id {
+        return Err(BambooError::validation(
+            "user",
+            "You cannot disable your own two factor authentication",
+        ));
+    }
+
+    dbal::disable_totp(path.user_id, &db)
+        .await
+        .map(|_| no_content!())
 }

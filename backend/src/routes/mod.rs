@@ -41,6 +41,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
         .service(user::add_mod_user)
         .service(user::remove_mod_user)
         .service(user::change_password)
+        .service(user::disable_totp)
         .service(event::get_events)
         .service(event::create_event)
         .service(event::update_event)
