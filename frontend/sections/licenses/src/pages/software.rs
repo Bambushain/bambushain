@@ -13,10 +13,8 @@ pub fn licenses() -> Html {
         use_mount(move || licenses.run())
     }
 
-    if licenses.loading {
-        html!()
-    } else if let Some(licenses) = &licenses.data {
-        html!(
+    html! {
+        if let Some(licenses) = &licenses.data {
             <CosmoSideList>
                 {for licenses.iter().map(|license| {
                     CosmoSideListItem::from_label_and_children(license.name.clone().into(), html!(
@@ -48,8 +46,6 @@ pub fn licenses() -> Html {
                     ))
                 })}
             </CosmoSideList>
-        )
-    } else {
-        html! {}
+        }
     }
 }
