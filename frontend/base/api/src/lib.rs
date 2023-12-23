@@ -190,7 +190,6 @@ async fn handle_response_code(response: Response) -> BambooApiResult<()> {
 }
 
 request_with_response!(get, get);
-request_with_response!(put_no_body_no_content, put);
 request_with_response!(post_no_body, post);
 
 request_with_response_no_content!(post_no_content, post);
@@ -239,6 +238,20 @@ pub async fn delete(uri: impl Into<String>) -> BambooApiResult<()> {
     log::debug!("Use auth token {token}");
     log::debug!("Execute $method request against {uri}");
     let request = Request::delete(uri.as_str())
+        .header("Authorization", format!("Panda {token}").as_str())
+        .send()
+        .await
+        .map_err(|_| ApiError::send_error())?;
+
+    handle_response_code(request).await
+}
+
+pub async fn put_no_body_no_content(uri: impl Into<String>) -> BambooApiResult<()> {
+    let uri = uri.into();
+    let token = get_token().unwrap_or_default();
+    log::debug!("Use auth token {token}");
+    log::debug!("Execute $method request against {uri}");
+    let request = Request::put(uri.as_str())
         .header("Authorization", format!("Panda {token}").as_str())
         .send()
         .await

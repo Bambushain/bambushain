@@ -1,23 +1,26 @@
 use std::ops::Deref;
+use std::pin::Pin;
+use std::task::{Context, Poll};
 
-use bounce::query::use_query_value;
 use chrono::prelude::*;
 use chrono::{Days, Months};
 use date_range::DateRange;
+use futures::channel::mpsc;
+use futures::stream::Stream;
+use gloo_events::EventListener;
 use stylist::yew::use_style;
-use wasm_bindgen::closure::Closure;
-use wasm_bindgen::JsCast;
-use web_sys::{EventSource, MessageEvent};
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use web_sys::{EventSource, EventTarget, MessageEvent};
 use yew::prelude::*;
 use yew_cosmo::prelude::*;
 use yew_hooks::prelude::{use_bool_toggle, use_effect_update, use_list, use_unmount};
+use yew_hooks::{use_async, use_mount};
 use yew_icons::Icon;
 
 use bamboo_entities::prelude::Event;
 use bamboo_frontend_base_error as error;
 
 use crate::api;
-use crate::models;
 use crate::props::calendar::*;
 
 enum ColorYiqResult {
@@ -35,9 +38,46 @@ impl ToString for ColorYiqResult {
     }
 }
 
-#[derive(Clone)]
+struct CalendarEventSourceEvent {
+    receiver: mpsc::UnboundedReceiver<()>,
+    #[allow(dead_code)]
+    listener: EventListener,
+}
+
+impl CalendarEventSourceEvent {
+    pub fn new(target: EventTarget, event: String, callback: Callback<Event>) -> Self {
+        let (sender, receiver) = mpsc::unbounded();
+
+        let listener = EventListener::new(&target, event, move |evt| {
+            log::debug!("New message received");
+            let evt = evt.dyn_ref::<MessageEvent>().unwrap_throw();
+            let data = evt.data();
+            if let Some(data) = data.as_string() {
+                log::debug!("The data received: {data:?}");
+                if let Ok(event) = serde_json::from_str::<Event>(data.as_str()) {
+                    log::debug!("Decoded the message {:#?}", event.clone());
+                    callback.emit(event);
+                }
+            }
+
+            sender.unbounded_send(()).unwrap_throw();
+        });
+
+        Self { receiver, listener }
+    }
+}
+
+impl Stream for CalendarEventSourceEvent {
+    type Item = ();
+
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
+        Pin::new(&mut self.receiver).poll_next(cx)
+    }
+}
+
 struct CalendarEventSource {
     event_source: Option<web_sys::EventSource>,
+    listeners: Vec<CalendarEventSourceEvent>,
 }
 
 impl CalendarEventSource {
@@ -47,44 +87,24 @@ impl CalendarEventSource {
                 "Failed to start event source, automatic calendar updates disabled: {err:?}"
             );
         }) {
-            let open_handler: Closure<dyn Fn()> = Closure::new(|| {
-                log::debug!("Calendar connected");
-            });
-            event_source.set_onopen(Some(open_handler.as_ref().unchecked_ref()));
-            open_handler.forget();
-
             Some(event_source)
         } else {
             None
         };
 
-        Self { event_source }
+        Self {
+            event_source,
+            listeners: vec![],
+        }
     }
 
-    fn register_handler(&self, event: impl Into<String>, callback: Callback<Event>) {
-        let message_handler: Closure<dyn Fn(MessageEvent)> =
-            Closure::new(move |evt: MessageEvent| {
-                log::debug!("New message received");
-                let data = evt.data();
-                if let Some(data) = data.as_string() {
-                    log::debug!("The data received: {data:?}");
-                    if let Ok(event) = serde_json::from_str::<Event>(data.as_str()) {
-                        log::debug!("Decoded the message {:#?}", event.clone());
-                        callback.emit(event);
-                    }
-                }
-            });
-
+    fn register_handler(&mut self, event: impl Into<String>, callback: Callback<Event>) {
         if let Some(source) = self.event_source.clone() {
-            let event = event.into();
-            log::debug!("Register handler for event {}", event.clone());
-            if let Err(err) = source.add_event_listener_with_callback(
-                event.as_str(),
-                message_handler.as_ref().unchecked_ref(),
-            ) {
-                log::error!("Failed to register event listener {err:#?}");
-            }
-            message_handler.forget();
+            self.listeners.push(CalendarEventSourceEvent::new(
+                source.into(),
+                event.into(),
+                callback,
+            ));
         }
     }
 
@@ -117,13 +137,11 @@ fn add_event_dialog(props: &AddEventDialogProps) -> Html {
     let color_state = use_state_eq(Color::random);
 
     let is_private_state = use_state_eq(|| false);
-    let error_state = use_state_eq(|| false);
-    let unknown_error_state = use_state_eq(|| false);
+    let unreported_error_toggle = use_state_eq(|| false);
 
     let bamboo_error_state = use_state_eq(api::ApiError::default);
 
     {
-        let error_state = error_state.clone();
         let is_private_state = is_private_state.clone();
 
         let title_state = title_state.clone();
@@ -132,7 +150,6 @@ fn add_event_dialog(props: &AddEventDialogProps) -> Html {
         let color_state = color_state.clone();
 
         use_unmount(move || {
-            error_state.set(false);
             is_private_state.set(false);
 
             title_state.set("".into());
@@ -142,27 +159,7 @@ fn add_event_dialog(props: &AddEventDialogProps) -> Html {
         })
     }
 
-    let title_input = use_callback(title_state.clone(), |value, state| state.set(value));
-    let description_input =
-        use_callback(description_state.clone(), |value, state| state.set(value));
-    let end_date_input = use_callback(end_date_state.clone(), |value, state| state.set(value));
-    let color_input = use_callback(color_state.clone(), |value, state| state.set(value));
-    let is_private_checked =
-        use_callback(is_private_state.clone(), |value, state| state.set(value));
-
-    let report_unknown_error = use_callback(
-        (bamboo_error_state.clone(), unknown_error_state.clone()),
-        |_, (bamboo_error_state, unknown_error_state)| {
-            error::report_unknown_error(
-                "bamboo_calendar",
-                "add_event_dialog",
-                bamboo_error_state.deref().clone(),
-            );
-            unknown_error_state.set(false);
-        },
-    );
-
-    let on_form_submit = {
+    let save_state = {
         let title_state = title_state.clone();
         let description_state = description_state.clone();
 
@@ -171,8 +168,7 @@ fn add_event_dialog(props: &AddEventDialogProps) -> Html {
         let color_state = color_state.clone();
 
         let is_private_state = is_private_state.clone();
-        let error_state = error_state.clone();
-        let unknown_error_state = unknown_error_state.clone();
+        let unreported_error_toggle = unreported_error_toggle.clone();
 
         let bamboo_error_state = bamboo_error_state.clone();
 
@@ -180,62 +176,63 @@ fn add_event_dialog(props: &AddEventDialogProps) -> Html {
 
         let on_added = props.on_added.clone();
 
-        Callback::from(move |_| {
-            let title_state = title_state.clone();
-            let description_state = description_state.clone();
+        use_async(async move {
+            api::create_event(Event::new(
+                (*title_state).to_string(),
+                (*description_state).to_string(),
+                start_date,
+                *end_date_state,
+                *color_state,
+                *is_private_state,
+            ))
+            .await
+            .map(|evt| {
+                on_added.emit(evt);
+                unreported_error_toggle.set(false)
+            })
+            .map_err(|err| {
+                log::error!("Failed to create event {err}");
+                unreported_error_toggle.set(true);
+                bamboo_error_state.set(err.clone());
 
-            let end_date_state = end_date_state.clone();
-
-            let color_state = color_state.clone();
-
-            let is_private_state = is_private_state.clone();
-            let error_state = error_state.clone();
-            let unknown_error_state = unknown_error_state.clone();
-
-            let bamboo_error_state = bamboo_error_state.clone();
-
-            let on_added = on_added.clone();
-
-            yew::platform::spawn_local(async move {
-                match api::create_event(Event::new(
-                    (*title_state).to_string(),
-                    (*description_state).to_string(),
-                    start_date,
-                    *end_date_state,
-                    *color_state,
-                    *is_private_state,
-                ))
-                .await
-                {
-                    Ok(evt) => {
-                        on_added.emit(evt);
-                        unknown_error_state.set(false);
-                    }
-                    Err(err) => {
-                        log::error!("Failed to create event {err}");
-                        error_state.set(true);
-                        unknown_error_state.set(true);
-                        bamboo_error_state.set(err.clone());
-                    }
-                }
+                err
             })
         })
     };
 
+    let title_input = use_callback(title_state.clone(), |value, state| state.set(value));
+    let description_input =
+        use_callback(description_state.clone(), |value, state| state.set(value));
+    let end_date_input = use_callback(end_date_state.clone(), |value, state| state.set(value));
+    let color_input = use_callback(color_state.clone(), |value, state| state.set(value));
+    let is_private_checked =
+        use_callback(is_private_state.clone(), |value, state| state.set(value));
+    let report_unknown_error = use_callback(
+        (bamboo_error_state.clone(), unreported_error_toggle.clone()),
+        |_, (bamboo_error_state, unreported_error_toggle)| {
+            error::report_unknown_error(
+                "bamboo_calendar",
+                "add_event_dialog",
+                bamboo_error_state.deref().clone(),
+            );
+            unreported_error_toggle.set(false);
+        },
+    );
+
+    let form_submit = use_callback(save_state.clone(), |_, state| state.run());
+
     html!(
         <>
-            <CosmoModal title="Event hinzufügen" on_form_submit={on_form_submit} is_form={true} buttons={html!(
+            <CosmoModal title="Event hinzufügen" on_form_submit={form_submit} is_form={true} buttons={html!(
                 <>
                     <CosmoButton label="Abbrechen" on_click={props.on_cancel.clone()} />
                     <CosmoButton label="Event speichern" is_submit={true} />
                 </>
             )}>
-                if *error_state {
-                    if *unknown_error_state {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message="Das Event konnte leider nicht erstellt werden" header="Fehler beim Speichern" actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
-                    } else {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message="Das Event konnte leider nicht erstellt werden" header="Fehler beim Speichern" />
-                    }
+                if save_state.error.is_some() && *unreported_error_toggle {
+                    <CosmoMessage message_type={CosmoMessageType::Negative} message="Das Event konnte leider nicht erstellt werden" header="Fehler beim Speichern" actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                } else if save_state.error.is_some() {
+                    <CosmoMessage message_type={CosmoMessageType::Negative} message="Das Event konnte leider nicht erstellt werden" header="Fehler beim Speichern" />
                 }
                 <CosmoInputGroup>
                     <CosmoTextBox width={CosmoInputWidth::Medium} label="Titel" value={(*title_state).clone()} on_input={title_input} />
@@ -260,45 +257,21 @@ fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
     let end_date_state = use_state_eq(|| props.event.end_date);
 
     let delete_event_open_state = use_state_eq(|| false);
-    let error_state = use_state_eq(|| false);
-    let delete_error_state = use_state_eq(|| false);
-    let unknown_error_state = use_state_eq(|| false);
+    let unreported_error_toggle = use_state_eq(|| false);
 
     let bamboo_error_state = use_state_eq(api::ApiError::default);
 
     {
-        let error_state = error_state.clone();
-
         let title_state = title_state.clone();
         let description_state = description_state.clone();
 
         use_unmount(move || {
-            error_state.set(false);
-
             title_state.set("".into());
             description_state.set("".into());
         })
     }
 
-    let title_input = use_callback(title_state.clone(), |value, state| state.set(value));
-    let end_date_input = use_callback(end_date_state.clone(), |value, state| state.set(value));
-    let description_input =
-        use_callback(description_state.clone(), |value, state| state.set(value));
-    let color_input = use_callback(color_state.clone(), |value, state| state.set(value));
-
-    let report_unknown_error = use_callback(
-        (bamboo_error_state.clone(), unknown_error_state.clone()),
-        |_, (bamboo_error_state, unknown_error_state)| {
-            error::report_unknown_error(
-                "bamboo_calendar",
-                "edit_event_dialog",
-                bamboo_error_state.deref().clone(),
-            );
-            unknown_error_state.set(false);
-        },
-    );
-
-    let on_form_submit = {
+    let save_state = {
         let title_state = title_state.clone();
         let description_state = description_state.clone();
 
@@ -306,8 +279,7 @@ fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
 
         let end_date_state = end_date_state.clone();
 
-        let error_state = error_state.clone();
-        let unknown_error_state = unknown_error_state.clone();
+        let unreported_error_toggle = unreported_error_toggle.clone();
 
         let bamboo_error_state = bamboo_error_state.clone();
 
@@ -315,116 +287,100 @@ fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
 
         let on_updated = props.on_updated.clone();
 
-        Callback::from(move |_| {
-            let title_state = title_state.clone();
-            let description_state = description_state.clone();
+        use_async(async move {
+            let mut evt = Event::new(
+                (*title_state).to_string(),
+                (*description_state).to_string(),
+                event.start_date,
+                *end_date_state,
+                *color_state,
+                event.is_private,
+            );
+            evt.id = event.id;
 
-            let color_state = color_state.clone();
-
-            let end_date_state = end_date_state.clone();
-
-            let error_state = error_state.clone();
-            let unknown_error_state = unknown_error_state.clone();
-
-            let bamboo_error_state = bamboo_error_state.clone();
-
-            let event = event.clone();
-
-            let on_updated = on_updated.clone();
-
-            yew::platform::spawn_local(async move {
-                let mut evt = Event::new(
-                    (*title_state).to_string(),
-                    (*description_state).to_string(),
-                    event.start_date,
-                    *end_date_state,
-                    *color_state,
-                    event.is_private,
-                );
-                evt.id = event.id;
-
-                match api::update_event(event.id, evt.clone()).await {
-                    Ok(_) => {
-                        on_updated.emit(evt);
-                        unknown_error_state.set(false);
-                    }
-                    Err(err) => {
-                        log::error!("Failed to update event {} {err}", event.id);
-                        error_state.set(true);
-                        unknown_error_state.set(true);
-                        bamboo_error_state.set(err.clone());
-                    }
-                }
-            })
+            api::update_event(event.id, evt.clone())
+                .await
+                .map(|_| {
+                    on_updated.emit(evt);
+                    unreported_error_toggle.set(false)
+                })
+                .map_err(|err| {
+                    log::error!("Failed to update event {} {err}", event.id);
+                    unreported_error_toggle.set(true);
+                    bamboo_error_state.set(err.clone());
+                    err
+                })
         })
     };
-    let on_delete_confirm = {
+    let delete_state = {
         let id = props.event.id;
 
         let event = props.event.clone();
 
-        let delete_error_state = delete_error_state.clone();
-        let unknown_error_state = unknown_error_state.clone();
+        let unreported_error_toggle = unreported_error_toggle.clone();
 
         let bamboo_error_state = bamboo_error_state.clone();
 
         let on_deleted = props.on_deleted.clone();
 
-        Callback::from(move |_| {
-            let delete_error_state = delete_error_state.clone();
-            let unknown_error_state = unknown_error_state.clone();
-
-            let bamboo_error_state = bamboo_error_state.clone();
-
-            let event = event.clone();
-            let on_deleted = on_deleted.clone();
-
-            yew::platform::spawn_local(async move {
-                match api::delete_event(id).await {
-                    Ok(_) => {
-                        on_deleted.emit(event);
-                        unknown_error_state.set(false);
-                    }
-                    Err(err) => {
-                        log::error!("Failed to update event {id} {err}");
-                        delete_error_state.set(true);
-                        unknown_error_state.set(true);
-                        bamboo_error_state.set(err.clone());
-                    }
-                }
-            })
+        use_async(async move {
+            api::delete_event(id)
+                .await
+                .map(|_| {
+                    on_deleted.emit(event);
+                    unreported_error_toggle.set(false)
+                })
+                .map_err(|err| {
+                    log::error!("Failed to update event {id} {err}");
+                    unreported_error_toggle.set(true);
+                    bamboo_error_state.set(err.clone());
+                    err
+                })
         })
     };
 
-    let on_open_delete = use_callback(delete_event_open_state.clone(), |_, state| state.set(true));
-    let on_delete_decline =
-        use_callback(delete_event_open_state.clone(), |_, state| state.set(false));
+    let title_input = use_callback(title_state.clone(), |value, state| state.set(value));
+    let end_date_input = use_callback(end_date_state.clone(), |value, state| state.set(value));
+    let description_input =
+        use_callback(description_state.clone(), |value, state| state.set(value));
+    let color_input = use_callback(color_state.clone(), |value, state| state.set(value));
+    let report_unknown_error = use_callback(
+        (bamboo_error_state.clone(), unreported_error_toggle.clone()),
+        |_, (bamboo_error_state, unreported_error_toggle)| {
+            error::report_unknown_error(
+                "bamboo_calendar",
+                "edit_event_dialog",
+                bamboo_error_state.deref().clone(),
+            );
+            unreported_error_toggle.set(false);
+        },
+    );
+    let form_submit = use_callback(save_state.clone(), |_, state| state.run());
+    let delete_confirm = use_callback(delete_state.clone(), |_, state| state.run());
+    let open_delete = use_callback(delete_event_open_state.clone(), |_, state| state.set(true));
+    let delete_decline = use_callback(delete_event_open_state.clone(), |_, state| state.set(false));
 
     log::debug!("Color {}", props.event.color().hex());
     log::debug!("Color string {}", props.event.color.clone());
 
     html!(
         <>
-            <CosmoModal title="Event bearbeiten" on_form_submit={on_form_submit} is_form={true} buttons={html!(
+            <CosmoModal title="Event bearbeiten" on_form_submit={form_submit} is_form={true} buttons={html!(
                 <>
-                    <CosmoButton state={CosmoButtonType::Negative} label="Event löschen" on_click={on_open_delete} />
+                    <CosmoButton state={CosmoButtonType::Negative} label="Event löschen" on_click={open_delete} />
                     <CosmoButton label="Abbrechen" on_click={props.on_cancel.clone()} />
                     <CosmoButton label="Event speichern" is_submit={true} />
                 </>
             )}>
-                if *error_state {
-                    if *unknown_error_state {
+                if save_state.error.is_some() && *unreported_error_toggle {
                         <CosmoMessage message_type={CosmoMessageType::Negative} message="Das Event konnte leider nicht geändert werden" header="Fehler beim Speichern" actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
-                    } else {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message="Das Event konnte leider nicht geändert werden" header="Fehler beim Speichern" />
-                    }
+                } else if save_state.error.is_some() {
+                    <CosmoMessage message_type={CosmoMessageType::Negative} message="Das Event konnte leider nicht geändert werden" header="Fehler beim Speichern" />
                 }
-                if *delete_error_state {
-                    if *unknown_error_state {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message="Das Event konnte leider nicht gelöscht werden" header="Fehler beim Löschen" actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
-                    } else {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message="Das Event konnte leider nicht gelöscht werden" header="Fehler beim Löschen" />
-                    }
+                if delete_state.error.is_some() && *unreported_error_toggle {
+                    <CosmoMessage message_type={CosmoMessageType::Negative} message="Das Event konnte leider nicht gelöscht werden" header="Fehler beim Löschen" actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
+                } else if delete_state.error.is_some() {
+                    <CosmoMessage message_type={CosmoMessageType::Negative} message="Das Event konnte leider nicht gelöscht werden" header="Fehler beim Löschen" />
                 }
                 <CosmoInputGroup>
                     <CosmoTextBox width={CosmoInputWidth::Medium} label="Titel" value={(*title_state).clone()} on_input={title_input} />
@@ -435,7 +391,7 @@ fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
                 </CosmoInputGroup>
             </CosmoModal>
             if *delete_event_open_state {
-                <CosmoConfirm confirm_type={CosmoModalType::Warning} title="Event löschen" message={format!("Soll das Event {} wirklich gelöscht werden?", props.event.title.clone())} confirm_label="Event löschen" decline_label="Nicht löschen" on_confirm={on_delete_confirm} on_decline={on_delete_decline} />
+                <CosmoConfirm confirm_type={CosmoModalType::Warning} title="Event löschen" message={format!("Soll das Event {} wirklich gelöscht werden?", props.event.title.clone())} confirm_label="Event löschen" decline_label="Nicht löschen" on_confirm={delete_confirm} on_decline={delete_decline} />
             }
         </>
     )
@@ -511,9 +467,9 @@ cursor: pointer;"#,
         classes!(event_style, hover_style)
     };
 
-    let edit_open_state = use_state_eq(|| false);
+    let edit_open_toggle = use_bool_toggle(false);
     let on_updated = use_callback(
-        (edit_open_state.clone(), props.on_updated.clone()),
+        (edit_open_toggle.clone(), props.on_updated.clone()),
         |event, (state, on_updated)| {
             state.set(false);
             on_updated.emit(event);
@@ -521,7 +477,7 @@ cursor: pointer;"#,
     );
     let on_deleted = use_callback(
         (
-            edit_open_state.clone(),
+            edit_open_toggle.clone(),
             props.on_deleted.clone(),
             props.event.clone(),
         ),
@@ -530,18 +486,18 @@ cursor: pointer;"#,
             on_deleted.emit(event.clone());
         },
     );
-    let on_cancel = use_callback(edit_open_state.clone(), |_, state| {
+    let on_cancel = use_callback(edit_open_toggle.clone(), |_, state| {
         state.set(false);
     });
 
     html!(
         <>
-            if *edit_open_state {
+            if *edit_open_toggle {
                 <EditEventDialog event={props.event.clone()} on_updated={on_updated} on_deleted={on_deleted} on_cancel={on_cancel} />
             }
             <span class={classes} data-description={props.event.description.clone()}>
                 {props.event.title.clone()}
-                <a onclick={move |_| edit_open_state.set(true)}>
+                <a onclick={move |_| edit_open_toggle.set(true)}>
                     <Icon icon_id={IconId::LucidePencil} width="16px" height="16px" class={classes!(edit_style, "panda-calendar-edit")} />
                 </a>
             </span>
@@ -551,7 +507,7 @@ cursor: pointer;"#,
 
 #[function_component(Day)]
 fn day(props: &DayProps) -> Html {
-    let add_event_open_state = use_state_eq(|| false);
+    let add_event_open_toggle = use_bool_toggle(false);
     let background_color = if props.selected_month == props.month {
         "transparent"
     } else {
@@ -631,23 +587,23 @@ z-index: 1;
     );
 
     let on_added = use_callback(
-        (add_event_open_state.clone(), props.on_added.clone()),
+        (add_event_open_toggle.clone(), props.on_added.clone()),
         |event, (state, on_added)| {
             state.set(false);
             on_added.emit(event);
         },
     );
-    let on_cancel = use_callback(add_event_open_state.clone(), |_, state| {
+    let on_cancel = use_callback(add_event_open_toggle.clone(), |_, state| {
         state.set(false);
     });
 
     html!(
         <>
-            if *add_event_open_state {
+            if *add_event_open_toggle {
                 <AddEventDialog start_date={NaiveDate::from_ymd_opt(props.year, props.month, props.day).unwrap()} on_added={on_added} on_cancel={on_cancel} />
             }
             <div class={classes!(style)}>
-                <Icon onclick={move |_| add_event_open_state.set(true)} icon_id={IconId::LucideCalendarPlus} class={classes!(add_style, "panda-calendar-add")} />
+                <Icon onclick={move |_| add_event_open_toggle.set(true)} icon_id={IconId::LucideCalendarPlus} class={classes!(add_style, "panda-calendar-add")} />
                 {for props.events.iter().map(move |evt| html!(
                     <EventEntry on_updated={props.on_updated.clone()} on_deleted={props.on_deleted.clone()} key={evt.id} event={evt.clone()} />
                 ))}
@@ -702,17 +658,8 @@ fn calendar_data(props: &CalendarProps) -> Html {
 
     let selected_month = first_day_of_month.month();
 
-    log::debug!("First day of month {first_day_of_month:?}");
-    log::debug!("Last day of month {last_day_of_month:?}");
-    log::debug!("First day of calendar {calendar_start_date:?}");
-    log::debug!("Last day of prev month {first_day_of_month:?}");
-    log::debug!("First day of next month {first_day_of_next_month:?}");
-    log::debug!("Last day of calendar {calendar_end_date:?}");
-
-    let initial_loaded_toggle = use_bool_toggle(false);
-    let loaded_toggle = use_bool_toggle(false);
     let event_source_connected_toggle = use_bool_toggle(false);
-    let unknown_error_state = use_state_eq(|| false);
+    let unreported_error_toggle = use_bool_toggle(false);
 
     let bamboo_error_state = use_state_eq(api::ApiError::default);
 
@@ -724,7 +671,31 @@ fn calendar_data(props: &CalendarProps) -> Html {
         DateRange::new(*start, *end).unwrap()
     });
 
-    let event_query_state = use_query_value::<models::EventRange>(range_memo.clone());
+    let events_state = {
+        let range_memo = range_memo.clone();
+
+        let events_list = events_list.clone();
+
+        let unreported_error_toggle = unreported_error_toggle.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
+
+        use_async(async move {
+            api::get_events(range_memo)
+                .await
+                .map(|data| {
+                    unreported_error_toggle.set(false);
+                    events_list.set(data)
+                })
+                .map_err(|err| {
+                    bamboo_error_state.set(err.clone());
+                    unreported_error_toggle.set(true);
+
+                    err
+                })
+        })
+    };
+
     let event_created = use_callback(
         (events_list.clone(), range_memo.clone()),
         |event: Event, (events_list, range_memo)| {
@@ -779,46 +750,6 @@ fn calendar_data(props: &CalendarProps) -> Html {
             events_list.current().len()
         );
     });
-
-    {
-        let calendar_event_source_state = calendar_event_source_state.clone();
-        use_unmount(move || {
-            let source = calendar_event_source_state.borrow().clone();
-            source.close();
-        });
-    }
-
-    let error_message_style = use_style!(
-        r#"
-grid-column: span 7;
-grid-row: 3/4;
-    "#
-    );
-    let progress_ring_style = use_style!(
-        r#"
-grid-column: span 7;
-grid-row: 3/4;
-    "#
-    );
-
-    {
-        let event_query_state = event_query_state.clone();
-        let props = props.clone();
-        let loaded_toggle = loaded_toggle.clone();
-
-        use_effect_update(move || {
-            if *props_date_memo != props.date {
-                loaded_toggle.set(false);
-
-                yew::platform::spawn_local(async move {
-                    let _ = event_query_state.refresh().await;
-                });
-            }
-
-            || ()
-        })
-    }
-
     let on_created = use_callback(
         (event_created.clone(), *event_source_connected_toggle),
         |event, (cb, connected)| {
@@ -845,63 +776,55 @@ grid-row: 3/4;
     );
 
     let report_unknown_error = use_callback(
-        (bamboo_error_state.clone(), unknown_error_state.clone()),
-        |_, (bamboo_error_state, unknown_error_state)| {
+        (bamboo_error_state.clone(), unreported_error_toggle.clone()),
+        |_, (bamboo_error_state, unreported_error_toggle)| {
             error::report_unknown_error(
                 "bamboo_calendar",
                 "calendar_data",
                 bamboo_error_state.deref().clone(),
             );
-            unknown_error_state.set(false);
+            unreported_error_toggle.set(false);
         },
     );
 
-    if !*loaded_toggle {
-        match event_query_state.result() {
-            None => {
-                log::debug!("Still loading");
-                if !*initial_loaded_toggle {
-                    return html!(
-                        <div class={progress_ring_style}>
-                            <CosmoProgressRing />
-                        </div>
-                    );
-                }
-            }
-            Some(Ok(res)) => {
-                log::debug!("Loaded events");
-                if !*initial_loaded_toggle {
-                    log::debug!("Start event source for calendar on /sse/event");
-                    let source = calendar_event_source_state.borrow().clone();
-                    source.register_handler("created", event_created.clone());
-                    source.register_handler("updated", event_updated.clone());
-                    source.register_handler("deleted", event_deleted.clone());
-                    event_source_connected_toggle.set(true);
-                }
+    {
+        let calendar_event_source_state = calendar_event_source_state.clone();
+        use_unmount(move || {
+            let source = calendar_event_source_state.borrow();
+            source.close();
+        });
+    }
+    {
+        let events_state = events_state.clone();
+        let calendar_event_source_state = calendar_event_source_state.clone();
 
-                events_list.set(res.events.clone());
-                initial_loaded_toggle.set(true);
-                loaded_toggle.set(true);
-            }
-            Some(Err(err)) => {
-                log::warn!("Failed to load {err}");
-                bamboo_error_state.set(err.clone());
-                if !*initial_loaded_toggle {
-                    unknown_error_state.set(true);
-                }
-                initial_loaded_toggle.set(true);
+        let event_source_connected_toggle = event_source_connected_toggle.clone();
 
-                return html!(
-                    <div class={error_message_style}>
-                        if *unknown_error_state {
-                            <CosmoMessage header="Fehler beim Laden" message="Der Event Kalender konnte nicht geladen werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
-                        } else {
-                            <CosmoMessage header="Fehler beim Laden" message="Der Event Kalender konnte nicht geladen werden" message_type={CosmoMessageType::Negative} />
-                        }
-                    </div>
-                );
+        let event_created = event_created.clone();
+        let event_updated = event_updated.clone();
+        let event_deleted = event_deleted.clone();
+
+        use_mount(move || {
+            log::debug!("Start event source for calendar on /sse/event");
+            let mut source = calendar_event_source_state.borrow_mut();
+            source.register_handler("created", event_created.clone());
+            source.register_handler("updated", event_updated.clone());
+            source.register_handler("deleted", event_deleted.clone());
+            event_source_connected_toggle.set(true);
+            events_state.run();
+        })
+    }
+    {
+        let events_state = events_state.clone();
+        let props = props.clone();
+
+        use_effect_update(move || {
+            if *props_date_memo != props.date {
+                events_state.run();
             }
-        }
+
+            || ()
+        })
     }
 
     let events_for_day = {
@@ -915,23 +838,52 @@ grid-row: 3/4;
         }
     };
 
-    let render_day = move |day| {
+    let render_day = move |day: NaiveDate| {
         let on_created = on_created.clone();
         let on_updated = on_updated.clone();
         let on_deleted = on_deleted.clone();
 
+        let events = events_for_day(day);
+
         html!(
-            <Day on_updated={on_updated} on_added={on_created} on_deleted={on_deleted} events={events_for_day(day)} key={day.format("%F").to_string()} day={day.day()} month={day.month()} year={day.year()} selected_month={selected_month} />
+            <Day on_updated={on_updated} on_added={on_created} on_deleted={on_deleted} events={events} key={day.format("%F").to_string()} day={day.day()} month={day.month()} year={day.year()} selected_month={selected_month} />
         )
     };
 
+    let error_message_style = use_style!(
+        r#"
+grid-column: span 7;
+grid-row: 3/4;
+    "#
+    );
+    let progress_ring_style = use_style!(
+        r#"
+grid-column: span 7;
+grid-row: 3/4;
+    "#
+    );
+
     html!(
         <>
-            if first_day_offset > 0 {
-                {for DateRange::new(calendar_start_date, last_day_of_prev_month).unwrap().into_iter().map(render_day.clone())}
+            if events_state.loading {
+                <div class={progress_ring_style}>
+                    <CosmoProgressRing />
+                </div>
+            } else if let Some(_) = &events_state.data {
+                if first_day_offset > 0 {
+                    {for DateRange::new(calendar_start_date, last_day_of_prev_month).unwrap().into_iter().map(render_day.clone())}
+                }
+                {for DateRange::new(first_day_of_month, last_day_of_month).unwrap().into_iter().map(render_day.clone())}
+                {for DateRange::new(first_day_of_next_month, calendar_end_date).unwrap().into_iter().map(render_day.clone())}
+            } else if let Some(_) = &events_state.error {
+                <div class={error_message_style}>
+                    if *unreported_error_toggle {
+                        <CosmoMessage header="Fehler beim Laden" message="Der Event Kalender konnte nicht geladen werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
+                    } else {
+                        <CosmoMessage header="Fehler beim Laden" message="Der Event Kalender konnte nicht geladen werden" message_type={CosmoMessageType::Negative} />
+                    }
+                </div>
             }
-            {for DateRange::new(first_day_of_month, last_day_of_month).unwrap().into_iter().map(render_day.clone())}
-            {for DateRange::new(first_day_of_next_month, calendar_end_date).unwrap().into_iter().map(render_day.clone())}
         </>
     )
 }
@@ -999,10 +951,10 @@ text-align: center;
     "#
     );
 
-    let move_prev = use_callback(date_state.clone(), |_: MouseEvent, date_state| {
+    let move_prev = use_callback(date_state.clone(), |_, date_state| {
         date_state.set((*date_state).checked_sub_months(Months::new(1)).unwrap())
     });
-    let move_next = use_callback(date_state.clone(), |_: MouseEvent, date_state| {
+    let move_next = use_callback(date_state.clone(), |_, date_state| {
         date_state.set((*date_state).checked_add_months(Months::new(1)).unwrap())
     });
 

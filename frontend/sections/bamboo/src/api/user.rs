@@ -1,25 +1,6 @@
-use std::rc::Rc;
-
-use async_trait::async_trait;
-use bounce::query::{Query, QueryResult};
-use bounce::BounceStates;
-
 use bamboo_entities::prelude::*;
 
-use crate::api::{
-    delete, get, post, put_no_body_no_content, put_no_content, ApiError, BambooApiResult,
-};
-use crate::models::Users;
-
-#[async_trait(? Send)]
-impl Query for Users {
-    type Input = ();
-    type Error = ApiError;
-
-    async fn query(_states: &BounceStates, _input: Rc<Self::Input>) -> QueryResult<Self> {
-        get_users().await.map(|res| Rc::new(res.into()))
-    }
-}
+use crate::api::{delete, get, post, put_no_body_no_content, put_no_content, BambooApiResult};
 
 pub async fn get_users() -> BambooApiResult<Vec<WebUser>> {
     log::debug!("Get users");
