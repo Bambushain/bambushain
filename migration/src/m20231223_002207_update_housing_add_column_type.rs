@@ -26,7 +26,7 @@ impl MigrationTrait for Migration {
                         ColumnDef::new(CharacterHousing::HousingType)
                             .custom(Alias::new("final_fantasy.housing_type"))
                             .not_null()
-                            .default(SimpleExpr::Custom("private".into())),
+                            .default(SimpleExpr::Value("private".into())),
                     )
                     .to_owned(),
             )
