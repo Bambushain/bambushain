@@ -27,6 +27,7 @@ enum HousingActions {
 #[function_component(ModifyHousingModal)]
 fn modify_housing_modal(props: &ModifyHousingModalProps) -> Html {
     let district_state = use_state_eq(|| props.housing.district);
+    let housing_type_state = use_state_eq(|| props.housing.housing_type);
     let ward_state = use_state_eq(|| props.housing.ward);
     let plot_state = use_state_eq(|| props.housing.plot);
 
@@ -36,6 +37,15 @@ fn modify_housing_modal(props: &ModifyHousingModalProps) -> Html {
                 district.to_string(),
                 district.get_name(),
                 (*district_state).clone().eq(&district),
+            )
+        })
+        .collect::<Vec<CosmoModernSelectItem>>();
+    let housing_types = HousingType::iter()
+        .map(|housing_type| {
+            CosmoModernSelectItem::new(
+                housing_type.to_string(),
+                housing_type.get_name(),
+                (*housing_type_state).clone().eq(&housing_type),
             )
         })
         .collect::<Vec<CosmoModernSelectItem>>();
@@ -62,15 +72,17 @@ fn modify_housing_modal(props: &ModifyHousingModalProps) -> Html {
     let on_save = use_callback(
         (
             district_state.clone(),
+            housing_type_state.clone(),
             ward_state.clone(),
             plot_state.clone(),
             props.on_save.clone(),
             props.character_id,
         ),
-        |_, (district_state, ward_state, plot_state, on_save, character_id)| {
+        |_, (district_state, housing_type_state, ward_state, plot_state, on_save, character_id)| {
             on_save.emit(CharacterHousing::new(
                 *character_id,
                 *(*district_state).clone(),
+                *(*housing_type_state).clone(),
                 *(*ward_state).clone(),
                 *(*plot_state).clone(),
             ))
@@ -80,6 +92,10 @@ fn modify_housing_modal(props: &ModifyHousingModalProps) -> Html {
     let update_district = use_callback(district_state.clone(), |value: AttrValue, state| {
         state.set(HousingDistrict::from(value.to_string()))
     });
+    let update_housing_type =
+        use_callback(housing_type_state.clone(), |value: AttrValue, state| {
+            state.set(HousingType::from(value.to_string()))
+        });
     let update_ward = use_callback(ward_state.clone(), |value: AttrValue, state| {
         state.set(value.to_string().as_str().parse::<i16>().unwrap())
     });
@@ -103,9 +119,10 @@ fn modify_housing_modal(props: &ModifyHousingModalProps) -> Html {
                     }
                 }
                 <CosmoInputGroup>
-                    <CosmoModernSelect label="Gebiet" on_select={update_district} required={true} items={districts} />
-                    <CosmoModernSelect label="Bezirk" on_select={update_ward} required={true} items={wards} />
-                    <CosmoModernSelect label="Nummer" on_select={update_plot} required={true} items={plots} />
+                    <CosmoModernSelect width={CosmoInputWidth::Medium} label="Gebiet" on_select={update_district} required={true} items={districts} />
+                    <CosmoModernSelect width={CosmoInputWidth::Medium} label="Bezirk" on_select={update_ward} required={true} items={wards} />
+                    <CosmoModernSelect width={CosmoInputWidth::Medium} label="Nummer" on_select={update_plot} required={true} items={plots} />
+                    <CosmoModernSelect width={CosmoInputWidth::Medium} label="Kategorie" on_select={update_housing_type} required={true} items={housing_types} />
                 </CosmoInputGroup>
             </CosmoModal>
         </>
@@ -408,6 +425,7 @@ h5 {
 button {
     border-top-left-radius: 0 !important;
     border-top-right-radius: 0 !important;
+    flex: 1 1 50%;
 }
 "#
     );
@@ -479,6 +497,7 @@ font-style: normal;
                         <div class={housing_container_style.clone()}>
                             <address class={housing_address_style.clone()}>
                                 <CosmoHeader level={CosmoHeaderLevel::H5} header={housing.district.to_string()} />
+                                <span>{housing.housing_type.to_string()}</span><br />
                                 <span>{format!("Bezirk {}", housing.ward)}</span><br />
                                 <span>{format!("Nr. {}", housing.plot)}</span>
                             </address>
@@ -491,7 +510,7 @@ font-style: normal;
                 })}
             </div>
             if *open_create_housing_modal_state {
-                <ModifyHousingModal has_unknown_error={*unknown_error_state} on_error_close={report_unknown_error.clone()} housing={CharacterHousing::new(props.character.id, HousingDistrict::TheLavenderBeds, 1, 1)} character_id={props.character.id} is_edit={false} error_message={(*error_message_state).clone()} has_error={*error_state} on_close={on_modal_create_close} title="Unterkunft hinzufügen" save_label="Unterkunft hinzufügen" on_save={on_modal_create_save} />
+                <ModifyHousingModal has_unknown_error={*unknown_error_state} on_error_close={report_unknown_error.clone()} housing={CharacterHousing::new(props.character.id, HousingDistrict::TheLavenderBeds, HousingType::Private, 1, 1)} character_id={props.character.id} is_edit={false} error_message={(*error_message_state).clone()} has_error={*error_state} on_close={on_modal_create_close} title="Unterkunft hinzufügen" save_label="Unterkunft hinzufügen" on_save={on_modal_create_save} />
             }
             {match (*action_state).clone() {
                 HousingActions::Edit(housing) => html!(

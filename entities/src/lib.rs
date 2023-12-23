@@ -21,6 +21,7 @@ pub mod prelude {
     pub use crate::character::Model as Character;
     pub use crate::character_housing;
     pub use crate::character_housing::HousingDistrict;
+    pub use crate::character_housing::HousingType;
     pub use crate::character_housing::Model as CharacterHousing;
     pub use crate::crafter;
     pub use crate::crafter::CrafterJob;

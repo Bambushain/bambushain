@@ -124,8 +124,8 @@ impl HousingType {
 impl ToString for HousingType {
     fn to_string(&self) -> String {
         match self {
-            HousingType::Private => "Privat",
-            HousingType::FreeCompany => "Freie Gesellschaft",
+            HousingType::Private => "Private Unterkunft",
+            HousingType::FreeCompany => "Unterkunft einer Freie Gesellschaft",
             HousingType::SharedAppartment => "Wohngemeinschaft",
         }
         .to_string()
@@ -211,7 +211,13 @@ impl Related<super::character::Entity> for Entity {
 impl ActiveModelBehavior for ActiveModel {}
 
 impl Model {
-    pub fn new(character_id: i32, district: HousingDistrict, housing_type: HousingType, ward: i16, plot: i16) -> Self {
+    pub fn new(
+        character_id: i32,
+        district: HousingDistrict,
+        housing_type: HousingType,
+        ward: i16,
+        plot: i16,
+    ) -> Self {
         Self {
             id: i32::default(),
             district,
