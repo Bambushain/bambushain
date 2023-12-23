@@ -167,6 +167,10 @@ pub async fn update_character_housing(
             character_housing::Column::District,
             Expr::val(housing.district).as_enum(character_housing::HousingDistrictEnum),
         )
+        .col_expr(
+            character_housing::Column::HousingType,
+            Expr::val(housing.housing_type).as_enum(character_housing::HousingTypeEnum),
+        )
         .col_expr(character_housing::Column::Ward, Expr::value(housing.ward))
         .col_expr(character_housing::Column::Plot, Expr::value(housing.plot))
         .exec(db)

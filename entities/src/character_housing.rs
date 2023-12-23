@@ -87,6 +87,74 @@ impl Ord for HousingDistrict {
     }
 }
 
+#[derive(Serialize, Deserialize, EnumIter, Debug, Eq, PartialEq, Clone, Default, Copy)]
+#[cfg_attr(
+    not(target_arch = "wasm32"),
+    derive(DeriveActiveEnum),
+    sea_orm(
+        rs_type = "String",
+        db_type = "Enum",
+        enum_name = "final_fantasy.housing_type"
+    )
+)]
+pub enum HousingType {
+    #[default]
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "private"))]
+    Private,
+    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "free_company"))]
+    FreeCompany,
+    #[cfg_attr(
+        not(target_arch = "wasm32"),
+        sea_orm(string_value = "shared_appartment")
+    )]
+    SharedAppartment,
+}
+
+impl HousingType {
+    pub fn get_name(self) -> String {
+        match self {
+            HousingType::Private => "private",
+            HousingType::FreeCompany => "free_company",
+            HousingType::SharedAppartment => "shared_appartment",
+        }
+        .to_string()
+    }
+}
+
+impl ToString for HousingType {
+    fn to_string(&self) -> String {
+        match self {
+            HousingType::Private => "Privat",
+            HousingType::FreeCompany => "Freie Gesellschaft",
+            HousingType::SharedAppartment => "Wohngemeinschaft",
+        }
+        .to_string()
+    }
+}
+
+impl From<String> for HousingType {
+    fn from(value: String) -> Self {
+        match value.as_str() {
+            "private" => HousingType::Private,
+            "free_company" => HousingType::FreeCompany,
+            "shared_appartment" => HousingType::SharedAppartment,
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl PartialOrd for HousingType {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for HousingType {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.get_name().cmp(&other.get_name())
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Default)]
 #[cfg_attr(
     not(target_arch = "wasm32"),
@@ -98,6 +166,7 @@ pub struct Model {
     #[cfg_attr(not(target_arch = "wasm32"), sea_orm(primary_key))]
     pub id: i32,
     pub district: HousingDistrict,
+    pub housing_type: HousingType,
     pub ward: i16,
     pub plot: i16,
     pub character_id: i32,
@@ -142,10 +211,11 @@ impl Related<super::character::Entity> for Entity {
 impl ActiveModelBehavior for ActiveModel {}
 
 impl Model {
-    pub fn new(character_id: i32, district: HousingDistrict, ward: i16, plot: i16) -> Self {
+    pub fn new(character_id: i32, district: HousingDistrict, housing_type: HousingType, ward: i16, plot: i16) -> Self {
         Self {
             id: i32::default(),
             district,
+            housing_type,
             ward,
             plot,
             character_id,
