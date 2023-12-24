@@ -4,6 +4,7 @@ pub use crafter::*;
 pub use custom_field::*;
 pub use fighter::*;
 pub use free_company::*;
+pub use bamboo_frontend_base_api::*;
 
 pub mod character;
 pub mod character_housing;
