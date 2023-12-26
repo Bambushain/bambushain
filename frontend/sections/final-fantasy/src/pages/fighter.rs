@@ -1,23 +1,20 @@
 use std::ops::Deref;
-use std::rc::Rc;
 
-use bounce::query::use_query_value;
 use strum::IntoEnumIterator;
 use yew::prelude::*;
 use yew_cosmo::prelude::*;
-use yew_hooks::use_unmount;
+use yew_hooks::{use_async, use_bool_toggle, use_mount};
 
 use bamboo_entities::prelude::*;
-use bamboo_frontend_base_api as api;
 use bamboo_frontend_base_api::{CONFLICT, NOT_FOUND};
 use bamboo_frontend_base_error as error;
 
-use crate::api::*;
-use crate::models::*;
+use crate::api;
 use crate::props::fighter::*;
 
 #[derive(PartialEq, Clone)]
 enum FighterActions {
+    Create,
     Edit(Fighter),
     Delete(Fighter),
     Closed,
@@ -111,378 +108,325 @@ fn modify_fighter_modal(props: &ModifyFighterModalProps) -> Html {
     )
 }
 
+#[allow(clippy::await_holding_refcell_ref)]
 #[function_component(FighterDetails)]
 pub fn fighter_details(props: &FighterDetailsProps) -> Html {
     log::debug!("Render fighter details");
-    let fighter_query_state = use_query_value::<FighterForCharacter>(Rc::new(props.character.id));
-
     let action_state = use_state_eq(|| FighterActions::Closed);
 
-    let initial_loaded_state = use_state_eq(|| false);
-    let open_create_fighter_modal_state = use_state_eq(|| false);
-    let error_state = use_state_eq(|| false);
-    let delete_error_state = use_state_eq(|| false);
-    let unknown_error_state = use_state_eq(|| false);
+    let create_fighter_ref = use_mut_ref(|| None as Option<Fighter>);
+    let edit_fighter_ref = use_mut_ref(|| None as Option<Fighter>);
+    let edit_id_fighter_ref = use_mut_ref(|| -1);
+    let delete_fighter_ref = use_mut_ref(|| None as Option<i32>);
+
+    let unreported_error_toggle = use_bool_toggle(false);
 
     let bamboo_error_state = use_state_eq(api::ApiError::default);
 
     let error_message_state = use_state_eq(|| AttrValue::from(""));
     let error_message_form_state = use_state_eq(|| AttrValue::from(""));
 
-    let fighter_state = use_state_eq(|| vec![] as Vec<Fighter>);
+    let fighter_state = {
+        let unreported_error_toggle = unreported_error_toggle.clone();
 
-    let jobs_state = use_state_eq(|| FighterJob::iter().collect::<Vec<FighterJob>>());
+        let bamboo_error_state = bamboo_error_state.clone();
 
-    {
-        let error_state = error_state.clone();
+        let error_message_form_state = error_message_form_state.clone();
 
-        use_unmount(move || {
-            error_state.set(false);
+        let character_id = props.character.id;
+
+        use_async(async move {
+            api::get_fighters(character_id).await.map_err(|err| {
+                bamboo_error_state.set(err.clone());
+                unreported_error_toggle.set(true);
+                error_message_form_state.set("get_fighters".into());
+
+                err
+            })
         })
-    }
+    };
+    let create_state = {
+        let action_state = action_state.clone();
+        let unreported_error_toggle = unreported_error_toggle.clone();
 
+        let bamboo_error_state = bamboo_error_state.clone();
+
+        let error_message_state = error_message_state.clone();
+        let error_message_form_state = error_message_form_state.clone();
+
+        let fighter_state = fighter_state.clone();
+
+        let character_id = props.character.id;
+
+        let create_fighter_ref = create_fighter_ref.clone();
+
+        use_async(async move {
+            if let Some(fighter) = create_fighter_ref.borrow().clone() {
+                api::create_fighter(character_id, fighter)
+                    .await
+                    .map(|_| {
+                        action_state.set(FighterActions::Closed);
+                        unreported_error_toggle.set(false);
+                        fighter_state.run()
+                    })
+                    .map_err(|err| {
+                        unreported_error_toggle.set(true);
+                        error_message_form_state.set("create_fighter".into());
+                        bamboo_error_state.set(err.clone());
+                        if err.code == CONFLICT {
+                            unreported_error_toggle.set(false);
+                            error_message_state
+                                .set("Ein Fighter mit diesem Job existiert bereits".into());
+                        } else {
+                            unreported_error_toggle.set(true);
+                            error_message_state
+                                .set("Der Fighter konnte nicht hinzugefügt werden".into());
+                        }
+
+                        err
+                    })
+            } else {
+                Ok(())
+            }
+        })
+    };
+    let update_state = {
+        let action_state = action_state.clone();
+        let unreported_error_toggle = unreported_error_toggle.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
+
+        let error_message_state = error_message_state.clone();
+        let error_message_form_state = error_message_form_state.clone();
+
+        let fighter_state = fighter_state.clone();
+
+        let character_id = props.character.id;
+
+        let edit_fighter_ref = edit_fighter_ref.clone();
+        let edit_id_fighter_ref = edit_id_fighter_ref.clone();
+
+        use_async(async move {
+            let id = *edit_id_fighter_ref.borrow();
+
+            if let Some(fighter) = edit_fighter_ref.borrow().clone() {
+                api::update_fighter(character_id, id, fighter)
+                    .await
+                    .map(|_| {
+                        action_state.set(FighterActions::Closed);
+                        unreported_error_toggle.set(false);
+                        fighter_state.run()
+                    })
+                    .map_err(|err| {
+                        unreported_error_toggle.set(true);
+                        error_message_form_state.set("update_fighter".into());
+                        bamboo_error_state.set(err.clone());
+                        match err.code {
+                            CONFLICT => {
+                                unreported_error_toggle.set(false);
+                                error_message_state
+                                    .set("Ein Fighter mit diesem Job existiert bereits".into());
+                            }
+                            NOT_FOUND => {
+                                unreported_error_toggle.set(false);
+                                error_message_state
+                                    .set("Der Fighter konnte nicht gefunden werden".into());
+                            }
+                            _ => {
+                                unreported_error_toggle.set(true);
+                                error_message_state
+                                    .set("Der Fighter konnte nicht gespeichert werden".into());
+                            }
+                        };
+
+                        err
+                    })
+            } else {
+                Ok(())
+            }
+        })
+    };
+    let delete_state = {
+        let action_state = action_state.clone();
+        let unreported_error_toggle = unreported_error_toggle.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
+
+        let error_message_form_state = error_message_form_state.clone();
+
+        let fighter_state = fighter_state.clone();
+
+        let character_id = props.character.id;
+
+        let delete_fighter_ref = delete_fighter_ref.clone();
+
+        use_async(async move {
+            if let Some(fighter) = *delete_fighter_ref.borrow() {
+                api::delete_fighter(character_id, fighter)
+                    .await
+                    .map(|_| {
+                        action_state.set(FighterActions::Closed);
+                        unreported_error_toggle.set(false);
+                        fighter_state.run()
+                    })
+                    .map_err(|err| {
+                        unreported_error_toggle.set(true);
+                        error_message_form_state.set("delete_fighter".into());
+                        bamboo_error_state.set(err.clone());
+
+                        err
+                    })
+            } else {
+                Ok(())
+            }
+        })
+    };
+
+    let on_modal_create_save = use_callback(
+        (create_fighter_ref.clone(), create_state.clone()),
+        |fighter, (create_fighter_ref, create_state)| {
+            *create_fighter_ref.borrow_mut() = Some(fighter);
+            create_state.run();
+        },
+    );
+    let on_modal_update_save = use_callback(
+        (edit_fighter_ref.clone(), update_state.clone()),
+        |fighter, (edit_fighter_ref, update_state)| {
+            *edit_fighter_ref.borrow_mut() = Some(fighter);
+            update_state.run();
+        },
+    );
+    let on_modal_delete = use_callback(
+        (delete_fighter_ref.clone(), delete_state.clone()),
+        |fighter_id, (delete_fighter_ref, delete_state)| {
+            *delete_fighter_ref.borrow_mut() = Some(fighter_id);
+            delete_state.run();
+        },
+    );
+    let on_modal_action_close = use_callback(
+        (action_state.clone(), unreported_error_toggle.clone()),
+        |_, (state, unreported_error_toggle)| {
+            state.set(FighterActions::Closed);
+            unreported_error_toggle.set(false);
+        },
+    );
+    let on_create_open = use_callback(action_state.clone(), |_, action_state| {
+        action_state.set(FighterActions::Create);
+    });
+    let on_edit_open = use_callback(
+        (action_state.clone(), edit_id_fighter_ref.clone()),
+        |fighter: Fighter, (action_state, edit_id_fighter_ref)| {
+            *edit_id_fighter_ref.borrow_mut() = fighter.id;
+            action_state.set(FighterActions::Edit(fighter));
+        },
+    );
+    let on_delete_open = use_callback(action_state.clone(), |fighter, action_state| {
+        action_state.set(FighterActions::Delete(fighter));
+    });
     let report_unknown_error = use_callback(
         (
             bamboo_error_state.clone(),
             error_message_form_state.clone(),
-            unknown_error_state.clone(),
+            unreported_error_toggle.clone(),
         ),
-        |_, (bamboo_error_state, error_message_form_state, unknown_error_state)| {
+        |_, (bamboo_error_state, error_message_form_state, unreported_error_toggle)| {
             error::report_unknown_error(
                 "final_fantasy_character",
                 error_message_form_state.deref().to_string(),
                 bamboo_error_state.deref().clone(),
             );
-            unknown_error_state.set(false);
+            unreported_error_toggle.set(false);
         },
     );
 
-    let on_modal_create_close = use_callback(
-        (open_create_fighter_modal_state.clone(), error_state.clone()),
-        |_, (state, error_state)| {
-            state.set(false);
-            error_state.set(false);
-        },
-    );
-    let on_modal_create_save = {
-        let error_state = error_state.clone();
-        let open_create_fighter_modal_state = open_create_fighter_modal_state.clone();
-        let unknown_error_state = unknown_error_state.clone();
+    {
+        let fighter_state = fighter_state.clone();
 
-        let bamboo_error_state = bamboo_error_state.clone();
-
-        let error_message_state = error_message_state.clone();
-        let error_message_form_state = error_message_form_state.clone();
-
-        let fighter_query_state = fighter_query_state.clone();
-
-        let character_id = props.character.id;
-
-        Callback::from(move |fighter: Fighter| {
-            log::debug!("Modal was confirmed lets execute the request");
-            let error_state = error_state.clone();
-            let open_create_fighter_modal_state = open_create_fighter_modal_state.clone();
-            let unknown_error_state = unknown_error_state.clone();
-
-            let bamboo_error_state = bamboo_error_state.clone();
-
-            let error_message_state = error_message_state.clone();
-            let error_message_form_state = error_message_form_state.clone();
-
-            let fighter_query_state = fighter_query_state.clone();
-
-            yew::platform::spawn_local(async move {
-                error_state.set(match create_fighter(character_id, fighter).await {
-                    Ok(_) => {
-                        open_create_fighter_modal_state.clone().set(false);
-                        let _ = fighter_query_state.refresh().await;
-                        unknown_error_state.set(false);
-
-                        false
-                    }
-                    Err(err) => {
-                        error_message_state.set(
-                            if err.code == CONFLICT {
-                                unknown_error_state.set(false);
-                                "Ein Kämpfer mit diesem Job existiert bereits"
-                            } else {
-                                bamboo_error_state.set(err.clone());
-                                error_message_form_state.set("create_fighter".into());
-                                unknown_error_state.set(true);
-                                "Der Kämpfer konnte nicht hinzugefügt werden"
-                            }
-                            .into(),
-                        );
-                        true
-                    }
-                });
-            });
-        })
-    };
-    let on_modal_update_save = {
-        let fighter_query_state = fighter_query_state.clone();
-
-        let on_modal_close = on_modal_create_close.clone();
-
-        let error_state = error_state.clone();
-        let unknown_error_state = unknown_error_state.clone();
-
-        let bamboo_error_state = bamboo_error_state.clone();
-
-        let error_message_state = error_message_state.clone();
-        let error_message_form_state = error_message_form_state.clone();
-
-        let action_state = action_state.clone();
-
-        let character_id = props.character.id;
-
-        Callback::from(move |fighter: Fighter| {
-            log::debug!("Modal was confirmed lets execute the request");
-            let on_modal_close = on_modal_close.clone();
-
-            let error_state = error_state.clone();
-            let unknown_error_state = unknown_error_state.clone();
-
-            let bamboo_error_state = bamboo_error_state.clone();
-
-            let error_message_state = error_message_state.clone();
-            let error_message_form_state = error_message_form_state.clone();
-
-            let action_state = action_state.clone();
-
-            let fighter_query_state = fighter_query_state.clone();
-
-            let id = if let FighterActions::Edit(fighter) = (*action_state).clone() {
-                fighter.id
-            } else {
-                -1
-            };
-
-            yew::platform::spawn_local(async move {
-                error_state.set(match update_fighter(character_id, id, fighter).await {
-                    Ok(_) => {
-                        let _ = fighter_query_state.refresh().await;
-                        on_modal_close.emit(());
-                        action_state.set(FighterActions::Closed);
-                        unknown_error_state.set(false);
-
-                        false
-                    }
-                    Err(err) => {
-                        match err.code {
-                            CONFLICT => {
-                                error_message_state
-                                    .set("Ein Kämpfer mit diesem Job existiert bereits".into());
-                                unknown_error_state.set(false);
-                            }
-                            NOT_FOUND => {
-                                error_message_state
-                                    .set("Der Kämpfer konnte nicht gefunden werden".into());
-                                unknown_error_state.set(false);
-                            }
-                            _ => {
-                                bamboo_error_state.set(err.clone());
-                                error_message_form_state.set("update_fighter".into());
-                                unknown_error_state.set(true);
-                                error_message_state
-                                    .set("Der Kämpfer konnte nicht gespeichert werden".into());
-                            }
-                        };
-                        true
-                    }
-                });
-            })
-        })
-    };
-    let on_modal_delete = {
-        let fighter_query_state = fighter_query_state.clone();
-
-        let delete_error_state = delete_error_state.clone();
-        let unknown_error_state = unknown_error_state.clone();
-
-        let bamboo_error_state = bamboo_error_state.clone();
-
-        let error_message_state = error_message_state.clone();
-        let error_message_form_state = error_message_form_state.clone();
-
-        let action_state = action_state.clone();
-
-        let character_id = props.character.id;
-
-        Callback::from(move |id: i32| {
-            let fighter_query_state = fighter_query_state.clone();
-
-            let delete_error_state = delete_error_state.clone();
-            let unknown_error_state = unknown_error_state.clone();
-
-            let bamboo_error_state = bamboo_error_state.clone();
-
-            let error_message_state = error_message_state.clone();
-            let error_message_form_state = error_message_form_state.clone();
-
-            let action_state = action_state.clone();
-
-            yew::platform::spawn_local(async move {
-                delete_error_state.set(match delete_fighter(character_id, id).await {
-                    Ok(_) => {
-                        let _ = fighter_query_state.refresh().await;
-                        unknown_error_state.set(false);
-
-                        false
-                    }
-                    Err(err) => match err.code {
-                        NOT_FOUND => {
-                            error_message_state
-                                .set("Der Kämpfer konnte nicht gefunden werden".into());
-                            unknown_error_state.set(false);
-
-                            true
-                        }
-                        _ => {
-                            bamboo_error_state.set(err.clone());
-                            error_message_form_state.set("delete_fighter".into());
-                            unknown_error_state.set(true);
-                            error_message_state
-                                .set("Der Kämpfer konnte nicht gelöscht werden".into());
-                            true
-                        }
-                    },
-                });
-                action_state.set(FighterActions::Closed);
-            })
-        })
-    };
-    let on_modal_action_close = use_callback(
-        (action_state.clone(), error_state.clone()),
-        |_, (state, error_state)| {
-            state.set(FighterActions::Closed);
-            error_state.set(false);
-        },
-    );
-    let on_create_open = use_callback(
-        (open_create_fighter_modal_state.clone(), error_state.clone()),
-        |_, (open_state, error_state)| {
-            open_state.set(true);
-            error_state.set(false);
-        },
-    );
-    let on_edit_open = use_callback(
-        (action_state.clone(), error_state.clone()),
-        |fighter, (action_state, error_state)| {
-            action_state.set(FighterActions::Edit(fighter));
-            error_state.set(false);
-        },
-    );
-    let on_delete_open = use_callback(
-        (action_state.clone(), error_state.clone()),
-        |fighter, (action_state, error_state)| {
-            action_state.set(FighterActions::Delete(fighter));
-            error_state.set(false);
-        },
-    );
-
-    match fighter_query_state.result() {
-        None => {
-            log::debug!("Still loading");
-            if !*initial_loaded_state {
-                return html!(
-                    <CosmoProgressRing />
-                );
-            }
-        }
-        Some(Ok(res)) => {
-            log::debug!("Loaded fighter");
-            initial_loaded_state.set(true);
-            let mut all_jobs = FighterJob::iter().collect::<Vec<FighterJob>>();
-            for fighter in res.fighter.clone() {
-                let _ = all_jobs
-                    .iter()
-                    .position(|job| job.eq(&fighter.job))
-                    .map(|idx| all_jobs.swap_remove(idx));
-            }
-            all_jobs.sort();
-            jobs_state.set(all_jobs);
-            let mut fighter = res.fighter.clone();
-            fighter.sort();
-            fighter_state.set(fighter);
-        }
-        Some(Err(err)) => {
-            log::warn!("Failed to load {err}");
-            bamboo_error_state.set(err.clone());
-            if !*initial_loaded_state {
-                unknown_error_state.set(true);
-            }
-            initial_loaded_state.set(true);
-
-            return html!(
-                if *unknown_error_state {
-                    <CosmoMessage header="Fehler beim Laden" message="Die Kämpfer konnten nicht geladen werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
-                } else {
-                    <CosmoMessage header="Fehler beim Laden" message="Die Kämpfer konnten nicht geladen werden" message_type={CosmoMessageType::Negative} />
-                }
-            );
-        }
+        use_mount(move || fighter_state.run());
     }
 
-    let new_fighter = (*jobs_state).clone().first().map(|job| Fighter {
-        job: *job,
-        ..Fighter::default()
-    });
+    if fighter_state.loading {
+        html!(
+            <CosmoProgressRing />
+        )
+    } else if let Some(data) = &fighter_state.data {
+        let mut all_jobs = FighterJob::iter().collect::<Vec<FighterJob>>();
+        for fighter in data.clone() {
+            let _ = all_jobs
+                .iter()
+                .position(|job| job.eq(&fighter.job))
+                .map(|idx| all_jobs.swap_remove(idx));
+        }
+        let new_fighter = all_jobs.first().map(|job| Fighter {
+            job: *job,
+            ..Fighter::default()
+        });
 
-    html!(
-        <>
-            if new_fighter.is_some() {
-                <CosmoToolbar>
-                    <CosmoToolbarGroup>
-                        <CosmoButton label="Kämpfer hinzufügen" on_click={on_create_open} />
-                    </CosmoToolbarGroup>
-                </CosmoToolbar>
-            }
-            if *delete_error_state {
-                if *unknown_error_state {
-                    <CosmoMessage header="Fehler beim Löschen" message={(*error_message_state).clone()} message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
-                } else {
-                    <CosmoMessage header="Fehler beim Löschen" message={(*error_message_state).clone()} message_type={CosmoMessageType::Negative} />
+        html!(
+            <>
+                if new_fighter.is_some() {
+                    <CosmoToolbar>
+                        <CosmoToolbarGroup>
+                            <CosmoButton label="Fighter hinzufügen" on_click={on_create_open} />
+                        </CosmoToolbarGroup>
+                    </CosmoToolbar>
                 }
-            }
-            <CosmoTable headers={vec![AttrValue::from(""), AttrValue::from("Job"), AttrValue::from("Level"), AttrValue::from("Gear Score"), AttrValue::from("Aktionen")]}>
-                {for (*fighter_state).clone().into_iter().map(|fighter| {
-                    let edit_fighter = fighter.clone();
-                    let delete_fighter = fighter.clone();
+                if let Some(err) = &delete_state.error {
+                    if err.code == NOT_FOUND {
+                        <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Der Fighter konnte nicht gefunden werden" />
+                    } else if *unreported_error_toggle {
+                        <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Der Fighter konnte nicht gelöscht werden" actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                    } else {
+                        <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Der Fighter konnte nicht gelöscht werden" />
+                    }
+                }
+                <CosmoTable headers={vec![AttrValue::from(""), AttrValue::from("Job"), AttrValue::from("Level"), AttrValue::from("Aktionen")]}>
+                    {for data.iter().map(|fighter| {
+                        let edit_fighter = fighter.clone();
+                        let delete_fighter = fighter.clone();
 
-                    let on_edit_open = on_edit_open.clone();
-                    let on_delete_open = on_delete_open.clone();
+                        let on_edit_open = on_edit_open.clone();
+                        let on_delete_open = on_delete_open.clone();
 
-                    CosmoTableRow::from_table_cells(vec![
-                        CosmoTableCell::from_html(html!(<img src={format!("/static/fighter_jobs/{}", fighter.job.get_file_name())} />), None),
-                        CosmoTableCell::from_html(html!({fighter.job.to_string()}), None),
-                        CosmoTableCell::from_html(html!({fighter.level.clone().unwrap_or("".into())}), None),
-                        CosmoTableCell::from_html(html!({fighter.gear_score.clone().unwrap_or("".into())}), None),
-                        CosmoTableCell::from_html(html!(
-                            <>
-                                <CosmoToolbarGroup>
-                                    <CosmoButton label="Bearbeiten" on_click={move |_| on_edit_open.emit(edit_fighter.clone())} />
-                                    <CosmoButton label="Löschen" on_click={move |_| on_delete_open.emit(delete_fighter.clone())} />
-                                </CosmoToolbarGroup>
-                            </>
-                        ), None),
-                    ], Some(fighter.id.into()))
-                })}
-            </CosmoTable>
-            if *open_create_fighter_modal_state {
-                <ModifyFighterModal has_unknown_error={*unknown_error_state} on_error_close={report_unknown_error.clone()} fighter={new_fighter.unwrap_or(Fighter::default())} character_id={props.character.id} jobs={(*jobs_state).clone()} is_edit={false} error_message={(*error_message_state).clone()} has_error={*error_state} on_close={on_modal_create_close} title="Kämpfer hinzufügen" save_label="Kämpfer hinzufügen" on_save={on_modal_create_save} />
+                        CosmoTableRow::from_table_cells(vec![
+                            CosmoTableCell::from_html(html!(<img src={format!("/static/fighter_jobs/{}", fighter.job.get_file_name())} />), None),
+                            CosmoTableCell::from_html(html!({fighter.job.to_string()}), None),
+                            CosmoTableCell::from_html(html!({fighter.level.clone().unwrap_or("".into())}), None),
+                            CosmoTableCell::from_html(html!({fighter.gear_score.clone().unwrap_or("".into())}), None),
+                            CosmoTableCell::from_html(html!(
+                                <>
+                                    <CosmoToolbarGroup>
+                                        <CosmoButton label="Bearbeiten" on_click={move |_| on_edit_open.emit(edit_fighter.clone())} />
+                                        <CosmoButton label="Löschen" on_click={move |_| on_delete_open.emit(delete_fighter.clone())} />
+                                    </CosmoToolbarGroup>
+                                </>
+                            ), None),
+                        ], Some(fighter.id.into()))
+                    })}
+                </CosmoTable>
+                {match (*action_state).clone() {
+                    FighterActions::Create => html!(
+                        <ModifyFighterModal on_error_close={report_unknown_error.clone()} has_unknown_error={*unreported_error_toggle} fighter={new_fighter.unwrap_or(Fighter::default())} character_id={props.character.id} jobs={all_jobs} is_edit={false} error_message={(*error_message_state).clone()} has_error={create_state.error.is_some()} on_close={on_modal_action_close} title="Fighter hinzufügen" save_label="Fighter hinzufügen" on_save={on_modal_create_save} />
+                    ),
+                    FighterActions::Edit(fighter) => html!(
+                        <ModifyFighterModal on_error_close={report_unknown_error.clone()} has_unknown_error={*unreported_error_toggle} character_id={props.character.id} is_edit={true} jobs={FighterJob::iter().collect::<Vec<FighterJob>>()} title={format!("Fighter {} bearbeiten", fighter.job.to_string())} save_label="Fighter speichern" on_save={on_modal_update_save} on_close={on_modal_action_close} fighter={fighter} error_message={(*error_message_state).clone()} has_error={update_state.error.is_some()} />
+                    ),
+                    FighterActions::Delete(fighter) => html!(
+                        <CosmoConfirm confirm_type={CosmoModalType::Warning} on_confirm={move |_| on_modal_delete.emit(fighter.id)} on_decline={on_modal_action_close} confirm_label="Fighter löschen" decline_label="Fighter behalten" title="Fighter löschen" message={format!("Soll der Fighter {} auf Level {} wirklich gelöscht werden?", fighter.job.to_string(), fighter.level.unwrap_or_default())} />
+                    ),
+                    FighterActions::Closed => html!(),
+                }}
+            </>
+        )
+    } else if fighter_state.error.is_some() {
+        html!(
+            if *unreported_error_toggle {
+                <CosmoMessage header="Fehler beim Laden" message="Die Fighter konnten nicht geladen werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+            } else {
+                <CosmoMessage header="Fehler beim Laden" message="Die Fighter konnten nicht geladen werden" message_type={CosmoMessageType::Negative} />
             }
-            {match (*action_state).clone() {
-                FighterActions::Edit(fighter) => html!(
-                    <ModifyFighterModal has_unknown_error={*unknown_error_state} on_error_close={report_unknown_error.clone()} character_id={props.character.id} is_edit={true} jobs={(*jobs_state).clone()} title={format!("Kämpfer {} bearbeiten", fighter.job.to_string())} save_label="Kämpfer speichern" on_save={on_modal_update_save} on_close={on_modal_action_close} fighter={fighter} error_message={(*error_message_state).clone()} has_error={*error_state} />
-                ),
-                FighterActions::Delete(fighter) => html!(
-                    <>
-                        <CosmoConfirm confirm_type={CosmoModalType::Warning} on_confirm={move |_| on_modal_delete.emit(fighter.id)} on_decline={on_modal_action_close} confirm_label="Kämpfer löschen" decline_label="Kämpfer behalten" title="Kämpfer löschen" message={format!("Soll der Kämpfer {} auf Level {} wirklich gelöscht werden?", fighter.job.to_string(), fighter.level.unwrap_or_default())} />
-                    </>
-                ),
-                FighterActions::Closed => html!(),
-            }}
-        </>
-    )
+        )
+    } else {
+        html!()
+    }
 }

@@ -1,5 +1,4 @@
 use sea_orm::prelude::*;
-use sea_orm::sea_query::Expr;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{IntoActiveModel, NotSet, QueryOrder};
 
@@ -60,7 +59,8 @@ async fn fighter_exists_by_id(
     job: FighterJob,
     db: &DatabaseConnection,
 ) -> BambooResult<bool> {
-    fighter::Entity::find_by_id(id)
+    fighter::Entity::find()
+        .filter(fighter::Column::Id.ne(id))
         .filter(fighter::Column::Job.eq(job))
         .filter(fighter::Column::CharacterId.eq(character_id))
         .filter(character::Column::UserId.eq(user_id))
@@ -131,12 +131,14 @@ pub async fn update_fighter(
         ));
     }
 
-    fighter::Entity::update_many()
-        .filter(fighter::Column::Id.eq(id))
-        .filter(fighter::Column::CharacterId.eq(character_id))
-        .filter(character::Column::UserId.eq(user_id))
-        .col_expr(fighter::Column::Level, Expr::value(fighter.level))
-        .exec(db)
+    let mut active_fighter = get_fighter(id, user_id, character_id, db)
+        .await?
+        .into_active_model();
+    active_fighter.level = Set(fighter.level);
+    active_fighter.gear_score = Set(fighter.gear_score);
+
+    active_fighter
+        .update(db)
         .await
         .map_err(|err| {
             log::error!("{err}");

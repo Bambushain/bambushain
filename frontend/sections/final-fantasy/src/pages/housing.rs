@@ -1,24 +1,21 @@
 use std::ops::Deref;
-use std::rc::Rc;
 
-use bounce::query::use_query_value;
 use strum::IntoEnumIterator;
 use stylist::yew::use_style;
 use yew::prelude::*;
 use yew_cosmo::prelude::*;
-use yew_hooks::use_unmount;
+use yew_hooks::{use_async, use_bool_toggle, use_mount};
 
 use bamboo_entities::prelude::*;
-use bamboo_frontend_base_api as api;
 use bamboo_frontend_base_api::{CONFLICT, NOT_FOUND};
 use bamboo_frontend_base_error as error;
 
-use crate::api::*;
-use crate::models::*;
+use crate::api;
 use crate::props::housing::*;
 
 #[derive(PartialEq, Clone)]
 enum HousingActions {
+    Create,
     Edit(CharacterHousing),
     Delete(CharacterHousing),
     Closed,
@@ -129,279 +126,244 @@ fn modify_housing_modal(props: &ModifyHousingModalProps) -> Html {
     )
 }
 
+#[allow(clippy::await_holding_refcell_ref)]
 #[function_component(HousingDetails)]
 pub fn housing_details(props: &HousingDetailsProps) -> Html {
     log::debug!("Render housing details");
-    let housing_query_state =
-        use_query_value::<CharacterHousingForCharacter>(Rc::new(props.character.id));
-
     let action_state = use_state_eq(|| HousingActions::Closed);
 
-    let initial_loaded_state = use_state_eq(|| false);
-    let open_create_housing_modal_state = use_state_eq(|| false);
-    let error_state = use_state_eq(|| false);
-    let delete_error_state = use_state_eq(|| false);
-    let unknown_error_state = use_state_eq(|| false);
+    let create_housing_ref = use_mut_ref(|| None as Option<CharacterHousing>);
+    let edit_housing_ref = use_mut_ref(|| None as Option<CharacterHousing>);
+    let edit_id_housing_ref = use_mut_ref(|| -1);
+    let delete_housing_ref = use_mut_ref(|| None as Option<i32>);
+
+    let unreported_error_toggle = use_bool_toggle(false);
 
     let bamboo_error_state = use_state_eq(api::ApiError::default);
 
     let error_message_state = use_state_eq(|| AttrValue::from(""));
     let error_message_form_state = use_state_eq(|| AttrValue::from(""));
 
-    let housing_state = use_state_eq(|| vec![] as Vec<CharacterHousing>);
+    let housing_state = {
+        let character_id = props.character.id;
 
-    {
-        let error_state = error_state.clone();
-
-        use_unmount(move || {
-            error_state.set(false);
-        })
-    }
-
-    let on_modal_create_close =
-        use_callback(open_create_housing_modal_state.clone(), |_, state| {
-            state.set(false)
-        });
-    let on_modal_create_save = {
-        let error_state = error_state.clone();
-        let open_create_housing_modal_state = open_create_housing_modal_state.clone();
-        let unknown_error_state = unknown_error_state.clone();
+        let error_message_form_state = error_message_form_state.clone();
 
         let bamboo_error_state = bamboo_error_state.clone();
 
-        let error_message_state = error_message_state.clone();
-        let error_message_form_state = error_message_form_state.clone();
+        let unreported_error_toggle = unreported_error_toggle.clone();
 
-        let housing_query_state = housing_query_state.clone();
+        use_async(async move {
+            api::get_character_housing(character_id)
+                .await
+                .map_err(|err| {
+                    bamboo_error_state.set(err.clone());
+                    unreported_error_toggle.set(true);
+                    error_message_form_state.set("get_character_housing".into());
 
-        let character_id = props.character.id;
-
-        Callback::from(move |housing: CharacterHousing| {
-            log::debug!("Modal was confirmed lets execute the request");
-            let error_state = error_state.clone();
-            let open_create_housing_modal_state = open_create_housing_modal_state.clone();
-            let unknown_error_state = unknown_error_state.clone();
-
-            let bamboo_error_state = bamboo_error_state.clone();
-
-            let error_message_state = error_message_state.clone();
-            let error_message_form_state = error_message_form_state.clone();
-
-            let housing_query_state = housing_query_state.clone();
-
-            yew::platform::spawn_local(async move {
-                error_state.set(
-                    match create_character_housing(character_id, housing).await {
-                        Ok(_) => {
-                            open_create_housing_modal_state.clone().set(false);
-                            let _ = housing_query_state.refresh().await;
-                            unknown_error_state.set(false);
-
-                            false
-                        }
-                        Err(err) => {
-                            error_message_state.set(
-                                if err.code == CONFLICT {
-                                    unknown_error_state.set(false);
-                                    "Eine Unterkunft an dieser Adresse existiert bereits"
-                                } else {
-                                    unknown_error_state.set(true);
-                                    error_message_form_state.set("create_character_housing".into());
-                                    bamboo_error_state.set(err.clone());
-                                    "Die Unterkunft konnte nicht hinzugefügt werden"
-                                }
-                                .into(),
-                            );
-                            true
-                        }
-                    },
-                );
-            });
+                    err
+                })
         })
     };
-    let on_modal_update_save = {
-        let housing_query_state = housing_query_state.clone();
-
-        let on_modal_close = on_modal_create_close.clone();
-
-        let error_state = error_state.clone();
-        let unknown_error_state = unknown_error_state.clone();
+    let create_state = {
+        let action_state = action_state.clone();
+        let unreported_error_toggle = unreported_error_toggle.clone();
 
         let bamboo_error_state = bamboo_error_state.clone();
 
         let error_message_state = error_message_state.clone();
         let error_message_form_state = error_message_form_state.clone();
 
-        let action_state = action_state.clone();
-
         let character_id = props.character.id;
 
-        Callback::from(move |housing: CharacterHousing| {
-            log::debug!("Modal was confirmed lets execute the request");
-            let on_modal_close = on_modal_close.clone();
+        let create_housing_ref = create_housing_ref.clone();
 
-            let error_state = error_state.clone();
-            let unknown_error_state = unknown_error_state.clone();
+        let housing_state = housing_state.clone();
 
-            let bamboo_error_state = bamboo_error_state.clone();
+        use_async(async move {
+            if let Some(housing) = create_housing_ref.borrow().clone() {
+                api::create_character_housing(character_id, housing)
+                    .await
+                    .map(|_| {
+                        action_state.set(HousingActions::Closed);
+                        unreported_error_toggle.set(false);
+                        housing_state.run();
+                    })
+                    .map_err(|err| {
+                        unreported_error_toggle.set(true);
+                        error_message_form_state.set("create_character_housing".into());
+                        bamboo_error_state.set(err.clone());
+                        if err.code == CONFLICT {
+                            unreported_error_toggle.set(false);
+                            error_message_state
+                                .set("Eine Unterkunft an dieser Adresse existiert bereits".into());
+                        } else {
+                            unreported_error_toggle.set(true);
+                            error_message_state
+                                .set("Die Unterkunft konnte nicht hinzugefügt werden".into());
+                        }
 
-            let error_message_state = error_message_state.clone();
-            let error_message_form_state = error_message_form_state.clone();
-
-            let action_state = action_state.clone();
-
-            let housing_query_state = housing_query_state.clone();
-
-            let id = if let HousingActions::Edit(housing) = (*action_state).clone() {
-                housing.id
+                        err
+                    })
             } else {
-                -1
-            };
-
-            yew::platform::spawn_local(async move {
-                error_state.set(
-                    match update_character_housing(character_id, id, housing).await {
-                        Ok(_) => {
-                            let _ = housing_query_state.refresh().await;
-                            on_modal_close.emit(());
-                            unknown_error_state.set(false);
-
-                            false
-                        }
-                        Err(err) => {
-                            match err.code {
-                                CONFLICT => {
-                                    error_message_state.set(
-                                        "Eine Unterkunft an dieser Adresse existiert bereits"
-                                            .into(),
-                                    );
-                                    unknown_error_state.set(false);
-                                }
-                                NOT_FOUND => {
-                                    error_message_state
-                                        .set("Die Unterkunft konnte nicht gefunden werden".into());
-                                    unknown_error_state.set(false);
-                                }
-                                _ => {
-                                    error_message_state.set(
-                                        "Die Unterkunft konnte nicht gespeichert werden".into(),
-                                    );
-                                    unknown_error_state.set(true);
-                                    error_message_form_state.set("update_character_housing".into());
-                                    bamboo_error_state.set(err.clone());
-                                }
-                            };
-                            true
-                        }
-                    },
-                );
-                action_state.set(HousingActions::Closed);
-            })
+                Ok(())
+            }
         })
     };
-    let on_modal_delete = {
-        let housing_query_state = housing_query_state.clone();
-
-        let delete_error_state = delete_error_state.clone();
-        let unknown_error_state = unknown_error_state.clone();
+    let update_state = {
+        let action_state = action_state.clone();
+        let unreported_error_toggle = unreported_error_toggle.clone();
 
         let bamboo_error_state = bamboo_error_state.clone();
 
         let error_message_state = error_message_state.clone();
         let error_message_form_state = error_message_form_state.clone();
 
+        let character_id = props.character.id;
+
+        let edit_housing_ref = edit_housing_ref.clone();
+        let edit_id_housing_ref = edit_id_housing_ref.clone();
+
+        let housing_state = housing_state.clone();
+
+        use_async(async move {
+            let id = *edit_id_housing_ref.borrow();
+
+            if let Some(housing) = edit_housing_ref.borrow().clone() {
+                api::update_character_housing(character_id, id, housing)
+                    .await
+                    .map(|_| {
+                        action_state.set(HousingActions::Closed);
+                        unreported_error_toggle.set(false);
+                        housing_state.run();
+                    })
+                    .map_err(|err| {
+                        error_message_form_state.set("update_character_housing".into());
+                        bamboo_error_state.set(err.clone());
+                        match err.code {
+                            CONFLICT => {
+                                unreported_error_toggle.set(false);
+                                error_message_state.set(
+                                    "Eine Unterkunft an dieser Adresse existiert bereits".into(),
+                                );
+                            }
+                            NOT_FOUND => {
+                                unreported_error_toggle.set(false);
+                                error_message_state
+                                    .set("Die Unterkunft konnte nicht gefunden werden".into());
+                            }
+                            _ => {
+                                unreported_error_toggle.set(true);
+                                error_message_state
+                                    .set("Die Unterkunft konnte nicht gespeichert werden".into());
+                            }
+                        };
+
+                        err
+                    })
+            } else {
+                Ok(())
+            }
+        })
+    };
+    let delete_state = {
         let action_state = action_state.clone();
+        let unreported_error_toggle = unreported_error_toggle.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
+
+        let error_message_form_state = error_message_form_state.clone();
 
         let character_id = props.character.id;
 
-        Callback::from(move |id: i32| {
-            let housing_query_state = housing_query_state.clone();
+        let delete_housing_ref = delete_housing_ref.clone();
 
-            let delete_error_state = delete_error_state.clone();
-            let unknown_error_state = unknown_error_state.clone();
+        let housing_state = housing_state.clone();
 
-            let bamboo_error_state = bamboo_error_state.clone();
+        use_async(async move {
+            if let Some(housing) = *delete_housing_ref.borrow() {
+                api::delete_character_housing(character_id, housing)
+                    .await
+                    .map(|_| {
+                        action_state.set(HousingActions::Closed);
+                        unreported_error_toggle.set(false);
+                        housing_state.run();
+                    })
+                    .map_err(|err| {
+                        unreported_error_toggle.set(true);
+                        error_message_form_state.set("delete_character_housing".into());
+                        bamboo_error_state.set(err.clone());
 
-            let error_message_state = error_message_state.clone();
-            let error_message_form_state = error_message_form_state.clone();
-
-            let action_state = action_state.clone();
-
-            yew::platform::spawn_local(async move {
-                delete_error_state.set(match delete_character_housing(character_id, id).await {
-                    Ok(_) => {
-                        let _ = housing_query_state.refresh().await;
-                        unknown_error_state.set(false);
-
-                        false
-                    }
-                    Err(err) => match err.code {
-                        NOT_FOUND => {
-                            error_message_state
-                                .set("Die Unterkunft konnte nicht gefunden werden".into());
-                            unknown_error_state.set(false);
-
-                            true
-                        }
-                        _ => {
-                            error_message_state
-                                .set("Die Unterkunft konnte nicht gelöscht werden".into());
-                            unknown_error_state.set(true);
-                            error_message_form_state.set("delete_character_housing".into());
-                            bamboo_error_state.set(err.clone());
-
-                            true
-                        }
-                    },
-                });
-                action_state.set(HousingActions::Closed);
-            })
+                        err
+                    })
+            } else {
+                Ok(())
+            }
         })
     };
-    let on_modal_action_close = use_callback(
-        (action_state.clone(), error_state.clone()),
-        |_, (state, error_state)| {
-            state.set(HousingActions::Closed);
-            error_state.set(false);
-        },
-    );
-    let on_create_open = use_callback(
-        (open_create_housing_modal_state.clone(), error_state.clone()),
-        |_, (open_state, error_state)| {
-            open_state.set(true);
-            error_state.set(false);
-        },
-    );
-    let on_edit_open = use_callback(
-        (action_state.clone(), error_state.clone()),
-        |housing, (action_state, error_state)| {
-            action_state.set(HousingActions::Edit(housing));
-            error_state.set(false);
-        },
-    );
-    let on_delete_open = use_callback(
-        (action_state.clone(), error_state.clone()),
-        |housing, (action_state, error_state)| {
-            action_state.set(HousingActions::Delete(housing));
-            error_state.set(false);
-        },
-    );
 
+    let on_modal_create_save = use_callback(
+        (create_housing_ref.clone(), create_state.clone()),
+        |housing, (create_housing_ref, create_state)| {
+            *create_housing_ref.borrow_mut() = Some(housing);
+            create_state.run();
+        },
+    );
+    let on_modal_update_save = use_callback(
+        (edit_housing_ref.clone(), update_state.clone()),
+        |housing, (edit_housing_ref, update_state)| {
+            *edit_housing_ref.borrow_mut() = Some(housing);
+            update_state.run();
+        },
+    );
+    let on_modal_delete = use_callback(
+        (delete_housing_ref.clone(), delete_state.clone()),
+        |housing_id, (delete_housing_ref, delete_state)| {
+            *delete_housing_ref.borrow_mut() = Some(housing_id);
+            delete_state.run();
+        },
+    );
+    let on_modal_action_close = use_callback(
+        (action_state.clone(), unreported_error_toggle.clone()),
+        |_, (state, unreported_error_toggle)| {
+            state.set(HousingActions::Closed);
+            unreported_error_toggle.set(false);
+        },
+    );
+    let on_create_open = use_callback(action_state.clone(), |_, action_state| {
+        action_state.set(HousingActions::Create);
+    });
+    let on_edit_open = use_callback(
+        (action_state.clone(), edit_id_housing_ref.clone()),
+        |housing: CharacterHousing, (action_state, edit_id_housing_ref)| {
+            *edit_id_housing_ref.borrow_mut() = housing.id;
+            action_state.set(HousingActions::Edit(housing));
+        },
+    );
+    let on_delete_open = use_callback(action_state.clone(), |housing, action_state| {
+        action_state.set(HousingActions::Delete(housing));
+    });
     let report_unknown_error = use_callback(
         (
             bamboo_error_state.clone(),
             error_message_form_state.clone(),
-            unknown_error_state.clone(),
+            unreported_error_toggle.clone(),
         ),
-        |_, (bamboo_error_state, error_message_form_state, unknown_error_state)| {
+        |_, (bamboo_error_state, error_message_form_state, unreported_error_toggle)| {
             error::report_unknown_error(
                 "final_fantasy_character",
                 error_message_form_state.deref().to_string(),
                 bamboo_error_state.deref().clone(),
             );
-            unknown_error_state.set(false);
+            unreported_error_toggle.set(false);
         },
     );
+
+    {
+        let housing_state = housing_state.clone();
+
+        use_mount(move || housing_state.run());
+    }
 
     let housing_list_style = use_style!(
         r#"
@@ -440,87 +402,74 @@ font-style: normal;
     "#
     );
 
-    match housing_query_state.result() {
-        None => {
-            log::debug!("Still loading");
-            if !*initial_loaded_state {
-                return html!(
-                    <CosmoProgressRing />
-                );
-            }
-        }
-        Some(Ok(res)) => {
-            log::debug!("Loaded housing");
-            initial_loaded_state.set(true);
-            let mut housing = res.character_housing.clone();
-            housing.sort();
-            housing_state.set(housing);
-        }
-        Some(Err(err)) => {
-            log::warn!("Failed to load {err}");
-            bamboo_error_state.set(err.clone());
-            unknown_error_state.set(true);
-
-            return html!(
-                if *unknown_error_state {
-                    <CosmoMessage header="Fehler beim Laden" message="Die Unterkünfte konnten nicht geladen werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
-                } else {
-                    <CosmoMessage header="Fehler beim Laden" message="Die Unterkünfte konnten nicht geladen werden" message_type={CosmoMessageType::Negative} />
+    if housing_state.loading {
+        html!(
+            <CosmoProgressRing />
+        )
+    } else if let Some(data) = &housing_state.data {
+        html!(
+            <>
+                <CosmoToolbar>
+                    <CosmoToolbarGroup>
+                        <CosmoButton label="Unterkunft hinzufügen" on_click={on_create_open} />
+                    </CosmoToolbarGroup>
+                </CosmoToolbar>
+                if let Some(err) = &delete_state.error {
+                    if err.code == NOT_FOUND {
+                        <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Die Unterkunft konnte nicht gefunden werden" />
+                    } else if *unreported_error_toggle {
+                        <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Die Unterkunft konnte nicht gespeichert werden" actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                    } else {
+                        <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Die Unterkunft konnte nicht gespeichert werden" />
+                    }
                 }
-            );
-        }
+                <div class={housing_list_style}>
+                    {for data.iter().map(|housing| {
+                        let edit_housing = housing.clone();
+                        let delete_housing = housing.clone();
+
+                        let on_edit_open = on_edit_open.clone();
+                        let on_delete_open = on_delete_open.clone();
+
+                        html!(
+                            <div class={housing_container_style.clone()}>
+                                <address class={housing_address_style.clone()}>
+                                    <CosmoHeader level={CosmoHeaderLevel::H5} header={housing.district.to_string()} />
+                                    <span>{housing.housing_type.to_string()}</span><br />
+                                    <span>{format!("Bezirk {}", housing.ward)}</span><br />
+                                    <span>{format!("Nr. {}", housing.plot)}</span>
+                                </address>
+                                <CosmoToolbarGroup>
+                                    <CosmoButton label="Bearbeiten" on_click={move |_| on_edit_open.emit(edit_housing.clone())} />
+                                    <CosmoButton label="Löschen" on_click={move |_| on_delete_open.emit(delete_housing.clone())} />
+                                </CosmoToolbarGroup>
+                            </div>
+                        )
+                    })}
+                </div>
+                {match (*action_state).clone() {
+                    HousingActions::Create => html!(
+                        <ModifyHousingModal has_unknown_error={*unreported_error_toggle} on_error_close={report_unknown_error.clone()} housing={CharacterHousing::new(props.character.id, HousingDistrict::TheLavenderBeds, HousingType::Private, 1, 1)} character_id={props.character.id} is_edit={false} error_message={(*error_message_state).clone()} has_error={create_state.error.is_some()} on_close={on_modal_action_close} title="Unterkunft hinzufügen" save_label="Unterkunft hinzufügen" on_save={on_modal_create_save} />
+                    ),
+                    HousingActions::Edit(housing) => html!(
+                        <ModifyHousingModal has_unknown_error={*unreported_error_toggle} on_error_close={report_unknown_error.clone()} character_id={props.character.id} is_edit={true} title="Unterkunft bearbeiten" save_label="Unterkunft speichern" on_save={on_modal_update_save} on_close={on_modal_action_close} housing={housing} error_message={(*error_message_state).clone()} has_error={update_state.error.is_some()} />
+                    ),
+                    HousingActions::Delete(housing) => html!(
+                        <CosmoConfirm confirm_type={CosmoModalType::Warning} on_confirm={move |_| on_modal_delete.emit(housing.id)} on_decline={on_modal_action_close} confirm_label="Unterkunft löschen" decline_label="Unterkunft behalten" title="Unterkunft löschen" message={format!("Soll die Unterkunft in {} im Bezirk {} mit der Nummer {} wirklich gelöscht werden?", housing.district.to_string(), housing.ward, housing.plot)} />
+                    ),
+                    HousingActions::Closed => html!(),
+                }}
+            </>
+        )
+    } else if housing_state.error.is_some() {
+        html!(
+            if *unreported_error_toggle {
+                <CosmoMessage header="Fehler beim Laden" message="Die Unterkünfte konnten nicht geladen werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+            } else {
+                <CosmoMessage header="Fehler beim Laden" message="Die Unterkünfte konnten nicht geladen werden" message_type={CosmoMessageType::Negative} />
+            }
+        )
+    } else {
+        html!()
     }
-
-    html!(
-        <>
-            <CosmoToolbar>
-                <CosmoToolbarGroup>
-                    <CosmoButton label="Unterkunft hinzufügen" on_click={on_create_open} />
-                </CosmoToolbarGroup>
-            </CosmoToolbar>
-            if *delete_error_state {
-                if *unknown_error_state {
-                    <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message={(*error_message_state).clone()} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
-                } else {
-                    <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message={(*error_message_state).clone()} />
-                }
-            }
-            <div class={housing_list_style}>
-                {for (*housing_state).clone().into_iter().map(|housing| {
-                    let edit_housing = housing.clone();
-                    let delete_housing = housing.clone();
-
-                    let on_edit_open = on_edit_open.clone();
-                    let on_delete_open = on_delete_open.clone();
-
-                    html!(
-                        <div class={housing_container_style.clone()}>
-                            <address class={housing_address_style.clone()}>
-                                <CosmoHeader level={CosmoHeaderLevel::H5} header={housing.district.to_string()} />
-                                <span>{housing.housing_type.to_string()}</span><br />
-                                <span>{format!("Bezirk {}", housing.ward)}</span><br />
-                                <span>{format!("Nr. {}", housing.plot)}</span>
-                            </address>
-                            <CosmoToolbarGroup>
-                                <CosmoButton label="Bearbeiten" on_click={move |_| on_edit_open.emit(edit_housing.clone())} />
-                                <CosmoButton label="Löschen" on_click={move |_| on_delete_open.emit(delete_housing.clone())} />
-                            </CosmoToolbarGroup>
-                        </div>
-                    )
-                })}
-            </div>
-            if *open_create_housing_modal_state {
-                <ModifyHousingModal has_unknown_error={*unknown_error_state} on_error_close={report_unknown_error.clone()} housing={CharacterHousing::new(props.character.id, HousingDistrict::TheLavenderBeds, HousingType::Private, 1, 1)} character_id={props.character.id} is_edit={false} error_message={(*error_message_state).clone()} has_error={*error_state} on_close={on_modal_create_close} title="Unterkunft hinzufügen" save_label="Unterkunft hinzufügen" on_save={on_modal_create_save} />
-            }
-            {match (*action_state).clone() {
-                HousingActions::Edit(housing) => html!(
-                    <ModifyHousingModal has_unknown_error={*unknown_error_state} on_error_close={report_unknown_error.clone()} character_id={props.character.id} is_edit={true} title="Unterkunft bearbeiten" save_label="Unterkunft speichern" on_save={on_modal_update_save} on_close={on_modal_action_close} housing={housing} error_message={(*error_message_state).clone()} has_error={*error_state} />
-                ),
-                HousingActions::Delete(housing) => html!(
-                    <CosmoConfirm confirm_type={CosmoModalType::Warning} on_confirm={move |_| on_modal_delete.emit(housing.id)} on_decline={on_modal_action_close} confirm_label="Unterkunft löschen" decline_label="Unterkunft behalten" title="Unterkunft löschen" message={format!("Soll die Unterkunft in {} im Bezirk {} mit der Nummer {} wirklich gelöscht werden?", housing.district.to_string(), housing.ward, housing.plot)} />
-                ),
-                HousingActions::Closed => html!(),
-            }}
-        </>
-    )
 }

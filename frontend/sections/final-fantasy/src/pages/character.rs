@@ -397,9 +397,13 @@ fn character_details(props: &CharacterDetailsProps) -> Html {
     let on_modal_delete = use_callback(delete_state.clone(), |_, delete_state| {
         delete_state.run();
     });
-    let on_modal_close = use_callback(action_state.clone(), |_, action_state| {
-        action_state.set(CharacterActions::Closed)
-    });
+    let on_modal_close = use_callback(
+        (action_state.clone(), unreported_error_toggle.clone()),
+        |_, (state, unreported_error_toggle)| {
+            state.set(CharacterActions::Closed);
+            unreported_error_toggle.set(false);
+        },
+    );
 
     let report_unknown_error = use_callback(
         (

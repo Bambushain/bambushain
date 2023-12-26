@@ -4,7 +4,7 @@ use bounce::query::use_query_value;
 use stylist::yew::use_style;
 use yew::prelude::*;
 use yew_cosmo::prelude::*;
-use yew_hooks::{use_async, use_bool_toggle, use_unmount, use_mount};
+use yew_hooks::{use_async, use_bool_toggle, use_mount, use_unmount};
 use yew_icons::Icon;
 
 use bamboo_entities::prelude::*;
@@ -1073,9 +1073,13 @@ fn free_companies() -> Html {
             name_state.set("".into());
         },
     );
-    let on_add_close = use_callback(add_open_state.clone(), |_, open_state| {
-        open_state.set(false)
-    });
+    let on_add_close = use_callback(
+        (add_open_state.clone(), unreported_error_toggle.clone()),
+        |_, (open_state, unreported_error_toggle)| {
+            open_state.set(false);
+            unreported_error_toggle.set(false);
+        },
+    );
     let on_add_save = use_callback(create_state.clone(), |_, state| state.run());
     let on_edit_open = use_callback(
         (
@@ -1089,9 +1093,13 @@ fn free_companies() -> Html {
             open_state.set(true);
         },
     );
-    let on_edit_close = use_callback(edit_open_state.clone(), |_, open_state| {
-        open_state.set(false)
-    });
+    let on_edit_close = use_callback(
+        (edit_open_state.clone(), unreported_error_toggle.clone()),
+        |_, (open_state, unreported_error_toggle)| {
+            open_state.set(false);
+            unreported_error_toggle.set(false);
+        },
+    );
     let on_edit_save = use_callback(edit_state.clone(), |_, state| state.run());
     let on_delete_open = use_callback(
         (
@@ -1105,7 +1113,13 @@ fn free_companies() -> Html {
             open_state.set(true);
         },
     );
-    let on_delete_close = use_callback(delete_open_state.clone(), |_, state| state.set(false));
+    let on_delete_close = use_callback(
+        (delete_open_state.clone(), unreported_error_toggle.clone()),
+        |_, (state, unreported_error_toggle)| {
+            state.set(false);
+            unreported_error_toggle.set(false);
+        },
+    );
     let on_delete = use_callback(delete_state.clone(), |_, state| state.run());
     let update_name = use_callback(name_state.clone(), |val, state| state.set(val));
 
