@@ -1,7 +1,7 @@
 use sea_orm::prelude::*;
 use sea_orm::sea_query::Expr;
 use sea_orm::ActiveValue::Set;
-use sea_orm::{IntoSimpleExpr, NotSet, QueryOrder, QuerySelect};
+use sea_orm::{IntoActiveModel, IntoSimpleExpr, NotSet, QueryOrder, QuerySelect};
 use std::cmp::Ordering;
 
 use bamboo_entities::prelude::*;
@@ -56,7 +56,7 @@ pub async fn get_custom_field(
             } else {
                 Err(BambooError::not_found(
                     "character",
-                    "Custom field not found"
+                    "Custom field not found",
                 ))
             }
         })?
@@ -68,7 +68,8 @@ async fn custom_field_exists_by_id(
     label: String,
     db: &DatabaseConnection,
 ) -> BambooResult<bool> {
-    custom_character_field::Entity::find_by_id(id)
+    custom_character_field::Entity::find()
+        .filter(custom_character_field::Column::Id.ne(id))
         .filter(custom_character_field::Column::Label.eq(label))
         .filter(custom_character_field::Column::UserId.eq(user_id))
         .count(db)
@@ -105,7 +106,7 @@ pub async fn create_custom_field(
     if custom_field_exists_by_label(user_id, custom_field.label.clone(), db).await? {
         return Err(BambooError::exists_already(
             "character",
-            "The custom field exists already"
+            "The custom field exists already",
         ));
     }
 
@@ -167,7 +168,7 @@ pub async fn update_custom_field(
     if custom_field_exists_by_id(user_id, id, custom_field.label.clone(), db).await? {
         return Err(BambooError::exists_already(
             "character",
-            "The custom field exists already"
+            "The custom field exists already",
         ));
     }
 
@@ -227,7 +228,8 @@ pub async fn custom_field_option_exists_by_id(
     label: String,
     db: &DatabaseConnection,
 ) -> BambooResult<bool> {
-    custom_character_field_option::Entity::find_by_id(id)
+    custom_character_field_option::Entity::find()
+        .filter(custom_character_field_option::Column::Id.ne(id))
         .filter(custom_character_field_option::Column::Label.eq(label))
         .filter(custom_character_field_option::Column::CustomCharacterFieldId.eq(custom_field_id))
         .filter(custom_character_field::Column::UserId.eq(user_id))
@@ -270,7 +272,7 @@ pub async fn create_custom_field_option(
     if custom_field_option_exists_by_label(user_id, custom_field_id, label.clone(), db).await? {
         return Err(BambooError::exists_already(
             "character",
-            "A custom field option with that label exists already"
+            "A custom field option with that label exists already",
         ));
     }
 
@@ -297,24 +299,39 @@ pub async fn update_custom_field_option(
     if custom_field_option_exists_by_id(id, user_id, custom_field_id, option.clone(), db).await? {
         return Err(BambooError::exists_already(
             "character",
-            "A custom field option with that label exists already"
+            "A custom field option with that label exists already",
         ));
     }
 
-    custom_character_field_option::Entity::update_many()
-        .filter(custom_character_field_option::Column::Id.eq(id))
+    let options = custom_character_field_option::Entity::find_by_id(id)
         .filter(custom_character_field_option::Column::CustomCharacterFieldId.eq(custom_field_id))
-        .col_expr(
-            custom_character_field_option::Column::Label,
-            Expr::value(option),
-        )
-        .exec(db)
+        .filter(custom_character_field::Column::UserId.eq(user_id))
+        .inner_join(custom_character_field::Entity)
+        .all(db)
         .await
         .map_err(|err| {
             log::error!("{err}");
             BambooError::database("character", "Failed to update custom field")
-        })
-        .map(|_| ())
+        })?;
+
+    if let Some(model) = options.first() {
+        let mut active_option = model.clone().into_active_model();
+        active_option.label = Set(option);
+
+        active_option
+            .update(db)
+            .await
+            .map_err(|err| {
+                log::error!("{err}");
+                BambooError::database("character", "Failed to update custom field")
+            })
+            .map(|_| ())
+    } else {
+        Err(BambooError::database(
+            "character",
+            "Failed to get custom field",
+        ))
+    }
 }
 
 pub async fn delete_custom_field_option(
@@ -353,7 +370,10 @@ pub async fn move_custom_field(
         })? {
         Ok(old_position)
     } else {
-        Err(BambooError::database("character", "Failed to move custom field"))
+        Err(BambooError::database(
+            "character",
+            "Failed to move custom field",
+        ))
     }?;
 
     let (position_expr, filter_expr, new_position) = match old_position.cmp(&position) {
