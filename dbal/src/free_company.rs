@@ -8,9 +8,9 @@ pub async fn get_free_companies(
     user_id: i32,
     db: &DatabaseConnection,
 ) -> BambooResult<Vec<FreeCompany>> {
-    bamboo_entities::free_company::Entity::find()
-        .filter(bamboo_entities::free_company::Column::UserId.eq(user_id))
-        .order_by_asc(bamboo_entities::free_company::Column::Name)
+    free_company::Entity::find()
+        .filter(free_company::Column::UserId.eq(user_id))
+        .order_by_asc(free_company::Column::Name)
         .all(db)
         .await
         .map_err(|err| {
@@ -25,8 +25,8 @@ pub async fn get_free_company(
     db: &DatabaseConnection,
 ) -> BambooResult<Option<FreeCompany>> {
     if let Some(id) = free_company_id {
-        bamboo_entities::free_company::Entity::find_by_id(id)
-            .filter(bamboo_entities::free_company::Column::UserId.eq(user_id))
+        free_company::Entity::find_by_id(id)
+            .filter(free_company::Column::UserId.eq(user_id))
             .one(db)
             .await
             .map_err(|err| {
@@ -46,11 +46,11 @@ pub async fn create_free_company(
     if free_company_exists_by_name(name.clone(), user_id, db).await? {
         return Err(BambooError::exists_already(
             "free company",
-            "A free company with that name exists"
+            "A free company with that name exists",
         ));
     }
 
-    let mut active_model = bamboo_entities::free_company::ActiveModel::new();
+    let mut active_model = free_company::ActiveModel::new();
     active_model.user_id = Set(user_id);
     active_model.name = Set(name);
     active_model.id = NotSet;
@@ -70,15 +70,15 @@ pub async fn update_free_company(
     if free_company_exists_by_id(name.clone(), user_id, id, db).await? {
         return Err(BambooError::exists_already(
             "free company",
-            "A free company with that name exists"
+            "A free company with that name exists",
         ));
     }
 
-    bamboo_entities::free_company::Entity::update_many()
-        .filter(bamboo_entities::free_company::Column::UserId.eq(user_id))
-        .filter(bamboo_entities::free_company::Column::Id.eq(id))
+    free_company::Entity::update_many()
+        .filter(free_company::Column::UserId.eq(user_id))
+        .filter(free_company::Column::Id.eq(id))
         .col_expr(
-            bamboo_entities::free_company::Column::Name,
+            free_company::Column::Name,
             Expr::value(name),
         )
         .exec(db)
@@ -95,8 +95,8 @@ pub async fn delete_free_company(
     user_id: i32,
     db: &DatabaseConnection,
 ) -> BambooErrorResult {
-    bamboo_entities::free_company::Entity::delete_by_id(id)
-        .filter(bamboo_entities::free_company::Column::UserId.eq(user_id))
+    free_company::Entity::delete_by_id(id)
+        .filter(free_company::Column::UserId.eq(user_id))
         .exec(db)
         .await
         .map_err(|err| {
@@ -112,9 +112,10 @@ async fn free_company_exists_by_id(
     id: i32,
     db: &DatabaseConnection,
 ) -> BambooResult<bool> {
-    bamboo_entities::free_company::Entity::find_by_id(id)
-        .filter(bamboo_entities::free_company::Column::Name.eq(name))
-        .filter(bamboo_entities::free_company::Column::UserId.eq(user_id))
+    free_company::Entity::find()
+        .filter(free_company::Column::Id.ne(id))
+        .filter(free_company::Column::Name.eq(name))
+        .filter(free_company::Column::UserId.eq(user_id))
         .count(db)
         .await
         .map(|count| count > 0)
@@ -129,9 +130,9 @@ async fn free_company_exists_by_name(
     user_id: i32,
     db: &DatabaseConnection,
 ) -> BambooResult<bool> {
-    bamboo_entities::free_company::Entity::find()
-        .filter(bamboo_entities::free_company::Column::Name.eq(name))
-        .filter(bamboo_entities::free_company::Column::UserId.eq(user_id))
+    free_company::Entity::find()
+        .filter(free_company::Column::Name.eq(name))
+        .filter(free_company::Column::UserId.eq(user_id))
         .count(db)
         .await
         .map(|count| count > 0)

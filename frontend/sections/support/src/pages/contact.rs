@@ -1,6 +1,7 @@
 use stylist::yew::use_style;
 use yew::prelude::*;
 use yew_cosmo::prelude::*;
+use yew_hooks::{use_async, use_bool_toggle};
 
 use bamboo_entities::prelude::SupportRequest;
 
@@ -31,53 +32,35 @@ flex-flow: column;
     let subject_state = use_state_eq(|| AttrValue::from(""));
     let message_state = use_state_eq(|| AttrValue::from(""));
 
-    let error_state = use_state_eq(|| false);
-    let send_state = use_state_eq(|| false);
+    let send_state = use_bool_toggle(false);
 
     let update_subject = use_callback(subject_state.clone(), |value, state| state.set(value));
     let update_message = use_callback(message_state.clone(), |value, state| state.set(value));
-    let close_alert = use_callback(
-        (error_state.clone(), send_state.clone()),
-        |_, (error_state, send_state)| {
-            error_state.set(false);
-            send_state.set(false);
-        },
-    );
+    let close_alert = use_callback(send_state.clone(), |_, state| state.set(false));
 
-    let send_request = {
+    let request_state = {
         let subject_state = subject_state.clone();
         let message_state = message_state.clone();
 
-        let error_state = error_state.clone();
         let send_state = send_state.clone();
 
-        Callback::from(move |_| {
-            let subject_state = subject_state.clone();
-            let message_state = message_state.clone();
-
-            let error_state = error_state.clone();
-            let send_state = send_state.clone();
-
-            yew::platform::spawn_local(async move {
-                let request = SupportRequest {
-                    subject: (*subject_state).to_string(),
-                    message: (*message_state).to_string(),
-                };
-                error_state.set(match api::send_support_request(request).await {
-                    Ok(_) => {
-                        send_state.set(true);
-                        subject_state.set("".into());
-                        message_state.set("".into());
-                        false
-                    }
-                    Err(_) => {
-                        send_state.set(true);
-                        true
-                    }
-                });
-            });
+        use_async(async move {
+            let request = SupportRequest {
+                subject: (*subject_state).to_string(),
+                message: (*message_state).to_string(),
+            };
+            api::send_support_request(request)
+                .await
+                .map(|_| {
+                    send_state.set(true);
+                    subject_state.set("".into());
+                    message_state.set("".into())
+                })
+                .map_err(|_| send_state.set(true))
         })
     };
+
+    let send_request = use_callback(request_state.clone(), |_, state| state.run());
 
     html!(
         <>
@@ -89,7 +72,7 @@ flex-flow: column;
                     <CosmoTextArea width={CosmoInputWidth::Large} rows={20} required={true} value={(*message_state).clone()} on_input={update_message} label="Nachricht" />
                 </CosmoForm>
             </div>
-            if *send_state && *error_state {
+            if *send_state && request_state.error.is_some() {
                 <CosmoAlert on_close={close_alert.clone()} alert_type={CosmoAlertType::Negative} close_label="Alles klar" title="Fehler beim Senden" message="Leider konnte deine Nachricht nicht gesendet werden, bitte schick uns eine Email and panda.helferlein@bambushain.app" />
             } else if *send_state {
                 <CosmoAlert on_close={close_alert.clone()} alert_type={CosmoAlertType::Positive} close_label="Alles klar" title="Abgesendet" message="Deine Nachricht wurde abgeschickt, wir werden uns so schnell wie möglich bei dir melden 🐼" />

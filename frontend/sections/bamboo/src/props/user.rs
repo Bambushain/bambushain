@@ -5,6 +5,7 @@ use yew::prelude::*;
 pub struct UserDetailsProps {
     pub user: WebUser,
     pub on_delete: Callback<()>,
+    pub on_update: Callback<()>,
 }
 
 #[derive(Properties, PartialEq, Clone)]
@@ -15,6 +16,7 @@ pub struct CreateUserModalProps {
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct UpdateProfileDialogProps {
+    pub on_update: Callback<()>,
     pub on_close: Callback<()>,
     pub display_name: AttrValue,
     pub email: AttrValue,

@@ -1,5 +1,4 @@
 use sea_orm::prelude::*;
-use sea_orm::sea_query::Expr;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{IntoActiveModel, NotSet, QueryOrder};
 
@@ -60,7 +59,8 @@ async fn crafter_exists_by_id(
     job: CrafterJob,
     db: &DatabaseConnection,
 ) -> BambooResult<bool> {
-    crafter::Entity::find_by_id(id)
+    crafter::Entity::find()
+        .filter(crafter::Column::Id.ne(id))
         .filter(crafter::Column::Job.eq(job))
         .filter(crafter::Column::CharacterId.eq(character_id))
         .filter(character::Column::UserId.eq(user_id))
@@ -131,11 +131,13 @@ pub async fn update_crafter(
         ));
     }
 
-    crafter::Entity::update_many()
-        .filter(crafter::Column::Id.eq(id))
-        .filter(crafter::Column::CharacterId.eq(character_id))
-        .col_expr(crafter::Column::Level, Expr::value(crafter.level))
-        .exec(db)
+    let mut active_crafter = get_crafter(id, user_id, character_id, db)
+        .await?
+        .into_active_model();
+    active_crafter.level = Set(crafter.level);
+
+    active_crafter
+        .update(db)
         .await
         .map_err(|err| {
             log::error!("{err}");

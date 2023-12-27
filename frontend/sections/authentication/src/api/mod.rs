@@ -1,35 +1,14 @@
-use std::rc::Rc;
-
-use async_trait::async_trait;
-use bounce::prelude::*;
-use bounce::query::{Query, QueryResult};
-
 use bamboo_entities::prelude::*;
 
 use bamboo_frontend_base_api as api;
 use bamboo_frontend_base_storage as storage;
 
-use crate::models;
-
-#[async_trait(? Send)]
-impl Query for models::Profile {
-    type Input = ();
-    type Error = api::ApiError;
-
-    async fn query(_states: &BounceStates, _input: Rc<Self::Input>) -> QueryResult<Self> {
-        match get_my_profile().await {
-            Ok(user) => Ok(Rc::new(user.into())),
-            Err(err) => {
-                storage::delete_token();
-                Err(err)
-            }
-        }
-    }
-}
-
 pub async fn get_my_profile() -> api::BambooApiResult<WebUser> {
     log::debug!("Get my profile");
-    api::get::<WebUser>("/api/my/profile").await
+    api::get::<WebUser>("/api/my/profile").await.map_err(|err| {
+        storage::delete_token();
+        err
+    })
 }
 
 pub async fn login(login_data: Login) -> api::BambooApiResult<either::Either<LoginResult, ()>> {

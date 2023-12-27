@@ -1,5 +1,4 @@
 use sea_orm::prelude::*;
-use sea_orm::sea_query::Expr;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{IntoActiveModel, NotSet, QueryOrder};
 
@@ -64,7 +63,8 @@ async fn character_housing_exists_by_id(
     plot: i16,
     db: &DatabaseConnection,
 ) -> BambooResult<bool> {
-    character_housing::Entity::find_by_id(id)
+    character_housing::Entity::find()
+        .filter(character_housing::Column::Id.ne(id))
         .filter(character_housing::Column::CharacterId.eq(character_id))
         .filter(character_housing::Column::District.eq(district))
         .filter(character_housing::Column::Ward.eq(ward))
@@ -122,7 +122,7 @@ pub async fn create_character_housing(
     {
         return Err(BambooError::exists_already(
             "character_housing",
-            "A character housing with that job exists already",
+            "A character housing with that address exists already",
         ));
     }
 
@@ -132,7 +132,7 @@ pub async fn create_character_housing(
 
     model.insert(db).await.map_err(|err| {
         log::error!("{err}");
-        BambooError::database("character_housing", "Failed to create character_housing")
+        BambooError::database("character_housing", "Failed to create character housing")
     })
 }
 
@@ -156,28 +156,24 @@ pub async fn update_character_housing(
     {
         return Err(BambooError::exists_already(
             "character_housing",
-            "A character housing with that job exists already",
+            "A character housing with that address exists already",
         ));
     }
 
-    character_housing::Entity::update_many()
-        .filter(character_housing::Column::Id.eq(id))
-        .filter(character_housing::Column::CharacterId.eq(character_id))
-        .col_expr(
-            character_housing::Column::District,
-            Expr::val(housing.district).as_enum(character_housing::HousingDistrictEnum),
-        )
-        .col_expr(
-            character_housing::Column::HousingType,
-            Expr::val(housing.housing_type).as_enum(character_housing::HousingTypeEnum),
-        )
-        .col_expr(character_housing::Column::Ward, Expr::value(housing.ward))
-        .col_expr(character_housing::Column::Plot, Expr::value(housing.plot))
-        .exec(db)
+    let mut active_housing = get_character_housing(id, user_id, character_id, db)
+        .await?
+        .into_active_model();
+    active_housing.district = Set(housing.district);
+    active_housing.housing_type = Set(housing.housing_type);
+    active_housing.ward = Set(housing.ward);
+    active_housing.plot = Set(housing.plot);
+
+    active_housing
+        .update(db)
         .await
         .map_err(|err| {
             log::error!("{err}");
-            BambooError::database("character_housing", "Failed to update character housing")
+            BambooError::database("character_housing", "Failed to update housing")
         })
         .map(|_| ())
 }

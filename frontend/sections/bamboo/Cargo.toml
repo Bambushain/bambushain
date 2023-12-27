@@ -14,6 +14,8 @@ bamboo-entities = { workspace = true }
 bounce = { workspace = true }
 chrono = { workspace = true }
 date-range = { workspace = true }
+futures = { workspace = true }
+gloo-events = { workspace = true }
 log = { workspace = true }
 rand = { workspace = true }
 serde_json = { workspace = true }

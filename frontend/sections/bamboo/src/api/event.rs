@@ -1,28 +1,13 @@
 use std::rc::Rc;
 
-use async_trait::async_trait;
-use bounce::query::{Query, QueryResult};
-use bounce::BounceStates;
 use date_range::DateRange;
 
 use bamboo_entities::prelude::*;
 use bamboo_frontend_base_api::{
-    delete, get_with_query, post, put_no_content, ApiError, BambooApiResult,
+    delete, get_with_query, post, put_no_content, BambooApiResult,
 };
 
-use crate::models::EventRange;
-
-#[async_trait(? Send)]
-impl Query for EventRange {
-    type Input = DateRange;
-    type Error = ApiError;
-
-    async fn query(_states: &BounceStates, input: Rc<Self::Input>) -> QueryResult<Self> {
-        get_events(input).await.map(|event| Rc::new(event.into()))
-    }
-}
-
-async fn get_events(range: Rc<DateRange>) -> BambooApiResult<Vec<Event>> {
+pub async fn get_events(range: Rc<DateRange>) -> BambooApiResult<Vec<Event>> {
     log::debug!("Get events");
     get_with_query(
         "/api/bamboo-grove/event",

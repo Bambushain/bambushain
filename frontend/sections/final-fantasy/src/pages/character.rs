@@ -1,20 +1,18 @@
+use std::collections::hash_map::Entry;
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::ops::Deref;
 
-use bounce::query::use_query_value;
 use strum::IntoEnumIterator;
 use yew::prelude::*;
 use yew::virtual_dom::{Key, VChild};
 use yew_cosmo::prelude::*;
-use yew_hooks::{use_mount, use_unmount};
+use yew_hooks::{use_async, use_bool_toggle, use_map, use_mount};
 
 use bamboo_entities::prelude::*;
-use bamboo_frontend_base_api as api;
 use bamboo_frontend_base_api::{CONFLICT, NOT_FOUND};
 use bamboo_frontend_base_error as error;
 
-use crate::api::*;
-use crate::models::*;
+use crate::api;
 use crate::pages::crafter::CrafterDetails;
 use crate::pages::fighter::FighterDetails;
 use crate::pages::housing::HousingDetails;
@@ -27,34 +25,12 @@ enum CharacterActions {
     Closed,
 }
 
-#[derive(PartialEq, Clone)]
-enum ErrorState {
-    Edit,
-    Delete,
-    None,
-}
-
 #[function_component(ModifyCharacterModal)]
 fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
     let race_state = use_state_eq(|| AttrValue::from(props.character.race.get_race_name()));
     let world_state = use_state_eq(|| AttrValue::from(props.character.world.clone()));
     let name_state = use_state_eq(|| AttrValue::from(props.character.name.clone()));
-    let custom_fields_state = use_state_eq(|| {
-        let character_fields = props.character.custom_fields.clone();
-        let mut custom_fields = HashMap::new();
-        for character_field in character_fields {
-            custom_fields.insert(
-                AttrValue::from(character_field.label),
-                character_field
-                    .values
-                    .iter()
-                    .map(|val| AttrValue::from(val.clone()))
-                    .collect::<HashSet<AttrValue>>(),
-            );
-        }
 
-        custom_fields
-    });
     let free_company_state = use_state_eq(|| {
         if let Some(free_company) = props.character.free_company.clone() {
             Some(AttrValue::from(free_company.id.to_string()))
@@ -63,13 +39,31 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
         }
     });
 
+    let mut custom_fields_map = HashMap::new();
+    props
+        .character
+        .custom_fields
+        .clone()
+        .iter()
+        .for_each(|character_field| {
+            custom_fields_map.insert(
+                AttrValue::from(character_field.label.clone()),
+                character_field
+                    .values
+                    .iter()
+                    .map(|val| AttrValue::from(val.clone()))
+                    .collect::<HashSet<AttrValue>>(),
+            );
+        });
+    let custom_fields_map = use_map(custom_fields_map);
+
     let on_close = props.on_close.clone();
     let on_save = use_callback(
         (
             race_state.clone(),
             world_state.clone(),
             name_state.clone(),
-            custom_fields_state.clone(),
+            custom_fields_map.clone(),
             free_company_state.clone(),
             props.free_companies.clone(),
             props.on_save.clone(),
@@ -79,14 +73,15 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
             race_state,
             world_state,
             name_state,
-            custom_fields_state,
+            custom_fields_map,
             free_company_state,
             free_companies,
             on_save,
         )| {
-            let mut custom_fields = vec![];
-            for (label, values) in (**custom_fields_state).clone() {
-                custom_fields.push(CustomField {
+            let custom_fields = custom_fields_map
+                .current()
+                .iter()
+                .map(|(label, values)| CustomField {
                     label: label.to_string(),
                     values: values
                         .iter()
@@ -94,7 +89,7 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
                         .collect::<BTreeSet<String>>(),
                     position: 0,
                 })
-            }
+                .collect::<Vec<_>>();
 
             let free_company = if let Some(id) = (**free_company_state).clone() {
                 free_companies.iter().find_map(|company| {
@@ -129,33 +124,32 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
         state.set(value)
     });
     let custom_field_select = use_callback(
-        custom_fields_state.clone(),
-        |(label, value): (AttrValue, AttrValue), state| {
-            let mut map = (**state).clone();
-            let mut set = if let Some(set) = map.get(&label) {
-                set.clone()
+        custom_fields_map.clone(),
+        |(label, value): (AttrValue, AttrValue), map| {
+            let mut data = map.current().clone();
+            if let Entry::Occupied(mut entry) = data.entry(label.clone()) {
+                let set = entry.get_mut();
+                set.insert(value);
+                map.update(&label, set.clone());
             } else {
-                HashSet::new()
-            };
-            set.insert(value);
-            map.insert(label, set);
-
-            state.set(map);
+                let mut set = HashSet::new();
+                set.insert(value);
+                map.insert(label, set.clone());
+            }
         },
     );
     let custom_field_deselect = use_callback(
-        custom_fields_state.clone(),
-        |(label, value): (AttrValue, AttrValue), state| {
-            let mut map = (**state).clone();
-            let mut set = if let Some(set) = map.get(&label) {
-                set.clone()
+        custom_fields_map.clone(),
+        |(label, value): (AttrValue, AttrValue), map| {
+            let mut data = map.current().clone();
+            if let Entry::Occupied(mut entry) = data.entry(label.clone()) {
+                let set = entry.get_mut();
+                set.remove(&value);
+                map.update(&label, set.clone());
             } else {
-                HashSet::new()
-            };
-            set.remove(&value);
-            map.insert(label, set);
-
-            state.set(map);
+                let set = HashSet::new();
+                map.insert(label, set.clone());
+            }
         },
     );
     let update_free_company =
@@ -215,12 +209,9 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
     let mut fields = props.custom_fields.clone();
     fields.sort();
     for field in fields {
-        let state = (*custom_fields_state).clone();
-        let values = if let Some(values) = state.get(&AttrValue::from(field.label.clone())) {
-            values.clone()
-        } else {
-            HashSet::new()
-        };
+        let map = custom_fields_map.clone();
+        let data = map.current().clone();
+        let values = data.get(&AttrValue::from(field.label.clone()));
 
         let on_select = custom_field_select.clone();
         let on_deselect = custom_field_deselect.clone();
@@ -236,7 +227,7 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
                 CosmoModernSelectItem {
                     label: item.clone(),
                     value: item.clone(),
-                    selected: values.contains(&item),
+                    selected: values.map(|set| set.contains(&item)).unwrap_or(false),
                 }
             })
             .collect::<Vec<CosmoModernSelectItem>>();
@@ -291,211 +282,142 @@ fn character_details(props: &CharacterDetailsProps) -> Html {
     log::debug!("Initialize character details state and callbacks");
     let action_state = use_state_eq(|| CharacterActions::Closed);
 
-    let error_state = use_state_eq(|| ErrorState::None);
+    let edit_character_ref = use_mut_ref(|| None as Option<Character>);
 
-    let unknown_error_state = use_state_eq(|| false);
+    let edit_error_toggle = use_bool_toggle(false);
+    let unreported_error_toggle = use_bool_toggle(false);
 
     let bamboo_error_state = use_state_eq(api::ApiError::default);
 
     let error_message_state = use_state_eq(|| AttrValue::from(""));
     let error_message_form_state = use_state_eq(|| AttrValue::from(""));
 
-    let character_query_state = use_query_value::<MyCharacters>(().into());
+    let save_state = {
+        let edit_error_toggle = edit_error_toggle.clone();
+        let unreported_error_toggle = unreported_error_toggle.clone();
 
-    {
-        let error_state = error_state.clone();
-
-        use_unmount(move || {
-            error_state.set(ErrorState::None);
-        })
-    }
-
-    let edit_character_click = use_callback(
-        (action_state.clone(), error_state.clone()),
-        |_, (state, error_state)| {
-            state.set(CharacterActions::Edit);
-            error_state.set(ErrorState::None);
-        },
-    );
-    let delete_character_click = use_callback(
-        (action_state.clone(), error_state.clone()),
-        |_, (state, error_state)| {
-            state.set(CharacterActions::Delete);
-            error_state.set(ErrorState::None);
-        },
-    );
-
-    let on_modal_close = {
-        let action_state = action_state.clone();
-
-        let error_state = error_state.clone();
-
-        let character_query_state = character_query_state.clone();
-
-        Callback::from(move |_| {
-            let action_state = action_state.clone();
-
-            let error_state = error_state.clone();
-
-            let character_query_state = character_query_state.clone();
-
-            yew::platform::spawn_local(async move {
-                action_state.set(CharacterActions::Closed);
-                error_state.set(ErrorState::None);
-
-                let _ = character_query_state.refresh().await;
-            });
-        })
-    };
-    let on_modal_delete = {
-        let action_state = action_state.clone();
-
-        let error_state = error_state.clone();
-        let unknown_error_state = unknown_error_state.clone();
+        let edit_character_ref = edit_character_ref.clone();
 
         let bamboo_error_state = bamboo_error_state.clone();
 
         let error_message_state = error_message_state.clone();
         let error_message_form_state = error_message_form_state.clone();
 
-        let character_query_state = character_query_state.clone();
+        let action_state = action_state.clone();
+
+        let id = props.character.id;
+
+        #[allow(clippy::await_holding_refcell_ref)]
+        use_async(async move {
+            if let Some(character) = edit_character_ref.borrow().clone() {
+                match api::update_character(id, character.clone()).await {
+                    Ok(_) => {
+                        action_state.set(CharacterActions::Closed);
+                        unreported_error_toggle.set(false);
+                        edit_error_toggle.set(false);
+                        Ok(())
+                    }
+                    Err(err) => {
+                        edit_error_toggle.set(true);
+                        match err.code {
+                            CONFLICT => {
+                                error_message_state
+                                    .set("Ein Charakter mit diesem Namen existiert bereits".into());
+                                unreported_error_toggle.set(false);
+                            }
+                            NOT_FOUND => {
+                                error_message_state
+                                    .set("Der Charakter konnte nicht gefunden werden".into());
+                                unreported_error_toggle.set(false);
+                            }
+                            _ => {
+                                error_message_state
+                                    .set("Der Charakter konnte nicht gespeichert werden".into());
+                                unreported_error_toggle.set(true);
+                                bamboo_error_state.set(err.clone());
+                                error_message_form_state.set("update_character".into());
+                            }
+                        }
+
+                        Err(())
+                    }
+                }
+            } else {
+                Err(())
+            }
+        })
+    };
+    let delete_state = {
+        let action_state = action_state.clone();
+
+        let unreported_error_toggle = unreported_error_toggle.clone();
+
+        let bamboo_error_state = bamboo_error_state.clone();
+
+        let error_message_form_state = error_message_form_state.clone();
 
         let on_delete = props.on_delete.clone();
 
         let id = props.character.id;
 
-        Callback::from(move |_| {
-            log::debug!("Modal was confirmed lets execute the request");
+        use_async(async move {
+            api::delete_character(id)
+                .await
+                .map(|_| {
+                    action_state.set(CharacterActions::Closed);
+                    on_delete.emit(())
+                })
+                .map_err(|err| {
+                    unreported_error_toggle.set(true);
+                    error_message_form_state.set("delete_character".into());
+                    bamboo_error_state.set(err.clone());
 
-            let error_state = error_state.clone();
-            let unknown_error_state = unknown_error_state.clone();
-
-            let bamboo_error_state = bamboo_error_state.clone();
-
-            let action_state = action_state.clone();
-
-            let error_message_state = error_message_state.clone();
-            let error_message_form_state = error_message_form_state.clone();
-
-            let character_query_state = character_query_state.clone();
-
-            let on_delete = on_delete.clone();
-
-            yew::platform::spawn_local(async move {
-                error_state.set(match delete_character(id).await {
-                    Ok(_) => {
-                        on_delete.emit(());
-                        ErrorState::None
-                    }
-                    Err(err) => match err.code {
-                        NOT_FOUND => {
-                            error_message_state
-                                .set("Der Charakter konnte nicht gefunden werden".into());
-                            unknown_error_state.set(false);
-
-                            ErrorState::Delete
-                        }
-                        _ => {
-                            error_message_state
-                                .set("Der Charakter konnte nicht gelöscht werden".into());
-                            unknown_error_state.set(true);
-                            error_message_form_state.set("delete_character".into());
-                            bamboo_error_state.set(err.clone());
-
-                            ErrorState::Delete
-                        }
-                    },
-                });
-                action_state.set(CharacterActions::Closed);
-
-                let _ = character_query_state.refresh().await;
-            });
+                    err
+                })
         })
     };
-    let on_modal_save = {
-        let on_modal_close = on_modal_close.clone();
 
-        let error_state = error_state.clone();
-        let unknown_error_state = unknown_error_state.clone();
-
-        let bamboo_error_state = bamboo_error_state.clone();
-
-        let error_message_state = error_message_state.clone();
-        let error_message_form_state = error_message_form_state.clone();
-
-        let action_state = action_state.clone();
-
-        let id = props.character.id;
-
-        Callback::from(move |character: Character| {
-            log::debug!("Modal was confirmed lets execute the request");
-            let on_modal_close = on_modal_close.clone();
-
-            let error_state = error_state.clone();
-            let unknown_error_state = unknown_error_state.clone();
-
-            let bamboo_error_state = bamboo_error_state.clone();
-
-            let error_message_state = error_message_state.clone();
-            let error_message_form_state = error_message_form_state.clone();
-
-            let action_state = action_state.clone();
-
-            let character_query_state = character_query_state.clone();
-
-            yew::platform::spawn_local(async move {
-                error_state.set(match update_character(id, character).await {
-                    Ok(_) => {
-                        let _ = character_query_state.refresh().await;
-                        on_modal_close.emit(());
-                        action_state.set(CharacterActions::Closed);
-                        unknown_error_state.set(false);
-
-                        ErrorState::None
-                    }
-                    Err(err) => match err.code {
-                        CONFLICT => {
-                            error_message_state
-                                .set("Ein Charakter mit diesem Namen existiert bereits".into());
-                            unknown_error_state.set(false);
-
-                            ErrorState::Edit
-                        }
-                        NOT_FOUND => {
-                            error_message_state
-                                .set("Der Charakter konnte nicht gefunden werden".into());
-                            unknown_error_state.set(false);
-
-                            ErrorState::Edit
-                        }
-                        _ => {
-                            error_message_state
-                                .set("Der Charakter konnte nicht gespeichert werden".into());
-                            unknown_error_state.set(true);
-                            bamboo_error_state.set(err.clone());
-                            error_message_form_state.set("update_character".into());
-
-                            ErrorState::Edit
-                        }
-                    },
-                });
-            })
-        })
-    };
+    let edit_character_click = use_callback(
+        (action_state.clone(), edit_error_toggle.clone()),
+        |_, (state, edit_error_toggle)| {
+            state.set(CharacterActions::Edit);
+            edit_error_toggle.set(false);
+        },
+    );
+    let delete_character_click = use_callback(action_state.clone(), |_, state| {
+        state.set(CharacterActions::Delete);
+    });
+    let on_modal_save = use_callback(
+        (edit_character_ref.clone(), save_state.clone()),
+        |character, (edit_character_ref, save_state)| {
+            *edit_character_ref.borrow_mut() = Some(character);
+            save_state.run();
+        },
+    );
+    let on_modal_delete = use_callback(delete_state.clone(), |_, delete_state| {
+        delete_state.run();
+    });
+    let on_modal_close = use_callback(
+        (action_state.clone(), unreported_error_toggle.clone()),
+        |_, (state, unreported_error_toggle)| {
+            state.set(CharacterActions::Closed);
+            unreported_error_toggle.set(false);
+        },
+    );
 
     let report_unknown_error = use_callback(
         (
             bamboo_error_state.clone(),
             error_message_form_state.clone(),
-            unknown_error_state.clone(),
+            unreported_error_toggle.clone(),
         ),
-        |_, (bamboo_error_state, error_message_form_state, unknown_error_state)| {
+        |_, (bamboo_error_state, error_message_form_state, unreported_error_toggle)| {
             error::report_unknown_error(
                 "final_fantasy_character",
                 error_message_form_state.deref().to_string(),
                 bamboo_error_state.deref().clone(),
             );
-            unknown_error_state.set(false);
+            unreported_error_toggle.set(false);
         },
     );
 
@@ -507,11 +429,13 @@ fn character_details(props: &CharacterDetailsProps) -> Html {
                     <CosmoButton on_click={delete_character_click} label="Löschen" />
                 </CosmoToolbarGroup>
             </CosmoToolbar>
-            if *error_state == ErrorState::Delete {
-                if *unknown_error_state {
-                    <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message={(*error_message_state).clone()} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+            if let Some(err) = &delete_state.error {
+                if err.code == NOT_FOUND {
+                    <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Der Charakter konnte nicht gefunden werden" />
+                } else if *unreported_error_toggle {
+                    <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Der Charakter konnte nicht gelöscht werden" actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
                 } else {
-                    <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message={(*error_message_state).clone()} />
+                    <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Der Charakter konnte nicht gelöscht werden" />
                 }
             }
             <CosmoKeyValueList>
@@ -529,7 +453,7 @@ fn character_details(props: &CharacterDetailsProps) -> Html {
             </CosmoKeyValueList>
             {match (*action_state).clone() {
                 CharacterActions::Edit => html!(
-                    <ModifyCharacterModal has_unknown_error={*unknown_error_state} free_companies={props.free_companies.clone()} on_error_close={report_unknown_error.clone()} title={format!("Charakter {} bearbeiten", props.character.name.clone())} save_label="Character speichern" on_save={on_modal_save} on_close={on_modal_close} character={props.character.clone()} custom_fields={props.custom_fields.clone()} error_message={(*error_message_state).clone()} has_error={*error_state == ErrorState::Edit} />
+                    <ModifyCharacterModal has_unknown_error={*unreported_error_toggle} free_companies={props.free_companies.clone()} on_error_close={report_unknown_error.clone()} title={format!("Charakter {} bearbeiten", props.character.name.clone())} save_label="Character speichern" on_save={on_modal_save} on_close={on_modal_close} character={props.character.clone()} custom_fields={props.custom_fields.clone()} error_message={(*error_message_state).clone()} has_error={*edit_error_toggle} />
                 ),
                 CharacterActions::Delete => {
                     let character = props.character.clone();
@@ -547,223 +471,195 @@ fn character_details(props: &CharacterDetailsProps) -> Html {
 pub fn character_page() -> Html {
     log::debug!("Render character page");
     log::debug!("Initialize state and callbacks");
-    let character_query_state = use_query_value::<MyCharacters>(().into());
+    let open_create_character_modal_toggle = use_bool_toggle(false);
+    let unreported_error_toggle = use_state_eq(|| false);
 
-    let open_create_character_modal_state = use_state_eq(|| false);
-    let error_state = use_state_eq(|| false);
-    let initial_loaded_state = use_state_eq(|| false);
-    let unknown_error_state = use_state_eq(|| false);
+    let create_character_ref = use_mut_ref(|| None as Option<Character>);
 
     let bamboo_error_state = use_state_eq(api::ApiError::default);
 
     let error_message_form_state = use_state_eq(|| AttrValue::from(""));
 
-    let character_state = use_state_eq(|| vec![] as Vec<Character>);
-
-    let free_companies_state = use_state_eq(|| vec![] as Vec<FreeCompany>);
-
-    let custom_fields_state = use_state_eq(|| vec![] as Vec<CustomCharacterField>);
-
     let selected_character_state = use_state_eq(|| 0);
 
     let error_message_state = use_state_eq(|| AttrValue::from(""));
 
-    let report_unknown_error = use_callback(
-        (
-            bamboo_error_state.clone(),
-            error_message_form_state.clone(),
-            unknown_error_state.clone(),
-        ),
-        |_, (bamboo_error_state, error_message_form_state, unknown_error_state)| {
-            error::report_unknown_error(
-                "final_fantasy_character",
-                error_message_form_state.deref().to_string(),
-                bamboo_error_state.deref().clone(),
-            );
-            unknown_error_state.set(false);
-        },
-    );
+    let characters_state = {
+        let bamboo_error_state = bamboo_error_state.clone();
 
-    let open_create_character_modal_click = use_callback(
-        (
-            open_create_character_modal_state.clone(),
-            error_state.clone(),
-        ),
-        |_, (open_create_character_modal_state, error_state)| {
-            open_create_character_modal_state.set(true);
-            error_state.set(false);
-        },
-    );
-    let on_character_select = use_callback(
-        (selected_character_state.clone(), error_state.clone()),
-        |idx, (state, error_state)| {
-            state.set(idx);
-            error_state.set(false);
-        },
-    );
-    let on_modal_close = use_callback(open_create_character_modal_state.clone(), |_, state| {
-        state.set(false)
-    });
-    let on_modal_save = {
-        let error_state = error_state.clone();
-        let open_create_character_modal_state = open_create_character_modal_state.clone();
-        let unknown_error_state = unknown_error_state.clone();
+        let unreported_error_toggle = unreported_error_toggle.clone();
+
+        use_async(async move {
+            api::get_characters()
+                .await
+                .map_err(|err| {
+                    unreported_error_toggle.set(true);
+                    bamboo_error_state.set(err.clone());
+
+                    err
+                })
+                .map(|data| {
+                    unreported_error_toggle.set(false);
+
+                    data
+                })
+        })
+    };
+    let free_companies_state = use_async(async move { api::get_free_companies().await });
+    let custom_fields_state = use_async(async move { api::get_custom_fields().await });
+    let create_state = {
+        let open_create_character_modal_state = open_create_character_modal_toggle.clone();
+        let unreported_error_toggle = unreported_error_toggle.clone();
+
+        let characters_state = characters_state.clone();
 
         let bamboo_error_state = bamboo_error_state.clone();
 
         let error_message_state = error_message_state.clone();
         let error_message_form_state = error_message_form_state.clone();
 
-        let character_query_state = character_query_state.clone();
-
         let selected_character_state = selected_character_state.clone();
 
-        Callback::from(move |character: Character| {
-            log::debug!("Modal was confirmed lets execute the request");
-            let error_state = error_state.clone();
-            let open_create_character_modal_state = open_create_character_modal_state.clone();
-            let unknown_error_state = unknown_error_state.clone();
+        let create_character_ref = create_character_ref.clone();
 
-            let bamboo_error_state = bamboo_error_state.clone();
+        #[allow(clippy::await_holding_refcell_ref)]
+        use_async(async move {
+            if let Some(character) = create_character_ref.borrow().clone() {
+                api::create_character(character)
+                    .await
+                    .map(|character| {
+                        open_create_character_modal_state.set(false);
+                        selected_character_state.set(character.id);
 
-            let error_message_state = error_message_state.clone();
-            let error_message_form_state = error_message_form_state.clone();
-
-            let selected_character_state = selected_character_state.clone();
-
-            let character_query_state = character_query_state.clone();
-
-            yew::platform::spawn_local(async move {
-                error_state.set(match create_character(character).await {
-                    Ok(character) => {
-                        let id = character.id;
-                        open_create_character_modal_state.clone().set(false);
-                        if let Ok(res) = character_query_state.refresh().await {
-                            selected_character_state.set(
-                                res.character
-                                    .iter()
-                                    .position(move |character| character.id.eq(&id))
-                                    .unwrap_or(0),
-                            );
-                        }
-                        false
-                    }
-                    Err(err) => {
+                        characters_state.run()
+                    })
+                    .map_err(|err| {
                         error_message_state.set(
                             if err.code == CONFLICT {
                                 "Ein Charakter mit diesem Namen existiert bereits"
                             } else {
                                 bamboo_error_state.set(err.clone());
                                 error_message_form_state.set("character_page".into());
-                                unknown_error_state.set(true);
+                                unreported_error_toggle.set(true);
                                 "Der Charakter konnte nicht hinzugefügt werden"
                             }
                             .into(),
                         );
-                        true
-                    }
-                });
-            });
+
+                        err
+                    })
+            } else {
+                Ok(())
+            }
         })
     };
-    let on_delete = {
-        let character_query_state = character_query_state.clone();
 
-        let selected_character_state = selected_character_state.clone();
-
-        Callback::from(move |_| {
-            let character_query_state = character_query_state.clone();
-
-            let selected_character_state = selected_character_state.clone();
-
-            yew::platform::spawn_local(async move {
-                let _ = character_query_state.refresh().await;
-                selected_character_state.set(0);
-            })
-        })
-    };
+    let report_unknown_error = use_callback(
+        (
+            bamboo_error_state.clone(),
+            error_message_form_state.clone(),
+            unreported_error_toggle.clone(),
+        ),
+        |_, (bamboo_error_state, error_message_form_state, unreported_error_toggle)| {
+            error::report_unknown_error(
+                "final_fantasy_character",
+                error_message_form_state.deref().to_string(),
+                bamboo_error_state.deref().clone(),
+            );
+            unreported_error_toggle.set(false);
+        },
+    );
+    let open_create_character_modal_click = use_callback(
+        open_create_character_modal_toggle.clone(),
+        |_, open_create_character_modal_state| {
+            open_create_character_modal_state.set(true);
+        },
+    );
+    let on_modal_close = use_callback(open_create_character_modal_toggle.clone(), |_, state| {
+        state.set(false)
+    });
+    let on_modal_save = use_callback(
+        (create_character_ref.clone(), create_state.clone()),
+        |character, (create_character_ref, create_state)| {
+            *create_character_ref.borrow_mut() = Some(character);
+            create_state.run();
+        },
+    );
+    let on_delete = use_callback(
+        (characters_state.clone(), selected_character_state.clone()),
+        |_, (characters_state, selected_character_state)| {
+            selected_character_state.set(0);
+            characters_state.run();
+        },
+    );
 
     {
         let custom_fields_state = custom_fields_state.clone();
-
         let free_companies_state = free_companies_state.clone();
+        let characters_state = characters_state.clone();
 
         use_mount(move || {
-            let custom_fields_state = custom_fields_state;
-
-            let free_companies_state = free_companies_state;
-
-            yew::platform::spawn_local(async move {
-                if let Ok(custom_fields) = get_custom_fields().await {
-                    custom_fields_state.set(custom_fields);
-                }
-                if let Ok(free_companies) = get_free_companies().await {
-                    free_companies_state.set(free_companies);
-                }
-            });
+            free_companies_state.run();
+            custom_fields_state.run();
+            characters_state.run();
         });
     }
 
-    match character_query_state.result() {
-        None => {
-            log::debug!("Still loading");
-            if !*initial_loaded_state {
-                return html!(
-                    <CosmoProgressRing />
-                );
-            }
+    if characters_state.loading {
+        html!(
+            <CosmoProgressRing />
+        )
+    } else if characters_state.error.is_some() {
+        if *unreported_error_toggle {
+            html!(
+                <CosmoMessage header="Fehler beim Laden" message="Deine Charaktere konnten nicht geladen werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
+            )
+        } else {
+            html!(
+                <CosmoMessage header="Fehler beim Laden" message="Deine Charaktere konnten nicht geladen werden" message_type={CosmoMessageType::Negative} />
+            )
         }
-        Some(Ok(res)) => {
-            log::debug!("Loaded character");
-            initial_loaded_state.set(true);
-            character_state.set(res.character.clone());
-        }
-        Some(Err(err)) => {
-            log::warn!("Failed to load {err}");
-            bamboo_error_state.set(err.clone());
-            if !*initial_loaded_state {
-                unknown_error_state.set(true);
-            }
-            initial_loaded_state.set(true);
+    } else if let Some(data) = &characters_state.data {
+        let select_character = {
+            let data = data.clone();
+            let selected_character_state = selected_character_state.clone();
 
-            return html!(
-                if *unknown_error_state {
-                    <CosmoMessage header="Fehler beim Laden" message="Deine Charaktere konnten nicht geladen werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
-                } else {
-                    <CosmoMessage header="Fehler beim Laden" message="Deine Charaktere konnten nicht geladen werden" message_type={CosmoMessageType::Negative} />
+            Callback::from(move |idx| {
+                selected_character_state.set(data.get(idx).map(|u: &Character| u.id).unwrap_or(0))
+            })
+        };
+
+        html!(
+            <>
+                <CosmoSideList on_select_item={select_character} selected_index={data.iter().position(|u| u.id == *selected_character_state).unwrap_or(0)} has_add_button={true} add_button_on_click={open_create_character_modal_click} add_button_label="Charakter hinzufügen">
+                    {for data.iter().map(|character| {
+                        CosmoSideListItem::from_label_and_children(character.name.clone().into(), html!(
+                            <>
+                                <CosmoTitle title={character.name.clone()} />
+                                <CosmoTabControl>
+                                    <CosmoTabItem label="Details">
+                                        <CharacterDetails free_companies={free_companies_state.data.clone().unwrap_or(Vec::new()).clone()} custom_fields={custom_fields_state.data.clone().unwrap_or(Vec::new()).clone()} on_delete={on_delete.clone()} character={character.clone()} />
+                                    </CosmoTabItem>
+                                    <CosmoTabItem label="Kämpfer">
+                                        <FighterDetails character={character.clone()} />
+                                    </CosmoTabItem>
+                                    <CosmoTabItem label="Crafter">
+                                        <CrafterDetails character={character.clone()} />
+                                    </CosmoTabItem>
+                                    <CosmoTabItem label="Unterkünfte">
+                                        <HousingDetails character={character.clone()} />
+                                    </CosmoTabItem>
+                                </CosmoTabControl>
+                            </>
+                        ))
+                    })}
+                </CosmoSideList>
+                if *open_create_character_modal_toggle {
+                    <ModifyCharacterModal has_unknown_error={*unreported_error_toggle} on_error_close={report_unknown_error.clone()} free_companies={free_companies_state.data.clone().unwrap_or(Vec::new()).clone()} error_message={(*error_message_state).clone()} has_error={create_state.error.is_some()} on_close={on_modal_close} title="Charakter hinzufügen" save_label="Charakter hinzufügen" on_save={on_modal_save} custom_fields={custom_fields_state.data.clone().unwrap_or(Vec::new()).clone()} />
                 }
-            );
-        }
+            </>
+        )
+    } else {
+        html!()
     }
-
-    html!(
-        <>
-            <CosmoSideList on_select_item={on_character_select} selected_index={*selected_character_state} has_add_button={true} add_button_on_click={open_create_character_modal_click} add_button_label="Charakter hinzufügen">
-                {for (*character_state).clone().into_iter().map(|character| {
-                    CosmoSideListItem::from_label_and_children(character.name.clone().into(), html!(
-                        <>
-                            <CosmoTitle title={character.name.clone()} />
-                            <CosmoTabControl>
-                                <CosmoTabItem label="Details">
-                                    <CharacterDetails free_companies={(*free_companies_state).clone()} custom_fields={(*custom_fields_state).clone()} on_delete={on_delete.clone()} character={character.clone()} />
-                                </CosmoTabItem>
-                                <CosmoTabItem label="Kämpfer">
-                                    <FighterDetails character={character.clone()} />
-                                </CosmoTabItem>
-                                <CosmoTabItem label="Crafter">
-                                    <CrafterDetails character={character.clone()} />
-                                </CosmoTabItem>
-                                <CosmoTabItem label="Unterkünfte">
-                                    <HousingDetails character={character} />
-                                </CosmoTabItem>
-                            </CosmoTabControl>
-                        </>
-                    ))
-                })}
-            </CosmoSideList>
-            if *open_create_character_modal_state {
-                <ModifyCharacterModal has_unknown_error={*unknown_error_state} on_error_close={report_unknown_error.clone()} free_companies={(*free_companies_state).clone()} error_message={(*error_message_state).clone()} has_error={*error_state} on_close={on_modal_close} title="Charakter hinzufügen" save_label="Charakter hinzufügen" on_save={on_modal_save} custom_fields={(*custom_fields_state).clone()} />
-            }
-        </>
-    )
 }

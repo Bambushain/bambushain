@@ -1,23 +1,5 @@
-use std::rc::Rc;
-
-use async_trait::async_trait;
 use bamboo_entities::prelude::FreeCompany;
-use bounce::query::{Query, QueryResult};
-use bounce::BounceStates;
-
-use bamboo_frontend_base_api::{delete, get, post, put_no_content, ApiError, BambooApiResult};
-
-use crate::models::FreeCompanies;
-
-#[async_trait(? Send)]
-impl Query for FreeCompanies {
-    type Input = ();
-    type Error = ApiError;
-
-    async fn query(_states: &BounceStates, _input: Rc<Self::Input>) -> QueryResult<Self> {
-        get_free_companies().await.map(|data| Rc::new(data.into()))
-    }
-}
+use bamboo_frontend_base_api::{delete, get, post, put_no_content, BambooApiResult};
 
 pub async fn get_free_companies() -> BambooApiResult<Vec<FreeCompany>> {
     log::debug!("Get free companies");
