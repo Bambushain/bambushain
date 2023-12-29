@@ -20,7 +20,7 @@ members = [
 ]
 
 [workspace.package]
-version = "1.5.0"
+version = "1.6.0"
 edition = "2021"
 license = "MIT"
 
@@ -58,6 +58,7 @@ chrono = { version = "0.4.31", features = ["serde", "unstable-locales"] }
 date-range = "0.3.0"
 either = "1.9.0"
 futures = "0.3.29"
+gloo-dialogs = "0.2.0"
 gloo-events = "0.2.0"
 gloo-net = "0.5.0"
 gloo-storage = "0.3.0"
@@ -72,6 +73,7 @@ wasm-bindgen = "0.2.89"
 wasm-logger = "0.2.0"
 web-sys = "0.3.66"
 yew = { version = "0.21.0", features = ["csr", "hydration"] }
+yew-autoprops = "0.4.1"
 yew-cosmo = "1.0.9"
 yew_icons = { version = "0.8.0", features = ["lucide"] }
 yew-hooks = "0.3.0"

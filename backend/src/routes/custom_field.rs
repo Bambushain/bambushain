@@ -96,7 +96,7 @@ pub async fn create_custom_field_option(
     body: Option<web::Json<String>>,
     authentication: Authentication,
     db: DbConnection,
-) -> BambooApiResponseResult {
+) -> BambooApiResult<CustomCharacterFieldOption> {
     let path = check_invalid_path!(path, "custom_field")?;
     let body = check_missing_fields!(body, "custom_field")?;
 
@@ -107,7 +107,7 @@ pub async fn create_custom_field_option(
         &db,
     )
     .await
-    .map(|_| no_content!())
+    .map(|data| created!(data))
 }
 
 #[get(

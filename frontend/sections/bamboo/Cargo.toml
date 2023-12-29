@@ -9,7 +9,6 @@ bamboo-frontend-base-api = { workspace = true }
 bamboo-frontend-base-error = { workspace = true }
 bamboo-frontend-base-storage = { workspace = true }
 
-async-trait = { workspace = true }
 bamboo-entities = { workspace = true }
 bounce = { workspace = true }
 chrono = { workspace = true }
