@@ -4,6 +4,7 @@ use bounce::helmet::Helmet;
 use bounce::{use_atom_setter, use_atom_value};
 use stylist::yew::use_style;
 use yew::prelude::*;
+use yew_autoprops::autoprops;
 use yew_cosmo::prelude::*;
 use yew_hooks::{use_async, use_bool_toggle, use_mount, UseAsyncHandle};
 use yew_router::prelude::*;
@@ -31,7 +32,6 @@ use bamboo_frontend_section_support::ContactPage;
 use crate::api::{
     change_my_password, disable_totp, enable_totp, logout, update_my_profile, validate_totp,
 };
-use crate::props::*;
 
 pub fn switch(route: AppRoute) -> Html {
     match route {
@@ -364,8 +364,9 @@ fn legal_layout() -> Html {
     )
 }
 
+#[autoprops]
 #[function_component(ChangePasswordDialog)]
-fn change_password_dialog(props: &ChangePasswordDialogProps) -> Html {
+fn change_password_dialog(on_close: &Callback<()>, mods: &Vec<AttrValue>) -> Html {
     log::debug!("Open dialog to change password");
     let navigator = use_navigator();
 
@@ -422,7 +423,7 @@ fn change_password_dialog(props: &ChangePasswordDialogProps) -> Html {
         })
     };
 
-    let on_close = props.on_close.clone();
+    let on_close = on_close.clone();
     let on_save = use_callback(save_state.clone(), |_, state| state.run());
 
     html!(
@@ -447,7 +448,7 @@ fn change_password_dialog(props: &ChangePasswordDialogProps) -> Html {
                         <CosmoMessage message_type={CosmoMessageType::Negative} message="Leider konnte dein Passwort nicht geändert werden" header="Fehler beim ändern" />
                     }
                 } else {
-                    <CosmoMessage message_type={CosmoMessageType::Information} message={format!("Falls du dich an dein altes Passwort nicht erinnern kannst,\nwende dich an einen Mod: {}", props.mods.join(", "))} header="Ändere dein Passwort" />
+                    <CosmoMessage message_type={CosmoMessageType::Information} message={format!("Falls du dich an dein altes Passwort nicht erinnern kannst,\nwende dich an einen Mod: {}", mods.join(", "))} header="Ändere dein Passwort" />
                 }
                 <CosmoInputGroup>
                     <CosmoTextBox input_type={CosmoTextBoxType::Password} label="Aktuelles Passwort" on_input={update_old_password} value={(*old_password_state).clone()} required={true} />
@@ -458,8 +459,9 @@ fn change_password_dialog(props: &ChangePasswordDialogProps) -> Html {
     )
 }
 
+#[autoprops]
 #[function_component(UpdateMyProfileDialog)]
-fn update_my_profile_dialog(props: &UpdateMyProfileDialogProps) -> Html {
+fn update_my_profile_dialog(on_close: &Callback<()>) -> Html {
     log::debug!("Open dialog to update profile");
     let profile_atom_setter = use_atom_setter::<storage::CurrentUser>();
     let profile_atom = use_atom_value::<storage::CurrentUser>();
@@ -503,7 +505,7 @@ fn update_my_profile_dialog(props: &UpdateMyProfileDialogProps) -> Html {
         let display_name_state = display_name_state.clone();
         let discord_name_state = discord_name_state.clone();
 
-        let on_close = props.on_close.clone();
+        let on_close = on_close.clone();
 
         use_async(async move {
             update_my_profile(UpdateProfile::new(
@@ -563,7 +565,7 @@ fn update_my_profile_dialog(props: &UpdateMyProfileDialogProps) -> Html {
     let on_disable_totp = use_callback(disable_totp_state.clone(), |_, disable_totp_state| {
         disable_totp_state.run()
     });
-    let on_close = props.on_close.clone();
+    let on_close = on_close.clone();
 
     html!(
         <>
@@ -615,8 +617,9 @@ fn update_my_profile_dialog(props: &UpdateMyProfileDialogProps) -> Html {
     )
 }
 
+#[autoprops]
 #[function_component(EnableTotpDialog)]
-fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
+fn enable_totp_dialog(on_close: &Callback<()>) -> Html {
     log::debug!("Open dialog to enable totp");
     let unreported_error_toggle = use_bool_toggle(false);
 
@@ -653,7 +656,7 @@ fn enable_totp_dialog(props: &EnableTotpDialogProps) -> Html {
         let code_state = code_state.clone();
         let current_password_state = current_password_state.clone();
 
-        let on_close = props.on_close.clone();
+        let on_close = on_close.clone();
 
         let profile_atom = profile_atom.clone();
 
@@ -722,7 +725,7 @@ object-fit: scale-down;
             </Helmet>
             <CosmoModal title="Zwei Faktor per App aktivieren" is_form={true} on_form_submit={on_form_submit} buttons={html!(
                 <>
-                    <CosmoButton on_click={props.on_close.clone()} label="Abbrechen" />
+                    <CosmoButton on_click={on_close.clone()} label="Abbrechen" />
                     <CosmoButton is_submit={true} label="App einrichten" />
                 </>
             )}>

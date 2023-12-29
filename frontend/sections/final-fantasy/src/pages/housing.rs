@@ -3,6 +3,7 @@ use std::ops::Deref;
 use strum::IntoEnumIterator;
 use stylist::yew::use_style;
 use yew::prelude::*;
+use yew_autoprops::autoprops;
 use yew_cosmo::prelude::*;
 use yew_hooks::{use_async, use_bool_toggle, use_mount};
 
@@ -11,7 +12,6 @@ use bamboo_frontend_base_api::{CONFLICT, NOT_FOUND};
 use bamboo_frontend_base_error as error;
 
 use crate::api;
-use crate::props::housing::*;
 
 #[derive(PartialEq, Clone)]
 enum HousingActions {
@@ -21,12 +21,24 @@ enum HousingActions {
     Closed,
 }
 
+#[autoprops]
 #[function_component(ModifyHousingModal)]
-fn modify_housing_modal(props: &ModifyHousingModalProps) -> Html {
-    let district_state = use_state_eq(|| props.housing.district);
-    let housing_type_state = use_state_eq(|| props.housing.housing_type);
-    let ward_state = use_state_eq(|| props.housing.ward);
-    let plot_state = use_state_eq(|| props.housing.plot);
+fn modify_housing_modal(
+    on_close: &Callback<()>,
+    on_error_close: &Callback<()>,
+    title: &AttrValue,
+    save_label: &AttrValue,
+    error_message: &AttrValue,
+    has_error: bool,
+    has_unknown_error: bool,
+    #[prop_or_default] housing: &CharacterHousing,
+    character_id: i32,
+    on_save: &Callback<CharacterHousing>,
+) -> Html {
+    let district_state = use_state_eq(|| housing.district);
+    let housing_type_state = use_state_eq(|| housing.housing_type);
+    let ward_state = use_state_eq(|| housing.ward);
+    let plot_state = use_state_eq(|| housing.plot);
 
     let districts = HousingDistrict::iter()
         .map(|district| {
@@ -65,15 +77,15 @@ fn modify_housing_modal(props: &ModifyHousingModalProps) -> Html {
         })
         .collect::<Vec<CosmoModernSelectItem>>();
 
-    let on_close = props.on_close.clone();
+    let on_close = on_close.clone();
     let on_save = use_callback(
         (
             district_state.clone(),
             housing_type_state.clone(),
             ward_state.clone(),
             plot_state.clone(),
-            props.on_save.clone(),
-            props.character_id,
+            on_save.clone(),
+            character_id,
         ),
         |_, (district_state, housing_type_state, ward_state, plot_state, on_save, character_id)| {
             on_save.emit(CharacterHousing::new(
@@ -102,17 +114,17 @@ fn modify_housing_modal(props: &ModifyHousingModalProps) -> Html {
 
     html!(
         <>
-            <CosmoModal title={props.title.clone()} is_form={true} on_form_submit={on_save} buttons={html!(
+            <CosmoModal title={title.clone()} is_form={true} on_form_submit={on_save} buttons={html!(
                 <>
                     <CosmoButton on_click={on_close} label="Abbrechen" />
-                    <CosmoButton label={props.save_label.clone()} is_submit={true} />
+                    <CosmoButton label={save_label.clone()} is_submit={true} />
                 </>
             )}>
-                if props.has_error {
-                    if props.has_unknown_error {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message={props.error_message.clone()} actions={html!(<CosmoButton label="Fehler melden" on_click={props.on_error_close.clone()} />)} />
+                if has_error {
+                    if has_unknown_error {
+                        <CosmoMessage message_type={CosmoMessageType::Negative} message={error_message.clone()} actions={html!(<CosmoButton label="Fehler melden" on_click={on_error_close.clone()} />)} />
                     } else {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message={props.error_message.clone()} />
+                        <CosmoMessage message_type={CosmoMessageType::Negative} message={error_message.clone()} />
                     }
                 }
                 <CosmoInputGroup>
@@ -127,8 +139,9 @@ fn modify_housing_modal(props: &ModifyHousingModalProps) -> Html {
 }
 
 #[allow(clippy::await_holding_refcell_ref)]
+#[autoprops]
 #[function_component(HousingDetails)]
-pub fn housing_details(props: &HousingDetailsProps) -> Html {
+pub fn housing_details(character: &Character) -> Html {
     log::debug!("Render housing details");
     let action_state = use_state_eq(|| HousingActions::Closed);
 
@@ -145,7 +158,7 @@ pub fn housing_details(props: &HousingDetailsProps) -> Html {
     let error_message_form_state = use_state_eq(|| AttrValue::from(""));
 
     let housing_state = {
-        let character_id = props.character.id;
+        let character_id = character.id;
 
         let error_message_form_state = error_message_form_state.clone();
 
@@ -174,7 +187,7 @@ pub fn housing_details(props: &HousingDetailsProps) -> Html {
         let error_message_state = error_message_state.clone();
         let error_message_form_state = error_message_form_state.clone();
 
-        let character_id = props.character.id;
+        let character_id = character.id;
 
         let create_housing_ref = create_housing_ref.clone();
 
@@ -219,7 +232,7 @@ pub fn housing_details(props: &HousingDetailsProps) -> Html {
         let error_message_state = error_message_state.clone();
         let error_message_form_state = error_message_form_state.clone();
 
-        let character_id = props.character.id;
+        let character_id = character.id;
 
         let edit_housing_ref = edit_housing_ref.clone();
         let edit_id_housing_ref = edit_id_housing_ref.clone();
@@ -274,7 +287,7 @@ pub fn housing_details(props: &HousingDetailsProps) -> Html {
 
         let error_message_form_state = error_message_form_state.clone();
 
-        let character_id = props.character.id;
+        let character_id = character.id;
 
         let delete_housing_ref = delete_housing_ref.clone();
 
@@ -449,10 +462,10 @@ font-style: normal;
                 </div>
                 {match (*action_state).clone() {
                     HousingActions::Create => html!(
-                        <ModifyHousingModal has_unknown_error={*unreported_error_toggle} on_error_close={report_unknown_error.clone()} housing={CharacterHousing::new(props.character.id, HousingDistrict::TheLavenderBeds, HousingType::Private, 1, 1)} character_id={props.character.id} is_edit={false} error_message={(*error_message_state).clone()} has_error={create_state.error.is_some()} on_close={on_modal_action_close} title="Unterkunft hinzufügen" save_label="Unterkunft hinzufügen" on_save={on_modal_create_save} />
+                        <ModifyHousingModal has_unknown_error={*unreported_error_toggle} on_error_close={report_unknown_error.clone()} housing={CharacterHousing::new(character.id, HousingDistrict::TheLavenderBeds, HousingType::Private, 1, 1)} character_id={character.id} error_message={(*error_message_state).clone()} has_error={create_state.error.is_some()} on_close={on_modal_action_close} title="Unterkunft hinzufügen" save_label="Unterkunft hinzufügen" on_save={on_modal_create_save} />
                     ),
                     HousingActions::Edit(housing) => html!(
-                        <ModifyHousingModal has_unknown_error={*unreported_error_toggle} on_error_close={report_unknown_error.clone()} character_id={props.character.id} is_edit={true} title="Unterkunft bearbeiten" save_label="Unterkunft speichern" on_save={on_modal_update_save} on_close={on_modal_action_close} housing={housing} error_message={(*error_message_state).clone()} has_error={update_state.error.is_some()} />
+                        <ModifyHousingModal has_unknown_error={*unreported_error_toggle} on_error_close={report_unknown_error.clone()} character_id={character.id} title="Unterkunft bearbeiten" save_label="Unterkunft speichern" on_save={on_modal_update_save} on_close={on_modal_action_close} housing={housing} error_message={(*error_message_state).clone()} has_error={update_state.error.is_some()} />
                     ),
                     HousingActions::Delete(housing) => html!(
                         <CosmoConfirm confirm_type={CosmoModalType::Warning} on_confirm={move |_| on_modal_delete.emit(housing.id)} on_decline={on_modal_action_close} confirm_label="Unterkunft löschen" decline_label="Unterkunft behalten" title="Unterkunft löschen" message={format!("Soll die Unterkunft in {} im Bezirk {} mit der Nummer {} wirklich gelöscht werden?", housing.district.to_string(), housing.ward, housing.plot)} />

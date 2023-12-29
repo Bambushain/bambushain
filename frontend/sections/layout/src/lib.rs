@@ -1,5 +1,4 @@
-pub(crate) mod api;
+mod api;
 pub mod pages;
-mod props;
 
 pub use pages::layout::*;

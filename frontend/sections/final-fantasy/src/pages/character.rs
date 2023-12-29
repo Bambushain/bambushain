@@ -5,6 +5,7 @@ use std::ops::Deref;
 use strum::IntoEnumIterator;
 use yew::prelude::*;
 use yew::virtual_dom::{Key, VChild};
+use yew_autoprops::autoprops;
 use yew_cosmo::prelude::*;
 use yew_hooks::{use_async, use_bool_toggle, use_map, use_mount};
 
@@ -16,7 +17,6 @@ use crate::api;
 use crate::pages::crafter::CrafterDetails;
 use crate::pages::fighter::FighterDetails;
 use crate::pages::housing::HousingDetails;
-use crate::props::character::*;
 
 #[derive(PartialEq, Clone)]
 enum CharacterActions {
@@ -25,14 +25,27 @@ enum CharacterActions {
     Closed,
 }
 
+#[autoprops]
 #[function_component(ModifyCharacterModal)]
-fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
-    let race_state = use_state_eq(|| AttrValue::from(props.character.race.get_race_name()));
-    let world_state = use_state_eq(|| AttrValue::from(props.character.world.clone()));
-    let name_state = use_state_eq(|| AttrValue::from(props.character.name.clone()));
+fn modify_character_modal(
+    on_close: &Callback<()>,
+    title: &AttrValue,
+    save_label: &AttrValue,
+    error_message: &AttrValue,
+    has_error: bool,
+    has_unknown_error: bool,
+    #[prop_or_default] character: &Character,
+    on_save: &Callback<Character>,
+    on_error_close: &Callback<()>,
+    custom_fields: &Vec<CustomCharacterField>,
+    free_companies: &Vec<FreeCompany>,
+) -> Html {
+    let race_state = use_state_eq(|| AttrValue::from(character.race.get_race_name()));
+    let world_state = use_state_eq(|| AttrValue::from(character.world.clone()));
+    let name_state = use_state_eq(|| AttrValue::from(character.name.clone()));
 
     let free_company_state = use_state_eq(|| {
-        if let Some(free_company) = props.character.free_company.clone() {
+        if let Some(free_company) = character.free_company.clone() {
             Some(AttrValue::from(free_company.id.to_string()))
         } else {
             None
@@ -40,8 +53,7 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
     });
 
     let mut custom_fields_map = HashMap::new();
-    props
-        .character
+    character
         .custom_fields
         .clone()
         .iter()
@@ -57,7 +69,7 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
         });
     let custom_fields_map = use_map(custom_fields_map);
 
-    let on_close = props.on_close.clone();
+    let on_close = on_close.clone();
     let on_save = use_callback(
         (
             race_state.clone(),
@@ -65,8 +77,8 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
             name_state.clone(),
             custom_fields_map.clone(),
             free_company_state.clone(),
-            props.free_companies.clone(),
-            props.on_save.clone(),
+            free_companies.clone(),
+            on_save.clone(),
         ),
         |_,
          (
@@ -171,7 +183,7 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
         })
         .collect::<Vec<CosmoModernSelectItem>>();
 
-    let mut all_free_companies = props.free_companies.clone();
+    let mut all_free_companies = free_companies.clone();
     all_free_companies.sort();
 
     let mut free_companies = vec![CosmoModernSelectItem::new(
@@ -206,7 +218,7 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
     log::debug!("Found {} free companies", free_companies.len());
 
     let mut custom_field_inputs = vec![];
-    let mut fields = props.custom_fields.clone();
+    let mut fields = custom_fields.clone();
     fields.sort();
     for field in fields {
         let map = custom_fields_map.clone();
@@ -253,17 +265,17 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
     }
 
     html!(
-        <CosmoModal title={props.title.clone()} is_form={true} on_form_submit={on_save} buttons={html!(
+        <CosmoModal title={title.clone()} is_form={true} on_form_submit={on_save} buttons={html!(
             <>
                 <CosmoButton on_click={on_close} label="Abbrechen" />
-                <CosmoButton label={props.save_label.clone()} is_submit={true} />
+                <CosmoButton label={save_label.clone()} is_submit={true} />
             </>
         )}>
-            if props.has_error {
-                if props.has_unknown_error {
-                    <CosmoMessage message_type={CosmoMessageType::Negative} message={props.error_message.clone()} actions={html!(<CosmoButton label="Fehler melden" on_click={props.on_error_close.clone()} />)} />
+            if has_error {
+                if has_unknown_error {
+                    <CosmoMessage message_type={CosmoMessageType::Negative} message={error_message.clone()} actions={html!(<CosmoButton label="Fehler melden" on_click={on_error_close.clone()} />)} />
                 } else {
-                    <CosmoMessage message_type={CosmoMessageType::Negative} message={props.error_message.clone()} />
+                    <CosmoMessage message_type={CosmoMessageType::Negative} message={error_message.clone()} />
                 }
             }
             <CosmoInputGroup>
@@ -277,8 +289,14 @@ fn modify_character_modal(props: &ModifyCharacterModalProps) -> Html {
     )
 }
 
+#[autoprops]
 #[function_component(CharacterDetails)]
-fn character_details(props: &CharacterDetailsProps) -> Html {
+fn character_details(
+    character: &Character,
+    on_delete: &Callback<()>,
+    custom_fields: &Vec<CustomCharacterField>,
+    free_companies: &Vec<FreeCompany>,
+) -> Html {
     log::debug!("Initialize character details state and callbacks");
     let action_state = use_state_eq(|| CharacterActions::Closed);
 
@@ -305,7 +323,7 @@ fn character_details(props: &CharacterDetailsProps) -> Html {
 
         let action_state = action_state.clone();
 
-        let id = props.character.id;
+        let id = character.id;
 
         #[allow(clippy::await_holding_refcell_ref)]
         use_async(async move {
@@ -356,9 +374,9 @@ fn character_details(props: &CharacterDetailsProps) -> Html {
 
         let error_message_form_state = error_message_form_state.clone();
 
-        let on_delete = props.on_delete.clone();
+        let on_delete = on_delete.clone();
 
-        let id = props.character.id;
+        let id = character.id;
 
         use_async(async move {
             api::delete_character(id)
@@ -439,13 +457,13 @@ fn character_details(props: &CharacterDetailsProps) -> Html {
                 }
             }
             <CosmoKeyValueList>
-                <CosmoKeyValueListItem title="Name">{props.character.name.clone()}</CosmoKeyValueListItem>
-                <CosmoKeyValueListItem title="Rasse">{props.character.race.to_string()}</CosmoKeyValueListItem>
-                <CosmoKeyValueListItem title="Welt">{props.character.world.clone()}</CosmoKeyValueListItem>
-                if let Some(free_company) = props.character.free_company.clone() {
+                <CosmoKeyValueListItem title="Name">{character.name.clone()}</CosmoKeyValueListItem>
+                <CosmoKeyValueListItem title="Rasse">{character.race.to_string()}</CosmoKeyValueListItem>
+                <CosmoKeyValueListItem title="Welt">{character.world.clone()}</CosmoKeyValueListItem>
+                if let Some(free_company) = character.free_company.clone() {
                     <CosmoKeyValueListItem title="Freie Gesellschaft">{free_company.name.clone()}</CosmoKeyValueListItem>
                 }
-                {for props.character.custom_fields.clone().iter().map(|field| {
+                {for character.custom_fields.clone().iter().map(|field| {
                     html!(
                         <CosmoKeyValueListItem title={field.label.clone()}>{field.values.clone().into_iter().collect::<Vec<String>>().join(", ")}</CosmoKeyValueListItem>
                     )
@@ -453,10 +471,10 @@ fn character_details(props: &CharacterDetailsProps) -> Html {
             </CosmoKeyValueList>
             {match (*action_state).clone() {
                 CharacterActions::Edit => html!(
-                    <ModifyCharacterModal has_unknown_error={*unreported_error_toggle} free_companies={props.free_companies.clone()} on_error_close={report_unknown_error.clone()} title={format!("Charakter {} bearbeiten", props.character.name.clone())} save_label="Character speichern" on_save={on_modal_save} on_close={on_modal_close} character={props.character.clone()} custom_fields={props.custom_fields.clone()} error_message={(*error_message_state).clone()} has_error={*edit_error_toggle} />
+                    <ModifyCharacterModal has_unknown_error={*unreported_error_toggle} free_companies={free_companies.clone()} on_error_close={report_unknown_error.clone()} title={format!("Charakter {} bearbeiten", character.name.clone())} save_label="Character speichern" on_save={on_modal_save} on_close={on_modal_close} character={character.clone()} custom_fields={custom_fields.clone()} error_message={(*error_message_state).clone()} has_error={*edit_error_toggle} />
                 ),
                 CharacterActions::Delete => {
-                    let character = props.character.clone();
+                    let character = character.clone();
                     html!(
                         <CosmoConfirm confirm_type={CosmoModalType::Warning} on_confirm={on_modal_delete} on_decline={on_modal_close} confirm_label="Character löschen" decline_label="Character behalten" title="Character löschen" message={format!("Soll der Character {} wirklich gelöscht werden?", character.name)} />
                     )
