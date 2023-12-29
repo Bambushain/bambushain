@@ -12,6 +12,7 @@ use stylist::yew::use_style;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::{EventSource, EventTarget, MessageEvent};
 use yew::prelude::*;
+use yew_autoprops::autoprops;
 use yew_cosmo::prelude::*;
 use yew_hooks::prelude::{use_bool_toggle, use_effect_update, use_list, use_unmount};
 use yew_hooks::{use_async, use_mount};
@@ -21,7 +22,6 @@ use bamboo_entities::prelude::Event;
 use bamboo_frontend_base_error as error;
 
 use crate::api;
-use crate::props::calendar::*;
 
 enum ColorYiqResult {
     Light,
@@ -127,12 +127,17 @@ fn color_yiq(color: Color) -> ColorYiqResult {
     }
 }
 
+#[autoprops]
 #[function_component(AddEventDialog)]
-fn add_event_dialog(props: &AddEventDialogProps) -> Html {
+fn add_event_dialog(
+    start_date: &NaiveDate,
+    on_added: &Callback<Event>,
+    on_cancel: &Callback<()>,
+) -> Html {
     let title_state = use_state_eq(|| AttrValue::from(""));
     let description_state = use_state_eq(|| AttrValue::from(""));
 
-    let end_date_state = use_state_eq(|| props.start_date);
+    let end_date_state = use_state_eq(|| start_date.clone());
 
     let color_state = use_state_eq(Color::random);
 
@@ -172,9 +177,9 @@ fn add_event_dialog(props: &AddEventDialogProps) -> Html {
 
         let bamboo_error_state = bamboo_error_state.clone();
 
-        let start_date = props.start_date;
+        let start_date = *start_date;
 
-        let on_added = props.on_added.clone();
+        let on_added = on_added.clone();
 
         use_async(async move {
             api::create_event(Event::new(
@@ -225,7 +230,7 @@ fn add_event_dialog(props: &AddEventDialogProps) -> Html {
         <>
             <CosmoModal title="Event hinzufügen" on_form_submit={form_submit} is_form={true} buttons={html!(
                 <>
-                    <CosmoButton label="Abbrechen" on_click={props.on_cancel.clone()} />
+                    <CosmoButton label="Abbrechen" on_click={on_cancel.clone()} />
                     <CosmoButton label="Event speichern" is_submit={true} />
                 </>
             )}>
@@ -238,8 +243,8 @@ fn add_event_dialog(props: &AddEventDialogProps) -> Html {
                     <CosmoTextBox width={CosmoInputWidth::Medium} label="Titel" value={(*title_state).clone()} on_input={title_input} />
                     <CosmoTextArea width={CosmoInputWidth::Medium} label="Beschreibung" value={(*description_state).clone()} on_input={description_input} />
                     <CosmoColorPicker width={CosmoInputWidth::Medium} label="Farbe" value={*color_state} on_input={color_input} />
-                    <CosmoDatePicker width={CosmoInputWidth::Medium} label="Von" value={props.start_date} readonly={true} on_input={|_| {}} />
-                    <CosmoDatePicker width={CosmoInputWidth::Medium} label="Bis" min={props.start_date} value={*end_date_state} on_input={end_date_input} />
+                    <CosmoDatePicker width={CosmoInputWidth::Medium} label="Von" value={*start_date} readonly={true} on_input={|_| {}} />
+                    <CosmoDatePicker width={CosmoInputWidth::Medium} label="Bis" min={*start_date} value={*end_date_state} on_input={end_date_input} />
                     <CosmoSwitch label="Nur für mich" checked={*is_private_state} on_check={is_private_checked} />
                 </CosmoInputGroup>
             </CosmoModal>
@@ -247,14 +252,20 @@ fn add_event_dialog(props: &AddEventDialogProps) -> Html {
     )
 }
 
+#[autoprops]
 #[function_component(EditEventDialog)]
-fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
-    let title_state = use_state_eq(|| AttrValue::from(props.event.title.clone()));
-    let description_state = use_state_eq(|| AttrValue::from(props.event.description.clone()));
+fn edit_event_dialog(
+    event: &Event,
+    on_updated: &Callback<Event>,
+    on_deleted: &Callback<Event>,
+    on_cancel: &Callback<()>,
+) -> Html {
+    let title_state = use_state_eq(|| AttrValue::from(event.title.clone()));
+    let description_state = use_state_eq(|| AttrValue::from(event.description.clone()));
 
-    let color_state = use_state_eq(|| props.event.color());
+    let color_state = use_state_eq(|| event.color());
 
-    let end_date_state = use_state_eq(|| props.event.end_date);
+    let end_date_state = use_state_eq(|| event.end_date);
 
     let delete_event_open_state = use_state_eq(|| false);
     let unreported_error_toggle = use_state_eq(|| false);
@@ -283,9 +294,9 @@ fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
 
         let bamboo_error_state = bamboo_error_state.clone();
 
-        let event = props.event.clone();
+        let event = event.clone();
 
-        let on_updated = props.on_updated.clone();
+        let on_updated = on_updated.clone();
 
         use_async(async move {
             let mut evt = Event::new(
@@ -313,15 +324,15 @@ fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
         })
     };
     let delete_state = {
-        let id = props.event.id;
+        let id = event.id;
 
-        let event = props.event.clone();
+        let event = event.clone();
 
         let unreported_error_toggle = unreported_error_toggle.clone();
 
         let bamboo_error_state = bamboo_error_state.clone();
 
-        let on_deleted = props.on_deleted.clone();
+        let on_deleted = on_deleted.clone();
 
         use_async(async move {
             api::delete_event(id)
@@ -360,15 +371,15 @@ fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
     let open_delete = use_callback(delete_event_open_state.clone(), |_, state| state.set(true));
     let delete_decline = use_callback(delete_event_open_state.clone(), |_, state| state.set(false));
 
-    log::debug!("Color {}", props.event.color().hex());
-    log::debug!("Color string {}", props.event.color.clone());
+    log::debug!("Color {}", event.color().hex());
+    log::debug!("Color string {}", event.color.clone());
 
     html!(
         <>
             <CosmoModal title="Event bearbeiten" on_form_submit={form_submit} is_form={true} buttons={html!(
                 <>
                     <CosmoButton state={CosmoButtonType::Negative} label="Event löschen" on_click={open_delete} />
-                    <CosmoButton label="Abbrechen" on_click={props.on_cancel.clone()} />
+                    <CosmoButton label="Abbrechen" on_click={on_cancel.clone()} />
                     <CosmoButton label="Event speichern" is_submit={true} />
                 </>
             )}>
@@ -386,19 +397,20 @@ fn edit_event_dialog(props: &EditEventDialogProps) -> Html {
                     <CosmoTextBox width={CosmoInputWidth::Medium} label="Titel" value={(*title_state).clone()} on_input={title_input} />
                     <CosmoTextArea width={CosmoInputWidth::Medium} label="Beschreibung" value={(*description_state).clone()} on_input={description_input} />
                     <CosmoColorPicker width={CosmoInputWidth::Medium} label="Farbe" value={*color_state} on_input={color_input} />
-                    <CosmoDatePicker width={CosmoInputWidth::Medium} label="Von" value={props.event.start_date} readonly={true} on_input={|_| {}} />
-                    <CosmoDatePicker width={CosmoInputWidth::Medium} label="Bis" min={props.event.start_date} value={*end_date_state} on_input={end_date_input} />
+                    <CosmoDatePicker width={CosmoInputWidth::Medium} label="Von" value={event.start_date} readonly={true} on_input={|_| {}} />
+                    <CosmoDatePicker width={CosmoInputWidth::Medium} label="Bis" min={event.start_date} value={*end_date_state} on_input={end_date_input} />
                 </CosmoInputGroup>
             </CosmoModal>
             if *delete_event_open_state {
-                <CosmoConfirm confirm_type={CosmoModalType::Warning} title="Event löschen" message={format!("Soll das Event {} wirklich gelöscht werden?", props.event.title.clone())} confirm_label="Event löschen" decline_label="Nicht löschen" on_confirm={delete_confirm} on_decline={delete_decline} />
+                <CosmoConfirm confirm_type={CosmoModalType::Warning} title="Event löschen" message={format!("Soll das Event {} wirklich gelöscht werden?", event.title.clone())} confirm_label="Event löschen" decline_label="Nicht löschen" on_confirm={delete_confirm} on_decline={delete_decline} />
             }
         </>
     )
 }
 
+#[autoprops]
 #[function_component(EventEntry)]
-fn event_entry(props: &EventEntryProps) -> Html {
+fn event_entry(event: &Event, on_updated: &Callback<Event>, on_deleted: &Callback<Event>) -> Html {
     let event_style = use_style!(
         r#"
 background-color: ${event_color};
@@ -416,8 +428,8 @@ align-items: center;
 &:hover .panda-calendar-edit {
     opacity: 1;
 }"#,
-        event_color = props.event.color().hex(),
-        color = color_yiq(props.event.color()).to_string(),
+        event_color = event.color().hex(),
+        color = color_yiq(event.color()).to_string(),
     );
     let hover_style = use_style!(
         r#"
@@ -448,8 +460,8 @@ align-items: center;
     transform: translate(-50%);
     z-index: 2;
 }"#,
-        event_color = props.event.color().hex(),
-        color = color_yiq(props.event.color()).to_string(),
+        event_color = event.color().hex(),
+        color = color_yiq(event.color()).to_string(),
     );
     let edit_style = use_style!(
         r#"
@@ -458,10 +470,10 @@ transition: all 0.1s;
 text-decoration: none;
 stroke: ${color};
 cursor: pointer;"#,
-        color = color_yiq(props.event.color()).to_string(),
+        color = color_yiq(event.color()).to_string(),
     );
 
-    let classes = if props.event.description.is_empty() {
+    let classes = if event.description.is_empty() {
         classes!(event_style)
     } else {
         classes!(event_style, hover_style)
@@ -469,18 +481,14 @@ cursor: pointer;"#,
 
     let edit_open_toggle = use_bool_toggle(false);
     let on_updated = use_callback(
-        (edit_open_toggle.clone(), props.on_updated.clone()),
+        (edit_open_toggle.clone(), on_updated.clone()),
         |event, (state, on_updated)| {
             state.set(false);
             on_updated.emit(event);
         },
     );
     let on_deleted = use_callback(
-        (
-            edit_open_toggle.clone(),
-            props.on_deleted.clone(),
-            props.event.clone(),
-        ),
+        (edit_open_toggle.clone(), on_deleted.clone(), event.clone()),
         |_, (state, on_deleted, event)| {
             state.set(false);
             on_deleted.emit(event.clone());
@@ -493,10 +501,10 @@ cursor: pointer;"#,
     html!(
         <>
             if *edit_open_toggle {
-                <EditEventDialog event={props.event.clone()} on_updated={on_updated} on_deleted={on_deleted} on_cancel={on_cancel} />
+                <EditEventDialog event={event.clone()} on_updated={on_updated} on_deleted={on_deleted} on_cancel={on_cancel} />
             }
-            <span class={classes} data-description={props.event.description.clone()}>
-                {props.event.title.clone()}
+            <span class={classes} data-description={event.description.clone()}>
+                {event.title.clone()}
                 <a onclick={move |_| edit_open_toggle.set(true)}>
                     <Icon icon_id={IconId::LucidePencil} width="16px" height="16px" class={classes!(edit_style, "panda-calendar-edit")} />
                 </a>
@@ -505,21 +513,30 @@ cursor: pointer;"#,
     )
 }
 
+#[autoprops]
 #[function_component(Day)]
-fn day(props: &DayProps) -> Html {
+fn day(
+    day: u32,
+    month: u32,
+    year: i32,
+    selected_month: u32,
+    events: &Vec<Event>,
+    on_added: &Callback<Event>,
+    on_updated: &Callback<Event>,
+    on_deleted: &Callback<Event>,
+) -> Html {
     let add_event_open_toggle = use_bool_toggle(false);
-    let background_color = if props.selected_month == props.month {
+    let background_color = if selected_month == month {
         "transparent"
     } else {
         "var(--day-background-past-month)"
     };
     let today = Local::now().date_naive();
-    let day_number_color =
-        if today.month() == props.month && today.day() == props.day && today.year() == props.year {
-            "var(--black)"
-        } else {
-            "var(--menu-text-color)"
-        };
+    let day_number_color = if today.month() == month && today.day() == day && today.year() == year {
+        "var(--black)"
+    } else {
+        "var(--menu-text-color)"
+    };
 
     let style = use_style!(
         r#"
@@ -569,7 +586,7 @@ align-content: end;
     opacity: 1;
 }"#,
         background_color = background_color,
-        day = props.day,
+        day = day,
         day_number_color = day_number_color,
     );
     let add_style = use_style!(
@@ -587,7 +604,7 @@ z-index: 1;
     );
 
     let on_added = use_callback(
-        (add_event_open_toggle.clone(), props.on_added.clone()),
+        (add_event_open_toggle.clone(), on_added.clone()),
         |event, (state, on_added)| {
             state.set(false);
             on_added.emit(event);
@@ -600,22 +617,23 @@ z-index: 1;
     html!(
         <>
             if *add_event_open_toggle {
-                <AddEventDialog start_date={NaiveDate::from_ymd_opt(props.year, props.month, props.day).unwrap()} on_added={on_added} on_cancel={on_cancel} />
+                <AddEventDialog start_date={NaiveDate::from_ymd_opt(year, month, day).unwrap()} on_added={on_added} on_cancel={on_cancel} />
             }
             <div class={classes!(style)}>
                 <Icon onclick={move |_| add_event_open_toggle.set(true)} icon_id={IconId::LucideCalendarPlus} class={classes!(add_style, "panda-calendar-add")} />
-                {for props.events.iter().map(move |evt| html!(
-                    <EventEntry on_updated={props.on_updated.clone()} on_deleted={props.on_deleted.clone()} key={evt.id} event={evt.clone()} />
+                {for events.iter().map(move |evt| html!(
+                    <EventEntry on_updated={on_updated.clone()} on_deleted={on_deleted.clone()} key={evt.id} event={evt.clone()} />
                 ))}
             </div>
         </>
     )
 }
 
+#[autoprops]
 #[function_component(CalendarData)]
-fn calendar_data(props: &CalendarProps) -> Html {
+fn calendar_data(date: &NaiveDate) -> Html {
     log::debug!("Render CalendarData");
-    let first_day_of_month = props.date;
+    let first_day_of_month = date;
     log::debug!("First day of month {}", first_day_of_month.clone());
 
     let first_day_offset = first_day_of_month.weekday() as i64 - 1;
@@ -666,7 +684,7 @@ fn calendar_data(props: &CalendarProps) -> Html {
     let events_list = use_list(vec![] as Vec<Event>);
     let calendar_event_source_state = use_mut_ref(CalendarEventSource::new);
 
-    let props_date_memo = use_memo(props.date, |date| *date);
+    let props_date_memo = use_memo(*date, |date| date.clone());
     let range_memo = use_memo((calendar_start_date, calendar_end_date), |(start, end)| {
         DateRange::new(*start, *end).unwrap()
     });
@@ -816,10 +834,13 @@ fn calendar_data(props: &CalendarProps) -> Html {
     }
     {
         let events_state = events_state.clone();
-        let props = props.clone();
+
+        let props_date_memo = props_date_memo.clone();
+
+        let date = date.clone();
 
         use_effect_update(move || {
-            if *props_date_memo != props.date {
+            if *props_date_memo != date {
                 events_state.run();
             }
 
@@ -873,7 +894,7 @@ grid-row: 3/4;
                 if first_day_offset > 0 {
                     {for DateRange::new(calendar_start_date, last_day_of_prev_month).unwrap().into_iter().map(render_day.clone())}
                 }
-                {for DateRange::new(first_day_of_month, last_day_of_month).unwrap().into_iter().map(render_day.clone())}
+                {for DateRange::new(*first_day_of_month, last_day_of_month).unwrap().into_iter().map(render_day.clone())}
                 {for DateRange::new(first_day_of_next_month, calendar_end_date).unwrap().into_iter().map(render_day.clone())}
             } else if let Some(_) = &events_state.error {
                 <div class={error_message_style}>

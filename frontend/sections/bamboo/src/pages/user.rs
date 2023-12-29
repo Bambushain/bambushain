@@ -4,6 +4,7 @@ use bounce::prelude::*;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use yew::prelude::*;
+use yew_autoprops::autoprops;
 use yew_cosmo::prelude::*;
 use yew_hooks::use_mount;
 use yew_hooks::{use_async, use_bool_toggle, use_unmount};
@@ -14,7 +15,6 @@ use bamboo_frontend_base_error as error;
 use bamboo_frontend_base_storage as storage;
 
 use crate::api;
-use crate::props::user::*;
 
 #[derive(PartialEq, Clone)]
 enum UserConfirmActions {
@@ -26,8 +26,9 @@ enum UserConfirmActions {
     Closed,
 }
 
+#[autoprops]
 #[function_component(CreateUserModal)]
-fn create_user_modal(props: &CreateUserModalProps) -> Html {
+fn create_user_modal(on_saved: &Callback<WebUser>, on_close: &Callback<()>) -> Html {
     log::debug!("Create create user modal");
     log::debug!("Initialize state and callbacks");
     let email_state = use_state_eq(|| AttrValue::from(""));
@@ -134,7 +135,7 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
     let on_save = use_callback(save_state.clone(), |_, state| state.run());
 
     let on_saved = use_callback(
-        (save_state.clone(), props.on_saved.clone()),
+        (save_state.clone(), on_saved.clone()),
         |_, (save_state, on_saved)| {
             if let Some(user) = &save_state.data {
                 on_saved.emit(user.clone())
@@ -149,7 +150,7 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
                     <CosmoButton on_click={on_saved} label="Alles klar" />
                 } else {
                     <>
-                        <CosmoButton on_click={props.on_close.clone()} label="Abbrechen" />
+                        <CosmoButton on_click={on_close.clone()} label="Abbrechen" />
                         <CosmoButton is_submit={true} label="Panda hinzufügen" />
                     </>
                 }
@@ -183,16 +184,24 @@ fn create_user_modal(props: &CreateUserModalProps) -> Html {
     )
 }
 
+#[autoprops]
 #[function_component(UpdateProfileDialog)]
-fn update_profile_dialog(props: &UpdateProfileDialogProps) -> Html {
+fn update_profile_dialog(
+    on_update: &Callback<()>,
+    on_close: &Callback<()>,
+    display_name: &AttrValue,
+    email: &AttrValue,
+    discord_name: &AttrValue,
+    id: i32,
+) -> Html {
     log::debug!("Open dialog to update profile");
     let unreported_error_toggle = use_bool_toggle(false);
 
     let bamboo_error_state = use_state_eq(api::ApiError::default);
 
-    let display_name_state = use_state_eq(|| props.display_name.clone());
-    let email_state = use_state_eq(|| props.email.clone());
-    let discord_name_state = use_state_eq(|| props.discord_name.clone());
+    let display_name_state = use_state_eq(|| display_name.clone());
+    let email_state = use_state_eq(|| email.clone());
+    let discord_name_state = use_state_eq(|| discord_name.clone());
 
     let save_state = {
         let unreported_error_toggle = unreported_error_toggle.clone();
@@ -203,9 +212,9 @@ fn update_profile_dialog(props: &UpdateProfileDialogProps) -> Html {
 
         let bamboo_error_state = bamboo_error_state.clone();
 
-        let id = props.id;
+        let id = id;
 
-        let on_update = props.on_update.clone();
+        let on_update = on_update.clone();
 
         use_async(async move {
             api::update_profile(
@@ -249,7 +258,7 @@ fn update_profile_dialog(props: &UpdateProfileDialogProps) -> Html {
         <>
             <CosmoModal title="Panda bearbeiten" is_form={true} on_form_submit={on_save} buttons={html!(
                 <>
-                    <CosmoButton on_click={props.on_close.clone()} label="Abbrechen" />
+                    <CosmoButton on_click={on_close.clone()} label="Abbrechen" />
                     <CosmoButton is_submit={true} label="Panda speichern" />
                 </>
             )}>
@@ -276,8 +285,9 @@ fn update_profile_dialog(props: &UpdateProfileDialogProps) -> Html {
     )
 }
 
+#[autoprops]
 #[function_component(UserDetails)]
-fn user_details(props: &UserDetailsProps) -> Html {
+fn user_details(user: &WebUser, on_delete: &Callback<()>, on_update: &Callback<()>) -> Html {
     log::debug!("Initialize table body state and callbacks");
     let confirm_state = use_state_eq(|| UserConfirmActions::Closed);
 
@@ -295,9 +305,9 @@ fn user_details(props: &UserDetailsProps) -> Html {
 
         let confirm_state = confirm_state.clone();
 
-        let on_delete = props.on_delete.clone();
+        let on_delete = on_delete.clone();
 
-        let user_id = props.user.id;
+        let user_id = user.id;
 
         use_async(async move {
             api::delete_user(user_id)
@@ -324,9 +334,9 @@ fn user_details(props: &UserDetailsProps) -> Html {
 
         let confirm_state = confirm_state.clone();
 
-        let on_update = props.on_update.clone();
+        let on_update = on_update.clone();
 
-        let user_id = props.user.id;
+        let user_id = user.id;
 
         use_async(async move {
             api::make_user_mod(user_id)
@@ -353,9 +363,9 @@ fn user_details(props: &UserDetailsProps) -> Html {
 
         let confirm_state = confirm_state.clone();
 
-        let on_update = props.on_update.clone();
+        let on_update = on_update.clone();
 
-        let user_id = props.user.id;
+        let user_id = user.id;
 
         use_async(async move {
             api::remove_user_mod(user_id)
@@ -382,9 +392,9 @@ fn user_details(props: &UserDetailsProps) -> Html {
 
         let confirm_state = confirm_state.clone();
 
-        let on_update = props.on_update.clone();
+        let on_update = on_update.clone();
 
-        let user_id = props.user.id;
+        let user_id = user.id;
 
         use_async(async move {
             api::disable_totp(user_id)
@@ -410,9 +420,9 @@ fn user_details(props: &UserDetailsProps) -> Html {
 
         let confirm_state = confirm_state.clone();
 
-        let on_update = props.on_update.clone();
+        let on_update = on_update.clone();
 
-        let user_id = props.user.id;
+        let user_id = user.id;
 
         use_async(async move {
             if let UserConfirmActions::ChangePassword(new_password) = (*confirm_state).clone() {
@@ -494,7 +504,7 @@ fn user_details(props: &UserDetailsProps) -> Html {
             UserConfirmActions::Closed => (),
         },
     );
-    let on_update = use_callback(props.on_update.clone(), |_, on_update| on_update.emit(()));
+    let on_update = use_callback(on_update.clone(), |_, on_update| on_update.emit(()));
     let report_unknown_error = use_callback(
         (bamboo_error_state.clone(), unreported_error_toggle.clone()),
         |_, (bamboo_error_state, unreported_error_toggle)| {
@@ -509,21 +519,21 @@ fn user_details(props: &UserDetailsProps) -> Html {
 
     html!(
         <>
-            <CosmoTitle title={props.user.display_name.clone()} subtitle={props.user.email.clone()} />
+            <CosmoTitle title={user.display_name.clone()} subtitle={user.email.clone()} />
             if current_user.profile.is_mod {
                 <CosmoToolbar>
                     <CosmoToolbarGroup>
-                        if props.user.is_mod {
-                            <CosmoButton enabled={props.user.id != current_user.profile.id} on_click={remove_mod_click} label="Modrechte entziehen" />
+                        if user.is_mod {
+                            <CosmoButton enabled={user.id != current_user.profile.id} on_click={remove_mod_click} label="Modrechte entziehen" />
                         } else {
-                            <CosmoButton enabled={props.user.id != current_user.profile.id} on_click={make_mod_click} label="Zum Mod machen" />
+                            <CosmoButton enabled={user.id != current_user.profile.id} on_click={make_mod_click} label="Zum Mod machen" />
                         }
-                        <CosmoButton enabled={props.user.id != current_user.profile.id} on_click={update_profile_click} label="Panda bearbeiten" />
+                        <CosmoButton enabled={user.id != current_user.profile.id} on_click={update_profile_click} label="Panda bearbeiten" />
                     </CosmoToolbarGroup>
                     <CosmoToolbarGroup>
-                        <CosmoButton enabled={props.user.id != current_user.profile.id} on_click={change_password_click} label="Passwort ändern" />
-                        <CosmoButton enabled={props.user.id != current_user.profile.id && props.user.app_totp_enabled} on_click={disable_totp_click} label="Zwei Faktor deaktivieren" />
-                        <CosmoButton enabled={props.user.id != current_user.profile.id} on_click={delete_click} label="Aus dem Hain werfen" />
+                        <CosmoButton enabled={user.id != current_user.profile.id} on_click={change_password_click} label="Passwort ändern" />
+                        <CosmoButton enabled={user.id != current_user.profile.id && user.app_totp_enabled} on_click={disable_totp_click} label="Zwei Faktor deaktivieren" />
+                        <CosmoButton enabled={user.id != current_user.profile.id} on_click={delete_click} label="Aus dem Hain werfen" />
                     </CosmoToolbarGroup>
                 </CosmoToolbar>
             }
@@ -584,20 +594,20 @@ fn user_details(props: &UserDetailsProps) -> Html {
             }
             <CosmoKeyValueList>
                 <CosmoKeyValueListItem title="Name">
-                    {props.user.display_name.clone()}
+                    {user.display_name.clone()}
                 </CosmoKeyValueListItem>
                 <CosmoKeyValueListItem title="Email">
-                    {props.user.email.clone()}
+                    {user.email.clone()}
                 </CosmoKeyValueListItem>
                 <CosmoKeyValueListItem title="Discord Name">
-                    if props.user.discord_name.is_empty() {
+                    if user.discord_name.is_empty() {
                         {"Kein Discord Name gesetzt"}
                     } else {
-                        {props.user.discord_name.clone()}
+                        {user.discord_name.clone()}
                     }
                 </CosmoKeyValueListItem>
                 <CosmoKeyValueListItem title="Ist Moderator">
-                    if props.user.is_mod {
+                    if user.is_mod {
                         {"Ja"}
                     } else {
                         {"Nein"}
@@ -606,16 +616,16 @@ fn user_details(props: &UserDetailsProps) -> Html {
             </CosmoKeyValueList>
             {match (*confirm_state).clone() {
                 UserConfirmActions::MakeMod => html!(
-                    <CosmoConfirm message={format!("Soll der Panda {} zum Mod gemacht werden?", props.user.display_name.clone())} title="Zum Mod machen" on_decline={on_decline} on_confirm={on_confirm} decline_label="Abbrechen" confirm_label="Zum Mod machen" />
+                    <CosmoConfirm message={format!("Soll der Panda {} zum Mod gemacht werden?", user.display_name.clone())} title="Zum Mod machen" on_decline={on_decline} on_confirm={on_confirm} decline_label="Abbrechen" confirm_label="Zum Mod machen" />
                 ),
                 UserConfirmActions::RemoveMod => html!(
-                    <CosmoConfirm message={format!("Sollen dem Panda {} wirklich die Modrechte entzogen werden?", props.user.display_name.clone())} title="Modrechte entziehen" on_decline={on_decline} on_confirm={on_confirm} confirm_label="Modrechte entziehen" decline_label="Abbrechen" />
+                    <CosmoConfirm message={format!("Sollen dem Panda {} wirklich die Modrechte entzogen werden?", user.display_name.clone())} title="Modrechte entziehen" on_decline={on_decline} on_confirm={on_confirm} confirm_label="Modrechte entziehen" decline_label="Abbrechen" />
                 ),
                 UserConfirmActions::Delete => html!(
-                    <CosmoConfirm confirm_type={CosmoModalType::Warning} message={format!("Soll der Panda {} wirklich aus dem Hain geworfen werden?", props.user.display_name.clone())} title="Panda rauswerfen" on_decline={on_decline} on_confirm={on_confirm} confirm_label="Panda rauswerfen" decline_label="Panda behalten" />
+                    <CosmoConfirm confirm_type={CosmoModalType::Warning} message={format!("Soll der Panda {} wirklich aus dem Hain geworfen werden?", user.display_name.clone())} title="Panda rauswerfen" on_decline={on_decline} on_confirm={on_confirm} confirm_label="Panda rauswerfen" decline_label="Panda behalten" />
                 ),
                 UserConfirmActions::DisableTotp => html!(
-                    <CosmoConfirm confirm_type={CosmoModalType::Warning} message={format!("Soll die Zwei Faktor Authentifizierung von {} wirklich deaktiviert werden?", props.user.display_name.clone())} title="Zwei Faktor Authentifizierung deaktivieren" on_decline={on_decline} on_confirm={on_confirm} confirm_label="Deaktivieren" decline_label="Nicht deaktivieren" />
+                    <CosmoConfirm confirm_type={CosmoModalType::Warning} message={format!("Soll die Zwei Faktor Authentifizierung von {} wirklich deaktiviert werden?", user.display_name.clone())} title="Zwei Faktor Authentifizierung deaktivieren" on_decline={on_decline} on_confirm={on_confirm} confirm_label="Deaktivieren" decline_label="Nicht deaktivieren" />
                 ),
                 UserConfirmActions::ChangePassword(password) => {
                     html!(
@@ -625,14 +635,14 @@ fn user_details(props: &UserDetailsProps) -> Html {
                                 <CosmoButton on_click={on_confirm} label="Passwort zurücksetzen" />
                             </>
                         )}>
-                            <CosmoParagraph>{format!("Das neue Passwort für {} wird auf ", props.user.display_name)}<CosmoCode>{password}</CosmoCode>{" gesetzt."}</CosmoParagraph>
+                            <CosmoParagraph>{format!("Das neue Passwort für {} wird auf ", user.display_name)}<CosmoCode>{password}</CosmoCode>{" gesetzt."}</CosmoParagraph>
                         </CosmoModal>
                     )
                 },
                 UserConfirmActions::Closed => html!(),
             }}
             if *profile_edit_toggle {
-                <UpdateProfileDialog on_close={on_update_close} on_update={on_update} id={props.user.id} email={props.user.email.clone()} display_name={props.user.display_name.clone()} discord_name={props.user.discord_name.clone()} />
+                <UpdateProfileDialog on_close={on_update_close} on_update={on_update} id={user.id} email={user.email.clone()} display_name={user.display_name.clone()} discord_name={user.discord_name.clone()} />
             }
         </>
     )

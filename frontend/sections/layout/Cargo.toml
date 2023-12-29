@@ -21,6 +21,7 @@ bounce = { workspace = true }
 log = { workspace = true }
 stylist = { workspace = true }
 yew = { workspace = true }
+yew-autoprops = { workspace = true }
 yew-cosmo = { workspace = true }
 yew-hooks = { workspace = true }
 yew-router = { workspace = true }
