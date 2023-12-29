@@ -212,8 +212,6 @@ fn update_profile_dialog(
 
         let bamboo_error_state = bamboo_error_state.clone();
 
-        let id = id;
-
         let on_update = on_update.clone();
 
         use_async(async move {

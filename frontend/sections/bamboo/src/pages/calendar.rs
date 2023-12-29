@@ -186,7 +186,7 @@ fn add_event_dialog(
                 (*title_state).to_string(),
                 (*description_state).to_string(),
                 start_date,
-                *end_date_state,
+                (*end_date_state).clone(),
                 *color_state,
                 *is_private_state,
             ))
@@ -208,7 +208,9 @@ fn add_event_dialog(
     let title_input = use_callback(title_state.clone(), |value, state| state.set(value));
     let description_input =
         use_callback(description_state.clone(), |value, state| state.set(value));
-    let end_date_input = use_callback(end_date_state.clone(), |value, state| state.set(value));
+    let end_date_input = use_callback(end_date_state.clone(), |value: NaiveDate, state| {
+        state.set(value.clone())
+    });
     let color_input = use_callback(color_state.clone(), |value, state| state.set(value));
     let is_private_checked =
         use_callback(is_private_state.clone(), |value, state| state.set(value));
@@ -244,7 +246,7 @@ fn add_event_dialog(
                     <CosmoTextArea width={CosmoInputWidth::Medium} label="Beschreibung" value={(*description_state).clone()} on_input={description_input} />
                     <CosmoColorPicker width={CosmoInputWidth::Medium} label="Farbe" value={*color_state} on_input={color_input} />
                     <CosmoDatePicker width={CosmoInputWidth::Medium} label="Von" value={*start_date} readonly={true} on_input={|_| {}} />
-                    <CosmoDatePicker width={CosmoInputWidth::Medium} label="Bis" min={*start_date} value={*end_date_state} on_input={end_date_input} />
+                    <CosmoDatePicker width={CosmoInputWidth::Medium} label="Bis" min={*start_date} value={(*end_date_state).clone()} on_input={end_date_input} />
                     <CosmoSwitch label="Nur für mich" checked={*is_private_state} on_check={is_private_checked} />
                 </CosmoInputGroup>
             </CosmoModal>
