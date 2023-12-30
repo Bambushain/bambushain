@@ -2,14 +2,34 @@ use sea_orm::prelude::*;
 use sea_orm::sea_query::Expr;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, EntityTrait, IntoActiveModel,
-    JoinType, NotSet, QueryFilter, QueryOrder, QuerySelect, RelationTrait,
+    JoinType, NotSet, QueryFilter, QueryOrder, QuerySelect, RelationTrait, Set,
 };
 
 use bamboo_entities::prelude::*;
 use bamboo_error::*;
 
-pub async fn get_user(id: i32, db: &DatabaseConnection) -> BambooResult<User> {
+use crate::prelude::dbal;
+
+pub async fn get_user_by_id_only(id: i32, db: &DatabaseConnection) -> BambooResult<User> {
     user::Entity::find_by_id(id)
+        .one(db)
+        .await
+        .map_err(|err| {
+            log::error!("{err}");
+            BambooError::database("user", "Failed to execute database query")
+        })
+        .map(|data| {
+            if let Some(data) = data {
+                Ok(data)
+            } else {
+                Err(BambooError::not_found("user", "The user was not found"))
+            }
+        })?
+}
+
+pub async fn get_user(grove_id: i32, id: i32, db: &DatabaseConnection) -> BambooResult<User> {
+    user::Entity::find_by_id(id)
+        .filter(user::Column::GroveId.eq(grove_id))
         .one(db)
         .await
         .map_err(|err| {
@@ -72,8 +92,9 @@ pub async fn get_user_by_email_or_username(
         })?
 }
 
-pub async fn get_users(db: &DatabaseConnection) -> BambooResult<Vec<User>> {
+pub async fn get_users(grove_id: i32, db: &DatabaseConnection) -> BambooResult<Vec<User>> {
     user::Entity::find()
+        .filter(user::Column::GroveId.eq(grove_id))
         .order_by_asc(user::Column::Email)
         .all(db)
         .await
@@ -83,9 +104,15 @@ pub async fn get_users(db: &DatabaseConnection) -> BambooResult<Vec<User>> {
         })
 }
 
-pub async fn get_users_with_mod_rights(db: &DatabaseConnection) -> BambooResult<Vec<User>> {
+pub async fn get_users_with_mod_rights(
+    user_id: i32,
+    db: &DatabaseConnection,
+) -> BambooResult<Vec<User>> {
+    let grove = dbal::get_grove_by_user_id(user_id, db).await?;
+
     user::Entity::find()
         .filter(user::Column::IsMod.eq(true))
+        .filter(user::Column::GroveId.eq(grove.id))
         .order_by_asc(user::Column::Email)
         .all(db)
         .await
@@ -95,7 +122,7 @@ pub async fn get_users_with_mod_rights(db: &DatabaseConnection) -> BambooResult<
         })
 }
 
-async fn user_exists_by_id(
+pub(crate) async fn user_exists_by_id(
     id: i32,
     email: String,
     name: String,
@@ -131,7 +158,7 @@ async fn user_exists_by_email_and_name(
         })
 }
 
-pub async fn create_user(user: User, db: &DatabaseConnection) -> BambooResult<User> {
+pub async fn create_user(grove_id: i32, user: User, db: &DatabaseConnection) -> BambooResult<User> {
     if user_exists_by_email_and_name(user.email.clone(), user.display_name.clone(), db).await? {
         return Err(BambooError::exists_already(
             "user",
@@ -141,6 +168,7 @@ pub async fn create_user(user: User, db: &DatabaseConnection) -> BambooResult<Us
 
     let mut model = user.into_active_model();
     model.id = NotSet;
+    model.grove_id = Set(grove_id);
     model
         .set_password(model.clone().password.as_ref())
         .map_err(|err| {
@@ -154,8 +182,9 @@ pub async fn create_user(user: User, db: &DatabaseConnection) -> BambooResult<Us
     })
 }
 
-pub async fn delete_user(id: i32, db: &DatabaseConnection) -> BambooErrorResult {
+pub async fn delete_user(grove_id: i32, id: i32, db: &DatabaseConnection) -> BambooErrorResult {
     user::Entity::delete_by_id(id)
+        .filter(user::Column::GroveId.eq(grove_id))
         .exec(db)
         .await
         .map_err(|err| {
@@ -166,11 +195,13 @@ pub async fn delete_user(id: i32, db: &DatabaseConnection) -> BambooErrorResult 
 }
 
 pub async fn change_mod_status(
+    grove_id: i32,
     id: i32,
     is_mod: bool,
     db: &DatabaseConnection,
 ) -> BambooErrorResult {
     user::Entity::update_many()
+        .filter(user::Column::GroveId.eq(grove_id))
         .filter(user::Column::Id.eq(id))
         .col_expr(user::Column::IsMod, Expr::value(is_mod))
         .exec(db)
@@ -183,6 +214,7 @@ pub async fn change_mod_status(
 }
 
 pub async fn change_password(
+    grove_id: i32,
     id: i32,
     password: String,
     db: &DatabaseConnection,
@@ -200,6 +232,7 @@ pub async fn change_password(
         )
         .col_expr(user::Column::TotpSecretEncrypted, Expr::value(false))
         .col_expr(user::Column::TotpValidated, Expr::value(false))
+        .filter(user::Column::GroveId.eq(grove_id))
         .filter(user::Column::Id.eq(id))
         .exec(db)
         .await
@@ -210,7 +243,8 @@ pub async fn change_password(
         .map(|_| ())
 }
 
-pub async fn update_me(
+pub async fn update_profile(
+    grove_id: i32,
     id: i32,
     email: String,
     display_name: String,
@@ -228,6 +262,7 @@ pub async fn update_me(
         .col_expr(user::Column::Email, Expr::value(email))
         .col_expr(user::Column::DisplayName, Expr::value(display_name))
         .col_expr(user::Column::DiscordName, Expr::value(discord_name))
+        .filter(user::Column::GroveId.eq(grove_id))
         .filter(user::Column::Id.eq(id))
         .exec(db)
         .await
@@ -235,5 +270,21 @@ pub async fn update_me(
             log::error!("{err}");
             BambooError::database("user", "Failed to update user")
         })
+        .map(|_| ())
+}
+
+pub async fn disable_totp(grove_id: i32, id: i32, db: &DatabaseConnection) -> BambooErrorResult {
+    user::Entity::update_many()
+        .col_expr(
+            user::Column::TotpSecret,
+            Expr::value::<Option<Vec<u8>>>(None),
+        )
+        .col_expr(user::Column::TotpValidated, Expr::value(false))
+        .col_expr(user::Column::TotpSecretEncrypted, Expr::value(false))
+        .filter(user::Column::Id.eq(id))
+        .filter(user::Column::GroveId.eq(grove_id))
+        .exec(db)
+        .await
+        .map_err(|_| BambooError::database("user", "Failed to disable totp"))
         .map(|_| ())
 }

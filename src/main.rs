@@ -1,13 +1,10 @@
 use std::sync::Arc;
 
 use actix_web::{middleware, App, HttpServer};
-use rand::distributions::Alphanumeric;
-use rand::prelude::*;
-use sea_orm::prelude::*;
+use sea_orm::{ConnectOptions, Database};
 
 use bamboo_backend::prelude::*;
 use bamboo_dbal::prelude::dbal;
-use bamboo_entities::user;
 use bamboo_migration::{IntoSchemaManagerConnection, Migrator, MigratorTrait};
 use bamboo_services::prelude::DbConnection;
 
@@ -45,13 +42,12 @@ fn main() -> std::io::Result<()> {
     actix_web::rt::System::new().block_on(async {
         log::info!("Open the bamboo grove");
 
-        let mut opts = sea_orm::ConnectOptions::new(
-            std::env::var("DATABASE_URL").expect("Needs DATABASE_URL"),
-        );
+        let mut opts =
+            ConnectOptions::new(std::env::var("DATABASE_URL").expect("Needs DATABASE_URL"));
         opts.sqlx_logging(true)
             .sqlx_logging_level(log::LevelFilter::Debug);
 
-        let db = sea_orm::Database::connect(opts)
+        let db = Database::connect(opts)
             .await
             .map_err(std::io::Error::other)?;
 
@@ -59,40 +55,21 @@ fn main() -> std::io::Result<()> {
             .await
             .map_err(std::io::Error::other)?;
         log::info!("Successfully migrated database");
+        let groves = dbal::get_groves(&db).await.map_err(std::io::Error::other)?;
 
-        let at_least_one_mod_exists = user::Entity::find()
-            .filter(user::Column::IsMod.eq(true))
-            .count(&db)
-            .await
-            .map(|count| count > 0)
-            .map_err(std::io::Error::other)?;
-
-        if !at_least_one_mod_exists {
-            log::info!("No mod exists, creating initial user");
-            let password = thread_rng()
-                .sample_iter(&Alphanumeric)
-                .take(12)
-                .map(char::from)
-                .collect::<String>();
-
-            let display_name = std::env::var("INITIAL_USER_DISPLAY_NAME")
-                .expect("INITIAL_USER_DISPLAY_NAME must be set");
-            let email =
-                std::env::var("INITIAL_USER_EMAIL").expect("INITIAL_USER_EMAIL must be set");
-
-            let _ = dbal::create_user(
-                user::Model::new(
-                    email.clone(),
-                    password.clone(),
-                    display_name.clone(),
-                    "".into(),
-                    true,
-                ),
+        if groves.is_empty() {
+            log::info!("Create initial grove as it doesn't exist");
+            let initial_grove = dbal::create_grove(
+                std::env::var("INITIAL_GROVE").expect("Needs INITIAL_GROVE"),
                 &db,
             )
             .await
             .map_err(std::io::Error::other)?;
-            log::info!("Created initial user {email} with password {password}");
+
+            log::info!("Migrate existing users and events to the new grove");
+            dbal::migrate_between_groves(None, initial_grove.id, &db)
+                .await
+                .map_err(std::io::Error::other)?;
         }
 
         let notifier = NotifierState::new();

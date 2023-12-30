@@ -7,11 +7,13 @@ use bamboo_entities::prelude::*;
 use bamboo_error::*;
 
 pub async fn get_events(
+    grove_id: i32,
     range: DateRange,
     user_id: i32,
     db: &DatabaseConnection,
 ) -> BambooResult<Vec<Event>> {
     event::Entity::find()
+        .filter(event::Column::GroveId.eq(grove_id))
         .filter(
             Condition::any()
                 .add(
@@ -43,8 +45,14 @@ pub async fn get_events(
         })
 }
 
-pub async fn get_event(id: i32, user_id: i32, db: &DatabaseConnection) -> BambooResult<Event> {
+pub async fn get_event(
+    id: i32,
+    grove_id: i32,
+    user_id: i32,
+    db: &DatabaseConnection,
+) -> BambooResult<Event> {
     event::Entity::find_by_id(id)
+        .filter(event::Column::GroveId.eq(grove_id))
         .one(db)
         .await
         .map_err(|err| {
@@ -66,11 +74,13 @@ pub async fn get_event(id: i32, user_id: i32, db: &DatabaseConnection) -> Bamboo
 
 pub async fn create_event(
     event: Event,
+    grove_id: i32,
     user_id: i32,
     db: &DatabaseConnection,
 ) -> BambooResult<Event> {
     let mut model = event.clone().into_active_model();
     model.id = NotSet;
+    model.grove_id = Set(grove_id);
     if event.is_private {
         model.user_id = Set(Some(user_id));
     }
@@ -81,9 +91,15 @@ pub async fn create_event(
     })
 }
 
-pub async fn update_event(id: i32, event: Event, db: &DatabaseConnection) -> BambooErrorResult {
+pub async fn update_event(
+    grove_id: i32,
+    id: i32,
+    event: Event,
+    db: &DatabaseConnection,
+) -> BambooErrorResult {
     event::Entity::update_many()
         .filter(event::Column::Id.eq(id))
+        .filter(event::Column::GroveId.eq(grove_id))
         .col_expr(event::Column::StartDate, Expr::value(event.start_date))
         .col_expr(event::Column::EndDate, Expr::value(event.end_date))
         .col_expr(event::Column::Description, Expr::value(event.description))
@@ -98,9 +114,10 @@ pub async fn update_event(id: i32, event: Event, db: &DatabaseConnection) -> Bam
         .map(|_| ())
 }
 
-pub async fn delete_event(id: i32, db: &DatabaseConnection) -> BambooErrorResult {
+pub async fn delete_event(grove_id: i32, id: i32, db: &DatabaseConnection) -> BambooErrorResult {
     event::Entity::delete_many()
         .filter(event::Column::Id.eq(id))
+        .filter(event::Column::GroveId.eq(grove_id))
         .exec(db)
         .await
         .map_err(|err| {

@@ -122,8 +122,8 @@ pub async fn validate_login(
     password: String,
     initial_validation: bool,
     db: &DatabaseConnection,
-    ) -> BambooErrorResult {
-    let user = dbal::get_user(id, db).await?;
+) -> BambooErrorResult {
+    let user = dbal::get_user_by_id_only(id, db).await?;
 
     let password_valid = user.validate_password(password.clone());
     if !password_valid {

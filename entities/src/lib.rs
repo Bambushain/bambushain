@@ -9,6 +9,7 @@ pub mod dependency;
 pub mod event;
 pub mod fighter;
 pub mod free_company;
+pub mod grove;
 pub mod support;
 pub mod token;
 pub mod user;
@@ -41,6 +42,8 @@ pub mod prelude {
     pub use crate::fighter::Model as Fighter;
     pub use crate::free_company;
     pub use crate::free_company::Model as FreeCompany;
+    pub use crate::grove;
+    pub use crate::grove::Model as Grove;
     pub use crate::support::*;
     pub use crate::token;
     pub use crate::token::Model as Token;

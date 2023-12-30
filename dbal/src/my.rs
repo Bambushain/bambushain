@@ -18,7 +18,7 @@ pub async fn change_my_password(
         PasswordError::Unknown
     })?;
 
-    let user = dbal::get_user(id, db)
+    let user = dbal::get_user_by_id_only(id, db)
         .await
         .map_err(|_| PasswordError::UserNotFound)?;
     let is_valid = user.validate_password(old_password.clone());
@@ -60,7 +60,7 @@ pub async fn change_my_password(
         .map(|_| ())
 }
 
-pub async fn enable_totp(id: i32, secret: Vec<u8>, db: &DatabaseConnection) -> BambooErrorResult {
+pub async fn enable_my_totp(id: i32, secret: Vec<u8>, db: &DatabaseConnection) -> BambooErrorResult {
     user::Entity::update_many()
         .col_expr(user::Column::TotpSecret, Expr::value(secret))
         .col_expr(user::Column::TotpSecretEncrypted, Expr::value(false))
@@ -72,7 +72,7 @@ pub async fn enable_totp(id: i32, secret: Vec<u8>, db: &DatabaseConnection) -> B
         .map(|_| ())
 }
 
-pub async fn disable_totp(id: i32, db: &DatabaseConnection) -> BambooErrorResult {
+pub async fn disable_my_totp(id: i32, db: &DatabaseConnection) -> BambooErrorResult {
     user::Entity::update_many()
         .col_expr(
             user::Column::TotpSecret,
@@ -87,13 +87,13 @@ pub async fn disable_totp(id: i32, db: &DatabaseConnection) -> BambooErrorResult
         .map(|_| ())
 }
 
-pub async fn validate_totp(
+pub async fn validate_my_totp(
     id: i32,
     password: String,
     code: String,
     db: &DatabaseConnection,
 ) -> BambooResult<bool> {
-    let user = dbal::get_user(id, db).await?;
+    let user = dbal::get_user_by_id_only(id, db).await?;
     let valid = dbal::validate_login(id, code, password.clone(), true, db)
         .await
         .is_ok();
@@ -108,4 +108,32 @@ pub async fn validate_totp(
         .await
         .map_err(|_| BambooError::database("user", "Totp could not be validated"))
         .map(|_| valid)
+}
+
+pub async fn update_my_profile(
+    id: i32,
+    email: String,
+    display_name: String,
+    discord_name: String,
+    db: &DatabaseConnection,
+) -> BambooErrorResult {
+    if dbal::user_exists_by_id(id, email.clone(), display_name.clone(), db).await? {
+        return Err(BambooError::exists_already(
+            "user",
+            "A user with that email or name exists already",
+        ));
+    }
+
+    user::Entity::update_many()
+        .col_expr(user::Column::Email, Expr::value(email))
+        .col_expr(user::Column::DisplayName, Expr::value(display_name))
+        .col_expr(user::Column::DiscordName, Expr::value(discord_name))
+        .filter(user::Column::Id.eq(id))
+        .exec(db)
+        .await
+        .map_err(|err| {
+            log::error!("{err}");
+            BambooError::database("user", "Failed to update user")
+        })
+        .map(|_| ())
 }

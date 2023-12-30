@@ -35,7 +35,7 @@ pub async fn update_profile(
 ) -> BambooApiResponseResult {
     let body = check_missing_fields!(body, "user")?;
 
-    dbal::update_me(
+    dbal::update_my_profile(
         authentication.user.id,
         body.email.clone(),
         body.display_name.clone(),
@@ -53,7 +53,7 @@ pub async fn enable_totp(
 ) -> BambooApiResult<TotpQrCode> {
     let mut totp = totp_rs::TOTP::default();
     let secret = totp.secret.clone();
-    dbal::enable_totp(authentication.user.id, secret, &db)
+    dbal::enable_my_totp(authentication.user.id, secret, &db)
         .await
         .map(|_| {
             totp.account_name = authentication.user.display_name.clone();
@@ -61,7 +61,7 @@ pub async fn enable_totp(
             let qr = totp.get_qr_base64().map_err(|err| {
                 log::error!("Failed to enable totp {err}");
                 actix_web::rt::spawn(async move {
-                    let _ = dbal::disable_totp(authentication.user.id, &db).await;
+                    let _ = dbal::disable_my_totp(authentication.user.id, &db).await;
                 });
 
                 BambooError::unknown("user", "Failed to create qr code")
@@ -85,7 +85,7 @@ pub async fn validate_totp(
     } else {
         let body = check_missing_fields!(body, "user")?;
 
-        dbal::validate_totp(
+        dbal::validate_my_totp(
             authentication.user.id,
             body.password.clone(),
             body.code.clone(),
@@ -115,7 +115,7 @@ pub async fn disable_totp(
     authentication: Authentication,
     db: DbConnection,
 ) -> BambooApiResponseResult {
-    dbal::disable_totp(authentication.user.id, &db)
+    dbal::disable_my_totp(authentication.user.id, &db)
         .await
         .map(|_| no_content!())
 }

@@ -19,6 +19,9 @@ mod m20231130_013324_increase_size_of_two_factor_code;
 mod m20231212_004733_create_table_character_housing;
 mod m20231218_111708_update_event_add_private_column;
 mod m20231223_002207_update_housing_add_column_type;
+mod m20231229_235511_create_table_grove;
+mod m20231230_000521_update_table_event_add_column_grove_id;
+mod m20231230_001307_update_table_user_add_column_grove_id;
 
 pub struct Migrator;
 
@@ -45,6 +48,9 @@ impl MigratorTrait for Migrator {
             Box::new(m20231212_004733_create_table_character_housing::Migration),
             Box::new(m20231218_111708_update_event_add_private_column::Migration),
             Box::new(m20231223_002207_update_housing_add_column_type::Migration),
+            Box::new(m20231229_235511_create_table_grove::Migration),
+            Box::new(m20231230_000521_update_table_event_add_column_grove_id::Migration),
+            Box::new(m20231230_001307_update_table_user_add_column_grove_id::Migration),
         ]
     }
 }
