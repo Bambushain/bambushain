@@ -9,6 +9,7 @@ pub mod dependency;
 pub mod event;
 pub mod fighter;
 pub mod free_company;
+pub mod grove;
 pub mod support;
 pub mod token;
 pub mod user;

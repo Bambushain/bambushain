@@ -33,6 +33,9 @@ pub struct Model {
     #[serde(default)]
     pub totp_secret_encrypted: bool,
     pub totp_validated: Option<bool>,
+    #[cfg(not(target_arch = "wasm32"))]
+    #[serde(skip)]
+    pub grove_id: i32,
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -44,6 +47,14 @@ pub enum Relation {
     Token,
     #[sea_orm(has_many = "super::event::Entity")]
     Event,
+    #[sea_orm(
+        belongs_to = "super::grove::Entity",
+        from = "Column::GroveId",
+        to = "super::grove::Column::Id",
+        on_update = "Cascade",
+        on_delete = "Cascade"
+    )]
+    Grove,
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -64,6 +75,13 @@ impl Related<super::token::Entity> for Entity {
 impl Related<super::event::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Event.def()
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl Related<super::grove::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Grove.def()
     }
 }
 
@@ -106,6 +124,8 @@ impl Model {
             #[cfg(not(target_arch = "wasm32"))]
             totp_secret_encrypted: false,
             totp_validated: None,
+            #[cfg(not(target_arch = "wasm32"))]
+            grove_id: -1,
         }
     }
 

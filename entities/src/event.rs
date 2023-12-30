@@ -27,6 +27,9 @@ pub struct Model {
     pub is_private: bool,
     #[serde(skip)]
     pub user_id: Option<i32>,
+    #[cfg(not(target_arch = "wasm32"))]
+    #[serde(skip)]
+    pub grove_id: i32,
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -40,6 +43,14 @@ pub enum Relation {
         on_delete = "Cascade"
     )]
     User,
+    #[sea_orm(
+        belongs_to = "super::grove::Entity",
+        from = "Column::GroveId",
+        to = "super::grove::Column::Id",
+        on_update = "Cascade",
+        on_delete = "Cascade"
+    )]
+    Grove,
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -50,9 +61,17 @@ impl Related<super::user::Entity> for Entity {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
+impl Related<super::grove::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Grove.def()
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
 impl ActiveModelBehavior for ActiveModel {}
 
 impl Model {
+    #[cfg(target_arch = "wasm32")]
     pub fn new(
         title: String,
         description: String,
