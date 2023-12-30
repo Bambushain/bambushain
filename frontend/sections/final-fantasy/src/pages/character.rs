@@ -294,6 +294,7 @@ fn modify_character_modal(
 fn character_details(
     character: &Character,
     on_delete: &Callback<()>,
+    on_save: &Callback<()>,
     custom_fields: &Vec<CustomCharacterField>,
     free_companies: &Vec<FreeCompany>,
 ) -> Html {
@@ -325,6 +326,8 @@ fn character_details(
 
         let id = character.id;
 
+        let on_save = on_save.clone();
+
         #[allow(clippy::await_holding_refcell_ref)]
         use_async(async move {
             if let Some(character) = edit_character_ref.borrow().clone() {
@@ -333,6 +336,7 @@ fn character_details(
                         action_state.set(CharacterActions::Closed);
                         unreported_error_toggle.set(false);
                         edit_error_toggle.set(false);
+                        on_save.emit(());
                         Ok(())
                     }
                     Err(err) => {
@@ -610,6 +614,9 @@ pub fn character_page() -> Html {
             characters_state.run();
         },
     );
+    let on_save = use_callback(characters_state.clone(), |_, characters_state| {
+        characters_state.run();
+    });
 
     {
         let custom_fields_state = custom_fields_state.clone();
@@ -656,7 +663,7 @@ pub fn character_page() -> Html {
                                 <CosmoTitle title={character.name.clone()} />
                                 <CosmoTabControl>
                                     <CosmoTabItem label="Details">
-                                        <CharacterDetails free_companies={free_companies_state.data.clone().unwrap_or(Vec::new()).clone()} custom_fields={custom_fields_state.data.clone().unwrap_or(Vec::new()).clone()} on_delete={on_delete.clone()} character={character.clone()} />
+                                        <CharacterDetails free_companies={free_companies_state.data.clone().unwrap_or(Vec::new()).clone()} custom_fields={custom_fields_state.data.clone().unwrap_or(Vec::new()).clone()} on_save={on_save.clone()} on_delete={on_delete.clone()} character={character.clone()} />
                                     </CosmoTabItem>
                                     <CosmoTabItem label="Kämpfer">
                                         <FighterDetails character={character.clone()} />

@@ -105,9 +105,9 @@ pub enum HousingType {
     FreeCompany,
     #[cfg_attr(
         not(target_arch = "wasm32"),
-        sea_orm(string_value = "shared_appartment")
+        sea_orm(string_value = "shared_apartment")
     )]
-    SharedAppartment,
+    SharedApartment,
 }
 
 impl HousingType {
@@ -115,7 +115,7 @@ impl HousingType {
         match self {
             HousingType::Private => "private",
             HousingType::FreeCompany => "free_company",
-            HousingType::SharedAppartment => "shared_appartment",
+            HousingType::SharedApartment => "shared_appartment",
         }
         .to_string()
     }
@@ -126,7 +126,7 @@ impl ToString for HousingType {
         match self {
             HousingType::Private => "Private Unterkunft",
             HousingType::FreeCompany => "Unterkunft einer Freie Gesellschaft",
-            HousingType::SharedAppartment => "Wohngemeinschaft",
+            HousingType::SharedApartment => "Wohngemeinschaft",
         }
         .to_string()
     }
@@ -137,7 +137,7 @@ impl From<String> for HousingType {
         match value.as_str() {
             "private" => HousingType::Private,
             "free_company" => HousingType::FreeCompany,
-            "shared_appartment" => HousingType::SharedAppartment,
+            "shared_appartment" => HousingType::SharedApartment,
             _ => unreachable!(),
         }
     }

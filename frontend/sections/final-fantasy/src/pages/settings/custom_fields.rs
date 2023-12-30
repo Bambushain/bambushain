@@ -304,7 +304,7 @@ justify-content: space-between;
                             <div class={option_style.clone()}>
                                 <span>{item.clone()}</span>
                                 <span class={edit_buttons.clone()}>
-                                    <Icon class={button_style.clone()} width="1rem" height="1rem" icon_id={IconId::LucideTextCursorInput} onclick={move |_| edit_option.emit(edit_label.clone())} />
+                                    <Icon class={button_style.clone()} width="1rem" height="1rem" icon_id={IconId::LucidePencil} onclick={move |_| edit_option.emit(edit_label.clone())} />
                                     <Icon class={button_style.clone()} width="1rem" height="1rem" icon_id={IconId::LucideTrash} onclick={move |_| delete_option.emit(delete_label.clone())} />
                                 </span>
                             </div>
@@ -648,7 +648,7 @@ cursor: pointer;
                     <legend class={legend_style.clone()}>
                         {custom_field.label.clone()}
                         <div class={edit_buttons.clone()}>
-                            <Icon class={button_style.clone()} width="1rem" height="1rem" icon_id={IconId::LucideTextCursorInput} onclick={open_edit_dialog} />
+                            <Icon class={button_style.clone()} width="1rem" height="1rem" icon_id={IconId::LucidePencil} onclick={open_edit_dialog} />
                             <Icon class={button_style.clone()} width="1rem" height="1rem" icon_id={IconId::LucideList} onclick={open_options_dialog} />
                             <Icon class={button_style} width="1rem" height="1rem" icon_id={IconId::LucideTrash} onclick={open_delete_dialog} />
                         </div>
