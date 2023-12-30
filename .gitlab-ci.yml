@@ -111,7 +111,7 @@ docker-build-testing:
   extends: 
     - .base-kaniko
   script: 
-    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/Dockerfile" --destination "harbor.ulbricht.casa/creastina/bamboo:1.5.0-test-$CI_PIPELINE_IID"
+    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/Dockerfile" --destination "harbor.ulbricht.casa/creastina/bamboo:1.6.0-test-$CI_PIPELINE_IID"
   needs: 
     - build-backend
     - build-frontend
