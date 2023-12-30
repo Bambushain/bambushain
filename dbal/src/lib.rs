@@ -13,6 +13,7 @@ mod custom_field;
 mod event;
 mod fighter;
 mod free_company;
+mod grove;
 mod my;
 mod user;
 
@@ -26,6 +27,7 @@ pub mod prelude {
         pub use crate::event::*;
         pub use crate::fighter::*;
         pub use crate::free_company::*;
+        pub use crate::grove::*;
         pub use crate::my::*;
         pub use crate::user::*;
     }

@@ -166,8 +166,8 @@ pub async fn forgot_password(
     env_service: EnvService,
 ) -> HttpResponse {
     if let Ok(body) = check_missing_fields!(body, "user") {
-        if let Ok(mods) = dbal::get_users_with_mod_rights(&db).await {
-            if let Ok(user) = dbal::get_user_by_email_or_username(body.email.clone(), &db).await {
+        if let Ok(user) = dbal::get_user_by_email_or_username(body.email.clone(), &db).await {
+            if let Ok(mods) = dbal::get_users_with_mod_rights(user.id, &db).await {
                 for bamboo_mod in mods {
                     send_forgot_passwod_mail(
                         user.display_name.clone(),

@@ -9,8 +9,7 @@
             "environment": {
                 "DATABASE_URL": "postgres://coder:coder@coder-database-knerd-bambushain:5432/coder",
                 "FRONTEND_DIR": "$PROJECT_DIR$/",
-                "INITIAL_USER_DISPLAY_NAME": "Knerd",
-                "INITIAL_USER_EMAIL": "me@imanuel.dev",
+                "INITIAL_GROVE": "Pandaparty",
                 "MAILER_ENCRYPTION": "false",
                 "MAILER_FROM": "noreply@creastina.art",
                 "MAILER_PASSWORD": "CPt2FGruqwbm",

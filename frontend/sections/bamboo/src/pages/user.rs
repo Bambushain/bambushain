@@ -174,7 +174,7 @@ fn create_user_modal(on_saved: &Callback<WebUser>, on_close: &Callback<()>) -> H
                     }
                     <CosmoInputGroup>
                         <CosmoTextBox label="Email" value={(*email_state).clone()} on_input={update_email} required={true} />
-                        <CosmoTextBox label="Name" value={(*display_name_state).clone()} on_input={update_display_name} />
+                        <CosmoTextBox label="Name" value={(*display_name_state).clone()} on_input={update_display_name} required={true} />
                         <CosmoTextBox label="Discord Name (optional)" value={(*discord_name_state).clone()} on_input={update_discord_name} />
                         <CosmoSwitch label="Moderator" on_check={update_is_mod} checked={*is_mod_toggle} />
                     </CosmoInputGroup>
@@ -702,10 +702,15 @@ pub fn users_page() -> Html {
         users_state.run();
     });
     let on_create_saved = use_callback(
-        (selected_user_state.clone(), users_state.clone()),
-        |user: WebUser, (selected_state, users_state)| {
+        (
+            selected_user_state.clone(),
+            users_state.clone(),
+            open_create_user_modal_toggle.clone(),
+        ),
+        |user: WebUser, (selected_state, users_state, open_create_user_modal_toggle)| {
             users_state.run();
             selected_state.set(user.id);
+            open_create_user_modal_toggle.set(false);
         },
     );
     let on_create_close = use_callback(open_create_user_modal_toggle.clone(), |_, state| {
