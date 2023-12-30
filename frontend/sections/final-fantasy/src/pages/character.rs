@@ -344,7 +344,7 @@ fn character_details(
                         match err.code {
                             CONFLICT => {
                                 error_message_state
-                                    .set("Ein Charakter mit diesem Namen existiert bereits".into());
+                                    .set("Ein Charakter mit diesem Namen existiert bereits für diese Welt".into());
                                 unreported_error_toggle.set(false);
                             }
                             NOT_FOUND => {
@@ -558,7 +558,7 @@ pub fn character_page() -> Html {
                     .map_err(|err| {
                         error_message_state.set(
                             if err.code == CONFLICT {
-                                "Ein Charakter mit diesem Namen existiert bereits"
+                                "Ein Charakter mit diesem Namen existiert bereits für diese Welt"
                             } else {
                                 bamboo_error_state.set(err.clone());
                                 error_message_form_state.set("character_page".into());

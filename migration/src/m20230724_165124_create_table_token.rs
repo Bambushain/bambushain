@@ -55,5 +55,6 @@ enum Token {
     Table,
     Id,
     UserId,
+    #[allow(clippy::enum_variant_names)]
     Token,
 }
