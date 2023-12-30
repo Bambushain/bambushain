@@ -50,4 +50,5 @@ pub enum Schemas {
     Bamboo,
     FinalFantasy,
     Authentication,
+    Grove,
 }
