@@ -23,7 +23,7 @@
   extends: 
     - .base-frontend-cache
   image: 
-    name: harbor.ulbricht.casa/imanuel/trunk-docker-base-image:latest
+    name: registry.ulbricht.casa/docker-images/trunk-docker-base-image:latest
     pull_policy: always
 
 .base-kaniko: 
@@ -32,7 +32,7 @@
     pull_policy: always
     entrypoint: [""]
   before_script: 
-    - echo $KANIKO_DOCKERHUB_AND_HARBOR > /kaniko/.docker/config.json
+    - echo "{\"auths\":{\"${CI_REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"},\"https://index.docker.io/v1/\":{\"auth\":\"$DOCKER_TOKEN\"}}}" > /kaniko/.docker/config.json
 
 stages: 
   - lint
@@ -42,7 +42,7 @@ stages:
 lint-backend: 
   stage: lint
   image: 
-    name: harbor.ulbricht.casa/base-images/rust-docker-base-image:latest
+    name: registry.ulbricht.casa/docker-images/rust-docker-base-image:latest
     pull_policy: always
   extends: 
     - .base-backend-cache
@@ -63,7 +63,7 @@ lint-frontend:
 build-backend: 
   stage: build
   image: 
-    name: harbor.ulbricht.casa/base-images/rust-docker-base-image:latest
+    name: registry.ulbricht.casa/docker-images/rust-docker-base-image:latest
     pull_policy: always
   extends: 
     - .base-backend-cache
@@ -95,7 +95,7 @@ docker-build:
   extends: 
     - .base-kaniko
   script: 
-    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/Dockerfile" --destination "harbor.ulbricht.casa/creastina/bamboo:${CI_COMMIT_TAG}" --destination "harbor.ulbricht.casa/creastina/bamboo:latest"
+    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/Dockerfile" --destination "${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}" --destination "${CI_REGISTRY_IMAGE}:latest"
   needs: 
     - build-backend
     - build-frontend
@@ -111,7 +111,7 @@ docker-build-testing:
   extends: 
     - .base-kaniko
   script: 
-    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/Dockerfile" --destination "harbor.ulbricht.casa/creastina/bamboo:1.6.0-test-$CI_PIPELINE_IID"
+    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/Dockerfile" --destination "${CI_REGISTRY_IMAGE}:1.6.0-test-$CI_PIPELINE_IID"
   needs: 
     - build-backend
     - build-frontend
