@@ -38,9 +38,14 @@ pub async fn get_character_housing(
 ) -> BambooApiResult<CharacterHousing> {
     let path = check_invalid_path!(path, "character_housing")?;
 
-    dbal::get_character_housing(path.character_housing_id, authentication.user.id, character.id, &db)
-        .await
-        .map(|character_housing| ok!(character_housing))
+    dbal::get_character_housing(
+        path.character_housing_id,
+        authentication.user.id,
+        character.id,
+        &db,
+    )
+    .await
+    .map(|character_housing| ok!(character_housing))
 }
 
 #[post(
@@ -100,7 +105,12 @@ pub async fn delete_character_housing(
 ) -> BambooApiResponseResult {
     let path = check_invalid_path!(path, "character_housing")?;
 
-    dbal::delete_character_housing(path.character_housing_id, authentication.user.id, character.id, &db)
-        .await
-        .map(|_| no_content!())
+    dbal::delete_character_housing(
+        path.character_housing_id,
+        authentication.user.id,
+        character.id,
+        &db,
+    )
+    .await
+    .map(|_| no_content!())
 }

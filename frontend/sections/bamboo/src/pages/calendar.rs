@@ -1,3 +1,4 @@
+#![allow(clippy::clone_on_copy)]
 use std::ops::Deref;
 use std::pin::Pin;
 use std::task::{Context, Poll};

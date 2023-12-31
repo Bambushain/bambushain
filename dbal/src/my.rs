@@ -60,7 +60,11 @@ pub async fn change_my_password(
         .map(|_| ())
 }
 
-pub async fn enable_my_totp(id: i32, secret: Vec<u8>, db: &DatabaseConnection) -> BambooErrorResult {
+pub async fn enable_my_totp(
+    id: i32,
+    secret: Vec<u8>,
+    db: &DatabaseConnection,
+) -> BambooErrorResult {
     user::Entity::update_many()
         .col_expr(user::Column::TotpSecret, Expr::value(secret))
         .col_expr(user::Column::TotpSecretEncrypted, Expr::value(false))

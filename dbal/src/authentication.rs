@@ -10,8 +10,8 @@ use sea_orm::{
 use bamboo_entities::prelude::*;
 use bamboo_error::*;
 
-use crate::{decrypt_string, encrypt_string};
 use crate::prelude::dbal;
+use crate::{decrypt_string, encrypt_string};
 
 pub async fn validate_auth_and_create_token(
     username: String,
@@ -142,7 +142,7 @@ async fn validate_totp_token(
     password: String,
     user: User,
     db: &DatabaseConnection,
-    ) -> BambooErrorResult {
+) -> BambooErrorResult {
     let totp_secret = if user.totp_secret_encrypted {
         decrypt_string(user.totp_secret.unwrap(), password.clone())?
     } else {

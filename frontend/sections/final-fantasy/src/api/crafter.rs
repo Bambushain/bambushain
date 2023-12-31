@@ -1,5 +1,5 @@
 use bamboo_entities::prelude::*;
-use bamboo_frontend_base_api::{delete, get, post, put_no_content,BambooApiResult};
+use bamboo_frontend_base_api::{delete, get, post, put_no_content, BambooApiResult};
 
 pub async fn get_crafters(character_id: i32) -> BambooApiResult<Vec<Crafter>> {
     log::debug!("Get crafter");

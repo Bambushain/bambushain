@@ -13,7 +13,7 @@ pub fn licenses() -> Html {
         use_mount(move || licenses.run())
     }
 
-    html! {
+    html!(
         if let Some(licenses) = &licenses.data {
             <CosmoSideList>
                 {for licenses.iter().map(|license| {
@@ -47,5 +47,5 @@ pub fn licenses() -> Html {
                 })}
             </CosmoSideList>
         }
-    }
+    )
 }

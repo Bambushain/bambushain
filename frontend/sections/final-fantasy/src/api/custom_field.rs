@@ -77,9 +77,14 @@ pub async fn delete_custom_field_option(field_id: i32, id: i32) -> BambooApiResu
     .await
 }
 
-pub async fn get_custom_field_options(field_id: i32) -> BambooApiResult<Vec<CustomCharacterFieldOption>> {
+pub async fn get_custom_field_options(
+    field_id: i32,
+) -> BambooApiResult<Vec<CustomCharacterFieldOption>> {
     log::debug!("Get custom field options for field {field_id}");
-    get(format!("/api/final-fantasy/character/custom-field/{field_id}/option")).await
+    get(format!(
+        "/api/final-fantasy/character/custom-field/{field_id}/option"
+    ))
+    .await
 }
 
 pub async fn move_custom_field(id: i32, position: i32) -> BambooApiResult<()> {

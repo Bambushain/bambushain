@@ -77,10 +77,7 @@ pub async fn update_free_company(
     free_company::Entity::update_many()
         .filter(free_company::Column::UserId.eq(user_id))
         .filter(free_company::Column::Id.eq(id))
-        .col_expr(
-            free_company::Column::Name,
-            Expr::value(name),
-        )
+        .col_expr(free_company::Column::Name, Expr::value(name))
         .exec(db)
         .await
         .map_err(|err| {

@@ -48,7 +48,13 @@ pub async fn create_event(
 ) -> BambooApiResult<Event> {
     let body = check_missing_fields!(body, "event")?;
 
-    let data = dbal::create_event(body.into_inner(), current_grove.grove.id, authentication.user.id, &db).await?;
+    let data = dbal::create_event(
+        body.into_inner(),
+        current_grove.grove.id,
+        authentication.user.id,
+        &db,
+    )
+    .await?;
     notifier.notify_event_create(data.clone());
 
     Ok(created!(data))
@@ -70,9 +76,21 @@ pub async fn update_event(
     let path = check_invalid_path!(path, "event")?;
     let body = check_missing_fields!(body, "event")?;
 
-    dbal::update_event(current_grove.grove.id, path.event_id, body.into_inner(), &db).await?;
+    dbal::update_event(
+        current_grove.grove.id,
+        path.event_id,
+        body.into_inner(),
+        &db,
+    )
+    .await?;
 
-    let event = dbal::get_event(path.event_id, current_grove.grove.id, authentication.user.id, &db).await?;
+    let event = dbal::get_event(
+        path.event_id,
+        current_grove.grove.id,
+        authentication.user.id,
+        &db,
+    )
+    .await?;
     notifier.notify_event_update(event);
 
     Ok(no_content!())
@@ -92,7 +110,13 @@ pub async fn delete_event(
 ) -> BambooApiResponseResult {
     let path = check_invalid_path!(path, "event")?;
 
-    let event = dbal::get_event(path.event_id, current_grove.grove.id, authentication.user.id, &db).await?;
+    let event = dbal::get_event(
+        path.event_id,
+        current_grove.grove.id,
+        authentication.user.id,
+        &db,
+    )
+    .await?;
     dbal::delete_event(current_grove.grove.id, path.event_id, &db).await?;
     notifier.notify_event_delete(event);
 

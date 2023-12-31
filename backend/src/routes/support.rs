@@ -2,8 +2,8 @@ use std::collections::BTreeMap;
 
 use actix_web::{post, web, HttpResponse};
 use sentry::protocol::{Event, Level};
-use sentry::types::random_uuid;
 use sentry::types::protocol::v7::Context;
+use sentry::types::random_uuid;
 
 use bamboo_entities::prelude::{GlitchTipErrorRequest, SupportRequest};
 use bamboo_error::*;
@@ -55,14 +55,32 @@ pub async fn report_glitchtip_error(
     if let Some(body) = body {
         let event_id = random_uuid();
         let mut base_data = BTreeMap::new();
-        base_data.insert("form".to_string(), serde_json::Value::String(body.form.clone()));
-        base_data.insert("page".to_string(), serde_json::Value::String(body.page.clone()));
-        base_data.insert("full_url".to_string(), serde_json::Value::String(body.full_url.clone()));
+        base_data.insert(
+            "form".to_string(),
+            serde_json::Value::String(body.form.clone()),
+        );
+        base_data.insert(
+            "page".to_string(),
+            serde_json::Value::String(body.page.clone()),
+        );
+        base_data.insert(
+            "full_url".to_string(),
+            serde_json::Value::String(body.full_url.clone()),
+        );
 
         let mut error = BTreeMap::new();
-        error.insert("entity_type".to_string(), serde_json::Value::String(body.bamboo_error.entity_type.to_string()));
-        error.insert("error_type".to_string(), serde_json::Value::String(body.bamboo_error.error_type.to_string()));
-        error.insert("message".to_string(), serde_json::Value::String(body.bamboo_error.message.to_string()));
+        error.insert(
+            "entity_type".to_string(),
+            serde_json::Value::String(body.bamboo_error.entity_type.to_string()),
+        );
+        error.insert(
+            "error_type".to_string(),
+            serde_json::Value::String(body.bamboo_error.error_type.to_string()),
+        );
+        error.insert(
+            "message".to_string(),
+            serde_json::Value::String(body.bamboo_error.message.to_string()),
+        );
 
         let mut contexts = BTreeMap::new();
         contexts.insert("base_data".to_string(), Context::Other(base_data));

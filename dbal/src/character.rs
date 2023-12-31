@@ -219,7 +219,15 @@ pub async fn update_character(
     character: Character,
     db: &DatabaseConnection,
 ) -> BambooErrorResult {
-    if character_exists_by_id(id, character.name.clone(), character.world.clone(), user_id, db).await? {
+    if character_exists_by_id(
+        id,
+        character.name.clone(),
+        character.world.clone(),
+        user_id,
+        db,
+    )
+    .await?
+    {
         return Err(BambooError::exists_already(
             "character",
             "A character with that name already exists",

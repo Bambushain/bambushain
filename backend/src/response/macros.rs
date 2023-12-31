@@ -3,7 +3,10 @@ macro_rules! check_missing_fields {
         if let Some(body) = $body {
             Ok(body)
         } else {
-            Err(bamboo_error::BambooError::invalid_data($entity, "There are missing fields"))
+            Err(bamboo_error::BambooError::invalid_data(
+                $entity,
+                "There are missing fields",
+            ))
         }
     };
 }
@@ -13,7 +16,10 @@ macro_rules! check_invalid_path {
         if let Some(path) = $path {
             Ok(path)
         } else {
-            Err(bamboo_error::BambooError::invalid_data($entity, "The path data are invalid"))
+            Err(bamboo_error::BambooError::invalid_data(
+                $entity,
+                "The path data are invalid",
+            ))
         }
     };
 }
@@ -23,7 +29,10 @@ macro_rules! check_invalid_query {
         if let Some(query) = $query {
             Ok(query)
         } else {
-            Err(bamboo_error::BambooError::invalid_data($entity, "The query data are invalid"))
+            Err(bamboo_error::BambooError::invalid_data(
+                $entity,
+                "The query data are invalid",
+            ))
         }
     };
 }
