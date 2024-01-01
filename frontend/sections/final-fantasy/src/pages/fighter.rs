@@ -4,7 +4,7 @@ use strum::IntoEnumIterator;
 use yew::prelude::*;
 use yew_autoprops::autoprops;
 use yew_cosmo::prelude::*;
-use yew_hooks::{use_async, use_bool_toggle, use_mount};
+use yew_hooks::{use_async, use_bool_toggle, use_effect_update, use_mount};
 
 use bamboo_entities::prelude::*;
 use bamboo_frontend_base_api::{CONFLICT, NOT_FOUND};
@@ -125,6 +125,8 @@ fn modify_fighter_modal(
 pub fn fighter_details(character: &Character) -> Html {
     log::debug!("Render fighter details");
     let action_state = use_state_eq(|| FighterActions::Closed);
+
+    let props_character_memo = use_memo(character.clone(), |character| character.clone());
 
     let create_fighter_ref = use_mut_ref(|| None as Option<Fighter>);
     let edit_fighter_ref = use_mut_ref(|| None as Option<Fighter>);
@@ -355,6 +357,21 @@ pub fn fighter_details(character: &Character) -> Html {
         let fighter_state = fighter_state.clone();
 
         use_mount(move || fighter_state.run());
+    }
+    {
+        let fighter_state = fighter_state.clone();
+
+        let props_character_memo = props_character_memo.clone();
+
+        let character = character.clone();
+
+        use_effect_update(move || {
+            if props_character_memo.id != character.id {
+                fighter_state.run();
+            }
+
+            || ()
+        })
     }
 
     if fighter_state.loading {

@@ -5,7 +5,7 @@ use stylist::yew::use_style;
 use yew::prelude::*;
 use yew_autoprops::autoprops;
 use yew_cosmo::prelude::*;
-use yew_hooks::{use_async, use_bool_toggle, use_mount};
+use yew_hooks::{use_async, use_bool_toggle, use_effect_update, use_mount};
 
 use bamboo_entities::prelude::*;
 use bamboo_frontend_base_api::{CONFLICT, NOT_FOUND};
@@ -144,6 +144,8 @@ fn modify_housing_modal(
 pub fn housing_details(character: &Character) -> Html {
     log::debug!("Render housing details");
     let action_state = use_state_eq(|| HousingActions::Closed);
+
+    let props_character_memo = use_memo(character.clone(), |character| character.clone());
 
     let create_housing_ref = use_mut_ref(|| None as Option<CharacterHousing>);
     let edit_housing_ref = use_mut_ref(|| None as Option<CharacterHousing>);
@@ -376,6 +378,21 @@ pub fn housing_details(character: &Character) -> Html {
         let housing_state = housing_state.clone();
 
         use_mount(move || housing_state.run());
+    }
+    {
+        let housing_state = housing_state.clone();
+
+        let props_character_memo = props_character_memo.clone();
+
+        let character = character.clone();
+
+        use_effect_update(move || {
+            if props_character_memo.id != character.id {
+                housing_state.run();
+            }
+
+            || ()
+        })
     }
 
     let housing_list_style = use_style!(
