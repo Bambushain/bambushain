@@ -145,7 +145,7 @@ pub fn housing_details(character: &Character) -> Html {
     log::debug!("Render housing details");
     let action_state = use_state_eq(|| HousingActions::Closed);
 
-    let props_character_memo = use_memo(character.clone(), |character| character.clone());
+    let props_character_id_state = use_state_eq(|| character.id);
 
     let create_housing_ref = use_mut_ref(|| None as Option<CharacterHousing>);
     let edit_housing_ref = use_mut_ref(|| None as Option<CharacterHousing>);
@@ -382,13 +382,14 @@ pub fn housing_details(character: &Character) -> Html {
     {
         let housing_state = housing_state.clone();
 
-        let props_character_memo = props_character_memo.clone();
+        let props_character_id_state = props_character_id_state.clone();
 
         let character = character.clone();
 
         use_effect_update(move || {
-            if props_character_memo.id != character.id {
+            if *props_character_id_state != character.id {
                 housing_state.run();
+                props_character_id_state.set(character.id);
             }
 
             || ()

@@ -117,7 +117,7 @@ pub fn crafter_details(character: &Character) -> Html {
     log::debug!("Render crafter details");
     let action_state = use_state_eq(|| CrafterActions::Closed);
 
-    let props_character_memo = use_memo(character.clone(), |character| character.clone());
+    let props_character_id_state = use_state_eq(|| character.id);
 
     let create_crafter_ref = use_mut_ref(|| None as Option<Crafter>);
     let edit_crafter_ref = use_mut_ref(|| None as Option<Crafter>);
@@ -351,13 +351,14 @@ pub fn crafter_details(character: &Character) -> Html {
     {
         let crafter_state = crafter_state.clone();
 
-        let props_character_memo = props_character_memo.clone();
+        let props_character_id_state = props_character_id_state.clone();
 
         let character = character.clone();
 
         use_effect_update(move || {
-            if props_character_memo.id != character.id {
+            if *props_character_id_state != character.id {
                 crafter_state.run();
+                props_character_id_state.set(character.id);
             }
 
             || ()
