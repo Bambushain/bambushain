@@ -130,8 +130,11 @@ pub(crate) async fn user_exists_by_id(
 ) -> BambooResult<bool> {
     user::Entity::find()
         .filter(user::Column::Id.ne(id))
-        .filter(user::Column::Email.eq(email))
-        .filter(user::Column::DisplayName.eq(name))
+        .filter(
+            Condition::any()
+                .add(user::Column::Email.eq(email))
+                .add(user::Column::DisplayName.eq(name)),
+        )
         .count(db)
         .await
         .map(|count| count > 0)
@@ -147,8 +150,11 @@ async fn user_exists_by_email_and_name(
     db: &DatabaseConnection,
 ) -> BambooResult<bool> {
     user::Entity::find()
-        .filter(user::Column::Email.eq(email))
-        .filter(user::Column::DisplayName.eq(name))
+        .filter(
+            Condition::any()
+                .add(user::Column::Email.eq(email))
+                .add(user::Column::DisplayName.eq(name)),
+        )
         .count(db)
         .await
         .map(|count| count > 0)

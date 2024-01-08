@@ -10,7 +10,7 @@ use yew_hooks::{use_async, use_bool_toggle, use_mount, UseAsyncHandle};
 use yew_router::prelude::*;
 
 use bamboo_entities::user::UpdateProfile;
-use bamboo_frontend_base_api::{ApiError, FORBIDDEN, NOT_FOUND};
+use bamboo_frontend_base_api::{ApiError, CONFLICT, FORBIDDEN, NOT_FOUND};
 use bamboo_frontend_base_error as error;
 use bamboo_frontend_base_routing::{
     AppRoute, BambooGroveRoute, FinalFantasyRoute, LegalRoute, LicensesRoute, SupportRoute,
@@ -586,6 +586,8 @@ fn update_my_profile_dialog(on_close: &Callback<()>) -> Html {
                 if let Some(err) = &save_state.error {
                     if err.code == NOT_FOUND {
                         <CosmoMessage message_type={CosmoMessageType::Negative} message="Bitte versuch es erneut um einen Fehler auszuschließen" header="Du wurdest scheinbar gelöscht" />
+                    } else if err.code == CONFLICT {
+                        <CosmoMessage message_type={CosmoMessageType::Negative} message="Die Email oder der Name ist leider schon vergeben" header="Leider schon vergeben" />
                     } else if *unreported_error_toggle {
                         <CosmoMessage message_type={CosmoMessageType::Negative} message="Dein Profil konnte leider nicht gespeichert werden" header="Fehler beim Speichern" actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
                     } else {
