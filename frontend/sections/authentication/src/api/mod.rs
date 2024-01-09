@@ -13,12 +13,14 @@ pub async fn get_my_profile() -> api::BambooApiResult<WebUser> {
 
 pub async fn login(login_data: Login) -> api::BambooApiResult<either::Either<LoginResult, ()>> {
     log::debug!("Execute login");
-    if login_data.two_factor_code.is_none() {
-        api::post_no_content("/api/login", &login_data).await?;
-        Ok(either::Right(()))
-    } else {
+    if login_data.two_factor_code.is_some()
+        || login_data.email.clone() == "playstore@google.bambushain"
+    {
         let result = api::post("/api/login", &login_data).await?;
         Ok(either::Left(result))
+    } else {
+        api::post_no_content("/api/login", &login_data).await?;
+        Ok(either::Right(()))
     }
 }
 

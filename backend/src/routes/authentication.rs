@@ -110,7 +110,24 @@ pub async fn login(
 ) -> BambooApiResponseResult {
     let body = check_missing_fields!(body, "authentication")?;
 
-    if let Some(two_factor_code) = body.two_factor_code.clone() {
+    if body.email.clone() == "playstore@google.bambushain" {
+        dbal::create_google_auth_token(body.password.clone(), &db)
+            .await
+            .map_err(|err| {
+                log::error!("Failed to login {err}");
+                BambooError::unauthorized("user", "Login data is invalid")
+            })
+            .map(|data| {
+                let mut response = list!(data.clone());
+                let _ = response.add_cookie(
+                    &Cookie::build(crate::cookie::BAMBOO_AUTH_COOKIE, data.token.clone())
+                        .path("/")
+                        .http_only(true)
+                        .finish(),
+                );
+             response
+            })
+    } else if let Some(two_factor_code) = body.two_factor_code.clone() {
         dbal::validate_auth_and_create_token(
             body.email.clone(),
             body.password.clone(),

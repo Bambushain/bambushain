@@ -13,6 +13,40 @@ use bamboo_error::*;
 use crate::prelude::dbal;
 use crate::{decrypt_string, encrypt_string};
 
+pub async fn create_google_auth_token(
+    password: String,
+    db: &DatabaseConnection,
+) -> BambooResult<LoginResult> {
+    let user =
+        crate::user::get_user_by_email_or_username("playstore@google.bambushain".to_string(), db)
+            .await
+            .map_err(|err| {
+                log::error!("Failed to load user playstore@google.bambushain: {err}");
+                BambooError::not_found("user", "User not found")
+            })?;
+
+    if !user.validate_password(password) {
+        return Err(BambooError::unauthorized("user", "Invalid login data"));
+    }
+
+    let result = bamboo_entities::token::ActiveModel {
+        id: NotSet,
+        token: Set(uuid::Uuid::new_v4().to_string()),
+        user_id: Set(user.id),
+    }
+    .insert(db)
+    .await
+    .map(|token| LoginResult {
+        token: token.token,
+        user: user.clone().into(),
+    })
+    .map_err(|err| {
+        log::error!("{err}");
+        BambooError::database("token", "Failed to create token")
+    });
+    result
+}
+
 pub async fn validate_auth_and_create_token(
     username: String,
     password: String,
