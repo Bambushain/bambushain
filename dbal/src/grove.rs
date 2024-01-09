@@ -23,6 +23,24 @@ pub async fn get_grove_by_user_id(user_id: i32, db: &DatabaseConnection) -> Bamb
         })?
 }
 
+pub async fn get_grove_by_name(name: String, db: &DatabaseConnection) -> BambooResult<Grove> {
+    grove::Entity::find()
+        .filter(grove::Column::Name.eq(name))
+        .one(db)
+        .await
+        .map_err(|err| {
+            log::error!("{err}");
+            BambooError::database("grove", "Failed to execute database query")
+        })
+        .map(|data| {
+            if let Some(data) = data {
+                Ok(data)
+            } else {
+                Err(BambooError::not_found("grove", "The grove was not found"))
+            }
+        })?
+}
+
 pub async fn get_groves(db: &DatabaseConnection) -> BambooResult<Vec<Grove>> {
     grove::Entity::find().all(db).await.map_err(|err| {
         log::error!("{err}");
