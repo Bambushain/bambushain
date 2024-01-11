@@ -16,6 +16,17 @@
       <sourceFolder url="file://$MODULE_DIR$/error/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/macros/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/sse/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/base/api/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/base/error/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/base/routing/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/base/storage/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/sections/authentication/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/sections/bamboo/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/sections/final-fantasy/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/sections/layout/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/sections/legal/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/sections/licenses/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/sections/support/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/backend/target" />
       <excludeFolder url="file://$MODULE_DIR$/entities/target" />
       <excludeFolder url="file://$MODULE_DIR$/frontend/target" />

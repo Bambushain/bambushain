@@ -473,8 +473,8 @@ fn user_details(user: &WebUser, on_delete: &Callback<()>, on_update: &Callback<(
     let on_decline = use_callback(confirm_state.clone(), |_, state| {
         state.set(UserConfirmActions::Closed)
     });
-    let on_update_close = use_callback(confirm_state.clone(), |_, state| {
-        state.set(UserConfirmActions::Closed)
+    let on_update_close = use_callback(profile_edit_toggle.clone(), |_, toggle| {
+        toggle.set(false);
     });
     let on_confirm = use_callback(
         (
