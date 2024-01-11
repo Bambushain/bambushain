@@ -1,4 +1,5 @@
 #![allow(clippy::clone_on_copy)]
+
 use std::ops::Deref;
 use std::pin::Pin;
 use std::task::{Context, Poll};
@@ -15,7 +16,7 @@ use web_sys::{EventSource, EventTarget, MessageEvent};
 use yew::prelude::*;
 use yew_autoprops::autoprops;
 use yew_cosmo::prelude::*;
-use yew_hooks::prelude::{use_bool_toggle, use_effect_update, use_list, use_unmount};
+use yew_hooks::prelude::{use_bool_toggle, use_effect_update_with_deps, use_list, use_unmount};
 use yew_hooks::{use_async, use_mount};
 use yew_icons::Icon;
 
@@ -35,7 +36,7 @@ impl ToString for ColorYiqResult {
             ColorYiqResult::Light => "#ffffff",
             ColorYiqResult::Dark => "#333333",
         }
-        .to_string()
+            .to_string()
     }
 }
 
@@ -191,18 +192,18 @@ fn add_event_dialog(
                 *color_state,
                 *is_private_state,
             ))
-            .await
-            .map(|evt| {
-                on_added.emit(evt);
-                unreported_error_toggle.set(false)
-            })
-            .map_err(|err| {
-                log::error!("Failed to create event {err}");
-                unreported_error_toggle.set(true);
-                bamboo_error_state.set(err.clone());
+                .await
+                .map(|evt| {
+                    on_added.emit(evt);
+                    unreported_error_toggle.set(false)
+                })
+                .map_err(|err| {
+                    log::error!("Failed to create event {err}");
+                    unreported_error_toggle.set(true);
+                    bamboo_error_state.set(err.clone());
 
-                err
-            })
+                    err
+                })
         })
     };
 
@@ -636,9 +637,9 @@ z-index: 1;
 #[function_component(CalendarData)]
 fn calendar_data(date: &NaiveDate) -> Html {
     log::debug!("Render CalendarData");
-    let first_day_of_month = date;
+    let date_state = use_state_eq(|| *date);
+    let first_day_of_month = *date_state;
     log::debug!("First day of month {}", first_day_of_month.clone());
-
     let first_day_offset = first_day_of_month.weekday() as i64 - 1;
     let first_day_offset = if first_day_offset < 0 {
         0
@@ -687,13 +688,8 @@ fn calendar_data(date: &NaiveDate) -> Html {
     let events_list = use_list(vec![] as Vec<Event>);
     let calendar_event_source_state = use_mut_ref(CalendarEventSource::new);
 
-    let props_date_memo = use_memo(*date, |date| date.clone());
-    let range_memo = use_memo((calendar_start_date, calendar_end_date), |(start, end)| {
-        DateRange::new(*start, *end).unwrap()
-    });
-
     let events_state = {
-        let range_memo = range_memo.clone();
+        let range = DateRange::new(calendar_start_date, calendar_end_date).unwrap();
 
         let events_list = events_list.clone();
 
@@ -702,7 +698,7 @@ fn calendar_data(date: &NaiveDate) -> Html {
         let bamboo_error_state = bamboo_error_state.clone();
 
         use_async(async move {
-            api::get_events(range_memo)
+            api::get_events(range.into())
                 .await
                 .map(|data| {
                     unreported_error_toggle.set(false);
@@ -718,17 +714,14 @@ fn calendar_data(date: &NaiveDate) -> Html {
     };
 
     let event_created = use_callback(
-        (events_list.clone(), range_memo.clone()),
-        |event: Event, (events_list, range_memo)| {
+        (events_list.clone(), calendar_start_date.clone(), calendar_end_date.clone()),
+        |event: Event, (events_list, since, until)| {
             log::debug!(
                 "Someone created a new event, adding it to the list if it is in current range"
             );
             log::debug!("Got event {event:?}");
-            let until = range_memo.until();
-            let since = range_memo.since();
-
-            if (event.start_date >= since && event.start_date <= until)
-                || (event.end_date >= since && event.end_date <= until)
+            if (event.start_date >= *since && event.start_date <= *until)
+                || (event.end_date >= *since && event.end_date <= *until)
             {
                 log::debug!("The event is in range, lets add it to the list");
                 events_list.push(event.clone());
@@ -736,15 +729,12 @@ fn calendar_data(date: &NaiveDate) -> Html {
         },
     );
     let event_updated = use_callback(
-        (events_list.clone(), range_memo.clone()),
-        |event: Event, (events_list, range_memo)| {
+        (events_list.clone(), calendar_start_date.clone(), calendar_end_date.clone()),
+        |event: Event, (events_list, since, until)| {
             log::debug!("Someone updated an event, if we have it loaded, lets update it");
             log::debug!("Got event {event:?}");
-            let until = range_memo.until();
-            let since = range_memo.since();
-
-            if (event.start_date >= since && event.start_date <= until)
-                || (event.end_date >= since && event.end_date <= until)
+            if (event.start_date >= *since && event.start_date <= *until)
+                || (event.end_date >= *since && event.end_date <= *until)
             {
                 log::debug!("The event is in range");
 
@@ -835,21 +825,14 @@ fn calendar_data(date: &NaiveDate) -> Html {
             events_state.run();
         })
     }
-    {
-        let events_state = events_state.clone();
+    use_effect_update_with_deps(|(date_state, date, events_state)| {
+        if *date != **date_state {
+            events_state.run();
+            date_state.set(*date);
+        }
 
-        let props_date_memo = props_date_memo.clone();
-
-        let date = date.clone();
-
-        use_effect_update(move || {
-            if *props_date_memo != date {
-                events_state.run();
-            }
-
-            || ()
-        })
-    }
+        || ()
+    }, (date_state.clone(), date.clone(), events_state.clone()));
 
     let events_for_day = {
         move |day: NaiveDate| {
@@ -897,7 +880,7 @@ grid-row: 3/4;
                 if first_day_offset > 0 {
                     {for DateRange::new(calendar_start_date, last_day_of_prev_month).unwrap().into_iter().map(render_day.clone())}
                 }
-                {for DateRange::new(*first_day_of_month, last_day_of_month).unwrap().into_iter().map(render_day.clone())}
+                {for DateRange::new(first_day_of_month, last_day_of_month).unwrap().into_iter().map(render_day.clone())}
                 {for DateRange::new(first_day_of_next_month, calendar_end_date).unwrap().into_iter().map(render_day.clone())}
             } else if let Some(_) = &events_state.error {
                 <div class={error_message_style}>
