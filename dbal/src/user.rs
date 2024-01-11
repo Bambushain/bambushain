@@ -230,6 +230,16 @@ pub async fn change_password(
         BambooError::unknown("user", "Failed to hash the password")
     })?;
 
+    token::Entity::delete_many()
+        .filter(token::Column::UserId.eq(id))
+        .exec(db)
+        .await
+        .map_err(|err| {
+            log::error!("{err}");
+            BambooError::database("user", "Failed to update user")
+        })
+        .map(|_| ())?;
+
     user::Entity::update_many()
         .col_expr(user::Column::Password, Expr::value(hashed_password))
         .col_expr(
