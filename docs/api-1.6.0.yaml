@@ -1207,6 +1207,63 @@ paths:
         schema: 
           type: number
         required: true
+  /api/user/{id}/totp:
+    summary: Path for actions for changing totp of a user
+    description: Perform a DELETE request to reset totp of a user
+    delete:
+      tags:
+        - User
+      responses:
+        '204':
+          description: The users totp was reset successfully
+        '400':
+          description: The data is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '401':
+          description: The access token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '403':
+          description: The user is no mod
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '404':
+          description: The user was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '409':
+          description: The email or username exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: []
+      operationId: disable_totp
+      summary: Reset totp
+      description: Resets the totp of the given user
+    parameters:
+      - in: path
+        name: id
+        description: The id of the user
+        schema:
+          type: number
+        required: true
   /api/my/totp: 
     post: 
       summary: Enables TOTP for the current user
