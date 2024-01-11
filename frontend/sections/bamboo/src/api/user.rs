@@ -27,13 +27,9 @@ pub async fn delete_user(id: i32) -> BambooApiResult<()> {
     delete(format!("/api/user/{id}")).await
 }
 
-pub async fn change_user_password(id: i32, new_password: String) -> BambooApiResult<()> {
+pub async fn change_user_password(id: i32) -> BambooApiResult<()> {
     log::debug!("Change user {id} password");
-    put_no_content(
-        format!("/api/user/{id}/password"),
-        &ChangePassword { new_password },
-    )
-    .await
+    put_no_body_no_content(format!("/api/user/{id}/password")).await
 }
 
 pub async fn update_profile(id: i32, profile: UpdateProfile) -> BambooApiResult<()> {

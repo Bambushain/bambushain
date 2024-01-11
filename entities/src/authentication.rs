@@ -47,12 +47,6 @@ pub struct TwoFactorResult {
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 #[serde(rename_all = "camelCase")]
-pub struct ChangePassword {
-    pub new_password: String,
-}
-
-#[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
-#[serde(rename_all = "camelCase")]
 pub struct ChangeMyPassword {
     pub old_password: String,
     pub new_password: String,

@@ -35,11 +35,11 @@ async fn setup_google_playstore_user(db: &sea_orm::DatabaseConnection) -> std::i
             grove.id,
             bamboo_entities::prelude::User::new(
                 email,
-                password,
                 "Google Playstore".to_string(),
                 "google".to_string(),
                 true,
             ),
+            password,
             db,
         )
         .await

@@ -164,7 +164,7 @@ async fn user_exists_by_email_and_name(
         })
 }
 
-pub async fn create_user(grove_id: i32, user: User, db: &DatabaseConnection) -> BambooResult<User> {
+pub async fn create_user(grove_id: i32, user: User, password: String, db: &DatabaseConnection) -> BambooResult<User> {
     if user_exists_by_email_and_name(user.email.clone(), user.display_name.clone(), db).await? {
         return Err(BambooError::exists_already(
             "user",
@@ -176,7 +176,7 @@ pub async fn create_user(grove_id: i32, user: User, db: &DatabaseConnection) -> 
     model.id = NotSet;
     model.grove_id = Set(grove_id);
     model
-        .set_password(model.clone().password.as_ref())
+        .set_password(&password)
         .map_err(|err| {
             log::error!("{err}");
             BambooError::database("user", "Failed to hash password user")

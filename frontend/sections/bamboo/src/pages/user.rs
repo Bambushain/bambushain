@@ -1,8 +1,6 @@
 use std::ops::Deref;
 
 use bounce::prelude::*;
-use rand::distributions::Alphanumeric;
-use rand::Rng;
 use yew::prelude::*;
 use yew_autoprops::autoprops;
 use yew_cosmo::prelude::*;
@@ -22,7 +20,7 @@ enum UserConfirmActions {
     RemoveMod,
     DisableTotp,
     Delete,
-    ChangePassword(String),
+    ChangePassword,
     Closed,
 }
 
@@ -34,15 +32,6 @@ fn create_user_modal(on_saved: &Callback<WebUser>, on_close: &Callback<()>) -> H
     let email_state = use_state_eq(|| AttrValue::from(""));
     let display_name_state = use_state_eq(|| AttrValue::from(""));
     let discord_name_state = use_state_eq(|| AttrValue::from(""));
-    let password_state = use_state_eq(|| {
-        AttrValue::from(
-            rand::thread_rng()
-                .sample_iter(&Alphanumeric)
-                .take(8)
-                .map(char::from)
-                .collect::<String>(),
-        )
-    });
 
     let is_mod_toggle = use_bool_toggle(false);
     let unreported_error_toggle = use_bool_toggle(false);
@@ -51,7 +40,6 @@ fn create_user_modal(on_saved: &Callback<WebUser>, on_close: &Callback<()>) -> H
 
     {
         let email_state = email_state.clone();
-        let password_state = password_state.clone();
         let display_name_state = display_name_state.clone();
         let discord_name_state = discord_name_state.clone();
 
@@ -61,7 +49,6 @@ fn create_user_modal(on_saved: &Callback<WebUser>, on_close: &Callback<()>) -> H
             is_mod_toggle.set(false);
 
             email_state.set("".into());
-            password_state.set("".into());
             display_name_state.set("".into());
             discord_name_state.set("".into());
         })
@@ -69,7 +56,6 @@ fn create_user_modal(on_saved: &Callback<WebUser>, on_close: &Callback<()>) -> H
 
     let save_state = {
         let email_state = email_state.clone();
-        let password_state = password_state.clone();
         let display_name_state = display_name_state.clone();
         let discord_name_state = discord_name_state.clone();
 
@@ -78,10 +64,11 @@ fn create_user_modal(on_saved: &Callback<WebUser>, on_close: &Callback<()>) -> H
 
         let bamboo_error_state = bamboo_error_state.clone();
 
+        let on_saved = on_saved.clone();
+
         use_async(async move {
             api::create_user(User::new(
                 (*email_state).to_string(),
-                (*password_state).to_string(),
                 (*display_name_state).to_string(),
                 (*discord_name_state).to_string(),
                 *is_mod_toggle,
@@ -90,6 +77,7 @@ fn create_user_modal(on_saved: &Callback<WebUser>, on_close: &Callback<()>) -> H
             .map(|data| {
                 log::debug!("User was created successfully");
                 unreported_error_toggle.set(false);
+                on_saved.emit(data.clone());
 
                 data
             })
@@ -97,15 +85,6 @@ fn create_user_modal(on_saved: &Callback<WebUser>, on_close: &Callback<()>) -> H
                 log::warn!("Failed to create user {err}");
                 unreported_error_toggle.set(true);
                 bamboo_error_state.set(err.clone());
-
-                password_state.set(
-                    rand::thread_rng()
-                        .sample_iter(&Alphanumeric)
-                        .take(8)
-                        .map(char::from)
-                        .collect::<String>()
-                        .into(),
-                );
 
                 err
             })
@@ -134,52 +113,35 @@ fn create_user_modal(on_saved: &Callback<WebUser>, on_close: &Callback<()>) -> H
 
     let on_save = use_callback(save_state.clone(), |_, state| state.run());
 
-    let on_saved = use_callback(
-        (save_state.clone(), on_saved.clone()),
-        |_, (save_state, on_saved)| {
-            if let Some(user) = &save_state.data {
-                on_saved.emit(user.clone())
-            }
-        },
-    );
-
     html!(
         <CosmoModal title="Panda hinzufügen" is_form={true} on_form_submit={on_save} buttons={
             html!(
-                if save_state.data.is_some() {
-                    <CosmoButton on_click={on_saved} label="Alles klar" />
-                } else {
-                    <>
-                        <CosmoButton on_click={on_close.clone()} label="Abbrechen" />
-                        <CosmoButton is_submit={true} label="Panda hinzufügen" />
-                    </>
-                }
-            )}>
-            if save_state.data.is_some() {
-                <CosmoParagraph>{format!("Das Passwort für {} ist ", (*email_state).clone())}<CosmoCode>{(*password_state).clone()}</CosmoCode></CosmoParagraph>
-            } else {
                 <>
-                    if let Some(err) = &save_state.error {
-                        if err.code == FORBIDDEN {
-                            <CosmoMessage message="Du musst Mod sein um andere Pandas hinzuzufügen" message_type={CosmoMessageType::Negative} />
-                        } else if err.code == CONFLICT {
-                            <CosmoMessage message="Ein Panda mit dieser Emailadresse oder Namen ist bereits im Hain" message_type={CosmoMessageType::Negative} />
-                        } else if *unreported_error_toggle {
-                            <CosmoMessage message="Der Panda konnte leider nicht hinzugefügt werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
-                        } else {
-                            <CosmoMessage message="Der Panda konnte leider nicht hinzugefügt werden" message_type={CosmoMessageType::Negative} />
-                        }
-                    } else {
-                        <CosmoMessage message_type={CosmoMessageType::Information} header="Füge einen neuen Panda hinzu" message="Das Passwort wird angezeigt wenn der Panda erfolgreich hinzugefügt wurde" />
-                    }
-                    <CosmoInputGroup>
-                        <CosmoTextBox label="Email" value={(*email_state).clone()} on_input={update_email} required={true} />
-                        <CosmoTextBox label="Name" value={(*display_name_state).clone()} on_input={update_display_name} required={true} />
-                        <CosmoTextBox label="Discord Name (optional)" value={(*discord_name_state).clone()} on_input={update_discord_name} />
-                        <CosmoSwitch label="Moderator" on_check={update_is_mod} checked={*is_mod_toggle} />
-                    </CosmoInputGroup>
+                    <CosmoButton on_click={on_close.clone()} label="Abbrechen" />
+                    <CosmoButton is_submit={true} label="Panda hinzufügen" />
                 </>
-            }
+            )}>
+            <>
+                if let Some(err) = &save_state.error {
+                    if err.code == FORBIDDEN {
+                        <CosmoMessage message="Du musst Mod sein um andere Pandas hinzuzufügen" message_type={CosmoMessageType::Negative} />
+                    } else if err.code == CONFLICT {
+                        <CosmoMessage message="Ein Panda mit dieser Emailadresse oder Namen ist bereits im Hain" message_type={CosmoMessageType::Negative} />
+                    } else if *unreported_error_toggle {
+                        <CosmoMessage message="Der Panda konnte leider nicht hinzugefügt werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
+                    } else {
+                        <CosmoMessage message="Der Panda konnte leider nicht hinzugefügt werden" message_type={CosmoMessageType::Negative} />
+                    }
+                } else {
+                    <CosmoMessage message_type={CosmoMessageType::Information} header="Füge einen neuen Panda hinzu" message="Das Passwort wird dem Panda per Mail geschickt" />
+                }
+                <CosmoInputGroup>
+                    <CosmoTextBox label="Email" value={(*email_state).clone()} on_input={update_email} required={true} />
+                    <CosmoTextBox label="Name" value={(*display_name_state).clone()} on_input={update_display_name} required={true} />
+                    <CosmoTextBox label="Discord Name (optional)" value={(*discord_name_state).clone()} on_input={update_discord_name} />
+                    <CosmoSwitch label="Moderator" on_check={update_is_mod} checked={*is_mod_toggle} />
+                </CosmoInputGroup>
+            </>
         </CosmoModal>
     )
 }
@@ -423,25 +385,21 @@ fn user_details(user: &WebUser, on_delete: &Callback<()>, on_update: &Callback<(
         let user_id = user.id;
 
         use_async(async move {
-            if let UserConfirmActions::ChangePassword(new_password) = (*confirm_state).clone() {
-                api::change_user_password(user_id, new_password)
-                    .await
-                    .map(|_| {
-                        unreported_error_toggle.set(false);
-                        confirm_state.set(UserConfirmActions::Closed);
+            api::change_user_password(user_id)
+                .await
+                .map(|_| {
+                    unreported_error_toggle.set(false);
+                    confirm_state.set(UserConfirmActions::Closed);
 
-                        on_update.emit(())
-                    })
-                    .map_err(|err| {
-                        log::error!("Failed to change password {err}");
-                        bamboo_error_state.set(err.clone());
-                        unreported_error_toggle.set(true);
+                    on_update.emit(())
+                })
+                .map_err(|err| {
+                    log::error!("Failed to change password {err}");
+                    bamboo_error_state.set(err.clone());
+                    unreported_error_toggle.set(true);
 
-                        err
-                    })
-            } else {
-                Ok(())
-            }
+                    err
+                })
         })
     };
 
@@ -462,13 +420,7 @@ fn user_details(user: &WebUser, on_delete: &Callback<()>, on_update: &Callback<(
             profile_edit_toggle.set(true)
         });
     let change_password_click = use_callback(confirm_state.clone(), |_, state| {
-        state.set(UserConfirmActions::ChangePassword(
-            rand::thread_rng()
-                .sample_iter(&Alphanumeric)
-                .take(8)
-                .map(char::from)
-                .collect::<String>(),
-        ))
+        state.set(UserConfirmActions::ChangePassword)
     });
     let on_decline = use_callback(confirm_state.clone(), |_, state| {
         state.set(UserConfirmActions::Closed)
@@ -498,7 +450,7 @@ fn user_details(user: &WebUser, on_delete: &Callback<()>, on_update: &Callback<(
             UserConfirmActions::RemoveMod => remove_mod_state.run(),
             UserConfirmActions::DisableTotp => disable_totp_state.run(),
             UserConfirmActions::Delete => delete_state.run(),
-            UserConfirmActions::ChangePassword(_) => change_password_state.run(),
+            UserConfirmActions::ChangePassword => change_password_state.run(),
             UserConfirmActions::Closed => (),
         },
     );
@@ -625,7 +577,7 @@ fn user_details(user: &WebUser, on_delete: &Callback<()>, on_update: &Callback<(
                 UserConfirmActions::DisableTotp => html!(
                     <CosmoConfirm confirm_type={CosmoModalType::Warning} message={format!("Soll die Zwei Faktor Authentifizierung von {} wirklich deaktiviert werden?", user.display_name.clone())} title="Zwei Faktor Authentifizierung deaktivieren" on_decline={on_decline} on_confirm={on_confirm} confirm_label="Deaktivieren" decline_label="Nicht deaktivieren" />
                 ),
-                UserConfirmActions::ChangePassword(password) => {
+                UserConfirmActions::ChangePassword => {
                     html!(
                         <CosmoModal title="Passwort zurücksetzen" buttons={html!(
                             <>
@@ -633,7 +585,7 @@ fn user_details(user: &WebUser, on_delete: &Callback<()>, on_update: &Callback<(
                                 <CosmoButton on_click={on_confirm} label="Passwort zurücksetzen" />
                             </>
                         )}>
-                            <CosmoParagraph>{format!("Das neue Passwort für {} wird auf ", user.display_name)}<CosmoCode>{password}</CosmoCode>{" gesetzt."}</CosmoParagraph>
+                            <CosmoParagraph>{format!("Das neue Passwort wird {} per Mail geschickt", user.display_name)}</CosmoParagraph>
                         </CosmoModal>
                     )
                 },
