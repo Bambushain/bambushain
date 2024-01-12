@@ -5,12 +5,10 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-bamboo-frontend-base-api = { workspace = true }
-bamboo-frontend-base-error = { workspace = true }
+bamboo-frontend-base-api = { path = "../../base/api" }
+bamboo-frontend-base-error = { path = "../../base/error" }
+bamboo-entities = { path = "../../../entities" }
 
-async-trait = { workspace = true }
-bamboo-entities = { workspace = true }
-bounce = { workspace = true }
 gloo-dialogs = { workspace = true }
 log = { workspace = true }
 strum = { workspace = true }

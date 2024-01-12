@@ -1,5 +1,5 @@
-use sea_orm::prelude::*;
 use sea_orm::{NotSet, QueryOrder, Set};
+use sea_orm::prelude::*;
 
 use bamboo_entities::prelude::*;
 use bamboo_error::*;

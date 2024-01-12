@@ -6,8 +6,8 @@ license.workspace = true
 
 [dependencies]
 bamboo-frontend-base-storage = { path = "../storage" }
+bamboo-error = { path = "../../../error" }
 
-bamboo-error = { workspace = true }
 gloo-net = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true }

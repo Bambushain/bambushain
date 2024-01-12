@@ -1,9 +1,9 @@
 use std::fmt::{Display, Formatter};
 
 #[cfg(not(target_arch = "wasm32"))]
-use sea_orm::entity::prelude::*;
-#[cfg(not(target_arch = "wasm32"))]
 use sea_orm::ActiveValue::Set;
+#[cfg(not(target_arch = "wasm32"))]
+use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[cfg(not(target_arch = "wasm32"))]

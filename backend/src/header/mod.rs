@@ -1,3 +1,4 @@
+pub(crate) use self::authorization::AuthorizationHeader;
+
 mod authorization;
 
-pub(crate) use self::authorization::AuthorizationHeader;

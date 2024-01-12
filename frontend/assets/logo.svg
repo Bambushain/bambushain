@@ -1,4 +1,5 @@
-<svg fill="#ffffff" height="512px" width="512px" version="1.1" id="SvgjsSvg1000" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" xml:space="preserve">
+<svg fill="#ffffff" height="512px" width="512px" version="1.1" id="SvgjsSvg1000" xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 512 512" xml:space="preserve">
 	<g>
 		<path d="M511.094,264.722c-1.136-3.307-28.511-81.137-89.171-95.166c-30.729-7.107-63.124,3.303-96.526,30.938v-35.663
 			c6.222-2.428,10.637-8.464,10.637-15.545s-4.415-13.117-10.637-15.545V21.124c0-9.22-7.475-16.696-16.696-16.696h-89.595
@@ -20,4 +21,5 @@
 			h56.204V474.18z M292.005,341.687h-56.204V165.981h56.204V341.687z M292.005,132.589h-56.204v-94.77h56.204V132.589z
 			 M361.327,215.325c19.184-12.489,36.925-16.945,52.99-13.256c19.207,4.408,34.299,19.645,45.106,35.114
 			C423.36,224.901,387.642,218.575,361.327,215.325z"></path>
-</g><style>:root {padding: 1rem;box-sizing:border-box;}</style></svg>
+</g>
+    <style>:root {padding: 1rem;box-sizing:border-box;}</style></svg>

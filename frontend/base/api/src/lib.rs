@@ -2,11 +2,10 @@ use std::convert::Into;
 use std::fmt::{Debug, Display, Formatter};
 
 use gloo_net::http::{Request, Response};
-use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
+use serde::de::DeserializeOwned;
 
 use bamboo_error::*;
-
 use bamboo_frontend_base_storage::get_token;
 
 macro_rules! error_code {

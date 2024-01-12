@@ -5,11 +5,11 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-bamboo-frontend-base-api = { workspace = true }
-bamboo-frontend-base-routing = { workspace = true }
-bamboo-frontend-base-storage = { workspace = true }
+bamboo-frontend-base-api = { path = "../../base/api" }
+bamboo-frontend-base-routing = { path = "../../base/routing" }
+bamboo-frontend-base-storage = { path = "../../base/storage" }
+bamboo-entities = { path = "../../../entities" }
 
-bamboo-entities = { workspace = true }
 either = { workspace = true }
 log = { workspace = true }
 stylist = { workspace = true }

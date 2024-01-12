@@ -1,19 +1,20 @@
+use std::cmp::Ordering;
+
 #[cfg(not(target_arch = "wasm32"))]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::cmp::Ordering;
 
 #[cfg(not(target_arch = "wasm32"))]
 use bamboo_macros::*;
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Default)]
 #[cfg_attr(
-    not(target_arch = "wasm32"),
-    derive(DeriveEntityModel, Responder),
-    sea_orm(
-        table_name = "custom_character_field_option",
-        schema_name = "final_fantasy"
-    )
+not(target_arch = "wasm32"),
+derive(DeriveEntityModel, Responder),
+sea_orm(
+table_name = "custom_character_field_option",
+schema_name = "final_fantasy"
+)
 )]
 #[serde(rename_all = "camelCase")]
 pub struct Model {
@@ -40,11 +41,11 @@ impl Ord for Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::custom_character_field::Entity",
-        from = "Column::CustomCharacterFieldId",
-        to = "super::custom_character_field::Column::Id",
-        on_update = "Cascade",
-        on_delete = "Cascade"
+    belongs_to = "super::custom_character_field::Entity",
+    from = "Column::CustomCharacterFieldId",
+    to = "super::custom_character_field::Column::Id",
+    on_update = "Cascade",
+    on_delete = "Cascade"
     )]
     CustomCharacterField,
 }

@@ -2,7 +2,7 @@ use actix_web::{body, dev, web, Error, HttpMessage};
 use actix_web_lab::middleware::Next;
 
 use bamboo_dbal::prelude::dbal;
-use bamboo_entities::prelude::*;
+use bamboo_entities::prelude as entities;
 use bamboo_services::prelude::DbConnection;
 
 use crate::header;
@@ -33,5 +33,5 @@ macro_rules! character {
     };
 }
 
+pub(crate) type CharacterData = web::ReqData<entities::Character>;
 pub(crate) use character;
-pub(crate) type CharacterData = web::ReqData<Character>;

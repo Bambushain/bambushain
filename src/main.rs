@@ -100,7 +100,7 @@ fn main() -> std::io::Result<()> {
         if groves.is_empty()
             || groves
                 .iter()
-                .filter(|grove| grove.name == "Google".to_string())
+                .filter(|grove| grove.name == *"Google")
                 .count()
                 == groves.len()
         {

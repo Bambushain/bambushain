@@ -1,7 +1,7 @@
+use lettre::{AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor};
 use lettre::message::{MessageBuilder, MultiPart};
 use lettre::transport::smtp;
 use lettre::transport::smtp::client::TlsParameters;
-use lettre::{AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor};
 
 use bamboo_error::*;
 use bamboo_services::prelude::EnvService;
@@ -19,11 +19,11 @@ fn get_transport(
     } else {
         AsyncSmtpTransport::<Tokio1Executor>::relay(mail_server.as_str())
     }
-    .map_err(|err| {
-        log::error!("Failed to create the email builder {err}");
+        .map_err(|err| {
+            log::error!("Failed to create the email builder {err}");
 
-        BambooError::mailing("Failed to create the email builder")
-    })?;
+            BambooError::mailing("Failed to create the email builder")
+        })?;
 
     let port = env_service
         .get_env("MAILER_PORT", "25")

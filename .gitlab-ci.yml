@@ -1,133 +1,133 @@
-.base-frontend-cache: 
-  variables: 
+.base-frontend-cache:
+  variables:
     CARGO_HOME: $CI_PROJECT_DIR/.cargo
-  cache: 
+  cache:
     key: $CI_PROJECT_NAME-frontend
-    paths: 
+    paths:
       - $CI_PROJECT_DIR/dist/
       - $CI_PROJECT_DIR/frontend/target/
       - $CI_PROJECT_DIR/.cargo/
       - $CI_PROJECT_DIR/frontend/Cargo.lock
 
-.base-backend-cache: 
-  variables: 
+.base-backend-cache:
+  variables:
     CARGO_HOME: $CI_PROJECT_DIR/.cargo
-  cache: 
+  cache:
     key: $CI_PROJECT_NAME-backend
-    paths: 
+    paths:
       - $CI_PROJECT_DIR/target/
       - $CI_PROJECT_DIR/.cargo/
       - $CI_PROJECT_DIR/Cargo.lock
 
-.base-trunk: 
-  extends: 
+.base-trunk:
+  extends:
     - .base-frontend-cache
-  image: 
+  image:
     name: registry.ulbricht.casa/docker-images/trunk-docker-base-image:latest
     pull_policy: always
 
-.base-kaniko: 
-  image: 
+.base-kaniko:
+  image:
     name: gcr.io/kaniko-project/executor:debug
     pull_policy: always
-    entrypoint: [""]
-  before_script: 
+    entrypoint: [ "" ]
+  before_script:
     - echo "{\"auths\":{\"${CI_REGISTRY}\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"},\"https://index.docker.io/v1/\":{\"auth\":\"$DOCKER_TOKEN\"}}}" > /kaniko/.docker/config.json
 
-stages: 
+stages:
   - lint
   - build
   - deploy
 
-lint-backend: 
+lint-backend:
   stage: lint
-  image: 
+  image:
     name: registry.ulbricht.casa/docker-images/rust-docker-base-image:latest
     pull_policy: always
-  extends: 
+  extends:
     - .base-backend-cache
-  script: 
+  script:
     - cargo clippy --release
 
-lint-frontend: 
+lint-frontend:
   stage: lint
-  extends: 
+  extends:
     - .base-trunk
-  script: 
+  script:
     - cd frontend
     - cargo clippy --release
-  artifacts: 
-    paths: 
+  artifacts:
+    paths:
       - dist
 
-build-backend: 
+build-backend:
   stage: build
-  image: 
+  image:
     name: registry.ulbricht.casa/docker-images/rust-docker-base-image:latest
     pull_policy: always
-  extends: 
+  extends:
     - .base-backend-cache
-  script: 
+  script:
     - cargo build --release
-  needs: 
+  needs:
     - lint-backend
-  artifacts: 
-    paths: 
+  artifacts:
+    paths:
       - target/release/bamboo
 
-build-frontend: 
+build-frontend:
   stage: build
-  extends: 
+  extends:
     - .base-trunk
-  script: 
+  script:
     - cd frontend
     - trunk build --release
-  needs: 
+  needs:
     - lint-frontend
-  artifacts: 
-    paths: 
+  artifacts:
+    paths:
       - dist
 
-docker-build: 
+docker-build:
   stage: deploy
-  variables: 
+  variables:
     SENTRY_RELEASE: $CI_COMMIT_TAG
-  extends: 
+  extends:
     - .base-kaniko
-  script: 
+  script:
     - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/Dockerfile" --destination "${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}" --destination "${CI_REGISTRY_IMAGE}:latest"
-  needs: 
+  needs:
     - build-backend
     - build-frontend
-  rules: 
+  rules:
     - if: $CI_COMMIT_TAG
-      exists: 
+      exists:
         - Dockerfile
 
-docker-build-testing: 
+docker-build-testing:
   stage: deploy
-  variables: 
+  variables:
     SENTRY_RELEASE: $CI_COMMIT_BRANCH
-  extends: 
+  extends:
     - .base-kaniko
-  script: 
+  script:
     - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/Dockerfile" --destination "${CI_REGISTRY_IMAGE}:1.7.0-test-$CI_PIPELINE_IID"
-  needs: 
+  needs:
     - build-backend
     - build-frontend
-  rules: 
+  rules:
     - if: $CI_COMMIT_BRANCH == "main"
-      exists: 
+      exists:
         - Dockerfile
 
-pages: 
+pages:
   image: library/node:latest
   stage: deploy
-  script: 
+  script:
     - cp -r docs public
     - echo "/* /index.html 200" > public/_redirects
-  artifacts: 
-    paths: 
+  artifacts:
+    paths:
       - public
-  rules: 
+  rules:
     - if: $CI_COMMIT_BRANCH == "main"

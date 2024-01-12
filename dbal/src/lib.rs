@@ -1,5 +1,5 @@
-use chacha20poly1305::aead::{Aead, OsRng};
 use chacha20poly1305::{AeadCore, ChaCha20Poly1305, Key, KeyInit, Nonce};
+use chacha20poly1305::aead::{Aead, OsRng};
 use pbkdf2::hmac::Hmac;
 use sha2::Sha512;
 
@@ -43,7 +43,7 @@ fn get_passphrase(passphrase: &[u8]) -> BambooResult<Key> {
         12,
         &mut key,
     )
-    .map_err(|_| BambooError::crypto("encryption", "Failed to create pbkdf2 key"))?;
+        .map_err(|_| BambooError::crypto("encryption", "Failed to create pbkdf2 key"))?;
 
     Ok(Key::from(key))
 }

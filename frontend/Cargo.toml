@@ -27,34 +27,21 @@ license = "MIT"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bamboo-frontend-base-routing = { workspace = true }
-bamboo-frontend-base-storage = { workspace = true }
-bamboo-frontend-section-layout = { workspace = true }
+bamboo-frontend-base-routing = { path = "base/routing" }
+bamboo-frontend-base-storage = { path = "base/storage" }
+bamboo-frontend-section-layout = { path = "sections/layout" }
 
+console_log = { workspace = true }
 log = { workspace = true }
-wasm-logger = { workspace = true }
 yew = { workspace = true }
 yew-cosmo = { workspace = true }
 yew-router = { workspace = true }
 
 [workspace.dependencies]
-bamboo-entities = { path = "../entities" }
-bamboo-error = { path = "../error" }
-bamboo-frontend-base-api = { path = "base/api" }
-bamboo-frontend-base-error = { path = "base/error" }
-bamboo-frontend-base-routing = { path = "base/routing" }
-bamboo-frontend-base-storage = { path = "base/storage" }
-bamboo-frontend-section-authentication = { path = "sections/authentication" }
-bamboo-frontend-section-bamboo = { path = "sections/bamboo" }
-bamboo-frontend-section-final-fantasy = { path = "sections/final-fantasy" }
-bamboo-frontend-section-layout = { path = "sections/layout" }
-bamboo-frontend-section-legal = { path = "sections/legal" }
-bamboo-frontend-section-licenses = { path = "sections/licenses" }
-bamboo-frontend-section-support = { path = "sections/support" }
-
 async-trait = "0.1.74"
 bounce = { version = "0.9.0", features = ["query", "helmet"] }
 chrono = { version = "0.4.31", features = ["serde", "unstable-locales"] }
+console_log = { version = "1.0.0", features = ["color"] }
 date-range = "0.3.0"
 either = "1.9.0"
 futures = "0.3.29"
@@ -70,7 +57,6 @@ serde_json = "1.0.108"
 strum = "0.25.0"
 stylist = { version = "0.13.0", features = ["yew"] }
 wasm-bindgen = "0.2.89"
-wasm-logger = "0.2.0"
 web-sys = "0.3.66"
 yew = { version = "0.21.0", features = ["csr", "hydration"] }
 yew-autoprops = "0.4.1"
@@ -90,6 +76,6 @@ panic = "abort"
 codegen-units = 1
 # optimization for size ( more aggressive )
 opt-level = "z"
-# link time optimization using using whole-program analysis
+# link time optimization using whole-program analysis
 lto = true
 strip = "symbols"

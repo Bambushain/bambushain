@@ -1,14 +1,14 @@
 version: 2
-updates: 
+updates:
   - package-ecosystem: cargo
     directory: /
-    schedule: 
+    schedule:
       interval: daily
   - package-ecosystem: cargo
     directory: /frontend
-    schedule: 
+    schedule:
       interval: daily
   - package-ecosystem: docker
     directory: /
-    schedule: 
+    schedule:
       interval: weekly

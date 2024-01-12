@@ -79,7 +79,7 @@ fn main() {
         dest_path,
         serde_json::to_string(&dep_entities).unwrap().as_bytes(),
     )
-    .unwrap();
+        .unwrap();
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=../Cargo.toml");
     println!("cargo:rerun-if-changed=../Cargo.lock");

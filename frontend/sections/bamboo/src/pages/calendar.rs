@@ -36,7 +36,7 @@ impl ToString for ColorYiqResult {
             ColorYiqResult::Light => "#ffffff",
             ColorYiqResult::Dark => "#333333",
         }
-            .to_string()
+        .to_string()
     }
 }
 
@@ -192,18 +192,18 @@ fn add_event_dialog(
                 *color_state,
                 *is_private_state,
             ))
-                .await
-                .map(|evt| {
-                    on_added.emit(evt);
-                    unreported_error_toggle.set(false)
-                })
-                .map_err(|err| {
-                    log::error!("Failed to create event {err}");
-                    unreported_error_toggle.set(true);
-                    bamboo_error_state.set(err.clone());
+            .await
+            .map(|evt| {
+                on_added.emit(evt);
+                unreported_error_toggle.set(false)
+            })
+            .map_err(|err| {
+                log::error!("Failed to create event {err}");
+                unreported_error_toggle.set(true);
+                bamboo_error_state.set(err.clone());
 
-                    err
-                })
+                err
+            })
         })
     };
 
@@ -714,7 +714,11 @@ fn calendar_data(date: &NaiveDate) -> Html {
     };
 
     let event_created = use_callback(
-        (events_list.clone(), calendar_start_date.clone(), calendar_end_date.clone()),
+        (
+            events_list.clone(),
+            calendar_start_date.clone(),
+            calendar_end_date.clone(),
+        ),
         |event: Event, (events_list, since, until)| {
             log::debug!(
                 "Someone created a new event, adding it to the list if it is in current range"
@@ -729,7 +733,11 @@ fn calendar_data(date: &NaiveDate) -> Html {
         },
     );
     let event_updated = use_callback(
-        (events_list.clone(), calendar_start_date.clone(), calendar_end_date.clone()),
+        (
+            events_list.clone(),
+            calendar_start_date.clone(),
+            calendar_end_date.clone(),
+        ),
         |event: Event, (events_list, since, until)| {
             log::debug!("Someone updated an event, if we have it loaded, lets update it");
             log::debug!("Got event {event:?}");
@@ -825,14 +833,17 @@ fn calendar_data(date: &NaiveDate) -> Html {
             events_state.run();
         })
     }
-    use_effect_update_with_deps(|(date_state, date, events_state)| {
-        if *date != **date_state {
-            events_state.run();
-            date_state.set(*date);
-        }
+    use_effect_update_with_deps(
+        |(date_state, date, events_state)| {
+            if *date != **date_state {
+                events_state.run();
+                date_state.set(*date);
+            }
 
-        || ()
-    }, (date_state.clone(), date.clone(), events_state.clone()));
+            || ()
+        },
+        (date_state.clone(), date.clone(), events_state.clone()),
+    );
 
     let events_for_day = {
         move |day: NaiveDate| {

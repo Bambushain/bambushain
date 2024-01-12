@@ -1,5 +1,4 @@
 use bamboo_entities::prelude::*;
-
 use bamboo_frontend_base_api as api;
 use bamboo_frontend_base_storage as storage;
 

@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
-use actix_web::{web, Responder};
+use actix_web::{Responder, web};
+
 use bamboo_entities::prelude::Event;
 
 #[derive(Clone)]

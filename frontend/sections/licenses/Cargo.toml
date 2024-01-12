@@ -5,8 +5,8 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-bamboo-entities = { workspace = true }
-bamboo-frontend-base-api = { workspace = true }
+bamboo-frontend-base-api = { path = "../../base/api" }
+bamboo-entities = { path = "../../../entities" }
 
 chrono = { workspace = true }
 log = { workspace = true }

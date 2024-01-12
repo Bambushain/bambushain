@@ -3,23 +3,23 @@ use std::cmp::Ordering;
 #[cfg(not(target_arch = "wasm32"))]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
-#[cfg(not(not(target_arch = "wasm32")))]
-use strum_macros::EnumIter;
 
 #[cfg(not(target_arch = "wasm32"))]
 use bamboo_macros::*;
+#[cfg(not(not(target_arch = "wasm32")))]
+use strum_macros::EnumIter;
 
 use crate::prelude::{CustomField, FreeCompany};
 
 #[derive(Serialize, Deserialize, EnumIter, Debug, Eq, PartialEq, Clone, Default, Copy)]
 #[cfg_attr(
-    not(target_arch = "wasm32"),
-    derive(DeriveActiveEnum),
-    sea_orm(
-        rs_type = "String",
-        db_type = "Enum",
-        enum_name = "final_fantasy.character_race"
-    )
+not(target_arch = "wasm32"),
+derive(DeriveActiveEnum),
+sea_orm(
+rs_type = "String",
+db_type = "Enum",
+enum_name = "final_fantasy.character_race"
+)
 )]
 pub enum CharacterRace {
     #[default]
@@ -53,7 +53,7 @@ impl CharacterRace {
             Self::Hrothgar => "hrothgar",
             Self::Viera => "viera",
         }
-        .to_string()
+            .to_string()
     }
 }
 
@@ -81,7 +81,7 @@ impl ToString for CharacterRace {
             Self::Hrothgar => "Hrothgar",
             Self::Viera => "Viera",
         }
-        .to_string()
+            .to_string()
     }
 }
 
@@ -103,9 +103,9 @@ impl From<String> for CharacterRace {
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 #[cfg_attr(
-    not(target_arch = "wasm32"),
-    derive(DeriveEntityModel, Responder),
-    sea_orm(table_name = "character", schema_name = "final_fantasy")
+not(target_arch = "wasm32"),
+derive(DeriveEntityModel, Responder),
+sea_orm(table_name = "character", schema_name = "final_fantasy")
 )]
 #[serde(rename_all = "camelCase")]
 pub struct Model {
@@ -130,19 +130,19 @@ pub struct Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::user::Entity",
-        from = "Column::UserId",
-        to = "super::user::Column::Id",
-        on_update = "Cascade",
-        on_delete = "Cascade"
+    belongs_to = "super::user::Entity",
+    from = "Column::UserId",
+    to = "super::user::Column::Id",
+    on_update = "Cascade",
+    on_delete = "Cascade"
     )]
     User,
     #[sea_orm(
-        belongs_to = "super::free_company::Entity",
-        from = "Column::FreeCompanyId",
-        to = "super::free_company::Column::Id",
-        on_update = "Cascade",
-        on_delete = "Cascade"
+    belongs_to = "super::free_company::Entity",
+    from = "Column::FreeCompanyId",
+    to = "super::free_company::Column::Id",
+    on_update = "Cascade",
+    on_delete = "Cascade"
     )]
     FreeCompany,
     #[sea_orm(has_many = "super::custom_character_field_value::Entity")]

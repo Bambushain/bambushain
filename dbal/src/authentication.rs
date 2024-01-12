@@ -29,7 +29,7 @@ pub async fn create_google_auth_token(
         return Err(BambooError::unauthorized("user", "Invalid login data"));
     }
 
-    let result = bamboo_entities::token::ActiveModel {
+    token::ActiveModel {
         id: NotSet,
         token: Set(uuid::Uuid::new_v4().to_string()),
         user_id: Set(user.id),
@@ -43,8 +43,7 @@ pub async fn create_google_auth_token(
     .map_err(|err| {
         log::error!("{err}");
         BambooError::database("token", "Failed to create token")
-    });
-    result
+    })
 }
 
 pub async fn validate_auth_and_create_token(

@@ -5,18 +5,17 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-bamboo-frontend-base-api = { workspace = true }
-bamboo-frontend-base-error = { workspace = true }
-bamboo-frontend-base-storage = { workspace = true }
+bamboo-frontend-base-api = { path = "../../base/api" }
+bamboo-frontend-base-error = { path = "../../base/error" }
+bamboo-frontend-base-storage = { path = "../../base/storage" }
+bamboo-entities = { path = "../../../entities" }
 
-bamboo-entities = { workspace = true }
 bounce = { workspace = true }
 chrono = { workspace = true }
 date-range = { workspace = true }
 futures = { workspace = true }
 gloo-events = { workspace = true }
 log = { workspace = true }
-rand = { workspace = true }
 serde_json = { workspace = true }
 stylist = { workspace = true }
 wasm-bindgen = { workspace = true }

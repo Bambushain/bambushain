@@ -1,6 +1,6 @@
 use date_range::DateRange;
-use sea_orm::prelude::*;
 use sea_orm::{Condition, IntoActiveModel, NotSet, QueryOrder, Set};
+use sea_orm::prelude::*;
 
 use bamboo_entities::event;
 use bamboo_entities::prelude::*;

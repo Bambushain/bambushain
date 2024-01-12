@@ -1,4 +1,3 @@
-use bamboo_frontend_base_routing::LegalRoute;
 use stylist::yew::use_style;
 use yew::prelude::*;
 use yew_cosmo::prelude::*;
@@ -8,6 +7,7 @@ use yew_router::hooks::use_navigator;
 
 use bamboo_entities::prelude::{ForgotPassword, Login};
 use bamboo_frontend_base_routing::AppRoute;
+use bamboo_frontend_base_routing::LegalRoute;
 use bamboo_frontend_base_storage as storage;
 
 use crate::api;

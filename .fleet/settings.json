@@ -1,29 +1,29 @@
 {
-    "plugins": [
-        {
-            "type": "add",
-            "pluginName": "fleet.rust"
-        },
-        {
-            "type": "add",
-            "pluginName": "fleet.toml"
-        },
-        {
-            "type": "add",
-            "pluginName": "fleet.yaml"
-        },
-        {
-            "type": "add",
-            "pluginName": "fleet.image.view"
-        },
-        {
-            "type": "add",
-            "pluginName": "fleet.docker"
-        }
-    ],
-    "editor.formatOnSave": true,
-    "rust-analyzer.check.command": "clippy",
-    "rust-analyzer.inlayHints.closureReturnTypeHints.enable": "suffix",
-    "autoSave": true,
-    "autoSave.delay": 0,
+  "plugins": [
+    {
+      "type": "add",
+      "pluginName": "fleet.rust"
+    },
+    {
+      "type": "add",
+      "pluginName": "fleet.toml"
+    },
+    {
+      "type": "add",
+      "pluginName": "fleet.yaml"
+    },
+    {
+      "type": "add",
+      "pluginName": "fleet.image.view"
+    },
+    {
+      "type": "add",
+      "pluginName": "fleet.docker"
+    }
+  ],
+  "editor.formatOnSave": true,
+  "rust-analyzer.check.command": "clippy",
+  "rust-analyzer.inlayHints.closureReturnTypeHints.enable": "suffix",
+  "autoSave": true,
+  "autoSave.delay": 0
 }

@@ -1,4 +1,4 @@
+pub use pages::layout::*;
+
 mod api;
 pub mod pages;
-
-pub use pages::layout::*;

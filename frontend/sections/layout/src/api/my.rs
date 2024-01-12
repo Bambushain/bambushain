@@ -1,5 +1,4 @@
 use bamboo_entities::prelude::*;
-
 use bamboo_frontend_base_api as api;
 
 pub async fn change_my_password(

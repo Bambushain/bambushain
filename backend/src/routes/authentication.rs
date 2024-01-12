@@ -1,4 +1,4 @@
-use actix_web::{cookie::Cookie, delete, post, web, HttpResponse};
+use actix_web::{cookie::Cookie, delete, HttpResponse, post, web};
 
 use bamboo_dbal::prelude::*;
 use bamboo_entities::prelude::*;
@@ -47,14 +47,14 @@ Alles Gute vom 🐼"#
         plain_body,
         html_body,
     )
-    .await
-    .map_err(|err| {
-        log::error!("Failed to send email {err}");
-        log::error!("{err:#?}");
+        .await
+        .map_err(|err| {
+            log::error!("Failed to send email {err}");
+            log::error!("{err:#?}");
 
-        BambooError::unauthorized("user", "Login data is invalid")
-    })
-    .map(|_| no_content!())
+            BambooError::unauthorized("user", "Login data is invalid")
+        })
+        .map(|_| no_content!())
 }
 
 async fn send_forgot_passwod_mail(
@@ -95,11 +95,11 @@ Alles Gute vom 🐼"#
         plain_body,
         html_body,
     )
-    .await
-    .map_err(|err| {
-        log::error!("Failed to send email {err}");
-        log::error!("{err:#?}");
-    });
+        .await
+        .map_err(|err| {
+            log::error!("Failed to send email {err}");
+            log::error!("{err:#?}");
+        });
 }
 
 #[post("/api/login")]
@@ -125,7 +125,7 @@ pub async fn login(
                         .http_only(true)
                         .finish(),
                 );
-             response
+                response
             })
     } else if let Some(two_factor_code) = body.two_factor_code.clone() {
         dbal::validate_auth_and_create_token(
@@ -134,33 +134,33 @@ pub async fn login(
             two_factor_code,
             &db,
         )
-        .await
-        .map_err(|err| {
-            log::error!("Failed to login {err}");
-            BambooError::unauthorized("user", "Login data is invalid")
-        })
-        .map(|data| {
-            let mut response = list!(data.clone());
-            let _ = response.add_cookie(
-                &Cookie::build(crate::cookie::BAMBOO_AUTH_COOKIE, data.token.clone())
-                    .path("/")
-                    .http_only(true)
-                    .finish(),
-            );
+            .await
+            .map_err(|err| {
+                log::error!("Failed to login {err}");
+                BambooError::unauthorized("user", "Login data is invalid")
+            })
+            .map(|data| {
+                let mut response = list!(data.clone());
+                let _ = response.add_cookie(
+                    &Cookie::build(crate::cookie::BAMBOO_AUTH_COOKIE, data.token.clone())
+                        .path("/")
+                        .http_only(true)
+                        .finish(),
+                );
 
-            response
-        })
+                response
+            })
     } else {
         let data = dbal::validate_auth_and_set_two_factor_code(
             body.email.clone(),
             body.password.clone(),
             &db,
         )
-        .await
-        .map_err(|err| {
-            log::error!("Failed to login {err}");
-            BambooError::unauthorized("user", "Login data is invalid")
-        })?;
+            .await
+            .map_err(|err| {
+                log::error!("Failed to login {err}");
+                BambooError::unauthorized("user", "Login data is invalid")
+            })?;
         if let Some(two_factor_code) = data.two_factor_code {
             send_two_factor_mail(
                 data.user.display_name,
@@ -168,8 +168,8 @@ pub async fn login(
                 two_factor_code,
                 env_service,
             )
-            .await
-            .map(|_| no_content!())
+                .await
+                .map(|_| no_content!())
         } else {
             Ok(no_content!())
         }
@@ -192,7 +192,7 @@ pub async fn forgot_password(
                         bamboo_mod.email.clone(),
                         env_service.clone(),
                     )
-                    .await
+                        .await
                 }
             }
         }

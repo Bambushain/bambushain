@@ -13,7 +13,6 @@ bamboo-services = { path = "services" }
 
 actix-web = { workspace = true }
 log = { workspace = true }
-rand = { workspace = true }
 sea-orm = { workspace = true }
 sentry = { workspace = true }
 sentry-actix = { workspace = true }

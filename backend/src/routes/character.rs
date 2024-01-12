@@ -20,8 +20,8 @@ pub async fn get_characters(
 }
 
 #[get(
-    "/api/final-fantasy/character/{character_id}",
-    wrap = "authenticate!()"
+"/api/final-fantasy/character/{character_id}",
+wrap = "authenticate!()"
 )]
 pub async fn get_character(
     path: Option<path::CharacterPath>,
@@ -49,8 +49,8 @@ pub async fn create_character(
 }
 
 #[put(
-    "/api/final-fantasy/character/{character_id}",
-    wrap = "authenticate!()"
+"/api/final-fantasy/character/{character_id}",
+wrap = "authenticate!()"
 )]
 pub async fn update_character(
     body: Option<web::Json<Character>>,
@@ -67,13 +67,13 @@ pub async fn update_character(
         body.into_inner(),
         &db,
     )
-    .await
-    .map(|_| no_content!())
+        .await
+        .map(|_| no_content!())
 }
 
 #[delete(
-    "/api/final-fantasy/character/{character_id}",
-    wrap = "authenticate!()"
+"/api/final-fantasy/character/{character_id}",
+wrap = "authenticate!()"
 )]
 pub async fn delete_character(
     path: Option<path::CharacterPath>,

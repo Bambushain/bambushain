@@ -1,5 +1,5 @@
-use sea_orm::prelude::*;
 use sea_orm::{IntoActiveModel, NotSet};
+use sea_orm::prelude::*;
 
 use bamboo_entities::prelude::*;
 use bamboo_error::*;
@@ -68,30 +68,30 @@ pub async fn migrate_between_groves(
     } else {
         user::Entity::update_many().filter(user::Column::GroveId.is_null())
     }
-    .col_expr(user::Column::GroveId, Expr::value(new_grove_id))
-    .exec(db)
-    .await
-    .map_err(|err| {
-        log::error!(
+        .col_expr(user::Column::GroveId, Expr::value(new_grove_id))
+        .exec(db)
+        .await
+        .map_err(|err| {
+            log::error!(
             "Failed to migrate users from grove {old_grove_id:?} to {new_grove_id} grove {err}"
         );
-        BambooError::database("grove", "Failed to create grove")
-    })
-    .map(|_| ())?;
+            BambooError::database("grove", "Failed to create grove")
+        })
+        .map(|_| ())?;
 
     if let Some(id) = old_grove_id {
         event::Entity::update_many().filter(event::Column::GroveId.eq(id))
     } else {
         event::Entity::update_many().filter(event::Column::GroveId.is_null())
     }
-    .col_expr(event::Column::GroveId, Expr::value(new_grove_id))
-    .exec(db)
-    .await
-    .map_err(|err| {
-        log::error!(
+        .col_expr(event::Column::GroveId, Expr::value(new_grove_id))
+        .exec(db)
+        .await
+        .map_err(|err| {
+            log::error!(
             "Failed to migrate events from grove {old_grove_id:?} to {new_grove_id} grove {err}"
         );
-        BambooError::database("grove", "Failed to create grove")
-    })
-    .map(|_| ())
+            BambooError::database("grove", "Failed to create grove")
+        })
+        .map(|_| ())
 }

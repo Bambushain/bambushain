@@ -1,16 +1,16 @@
 use actix_web::{delete, get, post, put, web};
 use rand::distributions::Alphanumeric;
+use rand::Rng;
 
 use bamboo_dbal::prelude::dbal;
 use bamboo_entities::prelude::*;
 use bamboo_error::*;
 use bamboo_services::prelude::{DbConnection, EnvService};
-use rand::Rng;
 
+use crate::{mailing, path};
 use crate::middleware::authenticate_user::{authenticate, Authentication};
 use crate::middleware::check_mod::is_mod;
-use crate::middleware::identify_grove::{grove, CurrentGrove};
-use crate::{mailing, path};
+use crate::middleware::identify_grove::{CurrentGrove, grove};
 use crate::response::macros::*;
 
 fn get_random_password() -> String {

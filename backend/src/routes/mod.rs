@@ -1,3 +1,9 @@
+use actix_web::{HttpResponse, web};
+
+use bamboo_services::prelude::{EnvironmentService, EnvService};
+
+use crate::middleware::authenticate_user::authenticate;
+
 mod authentication;
 mod character;
 mod character_housing;
@@ -10,12 +16,6 @@ mod licenses;
 mod my;
 mod support;
 mod user;
-
-use actix_web::{web, HttpResponse};
-
-use bamboo_services::prelude::{EnvService, EnvironmentService};
-
-use crate::middleware::authenticate_user::authenticate;
 
 pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     let environment_service = EnvService::new(EnvironmentService::new());

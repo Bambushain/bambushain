@@ -6,7 +6,7 @@ license.workspace = true
 
 [dependencies]
 bamboo-frontend-base-api = { path = "../api" }
+bamboo-entities = { path = "../../../entities" }
 
-bamboo-entities = { workspace = true }
 gloo-utils = { workspace = true }
 yew = { workspace = true }

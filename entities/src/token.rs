@@ -7,9 +7,9 @@ use bamboo_macros::*;
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 #[cfg_attr(
-    not(target_arch = "wasm32"),
-    derive(DeriveEntityModel, Responder),
-    sea_orm(table_name = "token", schema_name = "authentication")
+not(target_arch = "wasm32"),
+derive(DeriveEntityModel, Responder),
+sea_orm(table_name = "token", schema_name = "authentication")
 )]
 #[serde(rename_all = "camelCase")]
 pub struct Model {
@@ -25,11 +25,11 @@ pub struct Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::user::Entity",
-        from = "Column::UserId",
-        to = "super::user::Column::Id",
-        on_update = "Cascade",
-        on_delete = "Cascade"
+    belongs_to = "super::user::Entity",
+    from = "Column::UserId",
+    to = "super::user::Column::Id",
+    on_update = "Cascade",
+    on_delete = "Cascade"
     )]
     User,
 }

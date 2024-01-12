@@ -1,11 +1,11 @@
-use sea_orm::sea_query::Expr;
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
+use sea_orm::sea_query::Expr;
 
 use bamboo_entities::prelude::*;
 use bamboo_error::*;
 
-use crate::prelude::dbal;
 use crate::{decrypt_string, encrypt_string};
+use crate::prelude::dbal;
 
 pub async fn change_my_password(
     id: i32,

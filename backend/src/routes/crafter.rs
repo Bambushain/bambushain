@@ -11,9 +11,9 @@ use crate::path;
 use crate::response::macros::*;
 
 #[get(
-    "/api/final-fantasy/character/{character_id}/crafter",
-    wrap = "authenticate!()",
-    wrap = "character!()"
+"/api/final-fantasy/character/{character_id}/crafter",
+wrap = "authenticate!()",
+wrap = "character!()"
 )]
 pub async fn get_crafters(
     authentication: Authentication,
@@ -26,9 +26,9 @@ pub async fn get_crafters(
 }
 
 #[get(
-    "/api/final-fantasy/character/{character_id}/crafter/{crafter_id}",
-    wrap = "authenticate!()",
-    wrap = "character!()"
+"/api/final-fantasy/character/{character_id}/crafter/{crafter_id}",
+wrap = "authenticate!()",
+wrap = "character!()"
 )]
 pub async fn get_crafter(
     path: Option<path::CrafterPath>,
@@ -44,9 +44,9 @@ pub async fn get_crafter(
 }
 
 #[post(
-    "/api/final-fantasy/character/{character_id}/crafter",
-    wrap = "authenticate!()",
-    wrap = "character!()"
+"/api/final-fantasy/character/{character_id}/crafter",
+wrap = "authenticate!()",
+wrap = "character!()"
 )]
 pub async fn create_crafter(
     body: Option<web::Json<Crafter>>,
@@ -62,9 +62,9 @@ pub async fn create_crafter(
 }
 
 #[put(
-    "/api/final-fantasy/character/{character_id}/crafter/{crafter_id}",
-    wrap = "authenticate!()",
-    wrap = "character!()"
+"/api/final-fantasy/character/{character_id}/crafter/{crafter_id}",
+wrap = "authenticate!()",
+wrap = "character!()"
 )]
 pub async fn update_crafter(
     body: Option<web::Json<Crafter>>,
@@ -83,14 +83,14 @@ pub async fn update_crafter(
         body.into_inner(),
         &db,
     )
-    .await
-    .map(|_| no_content!())
+        .await
+        .map(|_| no_content!())
 }
 
 #[delete(
-    "/api/final-fantasy/character/{character_id}/crafter/{crafter_id}",
-    wrap = "authenticate!()",
-    wrap = "character!()"
+"/api/final-fantasy/character/{character_id}/crafter/{crafter_id}",
+wrap = "authenticate!()",
+wrap = "character!()"
 )]
 pub async fn delete_crafter(
     path: Option<path::CrafterPath>,

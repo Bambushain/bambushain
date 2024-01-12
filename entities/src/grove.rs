@@ -7,9 +7,9 @@ use bamboo_macros::*;
 
 #[derive(Serialize, Deserialize, Debug, Eq, Ord, PartialOrd, PartialEq, Clone, Default)]
 #[cfg_attr(
-    not(target_arch = "wasm32"),
-    derive(DeriveEntityModel, Responder),
-    sea_orm(table_name = "grove", schema_name = "grove")
+not(target_arch = "wasm32"),
+derive(DeriveEntityModel, Responder),
+sea_orm(table_name = "grove", schema_name = "grove")
 )]
 #[serde(rename_all = "camelCase")]
 pub struct Model {

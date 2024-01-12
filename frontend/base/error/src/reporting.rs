@@ -1,5 +1,4 @@
 use bamboo_entities::support::GlitchTipErrorRequest;
-
 use bamboo_frontend_base_api as api;
 
 pub fn report_unknown_error(
@@ -16,6 +15,6 @@ pub fn report_unknown_error(
             "/api/glitchtip",
             &GlitchTipErrorRequest::new(page, form, url.unwrap(), error.bamboo_error.clone()),
         )
-        .await;
+            .await;
     })
 }

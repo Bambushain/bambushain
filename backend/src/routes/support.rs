@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use actix_web::{post, web, HttpResponse};
+use actix_web::{HttpResponse, post, web};
 use sentry::protocol::{Event, Level};
 use sentry::types::protocol::v7::Context;
 use sentry::types::random_uuid;
@@ -44,8 +44,8 @@ pub async fn send_support_request(
         body.message.clone(),
         html_body,
     )
-    .await
-    .map(|_| no_content!())
+        .await
+        .map(|_| no_content!())
 }
 
 #[post("/api/glitchtip", wrap = "authenticate!()")]

@@ -1,4 +1,5 @@
-<svg fill="#598c79" height="512px" width="512px" version="1.1" id="SvgjsSvg1000" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" xml:space="preserve">
+<svg fill="#598c79" height="512px" width="512px" version="1.1" id="SvgjsSvg1000" xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 512 512" xml:space="preserve">
 <g>
 	<g>
 		<path d="M511.094,264.722c-1.136-3.307-28.511-81.137-89.171-95.166c-30.729-7.107-63.124,3.303-96.526,30.938v-35.663
@@ -23,6 +24,6 @@
 			C423.36,224.901,387.642,218.575,361.327,215.325z"></path>
 	</g>
 	</g>
-	<style>@media (prefers-color-scheme: light) { :root { filter: none; } }
+    <style>@media (prefers-color-scheme: light) { :root { filter: none; } }
 		@media (prefers-color-scheme: dark) { :root { filter: contrast(0.8333333333333334) brightness(1.7); } }
 	</style></svg>

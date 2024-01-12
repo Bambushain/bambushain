@@ -1,8 +1,9 @@
+use sea_orm_migration::prelude::*;
+
 use crate::m20220101_000001_create_schemas::Schemas;
 use crate::m20230724_121111_create_table_character::Character;
 use crate::m20230829_194031_create_table_custom_character_field::CustomCharacterField;
 use crate::m20230829_194055_create_table_custom_character_field_option::CustomCharacterFieldOption;
-use sea_orm_migration::prelude::*;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
