@@ -1,9 +1,9 @@
 use std::fmt::{Display, Formatter};
 
 #[cfg(not(target_arch = "wasm32"))]
-use sea_orm::ActiveValue::Set;
-#[cfg(not(target_arch = "wasm32"))]
 use sea_orm::entity::prelude::*;
+#[cfg(not(target_arch = "wasm32"))]
+use sea_orm::ActiveValue::Set;
 use serde::{Deserialize, Serialize};
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -11,9 +11,9 @@ use bamboo_macros::*;
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 #[cfg_attr(
-not(target_arch = "wasm32"),
-derive(DeriveEntityModel, Responder),
-sea_orm(table_name = "user", schema_name = "authentication")
+    not(target_arch = "wasm32"),
+    derive(DeriveEntityModel, Responder),
+    sea_orm(table_name = "user", schema_name = "authentication")
 )]
 #[serde(rename_all = "camelCase")]
 pub struct Model {
@@ -50,11 +50,11 @@ pub enum Relation {
     #[sea_orm(has_many = "super::event::Entity")]
     Event,
     #[sea_orm(
-    belongs_to = "super::grove::Entity",
-    from = "Column::GroveId",
-    to = "super::grove::Column::Id",
-    on_update = "Cascade",
-    on_delete = "Cascade"
+        belongs_to = "super::grove::Entity",
+        from = "Column::GroveId",
+        to = "super::grove::Column::Id",
+        on_update = "Cascade",
+        on_delete = "Cascade"
     )]
     Grove,
 }
@@ -105,12 +105,7 @@ impl ActiveModel {
 }
 
 impl Model {
-    pub fn new(
-        email: String,
-        display_name: String,
-        discord_name: String,
-        is_mod: bool,
-    ) -> Self {
+    pub fn new(email: String, display_name: String, discord_name: String, is_mod: bool) -> Self {
         Self {
             id: i32::default(),
             email,

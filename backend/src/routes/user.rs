@@ -7,11 +7,11 @@ use bamboo_entities::prelude::*;
 use bamboo_error::*;
 use bamboo_services::prelude::{DbConnection, EnvService};
 
-use crate::{mailing, path};
 use crate::middleware::authenticate_user::{authenticate, Authentication};
 use crate::middleware::check_mod::is_mod;
-use crate::middleware::identify_grove::{CurrentGrove, grove};
+use crate::middleware::identify_grove::{grove, CurrentGrove};
 use crate::response::macros::*;
+use crate::{mailing, path};
 
 fn get_random_password() -> String {
     rand::thread_rng()
@@ -64,14 +64,14 @@ Alles Gute vom 🐼"#
         plain_body,
         html_body,
     )
-        .await
-        .map_err(|err| {
-            log::error!("Failed to send email {err}");
-            log::error!("{err:#?}");
+    .await
+    .map_err(|err| {
+        log::error!("Failed to send email {err}");
+        log::error!("{err:#?}");
 
-            BambooError::mailing("Failed to send welcome email")
-        })
-        .map(|_| no_content!())
+        BambooError::mailing("Failed to send welcome email")
+    })
+    .map(|_| no_content!())
 }
 
 async fn send_password_changed(
@@ -113,19 +113,19 @@ Alles Gute vom 🐼"#
 
     mailing::send_mail(
         env_service,
-        "Dein Passwort wurde zurückgsetzt",
+        "Dein Passwort wurde zurückgesetzt",
         to,
         plain_body,
         html_body,
     )
-        .await
-        .map_err(|err| {
-            log::error!("Failed to send email {err}");
-            log::error!("{err:#?}");
+    .await
+    .map_err(|err| {
+        log::error!("Failed to send email {err}");
+        log::error!("{err:#?}");
 
-            BambooError::mailing("Failed to send change password email")
-        })
-        .map(|_| no_content!())
+        BambooError::mailing("Failed to send change password email")
+    })
+    .map(|_| no_content!())
 }
 
 #[get("/api/user", wrap = "authenticate!()", wrap = "grove!()")]
@@ -153,7 +153,12 @@ pub async fn get_user(
         .map(|data| ok!(data.into()))
 }
 
-#[post("/api/user", wrap = "authenticate!()", wrap = "is_mod!()", wrap = "grove!()")]
+#[post(
+    "/api/user",
+    wrap = "authenticate!()",
+    wrap = "is_mod!()",
+    wrap = "grove!()"
+)]
 pub async fn create_user(
     body: Option<web::Json<User>>,
     current_grove: CurrentGrove,
@@ -163,13 +168,31 @@ pub async fn create_user(
 ) -> BambooApiResult<WebUser> {
     let body = check_missing_fields!(body, "user")?;
     let new_password = get_random_password();
-    let user = dbal::create_user(current_grove.grove.id, body.into_inner(), new_password.clone(), &db).await?;
-    send_user_created(user.display_name.clone(), authentication.user.display_name.clone(), user.email.clone(), new_password, env_service).await?;
+    let user = dbal::create_user(
+        current_grove.grove.id,
+        body.into_inner(),
+        new_password.clone(),
+        &db,
+    )
+    .await?;
+    send_user_created(
+        user.display_name.clone(),
+        authentication.user.display_name.clone(),
+        user.email.clone(),
+        new_password,
+        env_service,
+    )
+    .await?;
 
     Ok(created!(user.into()))
 }
 
-#[delete("/api/user/{user_id}", wrap = "authenticate!()", wrap = "is_mod!()", wrap = "grove!()")]
+#[delete(
+    "/api/user/{user_id}",
+    wrap = "authenticate!()",
+    wrap = "is_mod!()",
+    wrap = "grove!()"
+)]
 pub async fn delete_user(
     path: Option<path::UserPath>,
     current_grove: CurrentGrove,
@@ -189,7 +212,12 @@ pub async fn delete_user(
         .map(|_| no_content!())
 }
 
-#[put("/api/user/{user_id}/mod", wrap = "authenticate!()", wrap = "is_mod!()", wrap = "grove!()")]
+#[put(
+    "/api/user/{user_id}/mod",
+    wrap = "authenticate!()",
+    wrap = "is_mod!()",
+    wrap = "grove!()"
+)]
 pub async fn add_mod_user(
     path: Option<path::UserPath>,
     current_grove: CurrentGrove,
@@ -209,7 +237,12 @@ pub async fn add_mod_user(
         .map(|_| no_content!())
 }
 
-#[delete("/api/user/{user_id}/mod", wrap = "authenticate!()", wrap = "is_mod!()", wrap = "grove!()")]
+#[delete(
+    "/api/user/{user_id}/mod",
+    wrap = "authenticate!()",
+    wrap = "is_mod!()",
+    wrap = "grove!()"
+)]
 pub async fn remove_mod_user(
     path: Option<path::UserPath>,
     current_grove: CurrentGrove,
@@ -229,7 +262,12 @@ pub async fn remove_mod_user(
         .map(|_| no_content!())
 }
 
-#[put("/api/user/{user_id}/password", wrap = "authenticate!()", wrap = "is_mod!()", wrap = "grove!()")]
+#[put(
+    "/api/user/{user_id}/password",
+    wrap = "authenticate!()",
+    wrap = "is_mod!()",
+    wrap = "grove!()"
+)]
 pub async fn change_password(
     path: Option<path::UserPath>,
     current_grove: CurrentGrove,
@@ -252,13 +290,25 @@ pub async fn change_password(
         new_password.clone(),
         &db,
     )
-        .await?;
+    .await?;
 
     let user = dbal::get_user(current_grove.grove.id, path.user_id, &db).await?;
-    send_password_changed(user.display_name.clone(), user.email.clone(), new_password, user.totp_validated.unwrap_or(false), env_service).await
+    send_password_changed(
+        user.display_name.clone(),
+        user.email.clone(),
+        new_password,
+        user.totp_validated.unwrap_or(false),
+        env_service,
+    )
+    .await
 }
 
-#[put("/api/user/{user_id}/profile", wrap = "authenticate!()", wrap = "is_mod!()", wrap = "grove!()")]
+#[put(
+    "/api/user/{user_id}/profile",
+    wrap = "authenticate!()",
+    wrap = "is_mod!()",
+    wrap = "grove!()"
+)]
 pub async fn update_user_profile(
     path: Option<path::UserPath>,
     body: Option<web::Json<UpdateProfile>>,
@@ -276,11 +326,16 @@ pub async fn update_user_profile(
         body.discord_name.clone(),
         &db,
     )
-        .await
-        .map(|_| no_content!())
+    .await
+    .map(|_| no_content!())
 }
 
-#[delete("/api/user/{user_id}/totp", wrap = "authenticate!()", wrap = "is_mod!()", wrap = "grove!()")]
+#[delete(
+    "/api/user/{user_id}/totp",
+    wrap = "authenticate!()",
+    wrap = "is_mod!()",
+    wrap = "grove!()"
+)]
 pub async fn disable_totp(
     path: Option<path::UserPath>,
     current_grove: CurrentGrove,
