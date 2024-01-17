@@ -23,6 +23,7 @@ mod m20231229_235511_create_table_grove;
 mod m20231230_000521_update_table_event_add_column_grove_id;
 mod m20231230_001307_update_table_user_add_column_grove_id;
 mod m20231230_231220_update_table_character_change_unique;
+mod m20240117_125532_fix_foreign_key_custom_character_field;
 
 pub struct Migrator;
 
@@ -53,6 +54,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20231230_000521_update_table_event_add_column_grove_id::Migration),
             Box::new(m20231230_001307_update_table_user_add_column_grove_id::Migration),
             Box::new(m20231230_231220_update_table_character_change_unique::Migration),
+            Box::new(m20240117_125532_fix_foreign_key_custom_character_field::Migration),
         ]
     }
 }
