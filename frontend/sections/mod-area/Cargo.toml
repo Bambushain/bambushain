@@ -1,5 +1,5 @@
 [package]
-name = "bamboo-frontend-section-bamboo"
+name = "bamboo-frontend-section-mod-area"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -7,9 +7,10 @@ license.workspace = true
 [dependencies]
 bamboo-frontend-base-api = { path = "../../base/api" }
 bamboo-frontend-base-error = { path = "../../base/error" }
-bamboo-frontend-base-ui = { path = "../../base/ui" }
+bamboo-frontend-base-storage = { path = "../../base/storage" }
 bamboo-entities = { path = "../../../entities" }
 
+bounce = { workspace = true }
 chrono = { workspace = true }
 date-range = { workspace = true }
 futures = { workspace = true }

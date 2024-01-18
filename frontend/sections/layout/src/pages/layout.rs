@@ -13,7 +13,8 @@ use bamboo_entities::user::UpdateProfile;
 use bamboo_frontend_base_api::{ApiError, CONFLICT, FORBIDDEN, NOT_FOUND};
 use bamboo_frontend_base_error as error;
 use bamboo_frontend_base_routing::{
-    AppRoute, BambooGroveRoute, FinalFantasyRoute, LegalRoute, LicensesRoute, SupportRoute,
+    AppRoute, BambooGroveRoute, FinalFantasyRoute, LegalRoute, LicensesRoute, ModAreaRoute,
+    SupportRoute,
 };
 use bamboo_frontend_base_storage as storage;
 use bamboo_frontend_section_authentication::api::get_my_profile;
@@ -64,6 +65,12 @@ fn switch_sub_menu(route: AppRoute) -> Html {
         AppRoute::SupportRoot | AppRoute::Support => html!(
             <CosmoSubMenuBar>
                 <Switch<SupportRoute> render={render_sub_menu_entry("Kontakt", SupportRoute::Contact)} />
+            </CosmoSubMenuBar>
+        ),
+        AppRoute::ModAreaRoot | AppRoute::ModArea => html!(
+            <CosmoSubMenuBar>
+                <Switch<ModAreaRoute> render={render_sub_menu_entry("Hainverwaltung", ModAreaRoute::GroveManagement)} />
+                <Switch<ModAreaRoute> render={render_sub_menu_entry("Benutzerverwaltung", ModAreaRoute::UserManagement)} />
             </CosmoSubMenuBar>
         ),
         AppRoute::LegalRoot | AppRoute::Legal => html!(
@@ -142,6 +149,25 @@ fn switch_support(route: SupportRoute) -> Html {
     }
 }
 
+fn switch_mod_area(route: ModAreaRoute) -> Html {
+    match route {
+        ModAreaRoute::GroveManagement => html!(
+            <>
+                <Helmet>
+                    <title>{"Hainverwaltung"}</title>
+                </Helmet>
+            </>
+        ),
+        ModAreaRoute::UserManagement => html!(
+            <>
+                <Helmet>
+                    <title>{"Benutzerverwaltung"}</title>
+                </Helmet>
+            </>
+        ),
+    }
+}
+
 fn switch_legal(route: LegalRoute) -> Html {
     match route {
         LegalRoute::Imprint => html!(
@@ -200,8 +226,8 @@ fn switch_licenses(route: LicensesRoute) -> Html {
     }
 }
 
-fn switch_app(route: AppRoute) -> Html {
-    match route {
+fn switch_app(is_mod: bool) -> impl Fn(AppRoute) -> Html {
+    move |route| match route {
         AppRoute::Home => html!(
             <Redirect<AppRoute> to={AppRoute::BambooGroveRoot} />
         ),
@@ -229,6 +255,22 @@ fn switch_app(route: AppRoute) -> Html {
                 <Switch<SupportRoute> render={switch_support} />
             </>
         ),
+        AppRoute::ModAreaRoot | AppRoute::ModArea => {
+            if is_mod {
+                html!(
+                    <>
+                        <Helmet>
+                            <title>{"Mod Area"}</title>
+                        </Helmet>
+                        <Switch<ModAreaRoute> render={switch_mod_area} />
+                    </>
+                )
+            } else {
+                html!(
+                    <Redirect<AppRoute> to={AppRoute::BambooGroveRoot} />
+                )
+            }
+        }
         AppRoute::LegalRoot | AppRoute::Legal => html!(
             <>
                 <Helmet>
@@ -325,7 +367,7 @@ fn app_layout() -> Html {
     html!(
         if let Some(_) = &profile_state.error {
             <Redirect<AppRoute> to={AppRoute::Login} />
-        } else if let Some(_) = &profile_state.data {
+        } else if let Some(profile) = &profile_state.data {
             <>
                 <Switch<AppRoute> render={switch_top_bar}/>
                 <CosmoMenuBar>
@@ -333,11 +375,14 @@ fn app_layout() -> Html {
                         <Switch<AppRoute> render={render_main_menu_entry("Bambushain", AppRoute::BambooGroveRoot, AppRoute::BambooGrove)} />
                         <Switch<AppRoute> render={render_main_menu_entry("Final Fantasy", AppRoute::FinalFantasyRoot, AppRoute::FinalFantasy)} />
                         <Switch<AppRoute> render={render_main_menu_entry("Bambussupport", AppRoute::SupportRoot, AppRoute::Support)} />
+                        if profile.is_mod {
+                            <Switch<AppRoute> render={render_main_menu_entry("Mod Area", AppRoute::ModAreaRoot, AppRoute::ModArea)} />
+                        }
                     </CosmoMainMenu>
                     <Switch<AppRoute> render={switch_sub_menu} />
                 </CosmoMenuBar>
                 <CosmoPageBody>
-                    <Switch<AppRoute> render={switch_app} />
+                    <Switch<AppRoute> render={switch_app(profile.is_mod)} />
                </CosmoPageBody>
             </>
         }
@@ -358,7 +403,7 @@ fn legal_layout() -> Html {
                 <Switch<AppRoute> render={switch_sub_menu} />
             </CosmoMenuBar>
             <CosmoPageBody>
-                <Switch<AppRoute> render={switch_app} />
+                <Switch<AppRoute> render={switch_app(false)} />
            </CosmoPageBody>
         </>
     )
