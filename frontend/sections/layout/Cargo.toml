@@ -14,6 +14,7 @@ bamboo-frontend-section-bamboo = { path = "../../sections/bamboo" }
 bamboo-frontend-section-final-fantasy = { path = "../../sections/final-fantasy" }
 bamboo-frontend-section-legal = { path = "../../sections/legal" }
 bamboo-frontend-section-licenses = { path = "../../sections/licenses" }
+bamboo-frontend-section-mod-area = { path = "../../sections/mod-area" }
 bamboo-frontend-section-support = { path = "../../sections/support" }
 bamboo-entities = { path = "../../../entities" }
 

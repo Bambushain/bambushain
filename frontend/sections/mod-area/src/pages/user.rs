@@ -126,7 +126,7 @@ fn create_user_modal(on_saved: &Callback<WebUser>, on_close: &Callback<()>) -> H
                     if err.code == FORBIDDEN {
                         <CosmoMessage message="Du musst Mod sein um andere Pandas hinzuzufügen" message_type={CosmoMessageType::Negative} />
                     } else if err.code == CONFLICT {
-                        <CosmoMessage message="Ein Panda mit dieser Emailadresse oder Namen ist bereits im Hain" message_type={CosmoMessageType::Negative} />
+                        <CosmoMessage message="Ein Panda mit dieser Emailadresse oder Namen ist bereits in Bambushain registriert" message_type={CosmoMessageType::Negative} />
                     } else if *unreported_error_toggle {
                         <CosmoMessage message="Der Panda konnte leider nicht hinzugefügt werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
                     } else {
@@ -228,7 +228,7 @@ fn update_profile_dialog(
                     } else if err.code == NOT_FOUND {
                         <CosmoMessage message="Der Panda wurde nicht gefunden" message_type={CosmoMessageType::Negative} />
                     } else if err.code == CONFLICT {
-                        <CosmoMessage message="Ein Panda mit dieser Emailadresse oder Namen ist bereits im Hain" message_type={CosmoMessageType::Negative} />
+                        <CosmoMessage message="Ein Panda mit dieser Emailadresse oder Namen ist bereits in Bambushain registriert" message_type={CosmoMessageType::Negative} />
                     } else if *unreported_error_toggle {
                         <CosmoMessage message="Der Panda konnte leider nicht geändert werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
                     } else {
@@ -470,28 +470,26 @@ fn user_details(user: &WebUser, on_delete: &Callback<()>, on_update: &Callback<(
     html!(
         <>
             <CosmoTitle title={user.display_name.clone()} subtitle={user.email.clone()} />
-            if current_user.profile.is_mod {
-                <CosmoToolbar>
-                    <CosmoToolbarGroup>
-                        if user.is_mod {
-                            <CosmoButton enabled={user.id != current_user.profile.id} on_click={remove_mod_click} label="Modrechte entziehen" />
-                        } else {
-                            <CosmoButton enabled={user.id != current_user.profile.id} on_click={make_mod_click} label="Zum Mod machen" />
-                        }
-                        <CosmoButton enabled={user.id != current_user.profile.id} on_click={update_profile_click} label="Panda bearbeiten" />
-                    </CosmoToolbarGroup>
-                    <CosmoToolbarGroup>
-                        <CosmoButton enabled={user.id != current_user.profile.id} on_click={change_password_click} label="Passwort ändern" />
-                        <CosmoButton enabled={user.id != current_user.profile.id && user.app_totp_enabled} on_click={disable_totp_click} label="Zwei Faktor deaktivieren" />
-                        <CosmoButton enabled={user.id != current_user.profile.id} on_click={delete_click} label="Aus dem Hain werfen" />
-                    </CosmoToolbarGroup>
-                </CosmoToolbar>
-            }
+            <CosmoToolbar>
+                <CosmoToolbarGroup>
+                    if user.is_mod {
+                        <CosmoButton enabled={user.id != current_user.profile.id} on_click={remove_mod_click} label="Modrechte entziehen" />
+                    } else {
+                        <CosmoButton enabled={user.id != current_user.profile.id} on_click={make_mod_click} label="Zum Mod machen" />
+                    }
+                    <CosmoButton enabled={user.id != current_user.profile.id} on_click={update_profile_click} label="Panda bearbeiten" />
+                </CosmoToolbarGroup>
+                <CosmoToolbarGroup>
+                    <CosmoButton enabled={user.id != current_user.profile.id} on_click={change_password_click} label="Passwort ändern" />
+                    <CosmoButton enabled={user.id != current_user.profile.id && user.app_totp_enabled} on_click={disable_totp_click} label="Zwei Faktor deaktivieren" />
+                    <CosmoButton enabled={user.id != current_user.profile.id} on_click={delete_click} label="Aus dem Hain werfen" />
+                </CosmoToolbarGroup>
+            </CosmoToolbar>
             if let Some(err) = &delete_state.error {
                 if err.code == FORBIDDEN {
                     <CosmoMessage header="Fehler beim Rauswerfen" message="Du musst Mod sein um Pandas aus dem Hain zu werfen" message_type={CosmoMessageType::Negative} />
                 } else if err.code == CONFLICT {
-                    <CosmoMessage header="Fehler beim Rauswerfen" message="Du kannst dich nicht selbst aus dem Hain werfen, wenn du gehen möchtest, wende dich an einen Mod" message_type={CosmoMessageType::Negative} />
+                    <CosmoMessage header="Fehler beim Rauswerfen" message="Du kannst dich nicht selbst aus dem Hain werfen, wenn du gehen möchtest, benutze die Verlassen Funktion" message_type={CosmoMessageType::Negative} />
                 } else if *unreported_error_toggle {
                     <CosmoMessage header="Fehler beim Rauswerfen" message="Der Panda konnte nicht aus dem Hain geworfen werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
                 } else {
@@ -598,8 +596,8 @@ fn user_details(user: &WebUser, on_delete: &Callback<()>, on_update: &Callback<(
     )
 }
 
-#[function_component(UsersPage)]
-pub fn users_page() -> Html {
+#[function_component(UserManagementPage)]
+pub fn user_management_page() -> Html {
     log::debug!("Render users page");
     log::debug!("Initialize state and callbacks");
     let current_user = use_atom::<storage::CurrentUser>();

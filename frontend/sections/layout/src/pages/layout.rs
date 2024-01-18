@@ -28,6 +28,7 @@ use bamboo_frontend_section_legal::{DataProtectionPage, ImprintPage};
 use bamboo_frontend_section_licenses::{
     BambooGrovePage, FontsPage, ImagesPage, SoftwareLicensesPage,
 };
+use bamboo_frontend_section_mod_area::UserManagementPage;
 use bamboo_frontend_section_support::ContactPage;
 
 use crate::api::{
@@ -163,6 +164,7 @@ fn switch_mod_area(route: ModAreaRoute) -> Html {
                 <Helmet>
                     <title>{"Benutzerverwaltung"}</title>
                 </Helmet>
+                <UserManagementPage />
             </>
         ),
     }
