@@ -92,6 +92,9 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
         .service(support::report_glitchtip_error)
         .service(licenses::get_licenses)
         .service(grove::get_grove)
+        .service(grove::disable_grove)
+        .service(grove::enable_grove)
+        .service(grove::delete_grove)
         .service(crate::sse::event::event_sse_client)
         .service(
             actix_web_lab::web::spa()

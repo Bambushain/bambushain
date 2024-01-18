@@ -1,9 +1,10 @@
 use sea_orm::prelude::*;
-use sea_orm::ActiveValue::Set;
 use sea_orm::{IntoActiveModel, NotSet};
 
 use bamboo_entities::prelude::*;
 use bamboo_error::*;
+
+use crate::authentication::get_tokens_by_grove;
 
 pub async fn get_grove_by_user_id(user_id: i32, db: &DatabaseConnection) -> BambooResult<Grove> {
     grove::Entity::find()
@@ -20,6 +21,23 @@ pub async fn get_grove_by_user_id(user_id: i32, db: &DatabaseConnection) -> Bamb
                 Ok(data)
             } else {
                 Err(BambooError::not_found("user", "The user was not found"))
+            }
+        })?
+}
+
+pub async fn get_grove_by_id(id: i32, db: &DatabaseConnection) -> BambooResult<Grove> {
+    grove::Entity::find_by_id(id)
+        .one(db)
+        .await
+        .map_err(|err| {
+            log::error!("{err}");
+            BambooError::database("grove", "Failed to execute database query")
+        })
+        .map(|data| {
+            if let Some(data) = data {
+                Ok(data)
+            } else {
+                Err(BambooError::not_found("grove", "The grove was not found"))
             }
         })?
 }
@@ -97,13 +115,21 @@ pub async fn migrate_between_groves(
     .map(|_| ())
 }
 
-pub async fn disable_grove(name: String, db: &DatabaseConnection) -> BambooErrorResult {
-    let grove = get_grove_by_name(name, db).await?;
+pub async fn disable_grove(id: i32, db: &DatabaseConnection) -> BambooErrorResult {
+    let tokens = get_tokens_by_grove(id, db).await?;
+    let tokens = tokens.iter().map(|token| token.id);
+    let _ = grove::Entity::delete_many()
+        .filter(token::Column::Id.is_in(tokens))
+        .exec(db)
+        .await
+        .map_err(|err| {
+            log::error!("Failed to delete tokens, disable grove anyway, {err}");
+        });
 
-    let mut active_model = grove.into_active_model();
-    active_model.is_enabled = Set(false);
-    active_model
-        .update(db)
+    grove::Entity::update_many()
+        .filter(grove::Column::Id.eq(id))
+        .col_expr(grove::Column::IsEnabled, Expr::value(false))
+        .exec(db)
         .await
         .map_err(|err| {
             log::error!("{err}");
@@ -112,12 +138,22 @@ pub async fn disable_grove(name: String, db: &DatabaseConnection) -> BambooError
         .map(|_| ())
 }
 
-pub async fn delete_grove(name: String, db: &DatabaseConnection) -> BambooErrorResult {
-    let grove = get_grove_by_name(name, db).await?;
+pub async fn enable_grove(id: i32, db: &DatabaseConnection) -> BambooErrorResult {
+    grove::Entity::update_many()
+        .filter(grove::Column::Id.eq(id))
+        .col_expr(grove::Column::IsEnabled, Expr::value(true))
+        .exec(db)
+        .await
+        .map_err(|err| {
+            log::error!("{err}");
+            BambooError::database("grove", "Failed to enable grove")
+        })
+        .map(|_| ())
+}
 
-    let active_model = grove.into_active_model();
-    active_model
-        .delete(db)
+pub async fn delete_grove(id: i32, db: &DatabaseConnection) -> BambooErrorResult {
+    grove::Entity::delete_by_id(id)
+        .exec(db)
         .await
         .map_err(|err| {
             log::error!("{err}");

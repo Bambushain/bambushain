@@ -11,6 +11,7 @@ use bamboo_entities::prelude::*;
 use bamboo_error::*;
 
 use crate::prelude::dbal;
+use crate::user::get_users;
 use crate::{decrypt_string, encrypt_string};
 
 pub async fn create_google_auth_token(
@@ -146,6 +147,23 @@ pub async fn delete_token(token: String, db: &DatabaseConnection) -> BambooError
         .map_err(|err| {
             log::error!("{err}");
             BambooError::database("token", "Failed to delete the token")
+        })
+}
+
+pub async fn get_tokens_by_grove(
+    grove_id: i32,
+    db: &DatabaseConnection,
+) -> BambooResult<Vec<Token>> {
+    let users = get_users(grove_id, db).await?;
+    let users = users.iter().map(|user| user.id);
+    token::Entity::find()
+        .filter(user::Column::Id.is_in(users))
+        .inner_join(user::Entity)
+        .all(db)
+        .await
+        .map_err(|err| {
+            log::error!("{err}");
+            BambooError::database("token", "Failed to get all tokens")
         })
 }
 
