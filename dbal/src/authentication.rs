@@ -61,7 +61,7 @@ pub async fn validate_auth_and_create_token(
 
     validate_login(user.id, two_factor_code, password, false, db).await?;
 
-    let result = bamboo_entities::token::ActiveModel {
+    let result = token::ActiveModel {
         id: NotSet,
         token: Set(uuid::Uuid::new_v4().to_string()),
         user_id: Set(user.id),

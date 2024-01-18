@@ -1,9 +1,9 @@
+use sea_orm::prelude::*;
+use sea_orm::sea_query::Expr;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, EntityTrait, IntoActiveModel,
     JoinType, NotSet, QueryFilter, QueryOrder, QuerySelect, RelationTrait, Set,
 };
-use sea_orm::prelude::*;
-use sea_orm::sea_query::Expr;
 
 use bamboo_entities::prelude::*;
 use bamboo_error::*;
@@ -73,10 +73,28 @@ pub async fn get_user_by_email_or_username(
 ) -> BambooResult<User> {
     user::Entity::find()
         .filter(
-            Condition::any()
-                .add(user::Column::Email.eq(username.clone()))
-                .add(user::Column::DisplayName.eq(username)),
+            Condition::all()
+                .add(
+                    Condition::any()
+                        .add(user::Column::Email.eq(username.clone()))
+                        .add(user::Column::DisplayName.eq(username)),
+                )
+                .add(
+                    Condition::any()
+                        .add(
+                            Condition::all()
+                                .add(grove::Column::IsSuspended.eq(false))
+                                .add(grove::Column::IsEnabled.eq(true)),
+                        )
+                        .add(
+                            Condition::all()
+                                .add(grove::Column::IsSuspended.eq(false))
+                                .add(grove::Column::IsEnabled.eq(false))
+                                .add(user::Column::IsMod.eq(true)),
+                        ),
+                ),
         )
+        .inner_join(grove::Entity)
         .one(db)
         .await
         .map_err(|err| {
@@ -164,7 +182,12 @@ async fn user_exists_by_email_and_name(
         })
 }
 
-pub async fn create_user(grove_id: i32, user: User, password: String, db: &DatabaseConnection) -> BambooResult<User> {
+pub async fn create_user(
+    grove_id: i32,
+    user: User,
+    password: String,
+    db: &DatabaseConnection,
+) -> BambooResult<User> {
     if user_exists_by_email_and_name(user.email.clone(), user.display_name.clone(), db).await? {
         return Err(BambooError::exists_already(
             "user",
@@ -175,12 +198,10 @@ pub async fn create_user(grove_id: i32, user: User, password: String, db: &Datab
     let mut model = user.into_active_model();
     model.id = NotSet;
     model.grove_id = Set(grove_id);
-    model
-        .set_password(&password)
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("user", "Failed to hash password user")
-        })?;
+    model.set_password(&password).map_err(|err| {
+        log::error!("{err}");
+        BambooError::database("user", "Failed to hash password user")
+    })?;
 
     model.insert(db).await.map_err(|err| {
         log::error!("{err}");

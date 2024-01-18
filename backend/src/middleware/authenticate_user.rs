@@ -1,4 +1,4 @@
-use actix_web::{body, dev, Error, HttpMessage, web};
+use actix_web::{body, dev, web, Error, HttpMessage};
 use actix_web_lab::middleware::Next;
 
 use bamboo_entities::prelude::*;
@@ -29,6 +29,11 @@ pub(crate) async fn authenticate_user(
         helpers::get_user_and_token_by_cookie(&db, auth_cookie).await?
     };
 
+    let grove = dbal::get_grove_by_user_id(user.id, &db).await?;
+    if (!grove.is_enabled && !user.is_mod) || grove.is_suspended {
+        return Err(BambooError::unauthorized("user", "Authorization failed").into());
+    }
+
     req.extensions_mut()
         .insert(AuthenticationState { token, user });
 
@@ -42,3 +47,5 @@ macro_rules! authenticate {
 }
 
 pub(crate) use authenticate;
+use bamboo_dbal::prelude::dbal;
+use bamboo_error::BambooError;

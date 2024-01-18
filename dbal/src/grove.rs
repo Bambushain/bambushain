@@ -1,5 +1,6 @@
-use sea_orm::{IntoActiveModel, NotSet};
 use sea_orm::prelude::*;
+use sea_orm::ActiveValue::Set;
+use sea_orm::{IntoActiveModel, NotSet};
 
 use bamboo_entities::prelude::*;
 use bamboo_error::*;
@@ -68,30 +69,59 @@ pub async fn migrate_between_groves(
     } else {
         user::Entity::update_many().filter(user::Column::GroveId.is_null())
     }
-        .col_expr(user::Column::GroveId, Expr::value(new_grove_id))
-        .exec(db)
-        .await
-        .map_err(|err| {
-            log::error!(
+    .col_expr(user::Column::GroveId, Expr::value(new_grove_id))
+    .exec(db)
+    .await
+    .map_err(|err| {
+        log::error!(
             "Failed to migrate users from grove {old_grove_id:?} to {new_grove_id} grove {err}"
         );
-            BambooError::database("grove", "Failed to create grove")
-        })
-        .map(|_| ())?;
+        BambooError::database("grove", "Failed to create grove")
+    })
+    .map(|_| ())?;
 
     if let Some(id) = old_grove_id {
         event::Entity::update_many().filter(event::Column::GroveId.eq(id))
     } else {
         event::Entity::update_many().filter(event::Column::GroveId.is_null())
     }
-        .col_expr(event::Column::GroveId, Expr::value(new_grove_id))
-        .exec(db)
-        .await
-        .map_err(|err| {
-            log::error!(
+    .col_expr(event::Column::GroveId, Expr::value(new_grove_id))
+    .exec(db)
+    .await
+    .map_err(|err| {
+        log::error!(
             "Failed to migrate events from grove {old_grove_id:?} to {new_grove_id} grove {err}"
         );
-            BambooError::database("grove", "Failed to create grove")
+        BambooError::database("grove", "Failed to create grove")
+    })
+    .map(|_| ())
+}
+
+pub async fn disable_grove(name: String, db: &DatabaseConnection) -> BambooErrorResult {
+    let grove = get_grove_by_name(name, db).await?;
+
+    let mut active_model = grove.into_active_model();
+    active_model.is_enabled = Set(false);
+    active_model
+        .update(db)
+        .await
+        .map_err(|err| {
+            log::error!("{err}");
+            BambooError::database("grove", "Failed to disable grove")
+        })
+        .map(|_| ())
+}
+
+pub async fn delete_grove(name: String, db: &DatabaseConnection) -> BambooErrorResult {
+    let grove = get_grove_by_name(name, db).await?;
+
+    let active_model = grove.into_active_model();
+    active_model
+        .delete(db)
+        .await
+        .map_err(|err| {
+            log::error!("{err}");
+            BambooError::database("grove", "Failed to delete grove")
         })
         .map(|_| ())
 }
