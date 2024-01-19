@@ -10,6 +10,7 @@ use crate::user::WebUser;
 pub struct Login {
     pub email: String,
     pub password: String,
+    #[serde(default)]
     pub two_factor_code: Option<String>,
 }
 

@@ -18,6 +18,7 @@ use bamboo_macros::*;
 #[serde(rename_all = "camelCase")]
 pub struct Model {
     #[cfg_attr(not(target_arch = "wasm32"), sea_orm(primary_key))]
+    #[serde(default)]
     pub id: i32,
     #[cfg_attr(not(target_arch = "wasm32"), sea_orm(unique))]
     pub email: String,
@@ -143,11 +144,13 @@ impl Model {
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Responder))]
 pub struct WebUser {
+    #[serde(default)]
     pub id: i32,
     pub display_name: String,
     pub email: String,
     pub is_mod: bool,
     pub discord_name: String,
+    #[serde(default)]
     pub app_totp_enabled: bool,
 }
 
