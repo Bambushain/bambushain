@@ -190,11 +190,11 @@ pub fn fighter_details(character: &Character) -> Html {
                         if err.code == CONFLICT {
                             unreported_error_toggle.set(false);
                             error_message_state
-                                .set("Ein Fighter mit diesem Job existiert bereits".into());
+                                .set("Ein Kämpfer mit diesem Job existiert bereits".into());
                         } else {
                             unreported_error_toggle.set(true);
                             error_message_state
-                                .set("Der Fighter konnte nicht hinzugefügt werden".into());
+                                .set("Der Kämpfer konnte nicht hinzugefügt werden".into());
                         }
 
                         err
@@ -239,17 +239,17 @@ pub fn fighter_details(character: &Character) -> Html {
                             CONFLICT => {
                                 unreported_error_toggle.set(false);
                                 error_message_state
-                                    .set("Ein Fighter mit diesem Job existiert bereits".into());
+                                    .set("Ein Kämpfer mit diesem Job existiert bereits".into());
                             }
                             NOT_FOUND => {
                                 unreported_error_toggle.set(false);
                                 error_message_state
-                                    .set("Der Fighter konnte nicht gefunden werden".into());
+                                    .set("Der Kämpfer konnte nicht gefunden werden".into());
                             }
                             _ => {
                                 unreported_error_toggle.set(true);
                                 error_message_state
-                                    .set("Der Fighter konnte nicht gespeichert werden".into());
+                                    .set("Der Kämpfer konnte nicht gespeichert werden".into());
                             }
                         };
 
@@ -397,20 +397,20 @@ pub fn fighter_details(character: &Character) -> Html {
                 if new_fighter.is_some() {
                     <CosmoToolbar>
                         <CosmoToolbarGroup>
-                            <CosmoButton label="Fighter hinzufügen" on_click={on_create_open} />
+                            <CosmoButton label="Kämpfer hinzufügen" on_click={on_create_open} />
                         </CosmoToolbarGroup>
                     </CosmoToolbar>
                 }
                 if let Some(err) = &delete_state.error {
                     if err.code == NOT_FOUND {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Der Fighter konnte nicht gefunden werden" />
+                        <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Der Kämpfer konnte nicht gefunden werden" />
                     } else if *unreported_error_toggle {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Der Fighter konnte nicht gelöscht werden" actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                        <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Der Kämpfer konnte nicht gelöscht werden" actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
                     } else {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Der Fighter konnte nicht gelöscht werden" />
+                        <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Der Kämpfer konnte nicht gelöscht werden" />
                     }
                 }
-                <CosmoTable headers={vec![AttrValue::from(""), AttrValue::from("Job"), AttrValue::from("Level"), AttrValue::from("Aktionen")]}>
+                <CosmoTable headers={vec![AttrValue::from(""), AttrValue::from("Job"), AttrValue::from("Level"), AttrValue::from("Gear Score"), AttrValue::from("Aktionen")]}>
                     {for data.iter().map(|fighter| {
                         let edit_fighter = fighter.clone();
                         let delete_fighter = fighter.clone();
@@ -436,13 +436,13 @@ pub fn fighter_details(character: &Character) -> Html {
                 </CosmoTable>
                 {match (*action_state).clone() {
                     FighterActions::Create => html!(
-                        <ModifyFighterModal on_error_close={report_unknown_error.clone()} has_unknown_error={*unreported_error_toggle} fighter={new_fighter.unwrap_or(Fighter::default())} character_id={character.id} jobs={all_jobs} is_edit={false} error_message={(*error_message_state).clone()} has_error={create_state.error.is_some()} on_close={on_modal_action_close} title="Fighter hinzufügen" save_label="Fighter hinzufügen" on_save={on_modal_create_save} />
+                        <ModifyFighterModal on_error_close={report_unknown_error.clone()} has_unknown_error={*unreported_error_toggle} fighter={new_fighter.unwrap_or(Fighter::default())} character_id={character.id} jobs={all_jobs} is_edit={false} error_message={(*error_message_state).clone()} has_error={create_state.error.is_some()} on_close={on_modal_action_close} title="Kämpfer hinzufügen" save_label="Kämpfer hinzufügen" on_save={on_modal_create_save} />
                     ),
                     FighterActions::Edit(fighter) => html!(
-                        <ModifyFighterModal on_error_close={report_unknown_error.clone()} has_unknown_error={*unreported_error_toggle} character_id={character.id} is_edit={true} jobs={FighterJob::iter().collect::<Vec<FighterJob>>()} title={format!("Fighter {} bearbeiten", fighter.job.to_string())} save_label="Fighter speichern" on_save={on_modal_update_save} on_close={on_modal_action_close} fighter={fighter} error_message={(*error_message_state).clone()} has_error={update_state.error.is_some()} />
+                        <ModifyFighterModal on_error_close={report_unknown_error.clone()} has_unknown_error={*unreported_error_toggle} character_id={character.id} is_edit={true} jobs={FighterJob::iter().collect::<Vec<FighterJob>>()} title={format!("Kämpfer {} bearbeiten", fighter.job.to_string())} save_label="Kämpfer speichern" on_save={on_modal_update_save} on_close={on_modal_action_close} fighter={fighter} error_message={(*error_message_state).clone()} has_error={update_state.error.is_some()} />
                     ),
                     FighterActions::Delete(fighter) => html!(
-                        <CosmoConfirm confirm_type={CosmoModalType::Warning} on_confirm={move |_| on_modal_delete.emit(fighter.id)} on_decline={on_modal_action_close} confirm_label="Fighter löschen" decline_label="Fighter behalten" title="Fighter löschen" message={format!("Soll der Fighter {} auf Level {} wirklich gelöscht werden?", fighter.job.to_string(), fighter.level.unwrap_or_default())} />
+                        <CosmoConfirm confirm_type={CosmoModalType::Warning} on_confirm={move |_| on_modal_delete.emit(fighter.id)} on_decline={on_modal_action_close} confirm_label="Kämfper löschen" decline_label="Kämpfer behalten" title="Kämpfer löschen" message={format!("Soll der Kämpfer {} auf Level {} wirklich gelöscht werden?", fighter.job.to_string(), fighter.level.unwrap_or_default())} />
                     ),
                     FighterActions::Closed => html!(),
                 }}
@@ -451,9 +451,9 @@ pub fn fighter_details(character: &Character) -> Html {
     } else if fighter_state.error.is_some() {
         html!(
             if *unreported_error_toggle {
-                <CosmoMessage header="Fehler beim Laden" message="Die Fighter konnten nicht geladen werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                <CosmoMessage header="Fehler beim Laden" message="Die Kämpfer konnten nicht geladen werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
             } else {
-                <CosmoMessage header="Fehler beim Laden" message="Die Fighter konnten nicht geladen werden" message_type={CosmoMessageType::Negative} />
+                <CosmoMessage header="Fehler beim Laden" message="Die Kämpfer konnten nicht geladen werden" message_type={CosmoMessageType::Negative} />
             }
         )
     } else {
