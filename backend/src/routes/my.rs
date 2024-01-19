@@ -22,9 +22,9 @@ pub async fn change_password(
         body.new_password.clone(),
         &db,
     )
-        .await
-        .map(|_| no_content!())
-        .map_err(|err| err.into())
+    .await
+    .map(|_| no_content!())
+    .map_err(|err| err.into())
 }
 
 #[put("/api/my/profile", wrap = "authenticate!()")]
@@ -42,8 +42,8 @@ pub async fn update_profile(
         body.discord_name.clone(),
         &db,
     )
-        .await
-        .map(|_| no_content!())
+    .await
+    .map(|_| no_content!())
 }
 
 #[post("/api/my/totp", wrap = "authenticate!()")]
@@ -91,17 +91,17 @@ pub async fn validate_totp(
             body.code.clone(),
             &db,
         )
-            .await
-            .map(|data| {
-                if data {
-                    Ok(no_content!())
-                } else {
-                    Err(BambooError::insufficient_rights(
-                        "user",
-                        "The code is invalid",
-                    ))
-                }
-            })?
+        .await
+        .map(|data| {
+            if data {
+                Ok(no_content!())
+            } else {
+                Err(BambooError::insufficient_rights(
+                    "user",
+                    "The code is invalid",
+                ))
+            }
+        })?
     }
 }
 
@@ -116,6 +116,13 @@ pub async fn disable_totp(
     db: DbConnection,
 ) -> BambooApiResponseResult {
     dbal::disable_my_totp(authentication.user.id, &db)
+        .await
+        .map(|_| no_content!())
+}
+
+#[delete("/api/my", wrap = "authenticate!()")]
+pub async fn leave(authentication: Authentication, db: DbConnection) -> BambooApiResponseResult {
+    dbal::delete_user(authentication.user.grove_id, authentication.user.id, &db)
         .await
         .map(|_| no_content!())
 }

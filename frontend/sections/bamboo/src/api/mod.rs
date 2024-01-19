@@ -1,7 +1,6 @@
-pub use bamboo_frontend_base_api::*;
-pub use event::*;
+pub(crate) use bamboo_frontend_base_api::*;
+pub(crate) use event::*;
 pub use user::*;
 
-pub mod event;
+pub(crate) mod event;
 pub mod user;
-

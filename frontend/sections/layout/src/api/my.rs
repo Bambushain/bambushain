@@ -35,3 +35,8 @@ pub async fn validate_totp(code: String, password: String) -> api::BambooApiResu
     log::debug!("Validate totp for current user");
     api::put_no_content("/api/my/totp/validate", &ValidateTotp { code, password }).await
 }
+
+pub async fn leave() -> api::BambooApiResult<()> {
+    log::debug!("Leaving the grove");
+    api::delete("/api/my").await
+}

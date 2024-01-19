@@ -53,6 +53,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
         .service(my::enable_totp)
         .service(my::disable_totp)
         .service(my::validate_totp)
+        .service(my::leave)
         .service(custom_field::get_custom_fields)
         .service(custom_field::create_custom_field)
         .service(custom_field::get_custom_field)

@@ -17,9 +17,7 @@ use bamboo_frontend_base_routing::{
     SupportRoute,
 };
 use bamboo_frontend_base_storage as storage;
-use bamboo_frontend_section_authentication::api::get_my_profile;
 use bamboo_frontend_section_authentication::LoginPage;
-use bamboo_frontend_section_bamboo::get_users;
 use bamboo_frontend_section_bamboo::CalendarPage;
 use bamboo_frontend_section_bamboo::UsersPage;
 use bamboo_frontend_section_final_fantasy::CharacterPage;
@@ -31,10 +29,7 @@ use bamboo_frontend_section_licenses::{
 use bamboo_frontend_section_mod_area::{GroveManagementPage, UserManagementPage};
 use bamboo_frontend_section_support::ContactPage;
 
-use crate::api::{
-    change_my_password, disable_totp, enable_totp, get_grove, logout, update_my_profile,
-    validate_totp,
-};
+use crate::api;
 
 pub fn switch(route: AppRoute) -> Html {
     match route {
@@ -386,7 +381,7 @@ fn app_layout() -> Html {
     let navigator = use_navigator();
 
     let profile_state = use_async(async move {
-        get_my_profile().await.map(|user| {
+        api::get_my_profile().await.map(|user| {
             profile_atom_setter(user.clone().into());
             user
         })
@@ -395,7 +390,7 @@ fn app_layout() -> Html {
         let grove_is_enabled = grove_is_enabled.clone();
 
         use_async(async move {
-            get_grove().await.map(|grove| {
+            api::get_grove().await.map(|grove| {
                 if !grove.is_enabled {
                     if let Some(navigator) = navigator {
                         navigator.push(&AppRoute::ModAreaRoot);
@@ -504,13 +499,13 @@ fn change_password_dialog(on_close: &Callback<()>, mods: &Vec<AttrValue>) -> Htm
         let new_password_state = new_password_state.clone();
 
         use_async(async move {
-            change_my_password(
+            api::change_my_password(
                 (*old_password_state).to_string(),
                 (*new_password_state).to_string(),
             )
             .await
             .map(|_| {
-                logout();
+                api::logout();
                 navigator
                     .expect("Navigator should be available")
                     .push(&AppRoute::Login);
@@ -609,7 +604,7 @@ fn update_my_profile_dialog(on_close: &Callback<()>) -> Html {
         let on_close = on_close.clone();
 
         use_async(async move {
-            update_my_profile(UpdateProfile::new(
+            api::update_my_profile(UpdateProfile::new(
                 (*email_state).to_string(),
                 (*display_name_state).to_string(),
                 (*discord_name_state).to_string(),
@@ -635,7 +630,7 @@ fn update_my_profile_dialog(on_close: &Callback<()>) -> Html {
         let profile_atom_setter = profile_atom_setter.clone();
 
         use_async(async move {
-            if let Err(err) = disable_totp().await {
+            if let Err(err) = api::disable_totp().await {
                 unreported_error_toggle.set(true);
                 disable_totp_open_toggle.set(true);
                 bamboo_error_state.set(err.clone());
@@ -644,7 +639,7 @@ fn update_my_profile_dialog(on_close: &Callback<()>) -> Html {
             } else {
                 unreported_error_toggle.set(false);
                 disable_totp_open_toggle.set(false);
-                if let Ok(profile) = get_my_profile().await {
+                if let Ok(profile) = api::get_my_profile().await {
                     profile_atom_setter(profile.into());
                 }
 
@@ -739,7 +734,7 @@ fn enable_totp_dialog(on_close: &Callback<()>) -> Html {
         let bamboo_error_state = bamboo_error_state.clone();
 
         use_async(async move {
-            enable_totp()
+            api::enable_totp()
                 .await
                 .map(|data| {
                     unreported_error_toggle.set(false);
@@ -764,7 +759,7 @@ fn enable_totp_dialog(on_close: &Callback<()>) -> Html {
         let profile_atom = profile_atom.clone();
 
         use_async(async move {
-            if let Err(err) = validate_totp(
+            if let Err(err) = api::validate_totp(
                 (*code_state).to_string(),
                 (*current_password_state).to_string(),
             )
@@ -778,7 +773,7 @@ fn enable_totp_dialog(on_close: &Callback<()>) -> Html {
             } else {
                 on_close.emit(());
                 unreported_error_toggle.set(false);
-                if let Ok(profile) = get_my_profile().await {
+                if let Ok(profile) = api::get_my_profile().await {
                     profile_atom(profile.into())
                 }
 
@@ -870,11 +865,12 @@ fn top_bar() -> Html {
     log::debug!("Render top bar");
     let navigator = use_navigator().expect("Navigator should be available");
 
-    let profile_open_state = use_state_eq(|| false);
-    let password_open_state = use_state_eq(|| false);
+    let profile_open_toggle = use_bool_toggle(false);
+    let password_open_toggle = use_bool_toggle(false);
+    let leave_grove_open_toggle = use_bool_toggle(false);
 
     let mods_state: UseAsyncHandle<_, ApiError> = use_async(async move {
-        Ok(if let Ok(users) = get_users().await {
+        Ok(if let Ok(users) = api::get_users().await {
             users
                 .into_iter()
                 .filter_map(|user| {
@@ -889,37 +885,51 @@ fn top_bar() -> Html {
             vec![]
         })
     });
+    let leave_grove_state =
+        use_async(async move { api::leave().await.map(|_| navigator.push(&AppRoute::Login)) });
 
+    let navigator = use_navigator().expect("Navigator should be available");
     let logout = use_callback(navigator, |_: (), navigator| {
-        logout();
+        api::logout();
         navigator.push(&AppRoute::Login);
     });
-    let update_my_profile_click =
-        use_callback(profile_open_state.clone(), |_, profile_open_state| {
+    let open_update_my_profile =
+        use_callback(profile_open_toggle.clone(), |_, profile_open_state| {
             profile_open_state.set(true)
         });
-    let change_password_click = use_callback(
-        (mods_state.clone(), password_open_state.clone()),
+    let open_change_password = use_callback(
+        (mods_state.clone(), password_open_toggle.clone()),
         |_, (mods_state, password_open_state)| {
             password_open_state.set(true);
             mods_state.run();
         },
     );
+    let open_leave_grove = use_callback(leave_grove_open_toggle.clone(), |_, toggle| {
+        toggle.set(true)
+    });
+    let close_leave_grove = use_callback(leave_grove_open_toggle.clone(), |_, toggle| {
+        toggle.set(false)
+    });
+    let leave_grove = use_callback(leave_grove_state.clone(), |_, state| state.run());
 
     html!(
         <>
             <CosmoTopBar profile_picture="/static/logo.webp" has_right_item={true} right_item_on_click={logout} right_item_label="Abmelden">
                 <CosmoTopBarItemLink<AppRoute> label="Rechtliches" to={AppRoute::LegalRoot} />
-                <CosmoTopBarItem label="Mein Profil" on_click={update_my_profile_click} />
-                <CosmoTopBarItem label="Passwort ändern" on_click={change_password_click} />
+                <CosmoTopBarItem label="Mein Profil" on_click={open_update_my_profile} />
+                <CosmoTopBarItem label="Passwort ändern" on_click={open_change_password} />
+                <CosmoTopBarItem label="Hain verlassen" on_click={open_leave_grove} />
             </CosmoTopBar>
-            if *profile_open_state {
-                <UpdateMyProfileDialog on_close={move |_| profile_open_state.set(false)} />
+            if *profile_open_toggle {
+                <UpdateMyProfileDialog on_close={move |_| profile_open_toggle.set(false)} />
             }
-            if *password_open_state {
+            if *password_open_toggle {
                 if let Some(data) = &mods_state.data {
-                    <ChangePasswordDialog on_close={move |_| password_open_state.set(false)} mods={data.clone()} />
+                    <ChangePasswordDialog on_close={move |_| password_open_toggle.set(false)} mods={data.clone()} />
                 }
+            }
+            if *leave_grove_open_toggle {
+                <CosmoConfirm confirm_type={CosmoModalType::Negative} on_confirm={leave_grove} on_decline={close_leave_grove} title="Hain verlassen" message="Bist du sicher, dass du den Hain verlassen möchtest?\nWenn du den Hain verlässt werden alle deine Daten gelöscht und können nicht wiederhergestellt werden." confirm_label="Hain verlassen" decline_label="Im Hain bleiben" />
             }
         </>
     )
