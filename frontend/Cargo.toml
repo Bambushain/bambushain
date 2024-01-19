@@ -9,13 +9,14 @@ members = [
     "base/api",
     "base/error",
     "base/routing",
-    "base/storage",
+    "base/storage", "base/ui",
     "sections/authentication",
     "sections/bamboo",
     "sections/final-fantasy",
     "sections/layout",
     "sections/legal",
     "sections/licenses",
+    "sections/mod-area",
     "sections/support"
 ]
 

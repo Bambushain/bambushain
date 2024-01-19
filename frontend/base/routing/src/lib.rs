@@ -17,6 +17,10 @@ pub enum AppRoute {
     SupportRoot,
     #[at("/support/*")]
     Support,
+    #[at("/mod-area")]
+    ModAreaRoot,
+    #[at("/mod-area/*")]
+    ModArea,
     #[at("/legal")]
     LegalRoot,
     #[at("/legal/*")]
@@ -41,6 +45,14 @@ pub enum FinalFantasyRoute {
 pub enum SupportRoute {
     #[at("/support")]
     Contact,
+}
+
+#[derive(Clone, Routable, PartialEq)]
+pub enum ModAreaRoute {
+    #[at("/mod-area")]
+    UserManagement,
+    #[at("/mod-area/grove")]
+    GroveManagement,
 }
 
 #[derive(Clone, Routable, PartialEq)]
