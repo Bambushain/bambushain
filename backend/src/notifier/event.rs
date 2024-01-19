@@ -1,14 +1,14 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use actix_web::Responder;
 use actix_web::rt::time::interval;
+use actix_web::Responder;
 use actix_web_lab::sse;
 use parking_lot::Mutex;
 use tokio::sync::mpsc::error::SendError;
 use tokio::sync::mpsc::Sender;
 
-use bamboo_entities::prelude::Event;
+use bamboo_entities::prelude::{Event, User};
 use bamboo_sse::event;
 
 pub(crate) struct EventBroadcaster {
@@ -17,7 +17,7 @@ pub(crate) struct EventBroadcaster {
 
 #[derive(Debug, Clone, Default)]
 struct EventBroadcasterInner {
-    clients: Vec<Sender<sse::Event>>,
+    clients: Vec<(Sender<sse::Event>, User)>,
 }
 
 impl EventBroadcaster {
@@ -44,18 +44,18 @@ impl EventBroadcaster {
     async fn remove_stale_clients(&self) {
         let clients = self.inner.lock().clients.clone();
         let mut ok_clients = Vec::new();
-        for client in clients {
+        for (client, user) in clients {
             if let Err(err) = Self::send_comment(client.clone(), event::Comment::Ping).await {
                 log::info!("Failed to send ping {err}");
             } else {
-                ok_clients.push(client.clone());
+                ok_clients.push((client.clone(), user));
             }
         }
 
         self.inner.lock().clients = ok_clients;
     }
 
-    pub async fn new_client(&self) -> impl Responder {
+    pub async fn new_client(&self, user: User) -> impl Responder {
         log::debug!("Open channel using tokio");
         let (tx, rx) = tokio::sync::mpsc::channel::<sse::Event>(10);
 
@@ -63,7 +63,7 @@ impl EventBroadcaster {
         if let Err(err) = Self::send_comment(tx.clone(), event::Comment::Connected).await {
             log::error!("Failed to send message {err}")
         }
-        self.inner.lock().clients.push(tx);
+        self.inner.lock().clients.push((tx, user));
 
         sse::Sse::from_infallible_receiver(rx).with_keep_alive(Duration::from_secs(60))
     }
@@ -71,19 +71,24 @@ impl EventBroadcaster {
     fn send_event(&self, evt: event::Event) {
         let clients = self.inner.lock().clients.clone();
         log::debug!("Has {} clients registered", clients.len());
-        for client in clients {
-            Self::send_message(client, evt.clone())
+        for (client, user) in clients {
+            Self::send_message(client, user, evt.clone())
         }
     }
 
-    fn send_message(client: Sender<sse::Event>, evt: event::Event) {
-        actix_web::rt::spawn(async move {
-            log::debug!("Send event data");
-            log::debug!("Sending message with data {evt:#?}");
-            if let Err(err) = client.send(evt.into()).await {
-                log::error!("Failed to send message {err}");
-            }
-        });
+    fn send_message(client: Sender<sse::Event>, user: User, evt: event::Event) {
+        let is_private_event_of_current_user =
+            evt.event.is_private && Some(user.id) == evt.event.user_id;
+        let is_in_same_grove = !evt.event.is_private && evt.event.grove_id == user.grove_id;
+        if is_private_event_of_current_user || is_in_same_grove {
+            actix_web::rt::spawn(async move {
+                log::debug!("Send event data");
+                log::debug!("Sending message with data {evt:#?}");
+                if let Err(err) = client.send(evt.into()).await {
+                    log::error!("Failed to send message {err}");
+                }
+            });
+        }
     }
 
     async fn send_comment(
