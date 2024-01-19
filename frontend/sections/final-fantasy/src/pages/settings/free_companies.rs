@@ -57,10 +57,13 @@ pub fn free_companies() -> Html {
         let add_open_state = add_open_state.clone();
         let unreported_error_toggle = unreported_error_toggle.clone();
 
+        let free_companies_state = free_companies_state.clone();
+
         use_async(async move {
             api::create_free_company(FreeCompany::new((*name_state).to_string()))
                 .await
                 .map(|_| {
+                    free_companies_state.run();
                     add_open_state.set(false);
                     name_state.set("".into());
                     unreported_error_toggle.set(false)
@@ -85,6 +88,8 @@ pub fn free_companies() -> Html {
         let edit_open_state = edit_open_state.clone();
         let unreported_error_toggle = unreported_error_toggle.clone();
 
+        let free_companies_state = free_companies_state.clone();
+
         use_async(async move {
             api::update_free_company(
                 *selected_id_state,
@@ -92,6 +97,7 @@ pub fn free_companies() -> Html {
             )
             .await
             .map(|_| {
+                free_companies_state.run();
                 edit_open_state.set(false);
                 name_state.set("".into());
                 unreported_error_toggle.set(false)
@@ -115,10 +121,13 @@ pub fn free_companies() -> Html {
         let delete_open_state = delete_open_state.clone();
         let unreported_error_toggle = unreported_error_toggle.clone();
 
+        let free_companies_state = free_companies_state.clone();
+
         use_async(async move {
             api::delete_free_company(*selected_id_state)
                 .await
                 .map(|_| {
+                    free_companies_state.run();
                     delete_open_state.set(false);
                     unreported_error_toggle.set(false)
                 })
