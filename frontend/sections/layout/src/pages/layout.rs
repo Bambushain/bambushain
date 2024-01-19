@@ -28,7 +28,7 @@ use bamboo_frontend_section_legal::{DataProtectionPage, ImprintPage};
 use bamboo_frontend_section_licenses::{
     BambooGrovePage, FontsPage, ImagesPage, SoftwareLicensesPage,
 };
-use bamboo_frontend_section_mod_area::UserManagementPage;
+use bamboo_frontend_section_mod_area::{GroveManagementPage, UserManagementPage};
 use bamboo_frontend_section_support::ContactPage;
 
 use crate::api::{
@@ -71,8 +71,8 @@ fn switch_sub_menu(route: AppRoute) -> Html {
         ),
         AppRoute::ModAreaRoot | AppRoute::ModArea => html!(
             <CosmoSubMenuBar>
-                <Switch<ModAreaRoute> render={render_sub_menu_entry("Hainverwaltung", ModAreaRoute::GroveManagement)} />
                 <Switch<ModAreaRoute> render={render_sub_menu_entry("Benutzerverwaltung", ModAreaRoute::UserManagement)} />
+                <Switch<ModAreaRoute> render={render_sub_menu_entry("Hainverwaltung", ModAreaRoute::GroveManagement)} />
             </CosmoSubMenuBar>
         ),
         AppRoute::LegalRoot | AppRoute::Legal => html!(
@@ -153,19 +153,20 @@ fn switch_support(route: SupportRoute) -> Html {
 
 fn switch_mod_area(route: ModAreaRoute) -> Html {
     match route {
-        ModAreaRoute::GroveManagement => html!(
-            <>
-                <Helmet>
-                    <title>{"Hainverwaltung"}</title>
-                </Helmet>
-            </>
-        ),
         ModAreaRoute::UserManagement => html!(
             <>
                 <Helmet>
                     <title>{"Benutzerverwaltung"}</title>
                 </Helmet>
                 <UserManagementPage />
+            </>
+        ),
+        ModAreaRoute::GroveManagement => html!(
+            <>
+                <Helmet>
+                    <title>{"Hainverwaltung"}</title>
+                </Helmet>
+                <GroveManagementPage />
             </>
         ),
     }

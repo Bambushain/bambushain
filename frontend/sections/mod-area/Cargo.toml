@@ -7,21 +7,14 @@ license.workspace = true
 [dependencies]
 bamboo-frontend-base-api = { path = "../../base/api" }
 bamboo-frontend-base-error = { path = "../../base/error" }
+bamboo-frontend-base-routing = { path = "../../base/routing" }
 bamboo-frontend-base-storage = { path = "../../base/storage" }
 bamboo-entities = { path = "../../../entities" }
 
 bounce = { workspace = true }
-chrono = { workspace = true }
-date-range = { workspace = true }
-futures = { workspace = true }
-gloo-events = { workspace = true }
 log = { workspace = true }
-serde_json = { workspace = true }
-stylist = { workspace = true }
-wasm-bindgen = { workspace = true }
-web-sys = { workspace = true }
 yew = { workspace = true }
 yew-cosmo = { workspace = true }
 yew-autoprops = { workspace = true }
-yew_icons = { workspace = true }
 yew-hooks = { workspace = true }
+yew-router = { workspace = true }

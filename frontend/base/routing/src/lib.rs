@@ -50,9 +50,9 @@ pub enum SupportRoute {
 #[derive(Clone, Routable, PartialEq)]
 pub enum ModAreaRoute {
     #[at("/mod-area")]
-    GroveManagement,
-    #[at("/mod-area/users")]
     UserManagement,
+    #[at("/mod-area/grove")]
+    GroveManagement,
 }
 
 #[derive(Clone, Routable, PartialEq)]

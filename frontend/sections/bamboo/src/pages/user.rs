@@ -71,19 +71,22 @@ pub fn users_page() -> Html {
         }
     } else if let Some(data) = &users_state.data {
         html!(
-            <BambooCardList>
-                {for data.iter().map(|user| html!(
-                    <BambooCard title={user.display_name.clone()}>
-                        <CosmoAnchor href={format!("mailto:{}", user.email.clone())}>{user.email.clone()}</CosmoAnchor>
-                        if !user.discord_name.is_empty() {
-                            <span>{"Auf Discord bekannt als "}<CosmoStrong>{user.discord_name.clone()}</CosmoStrong></span>
-                        }
-                        if user.is_mod {
-                            <span>{user.display_name.clone()}{" ist ein "}<CosmoStrong>{"Mod"}</CosmoStrong></span>
-                        }
-                    </BambooCard>
-                ))}
-            </BambooCardList>
+            <>
+                <CosmoTitle title="Pandas" />
+                <BambooCardList>
+                    {for data.iter().map(|user| html!(
+                        <BambooCard title={user.display_name.clone()}>
+                            <CosmoAnchor href={format!("mailto:{}", user.email.clone())}>{user.email.clone()}</CosmoAnchor>
+                            if !user.discord_name.is_empty() {
+                                <span>{"Auf Discord bekannt als "}<CosmoStrong>{user.discord_name.clone()}</CosmoStrong></span>
+                            }
+                            if user.is_mod {
+                                <span>{user.display_name.clone()}{" ist ein "}<CosmoStrong>{"Mod"}</CosmoStrong></span>
+                            }
+                        </BambooCard>
+                    ))}
+                </BambooCardList>
+            </>
         )
     } else {
         html!()
