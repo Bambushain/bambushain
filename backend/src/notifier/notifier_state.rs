@@ -1,17 +1,18 @@
 use std::sync::Arc;
 
-use actix_web::{Responder, web};
+use actix_web::{web, Responder};
 
-use bamboo_entities::prelude::Event;
+use crate::notifier::event::EventBroadcaster;
+use bamboo_entities::prelude::{Event, User};
 
 #[derive(Clone)]
 pub struct NotifierState {
-    event_broadcaster: Arc<crate::notifier::event::EventBroadcaster>,
+    event_broadcaster: Arc<EventBroadcaster>,
 }
 
 impl NotifierState {
     pub fn new() -> Self {
-        let event_broadcaster = crate::notifier::event::EventBroadcaster::create();
+        let event_broadcaster = EventBroadcaster::create();
 
         Self { event_broadcaster }
     }
@@ -31,9 +32,9 @@ impl NotifierState {
         self.event_broadcaster.notify_delete(event)
     }
 
-    pub async fn new_client(&self) -> impl Responder {
+    pub async fn new_client(&self, user: User) -> impl Responder {
         log::info!("Wanted new client");
-        self.event_broadcaster.new_client().await
+        self.event_broadcaster.new_client(user).await
     }
 }
 
