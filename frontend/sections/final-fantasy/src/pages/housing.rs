@@ -10,6 +10,7 @@ use yew_hooks::{use_async, use_bool_toggle, use_effect_update, use_mount};
 use bamboo_entities::prelude::*;
 use bamboo_frontend_base_api::{CONFLICT, NOT_FOUND};
 use bamboo_frontend_base_error as error;
+use bamboo_frontend_base_ui::{BambooCard, BambooCardList};
 
 use crate::api;
 
@@ -396,38 +397,9 @@ pub fn housing_details(character: &Character) -> Html {
         })
     }
 
-    let housing_list_style = use_style!(
-        r#"
-display: flex;
-margin-top: 2rem;
-flex-flow: row wrap;
-gap: 1rem;
-"#
-    );
-    let housing_container_style = use_style!(
-        r#"
-display: flex;
-flex-flow: column;
-background: var(--modal-backdrop);
-backdrop-filter: var(--modal-container-backdrop-filter);
-
-h5 {
-    margin-top: 0;
-}
-
-button {
-    border-top-left-radius: 0 !important;
-    border-top-right-radius: 0 !important;
-    flex: 1 1 50%;
-}
-"#
-    );
     let housing_address_style = use_style!(
         r#"
-border: var(--input-border-width) solid var(--control-border-color);
-border-radius: var(--border-radius);
 border-bottom: 0;
-padding: 0.5rem 1rem;
 margin-bottom: calc(var(--input-border-width) * -1 * 2);
 font-style: normal;
     "#
@@ -454,7 +426,7 @@ font-style: normal;
                         <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Die Unterkunft konnte nicht gespeichert werden" />
                     }
                 }
-                <div class={housing_list_style}>
+                <BambooCardList>
                     {for data.iter().map(|housing| {
                         let edit_housing = housing.clone();
                         let delete_housing = housing.clone();
@@ -463,21 +435,21 @@ font-style: normal;
                         let on_delete_open = on_delete_open.clone();
 
                         html!(
-                            <div class={housing_container_style.clone()}>
+                            <BambooCard title={housing.district.to_string()} buttons={html!(
+                                <>
+                                    <CosmoButton label="Bearbeiten" on_click={move |_| on_edit_open.emit(edit_housing.clone())} />
+                                    <CosmoButton label="Löschen" on_click={move |_| on_delete_open.emit(delete_housing.clone())} />
+                                </>
+                            )}>
                                 <address class={housing_address_style.clone()}>
-                                    <CosmoHeader level={CosmoHeaderLevel::H5} header={housing.district.to_string()} />
                                     <span>{housing.housing_type.to_string()}</span><br />
                                     <span>{format!("Bezirk {}", housing.ward)}</span><br />
                                     <span>{format!("Nr. {}", housing.plot)}</span>
                                 </address>
-                                <CosmoToolbarGroup>
-                                    <CosmoButton label="Bearbeiten" on_click={move |_| on_edit_open.emit(edit_housing.clone())} />
-                                    <CosmoButton label="Löschen" on_click={move |_| on_delete_open.emit(delete_housing.clone())} />
-                                </CosmoToolbarGroup>
-                            </div>
+                            </BambooCard>
                         )
                     })}
-                </div>
+                </BambooCardList>
                 {match (*action_state).clone() {
                     HousingActions::Create => html!(
                         <ModifyHousingModal has_unknown_error={*unreported_error_toggle} on_error_close={report_unknown_error.clone()} housing={CharacterHousing::new(character.id, HousingDistrict::TheLavenderBeds, HousingType::Private, 1, 1)} character_id={character.id} error_message={(*error_message_state).clone()} has_error={create_state.error.is_some()} on_close={on_modal_action_close} title="Unterkunft hinzufügen" save_label="Unterkunft hinzufügen" on_save={on_modal_create_save} />

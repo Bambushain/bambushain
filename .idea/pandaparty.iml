@@ -27,6 +27,8 @@
       <sourceFolder url="file://$MODULE_DIR$/frontend/sections/legal/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/frontend/sections/licenses/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/frontend/sections/support/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/base/ui/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/sections/mod-area/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/backend/target" />
       <excludeFolder url="file://$MODULE_DIR$/entities/target" />
       <excludeFolder url="file://$MODULE_DIR$/frontend/target" />

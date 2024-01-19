@@ -13,7 +13,8 @@ use bamboo_entities::user::UpdateProfile;
 use bamboo_frontend_base_api::{ApiError, CONFLICT, FORBIDDEN, NOT_FOUND};
 use bamboo_frontend_base_error as error;
 use bamboo_frontend_base_routing::{
-    AppRoute, BambooGroveRoute, FinalFantasyRoute, LegalRoute, LicensesRoute, SupportRoute,
+    AppRoute, BambooGroveRoute, FinalFantasyRoute, LegalRoute, LicensesRoute, ModAreaRoute,
+    SupportRoute,
 };
 use bamboo_frontend_base_storage as storage;
 use bamboo_frontend_section_authentication::api::get_my_profile;
@@ -27,10 +28,12 @@ use bamboo_frontend_section_legal::{DataProtectionPage, ImprintPage};
 use bamboo_frontend_section_licenses::{
     BambooGrovePage, FontsPage, ImagesPage, SoftwareLicensesPage,
 };
+use bamboo_frontend_section_mod_area::{GroveManagementPage, UserManagementPage};
 use bamboo_frontend_section_support::ContactPage;
 
 use crate::api::{
-    change_my_password, disable_totp, enable_totp, logout, update_my_profile, validate_totp,
+    change_my_password, disable_totp, enable_totp, get_grove, logout, update_my_profile,
+    validate_totp,
 };
 
 pub fn switch(route: AppRoute) -> Html {
@@ -64,6 +67,12 @@ fn switch_sub_menu(route: AppRoute) -> Html {
         AppRoute::SupportRoot | AppRoute::Support => html!(
             <CosmoSubMenuBar>
                 <Switch<SupportRoute> render={render_sub_menu_entry("Kontakt", SupportRoute::Contact)} />
+            </CosmoSubMenuBar>
+        ),
+        AppRoute::ModAreaRoot | AppRoute::ModArea => html!(
+            <CosmoSubMenuBar>
+                <Switch<ModAreaRoute> render={render_sub_menu_entry("Benutzerverwaltung", ModAreaRoute::UserManagement)} />
+                <Switch<ModAreaRoute> render={render_sub_menu_entry("Hainverwaltung", ModAreaRoute::GroveManagement)} />
             </CosmoSubMenuBar>
         ),
         AppRoute::LegalRoot | AppRoute::Legal => html!(
@@ -142,6 +151,27 @@ fn switch_support(route: SupportRoute) -> Html {
     }
 }
 
+fn switch_mod_area(route: ModAreaRoute) -> Html {
+    match route {
+        ModAreaRoute::UserManagement => html!(
+            <>
+                <Helmet>
+                    <title>{"Benutzerverwaltung"}</title>
+                </Helmet>
+                <UserManagementPage />
+            </>
+        ),
+        ModAreaRoute::GroveManagement => html!(
+            <>
+                <Helmet>
+                    <title>{"Hainverwaltung"}</title>
+                </Helmet>
+                <GroveManagementPage />
+            </>
+        ),
+    }
+}
+
 fn switch_legal(route: LegalRoute) -> Html {
     match route {
         LegalRoute::Imprint => html!(
@@ -200,52 +230,99 @@ fn switch_licenses(route: LicensesRoute) -> Html {
     }
 }
 
-fn switch_app(route: AppRoute) -> Html {
-    match route {
-        AppRoute::Home => html!(
-            <Redirect<AppRoute> to={AppRoute::BambooGroveRoot} />
-        ),
-        AppRoute::BambooGroveRoot | AppRoute::BambooGrove => html!(
-            <>
-                <Helmet>
-                    <title>{"Bambushain"}</title>
-                </Helmet>
-                <Switch<BambooGroveRoute> render={switch_bamboo_grove} />
-            </>
-        ),
-        AppRoute::FinalFantasyRoot | AppRoute::FinalFantasy => html!(
-            <>
-                <Helmet>
-                    <title>{"Final Fantasy"}</title>
-                </Helmet>
-                <Switch<FinalFantasyRoute> render={switch_final_fantasy} />
-            </>
-        ),
-        AppRoute::SupportRoot | AppRoute::Support => html!(
-            <>
-                <Helmet>
-                    <title>{"Bambussupport"}</title>
-                </Helmet>
-                <Switch<SupportRoute> render={switch_support} />
-            </>
-        ),
-        AppRoute::LegalRoot | AppRoute::Legal => html!(
-            <>
-                <Helmet>
-                    <title>{"Rechtliches"}</title>
-                </Helmet>
-                <Switch<LegalRoute> render={switch_legal} />
-            </>
-        ),
-        AppRoute::LicensesRoot | AppRoute::Licenses => html!(
-            <>
-                <Helmet>
-                    <title>{"Lizenz"}</title>
-                </Helmet>
-                <Switch<LicensesRoute> render={switch_licenses} />
-            </>
-        ),
-        AppRoute::Login => html!(),
+fn switch_app(is_mod: bool, grove_is_enabled: bool) -> impl Fn(AppRoute) -> Html {
+    move |route| {
+        if grove_is_enabled {
+            match route {
+                AppRoute::Home => html!(
+                    <Redirect<AppRoute> to={AppRoute::BambooGroveRoot} />
+                ),
+                AppRoute::BambooGroveRoot | AppRoute::BambooGrove => html!(
+                    <>
+                        <Helmet>
+                            <title>{"Bambushain"}</title>
+                        </Helmet>
+                        <Switch<BambooGroveRoute> render={switch_bamboo_grove} />
+                    </>
+                ),
+                AppRoute::FinalFantasyRoot | AppRoute::FinalFantasy => html!(
+                    <>
+                        <Helmet>
+                            <title>{"Final Fantasy"}</title>
+                        </Helmet>
+                        <Switch<FinalFantasyRoute> render={switch_final_fantasy} />
+                    </>
+                ),
+                AppRoute::SupportRoot | AppRoute::Support => html!(
+                    <>
+                        <Helmet>
+                            <title>{"Bambussupport"}</title>
+                        </Helmet>
+                        <Switch<SupportRoute> render={switch_support} />
+                    </>
+                ),
+                AppRoute::ModAreaRoot | AppRoute::ModArea => {
+                    if is_mod {
+                        html!(
+                            <>
+                                <Helmet>
+                                    <title>{"Mod Area"}</title>
+                                </Helmet>
+                                <Switch<ModAreaRoute> render={switch_mod_area} />
+                            </>
+                        )
+                    } else {
+                        html!(
+                            <Redirect<AppRoute> to={AppRoute::BambooGroveRoot} />
+                        )
+                    }
+                }
+                AppRoute::LegalRoot | AppRoute::Legal => html!(
+                    <>
+                        <Helmet>
+                            <title>{"Rechtliches"}</title>
+                        </Helmet>
+                        <Switch<LegalRoute> render={switch_legal} />
+                    </>
+                ),
+                AppRoute::LicensesRoot | AppRoute::Licenses => html!(
+                    <>
+                        <Helmet>
+                            <title>{"Lizenz"}</title>
+                        </Helmet>
+                        <Switch<LicensesRoute> render={switch_licenses} />
+                    </>
+                ),
+                AppRoute::Login => html!(),
+            }
+        } else {
+            match route {
+                AppRoute::LegalRoot | AppRoute::Legal => html!(
+                    <>
+                        <Helmet>
+                            <title>{"Rechtliches"}</title>
+                        </Helmet>
+                        <Switch<LegalRoute> render={switch_legal} />
+                    </>
+                ),
+                AppRoute::LicensesRoot | AppRoute::Licenses => html!(
+                    <>
+                        <Helmet>
+                            <title>{"Lizenz"}</title>
+                        </Helmet>
+                        <Switch<LicensesRoute> render={switch_licenses} />
+                    </>
+                ),
+                _ => html!(
+                    <>
+                        <Helmet>
+                            <title>{"Mod Area"}</title>
+                        </Helmet>
+                        <Switch<ModAreaRoute> render={switch_mod_area} />
+                    </>
+                ),
+            }
+        }
     }
 }
 
@@ -304,12 +381,30 @@ fn app_layout() -> Html {
     log::debug!("Render app layout");
     let profile_atom_setter = use_atom_setter::<storage::CurrentUser>();
 
+    let grove_is_enabled = use_bool_toggle(true);
+
+    let navigator = use_navigator();
+
     let profile_state = use_async(async move {
         get_my_profile().await.map(|user| {
             profile_atom_setter(user.clone().into());
             user
         })
     });
+    let grove_state = {
+        let grove_is_enabled = grove_is_enabled.clone();
+
+        use_async(async move {
+            get_grove().await.map(|grove| {
+                if !grove.is_enabled {
+                    if let Some(navigator) = navigator {
+                        navigator.push(&AppRoute::ModAreaRoot);
+                    }
+                    grove_is_enabled.set(false);
+                }
+            })
+        })
+    };
 
     {
         let profile_state = profile_state.clone();
@@ -319,25 +414,31 @@ fn app_layout() -> Html {
                 "First render, so lets send the request to check if the token is valid and see"
             );
             profile_state.run();
+            grove_state.run();
         });
     }
 
     html!(
         if let Some(_) = &profile_state.error {
             <Redirect<AppRoute> to={AppRoute::Login} />
-        } else if let Some(_) = &profile_state.data {
+        } else if let Some(profile) = &profile_state.data {
             <>
                 <Switch<AppRoute> render={switch_top_bar}/>
                 <CosmoMenuBar>
                     <CosmoMainMenu>
-                        <Switch<AppRoute> render={render_main_menu_entry("Bambushain", AppRoute::BambooGroveRoot, AppRoute::BambooGrove)} />
-                        <Switch<AppRoute> render={render_main_menu_entry("Final Fantasy", AppRoute::FinalFantasyRoot, AppRoute::FinalFantasy)} />
-                        <Switch<AppRoute> render={render_main_menu_entry("Bambussupport", AppRoute::SupportRoot, AppRoute::Support)} />
+                        if *grove_is_enabled {
+                            <Switch<AppRoute> render={render_main_menu_entry("Bambushain", AppRoute::BambooGroveRoot, AppRoute::BambooGrove)} />
+                            <Switch<AppRoute> render={render_main_menu_entry("Final Fantasy", AppRoute::FinalFantasyRoot, AppRoute::FinalFantasy)} />
+                            <Switch<AppRoute> render={render_main_menu_entry("Bambussupport", AppRoute::SupportRoot, AppRoute::Support)} />
+                        }
+                        if profile.is_mod {
+                            <Switch<AppRoute> render={render_main_menu_entry("Mod Area", AppRoute::ModAreaRoot, AppRoute::ModArea)} />
+                        }
                     </CosmoMainMenu>
                     <Switch<AppRoute> render={switch_sub_menu} />
                 </CosmoMenuBar>
                 <CosmoPageBody>
-                    <Switch<AppRoute> render={switch_app} />
+                    <Switch<AppRoute> render={switch_app(profile.is_mod, *grove_is_enabled)} />
                </CosmoPageBody>
             </>
         }
@@ -358,7 +459,7 @@ fn legal_layout() -> Html {
                 <Switch<AppRoute> render={switch_sub_menu} />
             </CosmoMenuBar>
             <CosmoPageBody>
-                <Switch<AppRoute> render={switch_app} />
+                <Switch<AppRoute> render={switch_app(false, true)} />
            </CosmoPageBody>
         </>
     )

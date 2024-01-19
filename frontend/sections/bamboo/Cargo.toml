@@ -7,10 +7,9 @@ license.workspace = true
 [dependencies]
 bamboo-frontend-base-api = { path = "../../base/api" }
 bamboo-frontend-base-error = { path = "../../base/error" }
-bamboo-frontend-base-storage = { path = "../../base/storage" }
+bamboo-frontend-base-ui = { path = "../../base/ui" }
 bamboo-entities = { path = "../../../entities" }
 
-bounce = { workspace = true }
 chrono = { workspace = true }
 date-range = { workspace = true }
 futures = { workspace = true }

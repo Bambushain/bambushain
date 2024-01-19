@@ -1,6 +1,6 @@
-use actix_web::{HttpResponse, web};
+use actix_web::{web, HttpResponse};
 
-use bamboo_services::prelude::{EnvironmentService, EnvService};
+use bamboo_services::prelude::{EnvService, EnvironmentService};
 
 use crate::middleware::authenticate_user::authenticate;
 
@@ -12,6 +12,7 @@ mod custom_field;
 mod event;
 mod fighter;
 mod free_company;
+mod grove;
 mod licenses;
 mod my;
 mod support;
@@ -90,6 +91,10 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
         .service(support::send_support_request)
         .service(support::report_glitchtip_error)
         .service(licenses::get_licenses)
+        .service(grove::get_grove)
+        .service(grove::disable_grove)
+        .service(grove::enable_grove)
+        .service(grove::delete_grove)
         .service(crate::sse::event::event_sse_client)
         .service(
             actix_web_lab::web::spa()
