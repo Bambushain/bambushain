@@ -1,9 +1,9 @@
-use actix_web::{delete, get, post, put, web};
+use actix_web::{delete, get, post, put};
 
 use bamboo_common::backend::dbal;
+use bamboo_common::backend::services::DbConnection;
 use bamboo_common::core::entities::*;
 use bamboo_common::core::error::*;
-use bamboo_common::backend::services::DbConnection;
 
 use crate::middleware::authenticate_user::{authenticate, Authentication};
 use crate::response::macros::*;
@@ -22,9 +22,9 @@ pub async fn change_password(
         body.new_password.clone(),
         &db,
     )
-    .await
-    .map(|_| no_content!())
-    .map_err(|err| err.into())
+        .await
+        .map(|_| no_content!())
+        .map_err(|err| err.into())
 }
 
 #[put("/api/my/profile", wrap = "authenticate!()")]
@@ -42,8 +42,8 @@ pub async fn update_profile(
         body.discord_name.clone(),
         &db,
     )
-    .await
-    .map(|_| no_content!())
+        .await
+        .map(|_| no_content!())
 }
 
 #[post("/api/my/totp", wrap = "authenticate!()")]
@@ -91,17 +91,17 @@ pub async fn validate_totp(
             body.code.clone(),
             &db,
         )
-        .await
-        .map(|data| {
-            if data {
-                Ok(no_content!())
-            } else {
-                Err(BambooError::insufficient_rights(
-                    "user",
-                    "The code is invalid",
-                ))
-            }
-        })?
+            .await
+            .map(|data| {
+                if data {
+                    Ok(no_content!())
+                } else {
+                    Err(BambooError::insufficient_rights(
+                        "user",
+                        "The code is invalid",
+                    ))
+                }
+            })?
     }
 }
 

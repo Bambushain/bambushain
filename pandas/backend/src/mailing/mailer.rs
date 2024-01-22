@@ -3,8 +3,8 @@ use lettre::message::{MessageBuilder, MultiPart};
 use lettre::transport::smtp;
 use lettre::transport::smtp::client::TlsParameters;
 
-use bamboo_common::core::error::*;
 use bamboo_common::backend::services::EnvService;
+use bamboo_common::core::error::*;
 
 fn get_transport(
     env_service: EnvService,

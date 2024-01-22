@@ -1,8 +1,8 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use actix_web::rt::time::interval;
 use actix_web::Responder;
+use actix_web::rt::time::interval;
 use actix_web_lab::sse;
 use parking_lot::Mutex;
 use tokio::sync::mpsc::error::SendError;

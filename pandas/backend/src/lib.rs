@@ -1,3 +1,5 @@
+pub use app::start_server;
+
 pub(crate) mod cookie;
 pub(crate) mod header;
 pub(crate) mod mailing;
@@ -9,4 +11,3 @@ pub(crate) mod routes;
 pub(crate) mod sse;
 mod app;
 
-pub use app::start_server;

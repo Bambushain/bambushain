@@ -9,12 +9,12 @@ use crate::prelude::{CustomCharacterField, CustomCharacterFieldOption};
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 #[cfg_attr(
-    not(target_arch = "wasm32"),
-    derive(DeriveEntityModel, Responder),
-    sea_orm(
-        table_name = "custom_character_field_value",
-        schema_name = "final_fantasy"
-    )
+not(target_arch = "wasm32"),
+derive(DeriveEntityModel, Responder),
+sea_orm(
+table_name = "custom_character_field_value",
+schema_name = "final_fantasy"
+)
 )]
 #[serde(rename_all = "camelCase")]
 pub struct Model {
@@ -34,27 +34,27 @@ pub struct Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::character::Entity",
-        from = "Column::CharacterId",
-        to = "super::character::Column::Id",
-        on_update = "Cascade",
-        on_delete = "Cascade"
+    belongs_to = "super::character::Entity",
+    from = "Column::CharacterId",
+    to = "super::character::Column::Id",
+    on_update = "Cascade",
+    on_delete = "Cascade"
     )]
     Character,
     #[sea_orm(
-        belongs_to = "super::custom_character_field::Entity",
-        from = "Column::CustomCharacterFieldId",
-        to = "super::custom_character_field::Column::Id",
-        on_update = "Cascade",
-        on_delete = "Cascade"
+    belongs_to = "super::custom_character_field::Entity",
+    from = "Column::CustomCharacterFieldId",
+    to = "super::custom_character_field::Column::Id",
+    on_update = "Cascade",
+    on_delete = "Cascade"
     )]
     CustomCharacterField,
     #[sea_orm(
-        belongs_to = "super::custom_character_field_option::Entity",
-        from = "Column::CustomCharacterFieldOptionId",
-        to = "super::custom_character_field_option::Column::Id",
-        on_update = "Cascade",
-        on_delete = "Cascade"
+    belongs_to = "super::custom_character_field_option::Entity",
+    from = "Column::CustomCharacterFieldOptionId",
+    to = "super::custom_character_field_option::Column::Id",
+    on_update = "Cascade",
+    on_delete = "Cascade"
     )]
     CustomCharacterFieldOption,
 }

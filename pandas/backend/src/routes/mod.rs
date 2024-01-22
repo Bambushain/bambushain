@@ -1,6 +1,6 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{HttpResponse, web};
 
-use bamboo_common::backend::services::{EnvService, EnvironmentService};
+use bamboo_common::backend::services::{EnvironmentService, EnvService};
 
 use crate::middleware::authenticate_user::authenticate;
 

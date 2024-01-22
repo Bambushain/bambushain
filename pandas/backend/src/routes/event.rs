@@ -4,9 +4,9 @@ use date_range::DateRange;
 use serde::Deserialize;
 
 use bamboo_common::backend::dbal;
+use bamboo_common::backend::services::DbConnection;
 use bamboo_common::core::entities::Event;
 use bamboo_common::core::error::*;
-use bamboo_common::backend::services::DbConnection;
 
 use crate::middleware::authenticate_user::{authenticate, Authentication};
 use crate::middleware::identify_grove::{CurrentGrove, grove};

@@ -1,7 +1,6 @@
 use std::str::FromStr;
 
 use log::Level;
-
 use yew::prelude::*;
 use yew_cosmo::prelude::CosmoPageLayout;
 use yew_router::prelude::*;

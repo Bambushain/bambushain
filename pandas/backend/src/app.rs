@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use actix_web::{middleware, App, HttpServer};
+use actix_web::{App, HttpServer, middleware};
 use sea_orm::{ConnectOptions, Database};
 
 use bamboo_common::backend::dbal;

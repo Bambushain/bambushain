@@ -23,7 +23,7 @@ pub async fn create_custom_field(
             position,
         },
     )
-    .await
+        .await
 }
 
 pub async fn update_custom_field(id: i32, label: String) -> BambooApiResult<()> {
@@ -36,7 +36,7 @@ pub async fn update_custom_field(id: i32, label: String) -> BambooApiResult<()> 
             ..Default::default()
         },
     )
-    .await
+        .await
 }
 
 pub async fn delete_custom_field(id: i32) -> BambooApiResult<()> {
@@ -53,7 +53,7 @@ pub async fn add_custom_field_option(
         format!("/api/final-fantasy/character/custom-field/{field_id}/option"),
         &label,
     )
-    .await
+        .await
 }
 
 pub async fn update_custom_field_option(
@@ -66,7 +66,7 @@ pub async fn update_custom_field_option(
         format!("/api/final-fantasy/character/custom-field/{field_id}/option/{id}"),
         &label,
     )
-    .await
+        .await
 }
 
 pub async fn delete_custom_field_option(field_id: i32, id: i32) -> BambooApiResult<()> {
@@ -74,7 +74,7 @@ pub async fn delete_custom_field_option(field_id: i32, id: i32) -> BambooApiResu
     delete(format!(
         "/api/final-fantasy/character/custom-field/{field_id}/option/{id}"
     ))
-    .await
+        .await
 }
 
 pub async fn get_custom_field_options(
@@ -84,7 +84,7 @@ pub async fn get_custom_field_options(
     get(format!(
         "/api/final-fantasy/character/custom-field/{field_id}/option"
     ))
-    .await
+        .await
 }
 
 pub async fn move_custom_field(id: i32, position: i32) -> BambooApiResult<()> {
@@ -92,5 +92,5 @@ pub async fn move_custom_field(id: i32, position: i32) -> BambooApiResult<()> {
     put_no_body_no_content(format!(
         "/api/final-fantasy/character/custom-field/{id}/{position}"
     ))
-    .await
+        .await
 }

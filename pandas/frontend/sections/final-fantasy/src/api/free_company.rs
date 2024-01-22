@@ -17,7 +17,7 @@ pub async fn update_free_company(id: i32, free_company: FreeCompany) -> BambooAp
         format!("/api/final-fantasy/free-company/{id}"),
         &free_company,
     )
-    .await
+        .await
 }
 
 pub async fn delete_free_company(id: i32) -> BambooApiResult<()> {

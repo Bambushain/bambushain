@@ -1,17 +1,16 @@
-use actix_web::{delete, get, post, put, web};
+use actix_web::{delete, get, post, put};
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 
 use bamboo_common::backend::dbal;
+use bamboo_common::backend::services::{DbConnection, EnvService};
 use bamboo_common::core::entities::*;
 use bamboo_common::core::error::*;
-use bamboo_common::backend::services::{DbConnection, EnvService};
 
-use crate::middleware::authenticate_user::{authenticate, Authentication};
-use crate::middleware::check_mod::is_mod;
-use crate::middleware::identify_grove::{grove, CurrentGrove};
-use crate::response::macros::*;
 use crate::{mailing, path};
+use crate::middleware::authenticate_user::authenticate;
+use crate::middleware::identify_grove::{CurrentGrove, grove};
+use crate::response::macros::*;
 
 fn get_random_password() -> String {
     rand::thread_rng()
@@ -64,14 +63,14 @@ Alles Gute vom 🐼"#
         plain_body,
         html_body,
     )
-    .await
-    .map_err(|err| {
-        log::error!("Failed to send email {err}");
-        log::error!("{err:#?}");
+        .await
+        .map_err(|err| {
+            log::error!("Failed to send email {err}");
+            log::error!("{err:#?}");
 
-        BambooError::mailing("Failed to send welcome email")
-    })
-    .map(|_| no_content!())
+            BambooError::mailing("Failed to send welcome email")
+        })
+        .map(|_| no_content!())
 }
 
 async fn send_password_changed(
@@ -118,14 +117,14 @@ Alles Gute vom 🐼"#
         plain_body,
         html_body,
     )
-    .await
-    .map_err(|err| {
-        log::error!("Failed to send email {err}");
-        log::error!("{err:#?}");
+        .await
+        .map_err(|err| {
+            log::error!("Failed to send email {err}");
+            log::error!("{err:#?}");
 
-        BambooError::mailing("Failed to send change password email")
-    })
-    .map(|_| no_content!())
+            BambooError::mailing("Failed to send change password email")
+        })
+        .map(|_| no_content!())
 }
 
 #[get("/api/user", wrap = "authenticate!()", wrap = "grove!()")]
@@ -154,10 +153,10 @@ pub async fn get_user(
 }
 
 #[post(
-    "/api/user",
-    wrap = "authenticate!()",
-    wrap = "is_mod!()",
-    wrap = "grove!()"
+"/api/user",
+wrap = "authenticate!()",
+wrap = "is_mod!()",
+wrap = "grove!()"
 )]
 pub async fn create_user(
     body: Option<web::Json<User>>,
@@ -174,7 +173,7 @@ pub async fn create_user(
         new_password.clone(),
         &db,
     )
-    .await?;
+        .await?;
     send_user_created(
         user.display_name.clone(),
         authentication.user.display_name.clone(),
@@ -182,16 +181,16 @@ pub async fn create_user(
         new_password,
         env_service,
     )
-    .await?;
+        .await?;
 
     Ok(created!(user.into()))
 }
 
 #[delete(
-    "/api/user/{user_id}",
-    wrap = "authenticate!()",
-    wrap = "is_mod!()",
-    wrap = "grove!()"
+"/api/user/{user_id}",
+wrap = "authenticate!()",
+wrap = "is_mod!()",
+wrap = "grove!()"
 )]
 pub async fn delete_user(
     path: Option<path::UserPath>,
@@ -213,10 +212,10 @@ pub async fn delete_user(
 }
 
 #[put(
-    "/api/user/{user_id}/mod",
-    wrap = "authenticate!()",
-    wrap = "is_mod!()",
-    wrap = "grove!()"
+"/api/user/{user_id}/mod",
+wrap = "authenticate!()",
+wrap = "is_mod!()",
+wrap = "grove!()"
 )]
 pub async fn add_mod_user(
     path: Option<path::UserPath>,
@@ -238,10 +237,10 @@ pub async fn add_mod_user(
 }
 
 #[delete(
-    "/api/user/{user_id}/mod",
-    wrap = "authenticate!()",
-    wrap = "is_mod!()",
-    wrap = "grove!()"
+"/api/user/{user_id}/mod",
+wrap = "authenticate!()",
+wrap = "is_mod!()",
+wrap = "grove!()"
 )]
 pub async fn remove_mod_user(
     path: Option<path::UserPath>,
@@ -263,10 +262,10 @@ pub async fn remove_mod_user(
 }
 
 #[put(
-    "/api/user/{user_id}/password",
-    wrap = "authenticate!()",
-    wrap = "is_mod!()",
-    wrap = "grove!()"
+"/api/user/{user_id}/password",
+wrap = "authenticate!()",
+wrap = "is_mod!()",
+wrap = "grove!()"
 )]
 pub async fn change_password(
     path: Option<path::UserPath>,
@@ -290,7 +289,7 @@ pub async fn change_password(
         new_password.clone(),
         &db,
     )
-    .await?;
+        .await?;
 
     let user = dbal::get_user(current_grove.grove.id, path.user_id, &db).await?;
     send_password_changed(
@@ -300,14 +299,14 @@ pub async fn change_password(
         user.totp_validated.unwrap_or(false),
         env_service,
     )
-    .await
+        .await
 }
 
 #[put(
-    "/api/user/{user_id}/profile",
-    wrap = "authenticate!()",
-    wrap = "is_mod!()",
-    wrap = "grove!()"
+"/api/user/{user_id}/profile",
+wrap = "authenticate!()",
+wrap = "is_mod!()",
+wrap = "grove!()"
 )]
 pub async fn update_user_profile(
     path: Option<path::UserPath>,
@@ -326,15 +325,15 @@ pub async fn update_user_profile(
         body.discord_name.clone(),
         &db,
     )
-    .await
-    .map(|_| no_content!())
+        .await
+        .map(|_| no_content!())
 }
 
 #[delete(
-    "/api/user/{user_id}/totp",
-    wrap = "authenticate!()",
-    wrap = "is_mod!()",
-    wrap = "grove!()"
+"/api/user/{user_id}/totp",
+wrap = "authenticate!()",
+wrap = "is_mod!()",
+wrap = "grove!()"
 )]
 pub async fn disable_totp(
     path: Option<path::UserPath>,

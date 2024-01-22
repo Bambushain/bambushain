@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
-use actix_web::{web, Responder};
+use actix_web::{Responder, web};
+
+use bamboo_common::core::entities::{Event, User};
 
 use crate::notifier::event::EventBroadcaster;
-use bamboo_common::core::entities::{Event, User};
 
 #[derive(Clone)]
 pub struct NotifierState {

@@ -6,7 +6,7 @@ pub async fn get_character_housing(character_id: i32) -> BambooApiResult<Vec<Cha
     get(format!(
         "/api/final-fantasy/character/{character_id}/housing"
     ))
-    .await
+        .await
 }
 
 pub async fn create_character_housing(
@@ -18,7 +18,7 @@ pub async fn create_character_housing(
         format!("/api/final-fantasy/character/{character_id}/housing"),
         &character_housing,
     )
-    .await
+        .await
 }
 
 pub async fn update_character_housing(
@@ -31,7 +31,7 @@ pub async fn update_character_housing(
         format!("/api/final-fantasy/character/{character_id}/housing/{id}"),
         &character_housing,
     )
-    .await
+        .await
 }
 
 pub async fn delete_character_housing(character_id: i32, id: i32) -> BambooApiResult<()> {
@@ -39,5 +39,5 @@ pub async fn delete_character_housing(character_id: i32, id: i32) -> BambooApiRe
     delete(format!(
         "/api/final-fantasy/character/{character_id}/housing/{id}"
     ))
-    .await
+        .await
 }

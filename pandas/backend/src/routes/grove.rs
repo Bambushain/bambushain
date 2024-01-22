@@ -1,14 +1,11 @@
 use actix_web::{delete, get, put};
 
-use bamboo_common::backend::dbal;
 use bamboo_common::core::entities::Grove;
-use bamboo_common::core::error::{BambooApiResponseResult, BambooApiResult};
-use bamboo_common::backend::services::DbConnection;
+use bamboo_common::core::error::BambooApiResult;
 
 use crate::middleware::authenticate_user::authenticate;
-use crate::middleware::check_mod::is_mod;
-use crate::middleware::identify_grove::{grove, CurrentGrove};
-use crate::response::macros::{no_content, ok};
+use crate::middleware::identify_grove::{CurrentGrove, grove};
+use crate::response::macros::ok;
 
 #[get("/api/grove", wrap = "authenticate!()", wrap = "grove!()")]
 pub async fn get_grove(current_grove: CurrentGrove) -> BambooApiResult<Grove> {
@@ -16,10 +13,10 @@ pub async fn get_grove(current_grove: CurrentGrove) -> BambooApiResult<Grove> {
 }
 
 #[delete(
-    "/api/grove/enabled",
-    wrap = "authenticate!()",
-    wrap = "grove!()",
-    wrap = "is_mod!()"
+"/api/grove/enabled",
+wrap = "authenticate!()",
+wrap = "grove!()",
+wrap = "is_mod!()"
 )]
 pub async fn disable_grove(
     current_grove: CurrentGrove,
@@ -31,10 +28,10 @@ pub async fn disable_grove(
 }
 
 #[put(
-    "/api/grove/enabled",
-    wrap = "authenticate!()",
-    wrap = "grove!()",
-    wrap = "is_mod!()"
+"/api/grove/enabled",
+wrap = "authenticate!()",
+wrap = "grove!()",
+wrap = "is_mod!()"
 )]
 pub async fn enable_grove(
     current_grove: CurrentGrove,
@@ -46,10 +43,10 @@ pub async fn enable_grove(
 }
 
 #[delete(
-    "/api/grove",
-    wrap = "authenticate!()",
-    wrap = "grove!()",
-    wrap = "is_mod!()"
+"/api/grove",
+wrap = "authenticate!()",
+wrap = "grove!()",
+wrap = "is_mod!()"
 )]
 pub async fn delete_grove(
     current_grove: CurrentGrove,

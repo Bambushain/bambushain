@@ -1,9 +1,9 @@
-use actix_web::{body, dev, web, Error, HttpMessage};
+use actix_web::{body, dev, Error, HttpMessage, web};
 use actix_web_lab::middleware::Next;
 
 use bamboo_common::backend::dbal;
-use bamboo_common::core::entities as entities;
 use bamboo_common::backend::services::DbConnection;
+use bamboo_common::core::entities as entities;
 
 use crate::header;
 use crate::middleware::helpers;
@@ -34,4 +34,5 @@ macro_rules! character {
 }
 
 pub(crate) type CharacterData = web::ReqData<entities::Character>;
+
 pub(crate) use character;

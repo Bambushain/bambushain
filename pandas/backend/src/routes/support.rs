@@ -5,9 +5,9 @@ use sentry::protocol::{Event, Level};
 use sentry::types::protocol::v7::Context;
 use sentry::types::random_uuid;
 
+use bamboo_common::backend::services::EnvService;
 use bamboo_common::core::entities::{GlitchTipErrorRequest, SupportRequest};
 use bamboo_common::core::error::*;
-use bamboo_common::backend::services::EnvService;
 
 use crate::mailing;
 use crate::middleware::authenticate_user::{authenticate, Authentication};

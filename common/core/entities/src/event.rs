@@ -15,9 +15,9 @@ fn set_false() -> bool {
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 #[cfg_attr(
-    not(target_arch = "wasm32"),
-    derive(DeriveEntityModel, Responder),
-    sea_orm(table_name = "event", schema_name = "bamboo")
+not(target_arch = "wasm32"),
+derive(DeriveEntityModel, Responder),
+sea_orm(table_name = "event", schema_name = "bamboo")
 )]
 #[serde(rename_all = "camelCase")]
 pub struct Model {
@@ -42,19 +42,19 @@ pub struct Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-        belongs_to = "super::user::Entity",
-        from = "Column::UserId",
-        to = "super::user::Column::Id",
-        on_update = "Cascade",
-        on_delete = "Cascade"
+    belongs_to = "super::user::Entity",
+    from = "Column::UserId",
+    to = "super::user::Column::Id",
+    on_update = "Cascade",
+    on_delete = "Cascade"
     )]
     User,
     #[sea_orm(
-        belongs_to = "super::grove::Entity",
-        from = "Column::GroveId",
-        to = "super::grove::Column::Id",
-        on_update = "Cascade",
-        on_delete = "Cascade"
+    belongs_to = "super::grove::Entity",
+    from = "Column::GroveId",
+    to = "super::grove::Column::Id",
+    on_update = "Cascade",
+    on_delete = "Cascade"
     )]
     Grove,
 }

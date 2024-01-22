@@ -1,9 +1,9 @@
 use actix_web::{delete, get, post, put, web};
 
 use bamboo_common::backend::dbal;
+use bamboo_common::backend::services::DbConnection;
 use bamboo_common::core::entities::*;
 use bamboo_common::core::error::*;
-use bamboo_common::backend::services::DbConnection;
 
 use crate::middleware::authenticate_user::{authenticate, Authentication};
 use crate::middleware::extract_character::{character, CharacterData};

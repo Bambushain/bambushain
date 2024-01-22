@@ -1,18 +1,18 @@
 use base64::Engine;
 use rand::distributions::Uniform;
 use rand::Rng;
-use sea_orm::prelude::Expr;
-use sea_orm::ActiveValue::Set;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, NotSet, QueryFilter,
 };
+use sea_orm::ActiveValue::Set;
+use sea_orm::prelude::Expr;
 
 use bamboo_common_core::entities::*;
 use bamboo_common_core::error::*;
 
+use crate::{decrypt_string, encrypt_string};
 use crate::prelude::dbal;
 use crate::user::get_users;
-use crate::{decrypt_string, encrypt_string};
 
 pub async fn create_google_auth_token(
     password: String,
@@ -35,16 +35,16 @@ pub async fn create_google_auth_token(
         token: Set(uuid::Uuid::new_v4().to_string()),
         user_id: Set(user.id),
     }
-    .insert(db)
-    .await
-    .map(|token| LoginResult {
-        token: token.token,
-        user: user.clone().into(),
-    })
-    .map_err(|err| {
-        log::error!("{err}");
-        BambooError::database("token", "Failed to create token")
-    })
+        .insert(db)
+        .await
+        .map(|token| LoginResult {
+            token: token.token,
+            user: user.clone().into(),
+        })
+        .map_err(|err| {
+            log::error!("{err}");
+            BambooError::database("token", "Failed to create token")
+        })
 }
 
 pub async fn validate_auth_and_create_token(
@@ -67,16 +67,16 @@ pub async fn validate_auth_and_create_token(
         token: Set(uuid::Uuid::new_v4().to_string()),
         user_id: Set(user.id),
     }
-    .insert(db)
-    .await
-    .map(|token| LoginResult {
-        token: token.token,
-        user: user.clone().into(),
-    })
-    .map_err(|err| {
-        log::error!("{err}");
-        BambooError::database("token", "Failed to create token")
-    });
+        .insert(db)
+        .await
+        .map(|token| LoginResult {
+            token: token.token,
+            user: user.clone().into(),
+        })
+        .map_err(|err| {
+            log::error!("{err}");
+            BambooError::database("token", "Failed to create token")
+        });
 
     let _ = bamboo_common_core::entities::user::Entity::update_many()
         .col_expr(
@@ -218,18 +218,18 @@ async fn validate_totp_token(
             Some("Bambushain".to_string()),
             user.display_name.clone(),
         )
-        .map_err(|_| BambooError::crypto("user", "Failed to validate"))?,
+            .map_err(|_| BambooError::crypto("user", "Failed to validate"))?,
     )
-    .map_err(|err| {
-        log::error!("Failed to create totp url {err}");
-        BambooError::crypto("user", "Failed to validate")
-    })
-    .map(|totp| {
-        totp.check_current(code.as_str()).unwrap_or_else(|err| {
-            log::error!("Failed to validate totp {err}");
-            false
+        .map_err(|err| {
+            log::error!("Failed to create totp url {err}");
+            BambooError::crypto("user", "Failed to validate")
         })
-    })?;
+        .map(|totp| {
+            totp.check_current(code.as_str()).unwrap_or_else(|err| {
+                log::error!("Failed to validate totp {err}");
+                false
+            })
+        })?;
 
     if is_totp_valid {
         Ok(())
@@ -245,7 +245,7 @@ fn validate_email_token(code: String, password: String, user: User) -> BambooErr
             .map_err(|_| BambooError::unauthorized("user", "Failed to validate"))?,
         password.clone(),
     )?)
-    .into_owned();
+        .into_owned();
 
     if two_factor_code.eq(&code) {
         Ok(())

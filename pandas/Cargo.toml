@@ -8,7 +8,6 @@ license.workspace = true
 [dependencies]
 bamboo-pandas-backend = { path = "backend", optional = true }
 bamboo-pandas-frontend = { path = "frontend", optional = true }
-bamboo-common = { path = "../common", default-features = false, optional = true }
 
 [[bin]]
 path = "src/bin/backend.rs"
@@ -99,8 +98,8 @@ yew-router = "0.18.0"
 
 [features]
 default = []
-frontend = ["dep:bamboo-pandas-frontend", "dep:bamboo-common", "bamboo-common/frontend", "bamboo-common/core"]
-backend = ["dep:bamboo-pandas-backend", "dep:bamboo-common", "bamboo-common/backend", "bamboo-common/core"]
+frontend = ["dep:bamboo-pandas-frontend"]
+backend = ["dep:bamboo-pandas-backend"]
 
 [profile.dev]
 # optimization for size ( more aggressive )

@@ -1,8 +1,10 @@
-use actix_web::{body, dev, web, Error, HttpMessage};
+use actix_web::{body, dev, Error, HttpMessage, web};
 use actix_web_lab::middleware::Next;
 
-use bamboo_common::core::entities::*;
+use bamboo_common::backend::dbal;
 use bamboo_common::backend::services::DbConnection;
+use bamboo_common::core::entities::*;
+use bamboo_common::core::error::BambooError;
 
 use crate::cookie;
 use crate::header;
@@ -47,5 +49,3 @@ macro_rules! authenticate {
 }
 
 pub(crate) use authenticate;
-use bamboo_common::backend::dbal;
-use bamboo_common::core::error::BambooError;
