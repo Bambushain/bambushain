@@ -1,0 +1,11 @@
+[package]
+name = "bamboo-common-backend-services"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+actix-web = { workspace = true }
+sea-orm = { workspace = true }

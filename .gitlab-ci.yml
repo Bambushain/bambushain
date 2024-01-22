@@ -2,22 +2,22 @@
   variables:
     CARGO_HOME: $CI_PROJECT_DIR/.cargo
   cache:
-    key: $CI_PROJECT_NAME-frontend
+    key: $CI_PROJECT_NAME-pandas-frontend
     paths:
-      - $CI_PROJECT_DIR/dist/
-      - $CI_PROJECT_DIR/frontend/target/
+      - $CI_PROJECT_DIR/pandas/dist/
+      - $CI_PROJECT_DIR/pandas/target/
       - $CI_PROJECT_DIR/.cargo/
-      - $CI_PROJECT_DIR/frontend/Cargo.lock
+      - $CI_PROJECT_DIR/pandas/Cargo.lock
 
 .base-backend-cache:
   variables:
     CARGO_HOME: $CI_PROJECT_DIR/.cargo
   cache:
-    key: $CI_PROJECT_NAME-backend
+    key: $CI_PROJECT_NAME-pandas-backend
     paths:
-      - $CI_PROJECT_DIR/target/
+      - $CI_PROJECT_DIR/pandas/target/
       - $CI_PROJECT_DIR/.cargo/
-      - $CI_PROJECT_DIR/Cargo.lock
+      - $CI_PROJECT_DIR/pandas/Cargo.lock
 
 .base-trunk:
   extends:
@@ -95,7 +95,7 @@ docker-build:
   extends:
     - .base-kaniko
   script:
-    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/Dockerfile" --destination "${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}" --destination "${CI_REGISTRY_IMAGE}:latest"
+    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/pandas.dockerfile" --destination "${CI_REGISTRY_IMAGE}/pandas:${CI_COMMIT_TAG}" --destination "${CI_REGISTRY_IMAGE}:latest"
   needs:
     - build-backend
     - build-frontend
@@ -111,7 +111,7 @@ docker-build-testing:
   extends:
     - .base-kaniko
   script:
-    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/Dockerfile" --destination "${CI_REGISTRY_IMAGE}:1.8.0-test-$CI_PIPELINE_IID"
+    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/pandas.dockerfile" --destination "${CI_REGISTRY_IMAGE}/pandas:2.0.0-test-$CI_PIPELINE_IID"
   needs:
     - build-backend
     - build-frontend

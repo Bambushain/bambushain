@@ -1,0 +1,62 @@
+[package]
+name = "bamboo-common"
+version = "2.0.0"
+edition = "2021"
+
+[dependencies]
+bamboo-common-backend = { path = "backend", optional = true }
+bamboo-common-core = { path = "core", optional = true, default-features = false }
+bamboo-common-frontend = { path = "frontend", optional = true }
+
+[workspace]
+members = [
+    "backend",
+    "backend/dbal",
+    "backend/services",
+    "core",
+    "core/entities",
+    "core/error",
+    "core/macros",
+    "core/migration",
+    "frontend",
+    "frontend/ui",
+]
+
+[workspace.package]
+version = "2.0.0"
+edition = "2021"
+license = "MIT"
+
+[workspace.dependencies]
+actix-web = "4.4.1"
+base64 = "0.21.7"
+bcrypt = "0.15.0"
+chacha20poly1305 = "0.10.1"
+date-range = "0.3.0"
+log = "0.4.20"
+pbkdf2 = "0.12.2"
+rand = "0.8.5"
+sea-orm = { version = "0.12.11", features = ["with-json", "runtime-actix-rustls", "sqlx-postgres"] }
+sha2 = "0.10.8"
+totp-rs = { version = "5.4.0", features = ["qr", "gen_secret"] }
+uuid = { version = "1.7.0", features = ["v4"] }
+chrono = { version = "0.4.31", features = ["serde"] }
+color-art = "0.3.7"
+quote = "1.0.35"
+sea-orm-migration = { version = "0.12.11", features = ["sqlx-postgres", "runtime-tokio-rustls"] }
+serde = { version = "1.0.195", features = ["derive"] }
+serde_json = "1.0.111"
+strum = "0.25.0"
+strum_macros = "0.25.3"
+syn = "2.0.48"
+stylist = { version = "0.13.0", features = ["yew"] }
+yew = { version = "0.21.0", features = ["csr", "hydration"] }
+yew-autoprops = "0.4.1"
+yew-cosmo = "1.0.10"
+
+[features]
+default = ["core"]
+
+backend = ["dep:bamboo-common-backend", "core", "bamboo-common-core/backend"]
+core = ["dep:bamboo-common-core"]
+frontend = ["dep:bamboo-common-frontend", "core", "bamboo-common-core/frontend"]

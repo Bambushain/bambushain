@@ -1,0 +1,17 @@
+[package]
+name = "bamboo-pandas-frontend-section-mod-area"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bamboo-common = { path = "../../../../common", features = ["frontend"] }
+bamboo-pandas-frontend-base = { path = "../../base" }
+
+bounce = { workspace = true }
+log = { workspace = true }
+yew = { workspace = true }
+yew-cosmo = { workspace = true }
+yew-autoprops = { workspace = true }
+yew-hooks = { workspace = true }
+yew-router = { workspace = true }

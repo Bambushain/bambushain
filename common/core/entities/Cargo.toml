@@ -1,0 +1,25 @@
+[package]
+name = "bamboo-common-core-entities"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bamboo-common-core-error = { path = "../error" }
+
+bcrypt = { workspace = true }
+chrono = { workspace = true }
+color-art = { workspace = true }
+log = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+bamboo-common-core-macros = { path = "../macros" }
+
+actix-web = { workspace = true }
+sea-orm = { workspace = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+strum = { workspace = true }
+strum_macros = { workspace = true }

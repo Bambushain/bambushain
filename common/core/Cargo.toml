@@ -1,0 +1,20 @@
+[package]
+name = "bamboo-common-core"
+version.workspace = true
+edition.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies]
+bamboo-common-core-entities = { path = "entities", optional = true }
+bamboo-common-core-error = { path = "error", optional = true }
+bamboo-common-core-macros = { path = "macros", optional = true }
+bamboo-common-core-migration = { path = "migration", optional = true }
+
+[features]
+backend = ["entities", "error", "macros", "migration"]
+frontend = ["entities", "error"]
+
+entities = ["dep:bamboo-common-core-entities"]
+error = ["dep:bamboo-common-core-error"]
+macros = ["dep:bamboo-common-core-macros"]
+migration = ["dep:bamboo-common-core-migration"]

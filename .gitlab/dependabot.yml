@@ -1,10 +1,10 @@
 version: 2
 updates:
   - package-ecosystem: cargo
-    directory: /
+    directory: /common
     schedule:
       interval: daily
   - package-ecosystem: cargo
-    directory: /frontend
+    directory: /pandas
     schedule:
       interval: daily
