@@ -48,7 +48,7 @@ chrono = { version = "0.4.31", features = ["serde"] }
 color-art = "0.3.7"
 date-range = "0.3.0"
 either = "1.9.0"
-env_logger = "0.10.2"
+env_logger = "0.11.0"
 futures = "0.3.30"
 futures-util = "0.3.30"
 lettre = { version = "0.11.3", features = ["tokio1-rustls-tls", "smtp-transport", "pool", "hostname", "builder"], default-features = false }
