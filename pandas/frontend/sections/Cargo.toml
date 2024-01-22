@@ -1,0 +1,15 @@
+[package]
+name = "bamboo-pandas-frontend-sections"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bamboo-pandas-frontend-section-authentication = { path = "authentication" }
+bamboo-pandas-frontend-section-bamboo = { path = "bamboo" }
+bamboo-pandas-frontend-section-final-fantasy = { path = "final-fantasy" }
+bamboo-pandas-frontend-section-layout = { path = "layout" }
+bamboo-pandas-frontend-section-legal = { path = "legal" }
+bamboo-pandas-frontend-section-licenses = { path = "licenses" }
+bamboo-pandas-frontend-section-mod-area = { path = "mod-area" }
+bamboo-pandas-frontend-section-support = { path = "support" }

@@ -1,0 +1,13 @@
+[package]
+name = "bamboo-common-frontend-ui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+stylist = { workspace = true }
+yew = { workspace = true }
+yew-autoprops = { workspace = true }
+yew-cosmo = { workspace = true }

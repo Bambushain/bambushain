@@ -1,8 +1,0 @@
-[package]
-name = "bamboo-frontend-base-routing"
-version.workspace = true
-edition.workspace = true
-license.workspace = true
-
-[dependencies]
-yew-router = { workspace = true }

@@ -1,0 +1,117 @@
+[package]
+name = "bamboo-pandas"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies]
+bamboo-pandas-backend = { path = "backend", optional = true }
+bamboo-pandas-frontend = { path = "frontend", optional = true }
+
+[[bin]]
+path = "src/bin/backend.rs"
+name = "pandas-server"
+required-features = ["backend"]
+
+[[bin]]
+path = "src/bin/frontend.rs"
+name = "pandas-web"
+required-features = ["frontend"]
+
+[workspace]
+members = [
+    "backend",
+    "frontend",
+    "frontend/base",
+    "frontend/base/api",
+    "frontend/base/error",
+    "frontend/base/routing",
+    "frontend/base/storage",
+    "frontend/sections",
+    "frontend/sections/authentication",
+    "frontend/sections/bamboo",
+    "frontend/sections/final-fantasy",
+    "frontend/sections/layout",
+    "frontend/sections/legal",
+    "frontend/sections/licenses",
+    "frontend/sections/mod-area",
+    "frontend/sections/support"
+]
+
+[workspace.package]
+version = "2.0.0"
+edition = "2021"
+license = "MIT"
+
+[workspace.dependencies]
+actix-web = "4.4.1"
+actix-web-lab = "0.20.1"
+async-trait = "0.1.77"
+base64 = "0.21.7"
+bcrypt = "0.15.0"
+bounce = { version = "0.9.0", features = ["query", "helmet"] }
+bytestring = "1.3.1"
+cargo_metadata = "0.18.1"
+chacha20poly1305 = "0.10.1"
+chrono = { version = "0.4.31", features = ["serde", "unstable-locales"] }
+color-art = "0.3.7"
+console_log = { version = "1.0.0", features = ["color"] }
+date-range = "0.3.0"
+either = "1.9.0"
+env_logger = "0.11.0"
+futures = "0.3.30"
+futures-util = "0.3.30"
+gloo-dialogs = "0.2.0"
+gloo-events = "0.2.0"
+gloo-net = "0.5.0"
+gloo-storage = "0.3.0"
+gloo-utils = "0.2.0"
+lettre = { version = "0.11.3", features = ["tokio1-rustls-tls", "smtp-transport", "pool", "hostname", "builder"], default-features = false }
+log = "0.4.20"
+parking_lot = "0.12.1"
+pbkdf2 = "0.12.2"
+quote = "1.0.35"
+rand = "0.8.5"
+sea-orm = { version = "0.12.11", features = ["with-json", "runtime-actix-rustls", "sqlx-postgres"] }
+sea-orm-migration = { version = "0.12.11", features = ["sqlx-mysql", "runtime-tokio-rustls"] }
+sentry = { version = "0.32.1", default-features = false, features = ["backtrace", "contexts", "panic", "debug-images", "reqwest", "rustls", "log"] }
+sentry-actix = "0.32.1"
+serde = { version = "1.0.195", features = ["derive"] }
+serde_json = "1.0.111"
+strum = "0.25.0"
+sha2 = "0.10.8"
+strum_macros = "0.25.3"
+stylist = { version = "0.13.0", features = ["yew"] }
+syn = "2.0.48"
+tokio = "1.35.1"
+totp-rs = { version = "5.4.0", features = ["qr", "gen_secret"] }
+uuid = { version = "1.7.0", features = ["v4"] }
+wasm-bindgen = "0.2.90"
+web-sys = "0.3.67"
+yew = { version = "0.21.0", features = ["csr", "hydration"] }
+yew-autoprops = "0.4.1"
+yew-cosmo = "1.0.10"
+yew_icons = { version = "0.8.0", features = ["lucide"] }
+yew-hooks = "0.3.0"
+yew-router = "0.18.0"
+
+[features]
+default = []
+frontend = ["dep:bamboo-pandas-frontend"]
+backend = ["dep:bamboo-pandas-backend"]
+
+[profile.dev]
+# optimization for size ( more aggressive )
+opt-level = "z"
+
+[profile.release]
+# less code to include into binary
+panic = "abort"
+# optimization over all codebase ( better optimization, slower build )
+codegen-units = 1
+# optimization for size ( more aggressive )
+opt-level = "z"
+# link time optimization using whole-program analysis
+lto = true
+#strip = "symbols"
