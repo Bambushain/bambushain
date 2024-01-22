@@ -1,7 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="EMPTY_MODULE" version="4">
   <component name="NewModuleRootManager">
-    <content url="file://$MODULE_DIR$" />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/backend/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/dbal/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/entities/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/error/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/base/api/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/base/error/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/base/routing/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/base/storage/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/base/ui/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/sections/authentication/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/sections/bamboo/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/sections/final-fantasy/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/sections/layout/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/sections/legal/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/sections/licenses/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/sections/mod-area/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/sections/support/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/macros/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/migration/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/services/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sse/src" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/frontend/target" />
+      <excludeFolder url="file://$MODULE_DIR$/target" />
+    </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>

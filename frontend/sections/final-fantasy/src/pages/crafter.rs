@@ -181,11 +181,11 @@ pub fn crafter_details(character: &Character) -> Html {
                         if err.code == CONFLICT {
                             unreported_error_toggle.set(false);
                             error_message_state
-                                .set("Ein Crafter mit diesem Job existiert bereits".into());
+                                .set("Ein Handwerker mit diesem Job existiert bereits".into());
                         } else {
                             unreported_error_toggle.set(true);
                             error_message_state
-                                .set("Der Crafter konnte nicht hinzugefügt werden".into());
+                                .set("Der Handwerker konnte nicht hinzugefügt werden".into());
                         }
 
                         err
@@ -229,17 +229,17 @@ pub fn crafter_details(character: &Character) -> Html {
                             CONFLICT => {
                                 unreported_error_toggle.set(false);
                                 error_message_state
-                                    .set("Ein Crafter mit diesem Job existiert bereits".into());
+                                    .set("Ein Handwerker mit diesem Job existiert bereits".into());
                             }
                             NOT_FOUND => {
                                 unreported_error_toggle.set(false);
                                 error_message_state
-                                    .set("Der Crafter konnte nicht gefunden werden".into());
+                                    .set("Der Handwerker konnte nicht gefunden werden".into());
                             }
                             _ => {
                                 unreported_error_toggle.set(true);
                                 error_message_state
-                                    .set("Der Crafter konnte nicht gespeichert werden".into());
+                                    .set("Der Handwerker konnte nicht gespeichert werden".into());
                             }
                         };
 
@@ -387,17 +387,17 @@ pub fn crafter_details(character: &Character) -> Html {
                 if new_crafter.is_some() {
                     <CosmoToolbar>
                         <CosmoToolbarGroup>
-                            <CosmoButton label="Crafter hinzufügen" on_click={on_create_open} />
+                            <CosmoButton label="Handwerker hinzufügen" on_click={on_create_open} />
                         </CosmoToolbarGroup>
                     </CosmoToolbar>
                 }
                 if let Some(err) = &delete_state.error {
                     if err.code == NOT_FOUND {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Der Crafter konnte nicht gefunden werden" />
+                        <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Der Handwerker konnte nicht gefunden werden" />
                     } else if *unreported_error_toggle {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Der Crafter konnte nicht gelöscht werden" actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                        <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Der Handwerker konnte nicht gelöscht werden" actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
                     } else {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Der Crafter konnte nicht gelöscht werden" />
+                        <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Der Handwerker konnte nicht gelöscht werden" />
                     }
                 }
                 <CosmoTable headers={vec![AttrValue::from(""), AttrValue::from("Job"), AttrValue::from("Level"), AttrValue::from("Aktionen")]}>
@@ -425,13 +425,13 @@ pub fn crafter_details(character: &Character) -> Html {
                 </CosmoTable>
                 {match (*action_state).clone() {
                     CrafterActions::Create => html!(
-                        <ModifyCrafterModal on_error_close={report_unknown_error.clone()} has_unknown_error={*unreported_error_toggle} crafter={new_crafter.unwrap_or(Crafter::default())} character_id={character.id} jobs={all_jobs} is_edit={false} error_message={(*error_message_state).clone()} has_error={create_state.error.is_some()} on_close={on_modal_action_close} title="Crafter hinzufügen" save_label="Crafter hinzufügen" on_save={on_modal_create_save} />
+                        <ModifyCrafterModal on_error_close={report_unknown_error.clone()} has_unknown_error={*unreported_error_toggle} crafter={new_crafter.unwrap_or(Crafter::default())} character_id={character.id} jobs={all_jobs} is_edit={false} error_message={(*error_message_state).clone()} has_error={create_state.error.is_some()} on_close={on_modal_action_close} title="Handwerker hinzufügen" save_label="Handwerker hinzufügen" on_save={on_modal_create_save} />
                     ),
                     CrafterActions::Edit(crafter) => html!(
-                        <ModifyCrafterModal on_error_close={report_unknown_error.clone()} has_unknown_error={*unreported_error_toggle} character_id={character.id} is_edit={true} jobs={CrafterJob::iter().collect::<Vec<CrafterJob>>()} title={format!("Crafter {} bearbeiten", crafter.job.to_string())} save_label="Crafter speichern" on_save={on_modal_update_save} on_close={on_modal_action_close} crafter={crafter} error_message={(*error_message_state).clone()} has_error={update_state.error.is_some()} />
+                        <ModifyCrafterModal on_error_close={report_unknown_error.clone()} has_unknown_error={*unreported_error_toggle} character_id={character.id} is_edit={true} jobs={CrafterJob::iter().collect::<Vec<CrafterJob>>()} title={format!("Handwerker {} bearbeiten", crafter.job.to_string())} save_label="Handwerker speichern" on_save={on_modal_update_save} on_close={on_modal_action_close} crafter={crafter} error_message={(*error_message_state).clone()} has_error={update_state.error.is_some()} />
                     ),
                     CrafterActions::Delete(crafter) => html!(
-                        <CosmoConfirm confirm_type={CosmoModalType::Warning} on_confirm={move |_| on_modal_delete.emit(crafter.id)} on_decline={on_modal_action_close} confirm_label="Crafter löschen" decline_label="Crafter behalten" title="Crafter löschen" message={format!("Soll der Crafter {} auf Level {} wirklich gelöscht werden?", crafter.job.to_string(), crafter.level.unwrap_or_default())} />
+                        <CosmoConfirm confirm_type={CosmoModalType::Warning} on_confirm={move |_| on_modal_delete.emit(crafter.id)} on_decline={on_modal_action_close} confirm_label="Handwerker löschen" decline_label="Handwerker behalten" title="Handwerker löschen" message={format!("Soll der Handwerker {} auf Level {} wirklich gelöscht werden?", crafter.job.to_string(), crafter.level.unwrap_or_default())} />
                     ),
                     CrafterActions::Closed => html!(),
                 }}
@@ -440,9 +440,9 @@ pub fn crafter_details(character: &Character) -> Html {
     } else if crafter_state.error.is_some() {
         html!(
             if *unreported_error_toggle {
-                <CosmoMessage header="Fehler beim Laden" message="Die Crafter konnten nicht geladen werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                <CosmoMessage header="Fehler beim Laden" message="Die Handwerker konnten nicht geladen werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
             } else {
-                <CosmoMessage header="Fehler beim Laden" message="Die Crafter konnten nicht geladen werden" message_type={CosmoMessageType::Negative} />
+                <CosmoMessage header="Fehler beim Laden" message="Die Handwerker konnten nicht geladen werden" message_type={CosmoMessageType::Negative} />
             }
         )
     } else {
