@@ -1,10 +1,11 @@
 use bamboo_common::core::entities::GlitchTipErrorRequest;
+use bamboo_common::frontend::api::ApiError;
 use bamboo_pandas_frontend_base_api as api;
 
 pub fn report_unknown_error(
     page: impl Into<String> + Clone,
     form: impl Into<String> + Clone,
-    error: api::ApiError,
+    error: ApiError,
 ) {
     let page = page.clone().into();
     let form = form.clone().into();

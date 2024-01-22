@@ -20,8 +20,8 @@ pub async fn get_free_companies(
 }
 
 #[get(
-"/api/final-fantasy/free-company/{free_company_id}",
-wrap = "authenticate!()"
+    "/api/final-fantasy/free-company/{free_company_id}",
+    wrap = "authenticate!()"
 )]
 pub async fn get_free_company(
     path: Option<path::FreeCompanyPath>,
@@ -49,8 +49,8 @@ pub async fn create_free_company(
 }
 
 #[put(
-"/api/final-fantasy/free-company/{free_company_id}",
-wrap = "authenticate!()"
+    "/api/final-fantasy/free-company/{free_company_id}",
+    wrap = "authenticate!()"
 )]
 pub async fn update_free_company(
     body: Option<web::Json<FreeCompany>>,
@@ -67,13 +67,13 @@ pub async fn update_free_company(
         body.name.clone(),
         &db,
     )
-        .await
-        .map(|_| no_content!())
+    .await
+    .map(|_| no_content!())
 }
 
 #[delete(
-"/api/final-fantasy/free-company/{free_company_id}",
-wrap = "authenticate!()"
+    "/api/final-fantasy/free-company/{free_company_id}",
+    wrap = "authenticate!()"
 )]
 pub async fn delete_free_company(
     path: Option<path::FreeCompanyPath>,

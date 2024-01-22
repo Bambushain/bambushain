@@ -10,7 +10,7 @@ use yew_hooks::{use_async, use_bool_toggle, use_mount, UseAsyncHandle};
 use yew_router::prelude::*;
 
 use bamboo_common::core::entities::user::UpdateProfile;
-use bamboo_pandas_frontend_base::api::{ApiError, CONFLICT, FORBIDDEN, NOT_FOUND};
+use bamboo_common::frontend::api::{ApiError, CONFLICT, FORBIDDEN, NOT_FOUND};
 use bamboo_pandas_frontend_base::{error, storage};
 use bamboo_pandas_frontend_base::routing::{
     AppRoute, BambooGroveRoute, FinalFantasyRoute, LegalRoute, LicensesRoute, ModAreaRoute,

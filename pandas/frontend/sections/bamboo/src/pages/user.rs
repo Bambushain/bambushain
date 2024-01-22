@@ -6,6 +6,7 @@ use yew_hooks::use_mount;
 use yew_hooks::{use_async, use_bool_toggle};
 
 use bamboo_pandas_frontend_base::error;
+use bamboo_common::frontend::api::ApiError;
 use bamboo_common::frontend::ui::{BambooCard, BambooCardList};
 
 use crate::api;
@@ -14,7 +15,7 @@ use crate::api;
 pub fn users_page() -> Html {
     log::debug!("Render users page");
     log::debug!("Initialize state and callbacks");
-    let bamboo_error_state = use_state_eq(api::ApiError::default);
+    let bamboo_error_state = use_state_eq(ApiError::default);
 
     let unreported_error_toggle = use_bool_toggle(false);
 

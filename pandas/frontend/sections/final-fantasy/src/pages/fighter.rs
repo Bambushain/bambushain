@@ -7,7 +7,7 @@ use yew_cosmo::prelude::*;
 use yew_hooks::{use_async, use_bool_toggle, use_effect_update, use_mount};
 
 use bamboo_common::core::entities::*;
-use bamboo_pandas_frontend_base::api::{CONFLICT, NOT_FOUND};
+use bamboo_common::frontend::api::{ApiError, CONFLICT, NOT_FOUND};
 use bamboo_pandas_frontend_base::error;
 
 use crate::api;
@@ -135,7 +135,7 @@ pub fn fighter_details(character: &Character) -> Html {
 
     let unreported_error_toggle = use_bool_toggle(false);
 
-    let bamboo_error_state = use_state_eq(api::ApiError::default);
+    let bamboo_error_state = use_state_eq(ApiError::default);
 
     let error_message_state = use_state_eq(|| AttrValue::from(""));
     let error_message_form_state = use_state_eq(|| AttrValue::from(""));

@@ -7,7 +7,7 @@ use yew_hooks::{use_async, use_bool_toggle, use_mount, use_unmount};
 use yew_icons::Icon;
 
 use bamboo_common::core::entities::*;
-use bamboo_pandas_frontend_base::api::CONFLICT;
+use bamboo_common::frontend::api::{ApiError, CONFLICT};
 use bamboo_pandas_frontend_base::error;
 
 use crate::api;
@@ -27,7 +27,7 @@ pub fn free_companies() -> Html {
     let selected_name_state = use_state_eq(|| AttrValue::from(""));
     let error_message_form_state = use_state_eq(|| AttrValue::from(""));
 
-    let bamboo_error_state = use_state_eq(api::ApiError::default);
+    let bamboo_error_state = use_state_eq(ApiError::default);
 
     let free_companies_state = {
         let unreported_error_toggle = unreported_error_toggle.clone();

@@ -1,5 +1,6 @@
 use bamboo_common::core::entities::FreeCompany;
-use bamboo_pandas_frontend_base::api::{delete, get, post, put_no_content, BambooApiResult};
+use bamboo_common::frontend::api::BambooApiResult;
+use bamboo_pandas_frontend_base::api::{delete, get, post, put_no_content};
 
 pub async fn get_free_companies() -> BambooApiResult<Vec<FreeCompany>> {
     log::debug!("Get free companies");

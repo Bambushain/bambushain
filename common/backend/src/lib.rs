@@ -1,11 +1,4 @@
-pub mod dbal {
-    pub use bamboo_common_backend_dbal::prelude::dbal::*;
-}
+pub use bamboo_common_backend_dbal::prelude::dbal as dbal;
+pub use bamboo_common_backend_services::prelude as services;
+pub use bamboo_common_core as core;
 
-pub mod services {
-    pub use bamboo_common_backend_services::prelude::*;
-}
-
-pub mod core {
-    pub use bamboo_common_core::*;
-}

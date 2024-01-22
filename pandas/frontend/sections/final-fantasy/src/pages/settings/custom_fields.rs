@@ -15,7 +15,7 @@ use yew_hooks::{
 use yew_icons::{get_svg, Icon, IconProps};
 
 use bamboo_common::core::entities::*;
-use bamboo_pandas_frontend_base::api::CONFLICT;
+use bamboo_common::frontend::api::{ApiError, CONFLICT};
 use bamboo_pandas_frontend_base::error;
 
 use crate::api;
@@ -58,7 +58,7 @@ fn custom_field_options_dialog(
 
     let actions_stack = use_list(Vec::new() as Vec<CustomFieldOptionAction>);
 
-    let bamboo_error_state = use_state_eq(api::ApiError::default);
+    let bamboo_error_state = use_state_eq(ApiError::default);
 
     let unreported_error_toggle = use_bool_toggle(false);
 
@@ -328,7 +328,7 @@ justify-content: space-between;
 fn add_custom_field_dialog(position: usize, close: &Callback<()>, save: &Callback<()>) -> Html {
     let label_state = use_state_eq(|| AttrValue::from(""));
 
-    let bamboo_error_state = use_state_eq(api::ApiError::default);
+    let bamboo_error_state = use_state_eq(ApiError::default);
 
     let unreported_error_toggle = use_bool_toggle(false);
 
@@ -408,7 +408,7 @@ fn edit_custom_field_dialog(
 ) -> Html {
     let label_state = use_state_eq(|| AttrValue::from(field.label.clone()));
 
-    let bamboo_error_state = use_state_eq(api::ApiError::default);
+    let bamboo_error_state = use_state_eq(ApiError::default);
 
     let unreported_error_toggle = use_bool_toggle(false);
 
@@ -774,7 +774,7 @@ pub fn custom_fields_page() -> Html {
     let error_message_form_state = use_state_eq(|| AttrValue::from(""));
     let selected_label_state = use_state_eq(|| AttrValue::from(""));
 
-    let bamboo_error_state = use_state_eq(api::ApiError::default);
+    let bamboo_error_state = use_state_eq(ApiError::default);
 
     let fields_state = {
         let error_message_form_state = error_message_form_state.clone();

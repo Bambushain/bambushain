@@ -8,3 +8,4 @@ license.workspace = true
 [dependencies]
 bamboo-common-core = { path = "../core", features = ["frontend"] }
 bamboo-common-frontend-ui = { path = "ui" }
+bamboo-common-frontend-api = { path = "api" }

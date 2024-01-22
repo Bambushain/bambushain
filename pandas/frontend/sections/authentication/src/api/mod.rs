@@ -1,7 +1,8 @@
 use bamboo_common::core::entities::*;
+use bamboo_common::frontend::api::BambooApiResult;
 use bamboo_pandas_frontend_base::*;
 
-pub async fn get_my_profile() -> api::BambooApiResult<WebUser> {
+pub async fn get_my_profile() -> BambooApiResult<WebUser> {
     log::debug!("Get my profile");
     api::get::<WebUser>("/api/my/profile").await.map_err(|err| {
         storage::delete_token();
@@ -9,7 +10,7 @@ pub async fn get_my_profile() -> api::BambooApiResult<WebUser> {
     })
 }
 
-pub async fn login(login_data: Login) -> api::BambooApiResult<either::Either<LoginResult, ()>> {
+pub async fn login(login_data: Login) -> BambooApiResult<either::Either<LoginResult, ()>> {
     log::debug!("Execute login");
     if login_data.two_factor_code.is_some()
         || login_data.email.clone() == "playstore@google.bambushain"
@@ -22,7 +23,7 @@ pub async fn login(login_data: Login) -> api::BambooApiResult<either::Either<Log
     }
 }
 
-pub async fn forgot_password(data: ForgotPassword) -> api::BambooApiResult<()> {
+pub async fn forgot_password(data: ForgotPassword) -> BambooApiResult<()> {
     log::debug!("Request new password");
     api::post_no_content("/api/forgot-password", &data).await
 }

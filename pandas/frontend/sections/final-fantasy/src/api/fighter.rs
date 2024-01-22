@@ -1,5 +1,6 @@
 use bamboo_common::core::entities::*;
-use bamboo_pandas_frontend_base::api::{delete, get, post, put_no_content, BambooApiResult};
+use bamboo_common::frontend::api::BambooApiResult;
+use bamboo_pandas_frontend_base::api::{delete, get, post, put_no_content};
 
 pub async fn get_fighters(character_id: i32) -> BambooApiResult<Vec<Fighter>> {
     log::debug!("Get fighter");

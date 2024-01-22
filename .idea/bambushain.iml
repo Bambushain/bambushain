@@ -10,6 +10,7 @@
       <sourceFolder url="file://$MODULE_DIR$/common/core/macros/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/common/core/migration/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/common/core/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/common/frontend/api/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/common/frontend/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/common/frontend/ui/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/common/src" isTestSource="false" />

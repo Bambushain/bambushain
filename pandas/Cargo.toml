@@ -1,6 +1,6 @@
 [package]
 name = "bamboo-pandas"
-version = "2.0.0"
+version.workspace = true
 edition.workspace = true
 license.workspace = true
 
@@ -114,4 +114,4 @@ codegen-units = 1
 opt-level = "z"
 # link time optimization using whole-program analysis
 lto = true
-strip = "symbols"
+#strip = "symbols"

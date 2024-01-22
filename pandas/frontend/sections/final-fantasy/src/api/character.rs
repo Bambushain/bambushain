@@ -1,5 +1,6 @@
 use bamboo_common::core::entities::*;
-use bamboo_pandas_frontend_base::api::{delete, get, post, put_no_content, BambooApiResult};
+use bamboo_common::frontend::api::BambooApiResult;
+use bamboo_pandas_frontend_base::api::{delete, get, post, put_no_content};
 
 pub async fn get_characters() -> BambooApiResult<Vec<Character>> {
     log::debug!("Get character");

@@ -11,9 +11,9 @@ use crate::path;
 use crate::response::macros::*;
 
 #[get(
-"/api/final-fantasy/character/{character_id}/housing",
-wrap = "authenticate!()",
-wrap = "character!()"
+    "/api/final-fantasy/character/{character_id}/housing",
+    wrap = "authenticate!()",
+    wrap = "character!()"
 )]
 pub async fn get_character_housings(
     authentication: Authentication,
@@ -26,9 +26,9 @@ pub async fn get_character_housings(
 }
 
 #[get(
-"/api/final-fantasy/character/{character_id}/housing/{character_housing_id}",
-wrap = "authenticate!()",
-wrap = "character!()"
+    "/api/final-fantasy/character/{character_id}/housing/{character_housing_id}",
+    wrap = "authenticate!()",
+    wrap = "character!()"
 )]
 pub async fn get_character_housing(
     path: Option<path::CharacterHousingPath>,
@@ -44,14 +44,14 @@ pub async fn get_character_housing(
         character.id,
         &db,
     )
-        .await
-        .map(|character_housing| ok!(character_housing))
+    .await
+    .map(|character_housing| ok!(character_housing))
 }
 
 #[post(
-"/api/final-fantasy/character/{character_id}/housing",
-wrap = "authenticate!()",
-wrap = "character!()"
+    "/api/final-fantasy/character/{character_id}/housing",
+    wrap = "authenticate!()",
+    wrap = "character!()"
 )]
 pub async fn create_character_housing(
     body: Option<web::Json<CharacterHousing>>,
@@ -67,9 +67,9 @@ pub async fn create_character_housing(
 }
 
 #[put(
-"/api/final-fantasy/character/{character_id}/housing/{character_housing_id}",
-wrap = "authenticate!()",
-wrap = "character!()"
+    "/api/final-fantasy/character/{character_id}/housing/{character_housing_id}",
+    wrap = "authenticate!()",
+    wrap = "character!()"
 )]
 pub async fn update_character_housing(
     body: Option<web::Json<CharacterHousing>>,
@@ -88,14 +88,14 @@ pub async fn update_character_housing(
         body.into_inner(),
         &db,
     )
-        .await
-        .map(|_| no_content!())
+    .await
+    .map(|_| no_content!())
 }
 
 #[delete(
-"/api/final-fantasy/character/{character_id}/housing/{character_housing_id}",
-wrap = "authenticate!()",
-wrap = "character!()"
+    "/api/final-fantasy/character/{character_id}/housing/{character_housing_id}",
+    wrap = "authenticate!()",
+    wrap = "character!()"
 )]
 pub async fn delete_character_housing(
     path: Option<path::CharacterHousingPath>,
@@ -111,6 +111,6 @@ pub async fn delete_character_housing(
         character.id,
         &db,
     )
-        .await
-        .map(|_| no_content!())
+    .await
+    .map(|_| no_content!())
 }

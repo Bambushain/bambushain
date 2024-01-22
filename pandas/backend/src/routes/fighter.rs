@@ -11,9 +11,9 @@ use crate::path;
 use crate::response::macros::*;
 
 #[get(
-"/api/final-fantasy/character/{character_id}/fighter",
-wrap = "authenticate!()",
-wrap = "character!()"
+    "/api/final-fantasy/character/{character_id}/fighter",
+    wrap = "authenticate!()",
+    wrap = "character!()"
 )]
 pub async fn get_fighters(
     authentication: Authentication,
@@ -26,9 +26,9 @@ pub async fn get_fighters(
 }
 
 #[get(
-"/api/final-fantasy/character/{character_id}/fighter/{fighter_id}",
-wrap = "authenticate!()",
-wrap = "character!()"
+    "/api/final-fantasy/character/{character_id}/fighter/{fighter_id}",
+    wrap = "authenticate!()",
+    wrap = "character!()"
 )]
 pub async fn get_fighter(
     path: Option<path::FighterPath>,
@@ -44,9 +44,9 @@ pub async fn get_fighter(
 }
 
 #[post(
-"/api/final-fantasy/character/{character_id}/fighter",
-wrap = "authenticate!()",
-wrap = "character!()"
+    "/api/final-fantasy/character/{character_id}/fighter",
+    wrap = "authenticate!()",
+    wrap = "character!()"
 )]
 pub async fn create_fighter(
     body: Option<web::Json<Fighter>>,
@@ -62,9 +62,9 @@ pub async fn create_fighter(
 }
 
 #[put(
-"/api/final-fantasy/character/{character_id}/fighter/{fighter_id}",
-wrap = "authenticate!()",
-wrap = "character!()"
+    "/api/final-fantasy/character/{character_id}/fighter/{fighter_id}",
+    wrap = "authenticate!()",
+    wrap = "character!()"
 )]
 pub async fn update_fighter(
     body: Option<web::Json<Fighter>>,
@@ -83,14 +83,14 @@ pub async fn update_fighter(
         body.into_inner(),
         &db,
     )
-        .await
-        .map(|_| no_content!())
+    .await
+    .map(|_| no_content!())
 }
 
 #[delete(
-"/api/final-fantasy/character/{character_id}/fighter/{fighter_id}",
-wrap = "authenticate!()",
-wrap = "character!()"
+    "/api/final-fantasy/character/{character_id}/fighter/{fighter_id}",
+    wrap = "authenticate!()",
+    wrap = "character!()"
 )]
 pub async fn delete_fighter(
     path: Option<path::FighterPath>,

@@ -20,8 +20,8 @@ pub async fn get_custom_fields(
 }
 
 #[get(
-"/api/final-fantasy/character/custom-field/{field_id}",
-wrap = "authenticate!()"
+    "/api/final-fantasy/character/custom-field/{field_id}",
+    wrap = "authenticate!()"
 )]
 pub async fn get_custom_field(
     path: Option<path::CustomFieldPath>,
@@ -49,8 +49,8 @@ pub async fn create_custom_field(
 }
 
 #[put(
-"/api/final-fantasy/character/custom-field/{field_id}",
-wrap = "authenticate!()"
+    "/api/final-fantasy/character/custom-field/{field_id}",
+    wrap = "authenticate!()"
 )]
 pub async fn update_custom_field(
     path: Option<path::CustomFieldPath>,
@@ -67,13 +67,13 @@ pub async fn update_custom_field(
         body.into_inner(),
         &db,
     )
-        .await
-        .map(|_| no_content!())
+    .await
+    .map(|_| no_content!())
 }
 
 #[delete(
-"/api/final-fantasy/character/custom-field/{field_id}",
-wrap = "authenticate!()"
+    "/api/final-fantasy/character/custom-field/{field_id}",
+    wrap = "authenticate!()"
 )]
 pub async fn delete_custom_field(
     path: Option<path::CustomFieldPath>,
@@ -88,8 +88,8 @@ pub async fn delete_custom_field(
 }
 
 #[post(
-"/api/final-fantasy/character/custom-field/{field_id}/option",
-wrap = "authenticate!()"
+    "/api/final-fantasy/character/custom-field/{field_id}/option",
+    wrap = "authenticate!()"
 )]
 pub async fn create_custom_field_option(
     path: Option<path::CustomFieldPath>,
@@ -106,13 +106,13 @@ pub async fn create_custom_field_option(
         body.into_inner(),
         &db,
     )
-        .await
-        .map(|data| created!(data))
+    .await
+    .map(|data| created!(data))
 }
 
 #[get(
-"/api/final-fantasy/character/custom-field/{field_id}/option",
-wrap = "authenticate!()"
+    "/api/final-fantasy/character/custom-field/{field_id}/option",
+    wrap = "authenticate!()"
 )]
 pub async fn get_custom_field_options(
     path: Option<path::CustomFieldPath>,
@@ -127,8 +127,8 @@ pub async fn get_custom_field_options(
 }
 
 #[put(
-"/api/final-fantasy/character/custom-field/{field_id}/option/{option_id}",
-wrap = "authenticate!()"
+    "/api/final-fantasy/character/custom-field/{field_id}/option/{option_id}",
+    wrap = "authenticate!()"
 )]
 pub async fn update_custom_field_option(
     path: Option<path::CustomFieldOptionPath>,
@@ -146,13 +146,13 @@ pub async fn update_custom_field_option(
         body.into_inner(),
         &db,
     )
-        .await
-        .map(|_| no_content!())
+    .await
+    .map(|_| no_content!())
 }
 
 #[delete(
-"/api/final-fantasy/character/custom-field/{field_id}/option/{option_id}",
-wrap = "authenticate!()"
+    "/api/final-fantasy/character/custom-field/{field_id}/option/{option_id}",
+    wrap = "authenticate!()"
 )]
 pub async fn delete_custom_field_option(
     path: Option<path::CustomFieldOptionPath>,
@@ -166,8 +166,8 @@ pub async fn delete_custom_field_option(
 }
 
 #[put(
-"/api/final-fantasy/character/custom-field/{field_id}/{position}",
-wrap = "authenticate!()"
+    "/api/final-fantasy/character/custom-field/{field_id}/{position}",
+    wrap = "authenticate!()"
 )]
 pub async fn move_custom_field(
     path: Option<path::CustomFieldPositionPath>,

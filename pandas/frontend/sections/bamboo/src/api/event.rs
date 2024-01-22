@@ -3,7 +3,8 @@ use std::rc::Rc;
 use date_range::DateRange;
 
 use bamboo_common::core::entities::*;
-use bamboo_pandas_frontend_base::api::{BambooApiResult, delete, get_with_query, post, put_no_content};
+use bamboo_common::frontend::api::BambooApiResult;
+use bamboo_pandas_frontend_base::api::{delete, get_with_query, post, put_no_content};
 
 pub async fn get_events(range: Rc<DateRange>) -> BambooApiResult<Vec<Event>> {
     log::debug!("Get events");

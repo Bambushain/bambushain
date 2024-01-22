@@ -1,27 +1,35 @@
-.base-frontend-cache:
+.base-pandas-web-cache:
   variables:
     CARGO_HOME: $CI_PROJECT_DIR/.cargo
   cache:
-    key: $CI_PROJECT_NAME-pandas-frontend
+    key: $CI_PROJECT_NAME-pandas-web
     paths:
       - $CI_PROJECT_DIR/pandas/dist/
       - $CI_PROJECT_DIR/pandas/target/
       - $CI_PROJECT_DIR/.cargo/
       - $CI_PROJECT_DIR/pandas/Cargo.lock
 
-.base-backend-cache:
+.base-pandas-server-cache:
   variables:
     CARGO_HOME: $CI_PROJECT_DIR/.cargo
   cache:
-    key: $CI_PROJECT_NAME-pandas-backend
+    key: $CI_PROJECT_NAME-pandas-server
     paths:
       - $CI_PROJECT_DIR/pandas/target/
       - $CI_PROJECT_DIR/.cargo/
       - $CI_PROJECT_DIR/pandas/Cargo.lock
 
+.base-common-cache:
+  variables:
+    CARGO_HOME: $CI_PROJECT_DIR/.cargo
+  cache:
+    key: $CI_PROJECT_NAME-common
+    paths:
+      - $CI_PROJECT_DIR/common/target/
+      - $CI_PROJECT_DIR/.cargo/
+      - $CI_PROJECT_DIR/common/Cargo.lock
+
 .base-trunk:
-  extends:
-    - .base-frontend-cache
   image:
     name: registry.ulbricht.casa/docker-images/trunk-docker-base-image:latest
     pull_policy: always
@@ -39,56 +47,62 @@ stages:
   - build
   - deploy
 
-lint-backend:
+lint-common:
   stage: lint
   image:
     name: registry.ulbricht.casa/docker-images/rust-docker-base-image:latest
     pull_policy: always
   extends:
-    - .base-backend-cache
+    - .base-common-cache
   script:
+    - cd common
     - cargo clippy --release
 
-lint-frontend:
+lint-pandas:
   stage: lint
   extends:
     - .base-trunk
+    - .base-pandas-web-cache
+  needs:
+    - lint-common
   script:
-    - cd frontend
+    - cd pandas
     - cargo clippy --release
   artifacts:
     paths:
       - dist
 
-build-backend:
+build-pandas-server:
   stage: build
   image:
     name: registry.ulbricht.casa/docker-images/rust-docker-base-image:latest
     pull_policy: always
   extends:
-    - .base-backend-cache
+    - .base-pandas-server-cache
   script:
-    - cargo build --release
+    - cd pandas
+    - cargo build --release --bin pandas-server --features backend
   needs:
-    - lint-backend
+    - lint-pandas
   artifacts:
     paths:
-      - target/release/bamboo
+      - pandas/target/release/pandas-server
 
-build-frontend:
+build-pandas-web:
   stage: build
   extends:
     - .base-trunk
+    - .base-pandas-web-cache
   script:
-    - cd frontend
+    - cd pandas
     - trunk build --release
   needs:
-    - lint-frontend
+    - lint-pandas
   artifacts:
     paths:
-      - dist
+      - pandas/dist
 
-docker-build:
+docker-build-pandas:
   stage: deploy
   variables:
     SENTRY_RELEASE: $CI_COMMIT_TAG
@@ -97,14 +111,14 @@ docker-build:
   script:
     - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/pandas.dockerfile" --destination "${CI_REGISTRY_IMAGE}/pandas:${CI_COMMIT_TAG}" --destination "${CI_REGISTRY_IMAGE}:latest"
   needs:
-    - build-backend
-    - build-frontend
+    - build-pandas-server
+    - build-pandas-web
   rules:
     - if: $CI_COMMIT_TAG
       exists:
         - Dockerfile
 
-docker-build-testing:
+docker-build-pandas-testing:
   stage: deploy
   variables:
     SENTRY_RELEASE: $CI_COMMIT_BRANCH
@@ -113,8 +127,8 @@ docker-build-testing:
   script:
     - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/pandas.dockerfile" --destination "${CI_REGISTRY_IMAGE}/pandas:2.0.0-test-$CI_PIPELINE_IID"
   needs:
-    - build-backend
-    - build-frontend
+    - build-pandas-server
+    - build-pandas-web
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       exists:

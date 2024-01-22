@@ -1,6 +1,7 @@
 use bamboo_common::core::entities::*;
+use bamboo_common::frontend::api::BambooApiResult;
 
-use crate::api::{BambooApiResult, delete, get, post, put_no_body_no_content, put_no_content};
+use crate::api::{delete, get, post, put_no_body_no_content, put_no_content};
 
 pub async fn get_users() -> BambooApiResult<Vec<WebUser>> {
     log::debug!("Get users");

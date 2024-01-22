@@ -9,7 +9,7 @@ use bamboo_common::core::entities::Event;
 use bamboo_common::core::error::*;
 
 use crate::middleware::authenticate_user::{authenticate, Authentication};
-use crate::middleware::identify_grove::{CurrentGrove, grove};
+use crate::middleware::identify_grove::{grove, CurrentGrove};
 use crate::notifier;
 use crate::path;
 use crate::response::macros::*;
@@ -54,16 +54,16 @@ pub async fn create_event(
         authentication.user.id,
         &db,
     )
-        .await?;
+    .await?;
     notifier.notify_event_create(data.clone());
 
     Ok(created!(data))
 }
 
 #[put(
-"/api/bamboo-grove/event/{event_id}",
-wrap = "authenticate!()",
-wrap = "grove!()"
+    "/api/bamboo-grove/event/{event_id}",
+    wrap = "authenticate!()",
+    wrap = "grove!()"
 )]
 pub async fn update_event(
     path: Option<path::EventPath>,
@@ -82,7 +82,7 @@ pub async fn update_event(
         body.into_inner(),
         &db,
     )
-        .await?;
+    .await?;
 
     let event = dbal::get_event(
         path.event_id,
@@ -90,16 +90,16 @@ pub async fn update_event(
         authentication.user.id,
         &db,
     )
-        .await?;
+    .await?;
     notifier.notify_event_update(event);
 
     Ok(no_content!())
 }
 
 #[delete(
-"/api/bamboo-grove/event/{event_id}",
-wrap = "authenticate!()",
-wrap = "grove!()"
+    "/api/bamboo-grove/event/{event_id}",
+    wrap = "authenticate!()",
+    wrap = "grove!()"
 )]
 pub async fn delete_event(
     path: Option<path::EventPath>,
@@ -116,7 +116,7 @@ pub async fn delete_event(
         authentication.user.id,
         &db,
     )
-        .await?;
+    .await?;
     dbal::delete_event(current_grove.grove.id, path.event_id, &db).await?;
     notifier.notify_event_delete(event);
 

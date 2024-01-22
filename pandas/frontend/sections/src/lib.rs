@@ -1,31 +1,9 @@
-pub mod authentication {
-    pub use bamboo_pandas_frontend_section_authentication::*;
-}
+pub use bamboo_pandas_frontend_section_authentication as authentication;
+pub use bamboo_pandas_frontend_section_bamboo as bamboo;
+pub use bamboo_pandas_frontend_section_final_fantasy as final_fantasy;
+pub use bamboo_pandas_frontend_section_layout as layout;
+pub use bamboo_pandas_frontend_section_legal as legal;
+pub use bamboo_pandas_frontend_section_licenses as licenses;
+pub use bamboo_pandas_frontend_section_mod_area as mod_area;
+pub use bamboo_pandas_frontend_section_support as support;
 
-pub mod bamboo {
-    pub use bamboo_pandas_frontend_section_bamboo::*;
-}
-
-pub mod final_fantasy {
-    pub use bamboo_pandas_frontend_section_final_fantasy::*;
-}
-
-pub mod layout {
-    pub use bamboo_pandas_frontend_section_layout::*;
-}
-
-pub mod legal {
-    pub use bamboo_pandas_frontend_section_legal::*;
-}
-
-pub mod licenses {
-    pub use bamboo_pandas_frontend_section_licenses::*;
-}
-
-pub mod mod_area {
-    pub use bamboo_pandas_frontend_section_mod_area::*;
-}
-
-pub mod support {
-    pub use bamboo_pandas_frontend_section_support::*;
-}

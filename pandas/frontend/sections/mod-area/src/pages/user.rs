@@ -8,7 +8,7 @@ use yew_hooks::use_mount;
 use yew_hooks::{use_async, use_bool_toggle, use_unmount};
 
 use bamboo_common::core::entities::*;
-use bamboo_pandas_frontend_base::api::{CONFLICT, FORBIDDEN, NOT_FOUND};
+use bamboo_common::frontend::api::{CONFLICT, FORBIDDEN, NOT_FOUND, ApiError};
 use bamboo_pandas_frontend_base::{error, storage};
 
 use crate::api;
@@ -35,7 +35,7 @@ fn create_user_modal(on_saved: &Callback<WebUser>, on_close: &Callback<()>) -> H
     let is_mod_toggle = use_bool_toggle(false);
     let unreported_error_toggle = use_bool_toggle(false);
 
-    let bamboo_error_state = use_state_eq(api::ApiError::default);
+    let bamboo_error_state = use_state_eq(ApiError::default);
 
     {
         let email_state = email_state.clone();
@@ -158,7 +158,7 @@ fn update_profile_dialog(
     log::debug!("Open dialog to update profile");
     let unreported_error_toggle = use_bool_toggle(false);
 
-    let bamboo_error_state = use_state_eq(api::ApiError::default);
+    let bamboo_error_state = use_state_eq(ApiError::default);
 
     let display_name_state = use_state_eq(|| display_name.clone());
     let email_state = use_state_eq(|| email.clone());
@@ -255,7 +255,7 @@ fn user_details(user: &WebUser, on_delete: &Callback<()>, on_update: &Callback<(
     let profile_edit_toggle = use_bool_toggle(false);
     let unreported_error_toggle = use_bool_toggle(false);
 
-    let bamboo_error_state = use_state_eq(api::ApiError::default);
+    let bamboo_error_state = use_state_eq(ApiError::default);
 
     let delete_state = {
         let bamboo_error_state = bamboo_error_state.clone();
@@ -606,7 +606,7 @@ pub fn user_management_page() -> Html {
 
     let selected_user_state = use_state_eq(|| 0);
 
-    let bamboo_error_state = use_state_eq(api::ApiError::default);
+    let bamboo_error_state = use_state_eq(ApiError::default);
 
     let users_state = {
         let bamboo_error_state = bamboo_error_state.clone();

@@ -1,9 +1,8 @@
 use std::collections::BTreeSet;
 
 use bamboo_common::core::entities::{CustomCharacterField, CustomCharacterFieldOption, CustomField};
-use bamboo_pandas_frontend_base::api::{
-    delete, get, post, put_no_body_no_content, put_no_content, BambooApiResult,
-};
+use bamboo_common::frontend::api::BambooApiResult;
+use bamboo_pandas_frontend_base::api::{delete, get, post, put_no_body_no_content, put_no_content};
 
 pub async fn get_custom_fields() -> BambooApiResult<Vec<CustomCharacterField>> {
     log::debug!("Get custom fields");

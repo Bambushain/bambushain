@@ -21,6 +21,7 @@ use yew_hooks::{use_async, use_mount};
 use yew_icons::Icon;
 
 use bamboo_common::core::entities::Event;
+use bamboo_common::frontend::api::ApiError;
 use bamboo_pandas_frontend_base::error;
 
 use crate::api;
@@ -146,7 +147,7 @@ fn add_event_dialog(
     let is_private_state = use_state_eq(|| false);
     let unreported_error_toggle = use_state_eq(|| false);
 
-    let bamboo_error_state = use_state_eq(api::ApiError::default);
+    let bamboo_error_state = use_state_eq(ApiError::default);
 
     {
         let is_private_state = is_private_state.clone();
@@ -274,7 +275,7 @@ fn edit_event_dialog(
     let delete_event_open_state = use_state_eq(|| false);
     let unreported_error_toggle = use_state_eq(|| false);
 
-    let bamboo_error_state = use_state_eq(api::ApiError::default);
+    let bamboo_error_state = use_state_eq(ApiError::default);
 
     {
         let title_state = title_state.clone();
@@ -683,7 +684,7 @@ fn calendar_data(date: &NaiveDate) -> Html {
     let event_source_connected_toggle = use_bool_toggle(false);
     let unreported_error_toggle = use_bool_toggle(false);
 
-    let bamboo_error_state = use_state_eq(api::ApiError::default);
+    let bamboo_error_state = use_state_eq(ApiError::default);
 
     let events_list = use_list(vec![] as Vec<Event>);
     let calendar_event_source_state = use_mut_ref(CalendarEventSource::new);
