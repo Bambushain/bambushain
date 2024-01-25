@@ -19,6 +19,27 @@
       - $CI_PROJECT_DIR/.cargo/
       - $CI_PROJECT_DIR/pandas/Cargo.lock
 
+.base-groves-web-cache:
+  variables:
+    CARGO_HOME: $CI_PROJECT_DIR/.cargo
+  cache:
+    key: $CI_PROJECT_NAME-groves-web
+    paths:
+      - $CI_PROJECT_DIR/groves/dist/
+      - $CI_PROJECT_DIR/groves/target/
+      - $CI_PROJECT_DIR/.cargo/
+      - $CI_PROJECT_DIR/groves/Cargo.lock
+
+.base-pandas-groves-cache:
+  variables:
+    CARGO_HOME: $CI_PROJECT_DIR/.cargo
+  cache:
+    key: $CI_PROJECT_NAME-groves-server
+    paths:
+      - $CI_PROJECT_DIR/groves/target/
+      - $CI_PROJECT_DIR/.cargo/
+      - $CI_PROJECT_DIR/groves/Cargo.lock
+
 .base-common-cache:
   variables:
     CARGO_HOME: $CI_PROJECT_DIR/.cargo
@@ -68,9 +89,17 @@ lint-pandas:
   script:
     - cd pandas
     - cargo clippy --release
-  artifacts:
-    paths:
-      - dist
+
+lint-groves:
+  stage: lint
+  extends:
+    - .base-trunk
+    - .base-groves-web-cache
+  needs:
+    - lint-common
+  script:
+    - cd groves
+    - cargo clippy --release
 
 build-pandas-server:
   stage: build
@@ -102,6 +131,36 @@ build-pandas-web:
     paths:
       - pandas/dist
 
+build-groves-server:
+  stage: build
+  image:
+    name: registry.ulbricht.casa/docker-images/rust-docker-base-image:latest
+    pull_policy: always
+  extends:
+    - .base-groves-server-cache
+  script:
+    - cd groves
+    - cargo build --release --bin groves-server --features backend
+  needs:
+    - lint-pandas
+  artifacts:
+    paths:
+      - groves/target/release/groves-server
+
+build-groves-web:
+  stage: build
+  extends:
+    - .base-trunk
+    - .base-groves-web-cache
+  script:
+    - cd groves
+    - trunk build --release
+  needs:
+    - lint-groves
+  artifacts:
+    paths:
+      - groves/dist
+
 docker-build-pandas:
   stage: deploy
   variables:
@@ -129,6 +188,38 @@ docker-build-pandas-testing:
   needs:
     - build-pandas-server
     - build-pandas-web
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      exists:
+        - Dockerfile
+
+docker-build-groves:
+  stage: deploy
+  variables:
+    SENTRY_RELEASE: $CI_COMMIT_TAG
+  extends:
+    - .base-kaniko
+  script:
+    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/groves.dockerfile" --destination "${CI_REGISTRY_IMAGE}/groves:${CI_COMMIT_TAG}" --destination "${CI_REGISTRY_IMAGE}:latest"
+  needs:
+    - build-groves-server
+    - build-groves-web
+  rules:
+    - if: $CI_COMMIT_TAG
+      exists:
+        - Dockerfile
+
+docker-build-groves-testing:
+  stage: deploy
+  variables:
+    SENTRY_RELEASE: $CI_COMMIT_BRANCH
+  extends:
+    - .base-kaniko
+  script:
+    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/groves.dockerfile" --destination "${CI_REGISTRY_IMAGE}/groves:2.0.0-test-$CI_PIPELINE_IID"
+  needs:
+    - build-groves-server
+    - build-groves-web
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       exists:
