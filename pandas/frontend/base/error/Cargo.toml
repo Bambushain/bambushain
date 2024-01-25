@@ -5,7 +5,6 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-bamboo-pandas-frontend-base-api = { path = "../api" }
 bamboo-common = { path = "../../../../common", features = ["frontend"] }
 
 gloo-utils = { workspace = true }

@@ -15,7 +15,4 @@ actix-session = { workspace = true, features = ["cookie-session", "redis-rs-sess
 env_logger = { workspace = true }
 log = { workspace = true }
 openidconnect = { workspace = true }
-sea-orm = { workspace = true }
 serde = { workspace = true }
-serde_json = { workspace = true }
-tokio = { workspace = true }

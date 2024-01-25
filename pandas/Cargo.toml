@@ -24,7 +24,6 @@ members = [
     "backend",
     "frontend",
     "frontend/base",
-    "frontend/base/api",
     "frontend/base/error",
     "frontend/base/routing",
     "frontend/base/storage",

@@ -1,2 +1,1 @@
-pub use bamboo_groves_frontend_base_authentication as authentication;
 pub use bamboo_groves_frontend_base_routing as routing;

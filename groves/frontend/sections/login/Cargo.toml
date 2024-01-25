@@ -7,16 +7,8 @@ license.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bamboo-common = { path = "../../../../common", features = ["frontend"] }
-bamboo-groves-frontend-base = { path = "../../base" }
-
-either = { workspace = true }
 log = { workspace = true }
 stylist = { workspace = true }
 gloo-utils = { workspace = true }
 yew = { workspace = true }
 yew-cosmo = { workspace = true }
-yew_icons = { workspace = true }
-yew-hooks = { workspace = true }
-yew-oauth2 = { workspace = true, features = ["openid", "router"] }
-yew-router = { workspace = true }

@@ -8,7 +8,6 @@ license.workspace = true
 [dependencies]
 bamboo-common-backend-database = { path = "database" }
 bamboo-common-backend-dbal = { path = "dbal" }
-bamboo-common-backend-macros = { path = "macros" }
 bamboo-common-backend-mailing = { path = "mailing" }
 bamboo-common-backend-migration = { path = "migration" }
 bamboo-common-backend-response = { path = "response" }

@@ -11,14 +11,9 @@ bamboo-groves-frontend-section-login = { path = "../../sections/login" }
 
 bounce = { workspace = true }
 gloo-utils = { workspace = true }
-jsonwebtokens = { workspace = true }
 log = { workspace = true }
-serde_json = { workspace = true }
-stylist = { workspace = true }
-url = { workspace = true }
 yew = { workspace = true }
 yew-autoprops = { workspace = true }
 yew-cosmo = { workspace = true }
 yew-hooks = { workspace = true }
-yew-oauth2 = { workspace = true }
 yew-router = { workspace = true }
