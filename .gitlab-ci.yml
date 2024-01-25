@@ -30,7 +30,7 @@
       - $CI_PROJECT_DIR/.cargo/
       - $CI_PROJECT_DIR/groves/Cargo.lock
 
-.base-pandas-groves-cache:
+.base-groves-server-cache:
   variables:
     CARGO_HOME: $CI_PROJECT_DIR/.cargo
   cache:
