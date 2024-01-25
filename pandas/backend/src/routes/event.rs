@@ -4,6 +4,7 @@ use date_range::DateRange;
 use serde::Deserialize;
 
 use bamboo_common::backend::dbal;
+use bamboo_common::backend::response::*;
 use bamboo_common::backend::services::DbConnection;
 use bamboo_common::core::entities::Event;
 use bamboo_common::core::error::*;
@@ -12,7 +13,6 @@ use crate::middleware::authenticate_user::{authenticate, Authentication};
 use crate::middleware::identify_grove::{grove, CurrentGrove};
 use crate::notifier;
 use crate::path;
-use crate::response::macros::*;
 
 #[derive(Deserialize)]
 pub struct GetEventsQuery {

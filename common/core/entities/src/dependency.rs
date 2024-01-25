@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[cfg(not(target_arch = "wasm32"))]
-use bamboo_common_core_macros::Responder;
+use bamboo_common_backend_macros::Responder;
 
 #[derive(Debug, Deserialize, Serialize, Clone, Hash, Eq, PartialEq)]
 #[cfg_attr(not(target_arch = "wasm32"), derive(Responder))]

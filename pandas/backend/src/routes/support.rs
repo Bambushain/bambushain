@@ -5,13 +5,13 @@ use sentry::protocol::{Event, Level};
 use sentry::types::protocol::v7::Context;
 use sentry::types::random_uuid;
 
+use bamboo_common::backend::mailing;
+use bamboo_common::backend::response::*;
 use bamboo_common::backend::services::EnvService;
 use bamboo_common::core::entities::{GlitchTipErrorRequest, SupportRequest};
 use bamboo_common::core::error::*;
 
-use crate::mailing;
 use crate::middleware::authenticate_user::{authenticate, Authentication};
-use crate::response::macros::*;
 
 #[post("/api/support", wrap = "authenticate!()")]
 pub async fn send_support_request(
@@ -21,28 +21,10 @@ pub async fn send_support_request(
 ) -> BambooApiResponseResult {
     let body = check_missing_fields!(body, "support")?;
 
-    let html_body = format!(
-        r#"
-<html lang="de" style="font-family: system-ui,-apple-system,'Segoe UI','Roboto','Ubuntu','Cantarell','Noto Sans',sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol','Noto Color Emoji';">
-<head>
-</head>
-<body>
-    {}
-</body>
-</html>"#,
-        body.message
-            .clone()
-            .replace("\r\n", "<br>")
-            .replace('\n', "<br>")
-    );
-
-    mailing::send_mail_with_reply_to(
+    mailing::support::send_support_request(
+        authentication.user.clone(),
         env_service,
-        body.subject.clone(),
-        "panda.helferlein@bambushain.app",
-        authentication.user.email.clone(),
-        body.message.clone(),
-        html_body,
+        body.into_inner(),
     )
     .await
     .map(|_| no_content!())

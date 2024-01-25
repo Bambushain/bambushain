@@ -5,25 +5,25 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[cfg(not(target_arch = "wasm32"))]
-use bamboo_common_core_macros::*;
+use bamboo_common_backend_macros::*;
 #[cfg(not(not(target_arch = "wasm32")))]
 use strum_macros::EnumIter;
 
 #[derive(Serialize, Deserialize, EnumIter, Debug, Eq, PartialEq, Clone, Default, Copy)]
 #[cfg_attr(
-not(target_arch = "wasm32"),
-derive(DeriveActiveEnum),
-sea_orm(
-rs_type = "String",
-db_type = "Enum",
-enum_name = "final_fantasy.district"
-)
+    not(target_arch = "wasm32"),
+    derive(DeriveActiveEnum),
+    sea_orm(
+        rs_type = "String",
+        db_type = "Enum",
+        enum_name = "final_fantasy.district"
+    )
 )]
 pub enum HousingDistrict {
     #[default]
     #[cfg_attr(
-    not(target_arch = "wasm32"),
-    sea_orm(string_value = "the_lavender_beds")
+        not(target_arch = "wasm32"),
+        sea_orm(string_value = "the_lavender_beds")
     )]
     TheLavenderBeds,
     #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "mist"))]
@@ -45,7 +45,7 @@ impl HousingDistrict {
             HousingDistrict::Shirogane => "shirogane",
             HousingDistrict::Empyreum => "empyreum",
         }
-            .to_string()
+        .to_string()
     }
 }
 
@@ -58,7 +58,7 @@ impl ToString for HousingDistrict {
             HousingDistrict::Shirogane => "Shirogane",
             HousingDistrict::Empyreum => "Empyreum",
         }
-            .to_string()
+        .to_string()
     }
 }
 
@@ -89,13 +89,13 @@ impl Ord for HousingDistrict {
 
 #[derive(Serialize, Deserialize, EnumIter, Debug, Eq, PartialEq, Clone, Default, Copy)]
 #[cfg_attr(
-not(target_arch = "wasm32"),
-derive(DeriveActiveEnum),
-sea_orm(
-rs_type = "String",
-db_type = "Enum",
-enum_name = "final_fantasy.housing_type"
-)
+    not(target_arch = "wasm32"),
+    derive(DeriveActiveEnum),
+    sea_orm(
+        rs_type = "String",
+        db_type = "Enum",
+        enum_name = "final_fantasy.housing_type"
+    )
 )]
 pub enum HousingType {
     #[default]
@@ -104,8 +104,8 @@ pub enum HousingType {
     #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "free_company"))]
     FreeCompany,
     #[cfg_attr(
-    not(target_arch = "wasm32"),
-    sea_orm(string_value = "shared_apartment")
+        not(target_arch = "wasm32"),
+        sea_orm(string_value = "shared_apartment")
     )]
     SharedApartment,
 }
@@ -117,7 +117,7 @@ impl HousingType {
             HousingType::FreeCompany => "free_company",
             HousingType::SharedApartment => "shared_appartment",
         }
-            .to_string()
+        .to_string()
     }
 }
 
@@ -125,10 +125,10 @@ impl ToString for HousingType {
     fn to_string(&self) -> String {
         match self {
             HousingType::Private => "Private Unterkunft",
-            HousingType::FreeCompany => "Unterkunft einer Freie Gesellschaft",
+            HousingType::FreeCompany => "Unterkunft einer Freien Gesellschaft",
             HousingType::SharedApartment => "Wohngemeinschaft",
         }
-            .to_string()
+        .to_string()
     }
 }
 
@@ -157,9 +157,9 @@ impl Ord for HousingType {
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Default)]
 #[cfg_attr(
-not(target_arch = "wasm32"),
-derive(DeriveEntityModel, Responder),
-sea_orm(table_name = "character_housing", schema_name = "final_fantasy")
+    not(target_arch = "wasm32"),
+    derive(DeriveEntityModel, Responder),
+    sea_orm(table_name = "character_housing", schema_name = "final_fantasy")
 )]
 #[serde(rename_all = "camelCase")]
 pub struct Model {
@@ -192,11 +192,11 @@ impl Ord for Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-    belongs_to = "super::character::Entity",
-    from = "Column::CharacterId",
-    to = "super::character::Column::Id",
-    on_update = "Cascade",
-    on_delete = "Cascade"
+        belongs_to = "super::character::Entity",
+        from = "Column::CharacterId",
+        to = "super::character::Column::Id",
+        on_update = "Cascade",
+        on_delete = "Cascade"
     )]
     Character,
 }

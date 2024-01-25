@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[cfg(not(target_arch = "wasm32"))]
-use bamboo_common_core_macros::*;
+use bamboo_common_backend_macros::*;
 
 use crate::user::WebUser;
 

@@ -3,4 +3,3 @@ pub use bamboo_pandas_frontend_base as base;
 pub use bamboo_pandas_frontend_sections as sections;
 
 mod app;
-

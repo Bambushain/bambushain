@@ -3,13 +3,13 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[cfg(not(target_arch = "wasm32"))]
-use bamboo_common_core_macros::*;
+use bamboo_common_backend_macros::*;
 
 #[derive(Serialize, Deserialize, Debug, Eq, Ord, PartialOrd, PartialEq, Clone, Default)]
 #[cfg_attr(
-not(target_arch = "wasm32"),
-derive(DeriveEntityModel, Responder),
-sea_orm(table_name = "free_company", schema_name = "final_fantasy")
+    not(target_arch = "wasm32"),
+    derive(DeriveEntityModel, Responder),
+    sea_orm(table_name = "free_company", schema_name = "final_fantasy")
 )]
 #[serde(rename_all = "camelCase")]
 pub struct Model {
@@ -26,11 +26,11 @@ pub struct Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-    belongs_to = "super::user::Entity",
-    from = "Column::UserId",
-    to = "super::user::Column::Id",
-    on_update = "Cascade",
-    on_delete = "Cascade"
+        belongs_to = "super::user::Entity",
+        from = "Column::UserId",
+        to = "super::user::Column::Id",
+        on_update = "Cascade",
+        on_delete = "Cascade"
     )]
     User,
 }

@@ -14,7 +14,6 @@ actix-web-lab = { workspace = true, features = ["spa"] }
 bytestring = { workspace = true }
 chrono = { workspace = true }
 date-range = { workspace = true }
-lettre = { workspace = true }
 log = { workspace = true }
 parking_lot = { workspace = true }
 rand = { workspace = true }

@@ -1,14 +1,14 @@
+use sea_orm::prelude::*;
+use sea_orm::sea_query::Expr;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, EntityTrait, IntoActiveModel,
     JoinType, NotSet, QueryFilter, QueryOrder, QuerySelect, RelationTrait, Set,
 };
-use sea_orm::prelude::*;
-use sea_orm::sea_query::Expr;
 
 use bamboo_common_core::entities::*;
 use bamboo_common_core::error::*;
 
-use crate::prelude::dbal;
+use crate as dbal;
 
 pub async fn get_user_by_id_only(id: i32, db: &DatabaseConnection) -> BambooResult<User> {
     user::Entity::find_by_id(id)

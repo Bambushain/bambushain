@@ -5,19 +5,19 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[cfg(not(target_arch = "wasm32"))]
-use bamboo_common_core_macros::*;
+use bamboo_common_backend_macros::*;
 #[cfg(not(not(target_arch = "wasm32")))]
 use strum_macros::EnumIter;
 
 #[derive(Serialize, Deserialize, EnumIter, Debug, Eq, PartialEq, Clone, Default, Copy)]
 #[cfg_attr(
-not(target_arch = "wasm32"),
-derive(DeriveActiveEnum),
-sea_orm(
-rs_type = "String",
-db_type = "Enum",
-enum_name = "final_fantasy.crafter_job"
-)
+    not(target_arch = "wasm32"),
+    derive(DeriveActiveEnum),
+    sea_orm(
+        rs_type = "String",
+        db_type = "Enum",
+        enum_name = "final_fantasy.crafter_job"
+    )
 )]
 pub enum CrafterJob {
     #[default]
@@ -60,7 +60,7 @@ impl CrafterJob {
             CrafterJob::Botanist => "botanist.webp",
             CrafterJob::Fisher => "fisher.webp",
         }
-            .to_string()
+        .to_string()
     }
 
     pub fn get_job_name(self) -> String {
@@ -77,7 +77,7 @@ impl CrafterJob {
             CrafterJob::Botanist => "botanist",
             CrafterJob::Fisher => "fisher",
         }
-            .to_string()
+        .to_string()
     }
 }
 
@@ -108,7 +108,7 @@ impl ToString for CrafterJob {
             CrafterJob::Botanist => "Gärtner",
             CrafterJob::Fisher => "Fischer",
         }
-            .to_string()
+        .to_string()
     }
 }
 
@@ -133,9 +133,9 @@ impl From<String> for CrafterJob {
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Default)]
 #[cfg_attr(
-not(target_arch = "wasm32"),
-derive(DeriveEntityModel, Responder),
-sea_orm(table_name = "crafter", schema_name = "final_fantasy")
+    not(target_arch = "wasm32"),
+    derive(DeriveEntityModel, Responder),
+    sea_orm(table_name = "crafter", schema_name = "final_fantasy")
 )]
 #[serde(rename_all = "camelCase")]
 pub struct Model {
@@ -164,11 +164,11 @@ impl Ord for Model {
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-    belongs_to = "super::character::Entity",
-    from = "Column::CharacterId",
-    to = "super::character::Column::Id",
-    on_update = "Cascade",
-    on_delete = "Cascade"
+        belongs_to = "super::character::Entity",
+        from = "Column::CharacterId",
+        to = "super::character::Column::Id",
+        on_update = "Cascade",
+        on_delete = "Cascade"
     )]
     Character,
 }

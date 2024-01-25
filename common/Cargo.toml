@@ -12,13 +12,16 @@ bamboo-common-frontend = { path = "frontend", optional = true }
 [workspace]
 members = [
     "backend",
+    "backend/database",
     "backend/dbal",
+    "backend/macros",
+    "backend/mailing",
+    "backend/migration",
+    "backend/response",
     "backend/services",
     "core",
     "core/entities",
     "core/error",
-    "core/macros",
-    "core/migration",
     "frontend",
     "frontend/api",
     "frontend/ui",
@@ -38,6 +41,7 @@ chrono = { version = "0.4.31", features = ["serde"] }
 color-art = "0.3.7"
 date-range = "0.3.0"
 gloo-net = "0.5.0"
+lettre = { version = "0.11.3", features = ["tokio1-rustls-tls", "smtp-transport", "pool", "hostname", "builder"], default-features = false }
 log = "0.4.20"
 pbkdf2 = "0.12.2"
 quote = "1.0.35"
@@ -60,6 +64,6 @@ yew-cosmo = "1.0.10"
 [features]
 default = ["core"]
 
-backend = ["dep:bamboo-common-backend", "core", "bamboo-common-core/backend"]
+backend = ["dep:bamboo-common-backend", "core"]
 core = ["dep:bamboo-common-core"]
-frontend = ["dep:bamboo-common-frontend", "core", "bamboo-common-core/frontend"]
+frontend = ["dep:bamboo-common-frontend", "core"]
