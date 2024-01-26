@@ -1,14 +1,14 @@
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[cfg(not(target_arch = "wasm32"))]
-use bamboo_common_core_macros::*;
+#[cfg(feature = "backend")]
+use bamboo_common_backend_macros::*;
 
-use crate::prelude::CustomCharacterFieldOption;
+use crate::CustomCharacterFieldOption;
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 pub struct CustomField {
@@ -19,21 +19,21 @@ pub struct CustomField {
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Default)]
 #[cfg_attr(
-not(target_arch = "wasm32"),
-derive(DeriveEntityModel, Responder),
-sea_orm(table_name = "custom_character_field", schema_name = "final_fantasy")
+    feature = "backend",
+    derive(DeriveEntityModel, Responder),
+    sea_orm(table_name = "custom_character_field", schema_name = "final_fantasy")
 )]
 #[serde(rename_all = "camelCase")]
 pub struct Model {
-    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(primary_key))]
+    #[cfg_attr(feature = "backend", sea_orm(primary_key))]
     #[serde(default)]
     pub id: i32,
     pub label: String,
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(feature = "backend")]
     #[serde(skip)]
     pub user_id: i32,
     pub position: i32,
-    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(ignore))]
+    #[cfg_attr(feature = "backend", sea_orm(ignore))]
     pub options: Vec<CustomCharacterFieldOption>,
 }
 
@@ -49,15 +49,15 @@ impl Ord for Model {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
-    belongs_to = "super::user::Entity",
-    from = "Column::UserId",
-    to = "super::user::Column::Id",
-    on_update = "Cascade",
-    on_delete = "Cascade"
+        belongs_to = "super::user::Entity",
+        from = "Column::UserId",
+        to = "super::user::Column::Id",
+        on_update = "Cascade",
+        on_delete = "Cascade"
     )]
     User,
     #[sea_orm(has_many = "super::custom_character_field_option::Entity")]
@@ -66,28 +66,28 @@ pub enum Relation {
     CustomFieldValue,
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 impl Related<super::user::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::User.def()
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 impl Related<super::custom_character_field_option::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::CustomFieldOption.def()
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 impl Related<super::custom_character_field_value::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::CustomFieldValue.def()
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 impl ActiveModelBehavior for ActiveModel {}
 
 impl Model {
@@ -95,7 +95,7 @@ impl Model {
         Self {
             id: i32::default(),
             label,
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(feature = "backend")]
             user_id: i32::default(),
             options,
             position: 0,

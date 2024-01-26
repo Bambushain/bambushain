@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-#[cfg(not(target_arch = "wasm32"))]
-use bamboo_common_core_macros::*;
+#[cfg(feature = "backend")]
+use bamboo_common_backend_macros::*;
 
 use crate::user::WebUser;
 
@@ -32,7 +32,7 @@ pub struct RequestTwoFactor {
 }
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
-#[cfg_attr(not(target_arch = "wasm32"), derive(Responder))]
+#[cfg_attr(feature = "backend", derive(Responder))]
 pub struct LoginResult {
     pub user: WebUser,
     pub token: String,
@@ -40,7 +40,7 @@ pub struct LoginResult {
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 #[serde(rename_all = "camelCase")]
-#[cfg_attr(not(target_arch = "wasm32"), derive(Responder))]
+#[cfg_attr(feature = "backend", derive(Responder))]
 pub struct TwoFactorResult {
     pub user: WebUser,
     pub two_factor_code: Option<String>,

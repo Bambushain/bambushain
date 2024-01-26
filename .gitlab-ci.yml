@@ -1,38 +1,42 @@
-.base-pandas-web-cache:
+.base-cargo:
   variables:
     CARGO_HOME: $CI_PROJECT_DIR/.cargo
-  cache:
-    key: $CI_PROJECT_NAME-pandas-web
-    paths:
-      - $CI_PROJECT_DIR/pandas/dist/
-      - $CI_PROJECT_DIR/pandas/target/
-      - $CI_PROJECT_DIR/.cargo/
-      - $CI_PROJECT_DIR/pandas/Cargo.lock
 
-.base-pandas-server-cache:
-  variables:
-    CARGO_HOME: $CI_PROJECT_DIR/.cargo
+.base-server-cache:
+  image:
+    name: registry.ulbricht.casa/docker-images/rust-docker-base-image:latest
+    pull_policy: always
+  extends:
+    - .base-cargo
   cache:
-    key: $CI_PROJECT_NAME-pandas-server
+    key: $CI_PROJECT_NAME-server
     paths:
-      - $CI_PROJECT_DIR/pandas/target/
+      - $CI_PROJECT_DIR/target/
       - $CI_PROJECT_DIR/.cargo/
-      - $CI_PROJECT_DIR/pandas/Cargo.lock
+      - $CI_PROJECT_DIR/Cargo.lock
 
-.base-common-cache:
-  variables:
-    CARGO_HOME: $CI_PROJECT_DIR/.cargo
-  cache:
-    key: $CI_PROJECT_NAME-common
-    paths:
-      - $CI_PROJECT_DIR/common/target/
-      - $CI_PROJECT_DIR/.cargo/
-      - $CI_PROJECT_DIR/common/Cargo.lock
-
-.base-trunk:
+.base-web-cache:
   image:
     name: registry.ulbricht.casa/docker-images/trunk-docker-base-image:latest
     pull_policy: always
+  extends:
+    - .base-cargo
+  variables:
+    TRUNK_BUILD_RELEASE: "true"
+    TRUNK_BUILD_PUBLIC_URL: /static/
+    CARGO_PROFILE_RELEASE_PANIC: abort
+    CARGO_PROFILE_RELEASE_CODEGEN_UNITS: 1
+    CARGO_PROFILE_RELEASE_OPT_LEVEL: z
+    CARGO_PROFILE_RELEASE_DEBUG: "false"
+    CARGO_PROFILE_RELEASE_LTO: "true"
+    CARGO_PROFILE_RELEASE_STRIP: "symbols"
+  cache:
+    key: $CI_PROJECT_NAME-pandas-web
+    paths:
+      - $CI_PROJECT_DIR/pandas-dist/
+      - $CI_PROJECT_DIR/target/
+      - $CI_PROJECT_DIR/.cargo/
+      - $CI_PROJECT_DIR/Cargo.lock
 
 .base-kaniko:
   image:
@@ -47,60 +51,53 @@ stages:
   - build
   - deploy
 
-lint-common:
+lint-server:
+  extends:
+    - .base-server-cache
   stage: lint
-  image:
-    name: registry.ulbricht.casa/docker-images/rust-docker-base-image:latest
-    pull_policy: always
-  extends:
-    - .base-common-cache
   script:
-    - cd common
-    - cargo clippy --release
+    - cargo clippy --release --features groves-backend --features pandas-backend --bin groves-server --bin pandas-server
 
-lint-pandas:
+lint-web:
+  extends:
+    - .base-web-cache
   stage: lint
-  extends:
-    - .base-trunk
-    - .base-pandas-web-cache
-  needs:
-    - lint-common
   script:
-    - cd pandas
-    - cargo clippy --release
-  artifacts:
-    paths:
-      - dist
+    - cargo clippy --release --features groves-frontend --features pandas-frontend --no-default-features --bin groves-web --bin pandas-web
 
-build-pandas-server:
-  stage: build
-  image:
-    name: registry.ulbricht.casa/docker-images/rust-docker-base-image:latest
-    pull_policy: always
-  extends:
-    - .base-pandas-server-cache
-  script:
-    - cd pandas
-    - cargo build --release --bin pandas-server --features backend
-  needs:
-    - lint-pandas
-  artifacts:
-    paths:
-      - pandas/target/release/pandas-server
-
-build-pandas-web:
+build-server:
   stage: build
   extends:
-    - .base-trunk
-    - .base-pandas-web-cache
+    - .base-server-cache
   script:
-    - cd pandas
-    - trunk build --release
+    - cargo build --release --bin pandas-server --bin groves-server --features pandas-backend --features groves-backend
   needs:
-    - lint-pandas
+    - lint-server
   artifacts:
     paths:
-      - pandas/dist
+      - target/release/pandas-server
+      - target/release/groves-server
+
+build-web:
+  stage: build
+  extends:
+    - .base-web-cache
+  script:
+    - trunk build
+  needs:
+    - lint-web
+  parallel:
+    matrix:
+      # groves
+      - TRUNK_BUILD_TARGET: groves/frontend/index.html
+        TRUNK_BUILD_DIST: dist-groves
+      # pandas
+      - TRUNK_BUILD_TARGET: pandas/frontend/index.html
+        TRUNK_BUILD_DIST: dist-pandas
+  artifacts:
+    paths:
+      - dist-pandas
+      - dist-groves
 
 docker-build-pandas:
   stage: deploy
@@ -111,12 +108,10 @@ docker-build-pandas:
   script:
     - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/pandas.dockerfile" --destination "${CI_REGISTRY_IMAGE}/pandas:${CI_COMMIT_TAG}" --destination "${CI_REGISTRY_IMAGE}:latest"
   needs:
-    - build-pandas-server
-    - build-pandas-web
+    - build-server
+    - build-web
   rules:
     - if: $CI_COMMIT_TAG
-      exists:
-        - Dockerfile
 
 docker-build-pandas-testing:
   stage: deploy
@@ -127,12 +122,34 @@ docker-build-pandas-testing:
   script:
     - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/pandas.dockerfile" --destination "${CI_REGISTRY_IMAGE}/pandas:2.0.0-test-$CI_PIPELINE_IID"
   needs:
-    - build-pandas-server
-    - build-pandas-web
+    - build-server
+    - build-web
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
-      exists:
-        - Dockerfile
+
+docker-build-groves:
+  stage: deploy
+  extends:
+    - .base-kaniko
+  script:
+    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/groves.dockerfile" --destination "${CI_REGISTRY_IMAGE}/groves:${CI_COMMIT_TAG}" --destination "${CI_REGISTRY_IMAGE}:latest"
+  needs:
+    - build-server
+    - build-web
+  rules:
+    - if: $CI_COMMIT_TAG
+
+docker-build-groves-testing:
+  stage: deploy
+  extends:
+    - .base-kaniko
+  script:
+    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/groves.dockerfile" --destination "${CI_REGISTRY_IMAGE}/groves:2.0.0-test-$CI_PIPELINE_IID"
+  needs:
+    - build-server
+    - build-web
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
 
 pages:
   image: library/node:latest

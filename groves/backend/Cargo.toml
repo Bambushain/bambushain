@@ -1,0 +1,18 @@
+[package]
+name = "bamboo-groves-backend"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bamboo-common = { path = "../../common", features = ["backend"] }
+
+actix-session = { workspace = true }
+actix-web = { workspace = true }
+actix-web-lab = { workspace = true }
+env_logger = { workspace = true }
+log = { workspace = true }
+openidconnect = { workspace = true }
+serde = { workspace = true }

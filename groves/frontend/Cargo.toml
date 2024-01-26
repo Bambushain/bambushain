@@ -1,0 +1,17 @@
+[package]
+name = "bamboo-groves-frontend"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bamboo-groves-frontend-base = { path = "base" }
+bamboo-groves-frontend-sections = { path = "sections" }
+
+console_log = { workspace = true }
+log = { workspace = true }
+yew = { workspace = true }
+yew-cosmo = { workspace = true }
+yew-router = { workspace = true }

@@ -1,9 +1,21 @@
-use chacha20poly1305::{AeadCore, ChaCha20Poly1305, Key, KeyInit, Nonce};
 use chacha20poly1305::aead::{Aead, OsRng};
+use chacha20poly1305::{AeadCore, ChaCha20Poly1305, Key, KeyInit, Nonce};
 use pbkdf2::hmac::Hmac;
 use sha2::Sha512;
 
 use bamboo_common_core::error::*;
+
+pub use crate::authentication::*;
+pub use crate::character::*;
+pub use crate::character_housing::*;
+pub use crate::crafter::*;
+pub use crate::custom_field::*;
+pub use crate::event::*;
+pub use crate::fighter::*;
+pub use crate::free_company::*;
+pub use crate::grove::*;
+pub use crate::my::*;
+pub use crate::user::*;
 
 mod authentication;
 mod character;
@@ -17,22 +29,6 @@ mod grove;
 mod my;
 mod user;
 
-pub mod prelude {
-    pub mod dbal {
-        pub use crate::authentication::*;
-        pub use crate::character::*;
-        pub use crate::character_housing::*;
-        pub use crate::crafter::*;
-        pub use crate::custom_field::*;
-        pub use crate::event::*;
-        pub use crate::fighter::*;
-        pub use crate::free_company::*;
-        pub use crate::grove::*;
-        pub use crate::my::*;
-        pub use crate::user::*;
-    }
-}
-
 fn get_passphrase(passphrase: &[u8]) -> BambooResult<Key> {
     let mut key = [0_u8; 32];
     pbkdf2::pbkdf2::<Hmac<Sha512>>(
@@ -43,7 +39,7 @@ fn get_passphrase(passphrase: &[u8]) -> BambooResult<Key> {
         12,
         &mut key,
     )
-        .map_err(|_| BambooError::crypto("encryption", "Failed to create pbkdf2 key"))?;
+    .map_err(|_| BambooError::crypto("encryption", "Failed to create pbkdf2 key"))?;
 
     Ok(Key::from(key))
 }

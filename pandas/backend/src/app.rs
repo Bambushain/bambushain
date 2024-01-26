@@ -1,11 +1,10 @@
 use std::sync::Arc;
 
-use actix_web::{App, HttpServer, middleware};
-use sea_orm::{ConnectOptions, Database};
+use actix_web::{middleware, App, HttpServer};
 
 use bamboo_common::backend::dbal;
+use bamboo_common::backend::migration::{IntoSchemaManagerConnection, Migrator, MigratorTrait};
 use bamboo_common::backend::services::DbConnection;
-use bamboo_common::core::migration::{IntoSchemaManagerConnection, Migrator, MigratorTrait};
 
 use crate::notifier;
 use crate::routes;
@@ -44,9 +43,9 @@ async fn setup_google_playstore_user(db: &sea_orm::DatabaseConnection) -> std::i
             password,
             db,
         )
-            .await
-            .map_err(std::io::Error::other)
-            .map(|_| ())
+        .await
+        .map_err(std::io::Error::other)
+        .map(|_| ())
     }
 }
 
@@ -83,16 +82,9 @@ pub fn start_server() -> std::io::Result<()> {
 
     actix_web::rt::System::new().block_on(async {
         log::info!("Open the bamboo grove");
-
-        let mut opts =
-            ConnectOptions::new(std::env::var("DATABASE_URL").expect("Needs DATABASE_URL"));
-        opts.sqlx_logging(true)
-            .sqlx_logging_level(log::LevelFilter::Debug);
-
-        let db = Database::connect(opts)
+        let db = bamboo_common::backend::database::get_database()
             .await
             .map_err(std::io::Error::other)?;
-
         Migrator::up(db.into_schema_manager_connection(), None)
             .await
             .map_err(std::io::Error::other)?;
@@ -101,18 +93,18 @@ pub fn start_server() -> std::io::Result<()> {
 
         if groves.is_empty()
             || groves
-            .iter()
-            .filter(|grove| grove.name == *"Google")
-            .count()
-            == groves.len()
+                .iter()
+                .filter(|grove| grove.name == *"Google")
+                .count()
+                == groves.len()
         {
             log::info!("Create initial grove as it doesn't exist");
             let initial_grove = dbal::create_grove(
                 std::env::var("INITIAL_GROVE").expect("Needs INITIAL_GROVE"),
                 &db,
             )
-                .await
-                .map_err(std::io::Error::other)?;
+            .await
+            .map_err(std::io::Error::other)?;
 
             log::info!("Migrate existing users and events to the new grove");
             dbal::migrate_between_groves(None, initial_grove.id, &db)
@@ -132,9 +124,9 @@ pub fn start_server() -> std::io::Result<()> {
                 .app_data(DbConnection::new(db.clone()))
                 .configure(routes::configure_routes)
         })
-            .bind(("0.0.0.0", 8070))?
-            .run()
-            .await
+        .bind(("0.0.0.0", 8070))?
+        .run()
+        .await
     })?;
     Ok(())
 }

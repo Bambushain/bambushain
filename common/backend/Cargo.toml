@@ -6,7 +6,10 @@ license.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
+bamboo-common-backend-database = { path = "database" }
 bamboo-common-backend-dbal = { path = "dbal" }
+bamboo-common-backend-mailing = { path = "mailing" }
+bamboo-common-backend-migration = { path = "migration" }
+bamboo-common-backend-response = { path = "response" }
 bamboo-common-backend-services = { path = "services" }
-bamboo-common-core = { path = "../core" }
-
+bamboo-common-core = { path = "../core", features = ["backend"] }

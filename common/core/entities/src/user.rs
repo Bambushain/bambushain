@@ -1,47 +1,47 @@
 use std::fmt::{Display, Formatter};
 
-#[cfg(not(target_arch = "wasm32"))]
-use sea_orm::ActiveValue::Set;
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 use sea_orm::entity::prelude::*;
+#[cfg(feature = "backend")]
+use sea_orm::ActiveValue::Set;
 use serde::{Deserialize, Serialize};
 
-#[cfg(not(target_arch = "wasm32"))]
-use bamboo_common_core_macros::*;
+#[cfg(feature = "backend")]
+use bamboo_common_backend_macros::*;
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 #[cfg_attr(
-not(target_arch = "wasm32"),
-derive(DeriveEntityModel, Responder),
-sea_orm(table_name = "user", schema_name = "authentication")
+    feature = "backend",
+    derive(DeriveEntityModel, Responder),
+    sea_orm(table_name = "user", schema_name = "authentication")
 )]
 #[serde(rename_all = "camelCase")]
 pub struct Model {
-    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(primary_key))]
+    #[cfg_attr(feature = "backend", sea_orm(primary_key))]
     #[serde(default)]
     pub id: i32,
-    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(unique))]
+    #[cfg_attr(feature = "backend", sea_orm(unique))]
     pub email: String,
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(feature = "backend")]
     #[serde(skip)]
     pub password: String,
     pub display_name: String,
     pub is_mod: bool,
     pub discord_name: String,
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(feature = "backend")]
     pub two_factor_code: Option<String>,
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(feature = "backend")]
     pub totp_secret: Option<Vec<u8>>,
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(feature = "backend")]
     #[serde(default)]
     pub totp_secret_encrypted: bool,
     pub totp_validated: Option<bool>,
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(feature = "backend")]
     #[serde(skip)]
     pub grove_id: i32,
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(has_many = "super::character::Entity")]
@@ -51,47 +51,47 @@ pub enum Relation {
     #[sea_orm(has_many = "super::event::Entity")]
     Event,
     #[sea_orm(
-    belongs_to = "super::grove::Entity",
-    from = "Column::GroveId",
-    to = "super::grove::Column::Id",
-    on_update = "Cascade",
-    on_delete = "Cascade"
+        belongs_to = "super::grove::Entity",
+        from = "Column::GroveId",
+        to = "super::grove::Column::Id",
+        on_update = "Cascade",
+        on_delete = "Cascade"
     )]
     Grove,
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 impl Related<super::character::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Character.def()
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 impl Related<super::token::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Token.def()
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 impl Related<super::event::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Event.def()
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 impl Related<super::grove::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Grove.def()
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 impl ActiveModelBehavior for ActiveModel {}
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 impl ActiveModel {
     pub fn set_password(&mut self, plain_password: &String) -> Result<(), bcrypt::BcryptError> {
         let hashed = bcrypt::hash(plain_password.as_bytes(), 12);
@@ -110,24 +110,24 @@ impl Model {
         Self {
             id: i32::default(),
             email,
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(feature = "backend")]
             password: String::default(),
             is_mod,
             display_name,
             discord_name,
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(feature = "backend")]
             two_factor_code: None,
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(feature = "backend")]
             totp_secret: None,
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(feature = "backend")]
             totp_secret_encrypted: false,
             totp_validated: None,
-            #[cfg(not(target_arch = "wasm32"))]
+            #[cfg(feature = "backend")]
             grove_id: -1,
         }
     }
 
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(feature = "backend")]
     pub fn validate_password(&self, password: String) -> bool {
         let result = bcrypt::verify(password, self.password.as_str());
         match result {
@@ -142,7 +142,7 @@ impl Model {
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 #[serde(rename_all = "camelCase")]
-#[cfg_attr(not(target_arch = "wasm32"), derive(Responder))]
+#[cfg_attr(feature = "backend", derive(Responder))]
 pub struct WebUser {
     #[serde(default)]
     pub id: i32,
@@ -204,7 +204,7 @@ pub struct ValidateTotp {
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 #[serde(rename_all = "camelCase")]
-#[cfg_attr(not(target_arch = "wasm32"), derive(Responder))]
+#[cfg_attr(feature = "backend", derive(Responder))]
 pub struct TotpQrCode {
     pub qr_code: String,
     pub secret: String,

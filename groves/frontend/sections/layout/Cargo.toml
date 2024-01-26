@@ -1,0 +1,19 @@
+[package]
+name = "bamboo-groves-frontend-section-layout"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bamboo-common = { path = "../../../../common", features = ["frontend"] }
+bamboo-groves-frontend-base = { path = "../../base" }
+bamboo-groves-frontend-section-login = { path = "../../sections/login" }
+
+bounce = { workspace = true }
+gloo-utils = { workspace = true }
+log = { workspace = true }
+yew = { workspace = true }
+yew-autoprops = { workspace = true }
+yew-cosmo = { workspace = true }
+yew-hooks = { workspace = true }
+yew-router = { workspace = true }
