@@ -6,6 +6,7 @@ license.workspace = true
 
 [dependencies]
 bamboo-common-core-error = { path = "../error" }
+bamboo-common-backend-macros = { path = "../../backend/macros", optional = true }
 
 bcrypt = { workspace = true }
 chrono = { workspace = true }
@@ -14,12 +15,12 @@ log = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-bamboo-common-backend-macros = { path = "../../backend/macros" }
+actix-web = { workspace = true, optional = true }
+sea-orm = { workspace = true, optional = true }
 
-actix-web = { workspace = true }
-sea-orm = { workspace = true }
+strum = { workspace = true, optional = true }
+strum_macros = { workspace = true, optional = true }
 
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-strum = { workspace = true }
-strum_macros = { workspace = true }
+[features]
+backend = ["dep:actix-web", "dep:sea-orm", "dep:bamboo-common-backend-macros"]
+frontend = ["dep:strum", "dep:strum_macros"]

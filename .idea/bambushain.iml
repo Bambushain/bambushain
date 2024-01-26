@@ -61,6 +61,7 @@
       <sourceFolder url="file://$MODULE_DIR$/groves/frontend/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/groves/common/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/groves/frontend/base/api/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/common/backend/target" />
       <excludeFolder url="file://$MODULE_DIR$/common/core/target" />
       <excludeFolder url="file://$MODULE_DIR$/common/frontend/target" />

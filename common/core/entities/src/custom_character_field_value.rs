@@ -1,15 +1,15 @@
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 use bamboo_common_backend_macros::*;
 
 use crate::{CustomCharacterField, CustomCharacterFieldOption};
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 #[cfg_attr(
-    not(target_arch = "wasm32"),
+    feature = "backend",
     derive(DeriveEntityModel, Responder),
     sea_orm(
         table_name = "custom_character_field_value",
@@ -18,19 +18,19 @@ use crate::{CustomCharacterField, CustomCharacterFieldOption};
 )]
 #[serde(rename_all = "camelCase")]
 pub struct Model {
-    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(primary_key))]
+    #[cfg_attr(feature = "backend", sea_orm(primary_key))]
     #[serde(default)]
     pub id: i32,
     pub character_id: i32,
     pub custom_character_field_id: i32,
     pub custom_character_field_option_id: i32,
-    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(ignore))]
+    #[cfg_attr(feature = "backend", sea_orm(ignore))]
     pub custom_character_field: CustomCharacterField,
-    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(ignore))]
+    #[cfg_attr(feature = "backend", sea_orm(ignore))]
     pub custom_character_field_option: CustomCharacterFieldOption,
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
@@ -59,28 +59,28 @@ pub enum Relation {
     CustomCharacterFieldOption,
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 impl Related<super::character::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Character.def()
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 impl Related<super::custom_character_field::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::CustomCharacterField.def()
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 impl Related<super::custom_character_field_option::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::CustomCharacterFieldOption.def()
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 impl ActiveModelBehavior for ActiveModel {}
 
 impl Model {

@@ -6,5 +6,9 @@ license.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-bamboo-common-core-entities = { path = "entities" }
+bamboo-common-core-entities = { path = "entities", default-features = false }
 bamboo-common-core-error = { path = "error" }
+
+[features]
+backend = ["bamboo-common-core-entities/backend"]
+frontend = ["bamboo-common-core-entities/frontend"]

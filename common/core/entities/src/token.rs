@@ -1,27 +1,27 @@
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 use bamboo_common_backend_macros::*;
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 #[cfg_attr(
-    not(target_arch = "wasm32"),
+    feature = "backend",
     derive(DeriveEntityModel, Responder),
     sea_orm(table_name = "token", schema_name = "authentication")
 )]
 #[serde(rename_all = "camelCase")]
 pub struct Model {
-    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(primary_key))]
+    #[cfg_attr(feature = "backend", sea_orm(primary_key))]
     #[serde(skip)]
     pub id: i32,
     pub user_id: i32,
-    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(unique))]
+    #[cfg_attr(feature = "backend", sea_orm(unique))]
     pub token: String,
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
@@ -34,12 +34,12 @@ pub enum Relation {
     User,
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 impl Related<super::user::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::User.def()
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 impl ActiveModelBehavior for ActiveModel {}

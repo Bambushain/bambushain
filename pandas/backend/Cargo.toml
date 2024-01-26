@@ -10,7 +10,7 @@ license.workspace = true
 bamboo-common = { path = "../../common", features = ["backend"] }
 
 actix-web = { workspace = true }
-actix-web-lab = { workspace = true, features = ["spa"] }
+actix-web-lab = { workspace = true }
 bytestring = { workspace = true }
 chrono = { workspace = true }
 date-range = { workspace = true }

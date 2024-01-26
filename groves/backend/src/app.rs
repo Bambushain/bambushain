@@ -1,4 +1,4 @@
-use actix_session::storage::{CookieSessionStore, RedisSessionStore};
+use actix_session::storage::CookieSessionStore;
 use actix_session::SessionMiddleware;
 use actix_web::cookie::Key;
 use actix_web::{middleware, App, HttpServer};
@@ -22,9 +22,6 @@ pub async fn start_server() -> std::io::Result<()> {
         )))
         .map_err(std::io::Error::other)?;
     let secret_key = Key::from(key.as_bytes());
-    let _redis_store = RedisSessionStore::new("redis://127.0.0.1:6379")
-        .await
-        .expect("Redis connection error");
 
     HttpServer::new(move || {
         App::new()

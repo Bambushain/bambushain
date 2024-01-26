@@ -1,17 +1,17 @@
 use std::cmp::Ordering;
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 use bamboo_common_backend_macros::*;
-#[cfg(not(not(target_arch = "wasm32")))]
+#[cfg(feature = "frontend")]
 use strum_macros::EnumIter;
 
 #[derive(Serialize, Deserialize, EnumIter, Debug, Eq, PartialEq, Clone, Default, Copy)]
 #[cfg_attr(
-    not(target_arch = "wasm32"),
+    feature = "backend",
     derive(DeriveActiveEnum),
     sea_orm(
         rs_type = "String",
@@ -21,18 +21,15 @@ use strum_macros::EnumIter;
 )]
 pub enum HousingDistrict {
     #[default]
-    #[cfg_attr(
-        not(target_arch = "wasm32"),
-        sea_orm(string_value = "the_lavender_beds")
-    )]
+    #[cfg_attr(feature = "backend", sea_orm(string_value = "the_lavender_beds"))]
     TheLavenderBeds,
-    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "mist"))]
+    #[cfg_attr(feature = "backend", sea_orm(string_value = "mist"))]
     Mist,
-    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "the_goblet"))]
+    #[cfg_attr(feature = "backend", sea_orm(string_value = "the_goblet"))]
     TheGoblet,
-    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "shirogane"))]
+    #[cfg_attr(feature = "backend", sea_orm(string_value = "shirogane"))]
     Shirogane,
-    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "empyreum"))]
+    #[cfg_attr(feature = "backend", sea_orm(string_value = "empyreum"))]
     Empyreum,
 }
 
@@ -89,7 +86,7 @@ impl Ord for HousingDistrict {
 
 #[derive(Serialize, Deserialize, EnumIter, Debug, Eq, PartialEq, Clone, Default, Copy)]
 #[cfg_attr(
-    not(target_arch = "wasm32"),
+    feature = "backend",
     derive(DeriveActiveEnum),
     sea_orm(
         rs_type = "String",
@@ -99,14 +96,11 @@ impl Ord for HousingDistrict {
 )]
 pub enum HousingType {
     #[default]
-    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "private"))]
+    #[cfg_attr(feature = "backend", sea_orm(string_value = "private"))]
     Private,
-    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(string_value = "free_company"))]
+    #[cfg_attr(feature = "backend", sea_orm(string_value = "free_company"))]
     FreeCompany,
-    #[cfg_attr(
-        not(target_arch = "wasm32"),
-        sea_orm(string_value = "shared_apartment")
-    )]
+    #[cfg_attr(feature = "backend", sea_orm(string_value = "shared_apartment"))]
     SharedApartment,
 }
 
@@ -157,13 +151,13 @@ impl Ord for HousingType {
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Default)]
 #[cfg_attr(
-    not(target_arch = "wasm32"),
+    feature = "backend",
     derive(DeriveEntityModel, Responder),
     sea_orm(table_name = "character_housing", schema_name = "final_fantasy")
 )]
 #[serde(rename_all = "camelCase")]
 pub struct Model {
-    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(primary_key))]
+    #[cfg_attr(feature = "backend", sea_orm(primary_key))]
     #[serde(default)]
     pub id: i32,
     pub district: HousingDistrict,
@@ -188,7 +182,7 @@ impl Ord for Model {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
@@ -201,14 +195,14 @@ pub enum Relation {
     Character,
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 impl Related<super::character::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Character.def()
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 impl ActiveModelBehavior for ActiveModel {}
 
 impl Model {

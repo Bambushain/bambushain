@@ -1,10 +1,10 @@
 use serde::{Deserialize, Serialize};
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 use bamboo_common_backend_macros::Responder;
 
 #[derive(Debug, Deserialize, Serialize, Clone, Hash, Eq, PartialEq)]
-#[cfg_attr(not(target_arch = "wasm32"), derive(Responder))]
+#[cfg_attr(feature = "backend", derive(Responder))]
 pub struct DependencyDetails {
     pub name: String,
     pub authors: String,
@@ -25,7 +25,7 @@ impl Ord for DependencyDetails {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 impl DependencyDetails {
     #[must_use]
     pub fn new(

@@ -2,11 +2,11 @@ use std::str::FromStr;
 
 use chrono::NaiveDate;
 use color_art::{color, Color};
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 use bamboo_common_backend_macros::*;
 
 fn set_false() -> bool {
@@ -15,13 +15,13 @@ fn set_false() -> bool {
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 #[cfg_attr(
-    not(target_arch = "wasm32"),
+    feature = "backend",
     derive(DeriveEntityModel, Responder),
     sea_orm(table_name = "event", schema_name = "bamboo")
 )]
 #[serde(rename_all = "camelCase")]
 pub struct Model {
-    #[cfg_attr(not(target_arch = "wasm32"), sea_orm(primary_key))]
+    #[cfg_attr(feature = "backend", sea_orm(primary_key))]
     #[serde(default)]
     pub id: i32,
     pub title: String,
@@ -33,12 +33,12 @@ pub struct Model {
     pub is_private: bool,
     #[serde(skip)]
     pub user_id: Option<i32>,
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(feature = "backend")]
     #[serde(skip)]
     pub grove_id: i32,
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
     #[sea_orm(
@@ -59,25 +59,25 @@ pub enum Relation {
     Grove,
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 impl Related<super::user::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::User.def()
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 impl Related<super::grove::Entity> for Entity {
     fn to() -> RelationDef {
         Relation::Grove.def()
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(feature = "backend")]
 impl ActiveModelBehavior for ActiveModel {}
 
 impl Model {
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(feature = "frontend")]
     pub fn new(
         title: String,
         description: String,
