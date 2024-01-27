@@ -4,7 +4,7 @@ target = "groves/frontend/index.html"
 # Build in release mode.
 release = false
 # The output dir for all final assets.
-dist = "dist-groves"
+dist = "dist-groves/dist"
 # The public URL from which assets are to be served.
 public_url = "/static/"
 wasm-opt = "z"

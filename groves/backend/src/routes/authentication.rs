@@ -10,11 +10,12 @@ use openidconnect::{
 };
 
 use bamboo_common::backend::services::EnvService;
-use bamboo_common::core::error::BambooError;
+use bamboo_common::core::error::{BambooError, BambooResult};
 
 use crate::authentication::{get_client, validate_user, ACCESS_TOKEN};
 use crate::middleware::authenticate_user::authenticate;
 use crate::query;
+use crate::query::LoginCallbackQuery;
 
 const AUTH_PKCE_VERIFIER: &'static str = "auth-pkce-verifier";
 const AUTH_CSRF_TOKEN: &'static str = "auth-csrf-token";
@@ -68,7 +69,23 @@ pub async fn login_callback(
     session: Session,
     env_service: EnvService,
     host: Host,
-) -> Result<Redirect, BambooError> {
+) -> BambooResult<Redirect> {
+    let result =
+        perform_login_callback(callback.into_inner(), session.clone(), env_service, host).await;
+    if result.is_err() {
+        session.purge();
+        Ok(Redirect::to("/"))
+    } else {
+        result
+    }
+}
+
+async fn perform_login_callback(
+    callback: LoginCallbackQuery,
+    session: Session,
+    env_service: EnvService,
+    host: Host,
+) -> BambooResult<Redirect> {
     let csrf_token = session
         .get::<CsrfToken>(AUTH_CSRF_TOKEN)
         .map_err(|err| {
@@ -102,7 +119,10 @@ pub async fn login_callback(
             .set_pkce_verifier(pkce_verifier)
             .request_async(async_http_client)
             .await
-            .map_err(|_| BambooError::unauthorized("login", "Invalid user"))?;
+            .map_err(|err| {
+                log::error!("Failed to check code: {err}");
+                BambooError::unauthorized("login", "Invalid user")
+            })?;
 
         let id_token = token_response.id_token().ok_or_else(|| {
             BambooError::unauthorized("login", "Server did not return an ID token")
@@ -118,9 +138,10 @@ pub async fn login_callback(
         let verifier = client
             .id_token_verifier()
             .set_other_audience_verifier_fn(|aud| valid_audiences.contains(aud));
-        let claims = id_token
-            .claims(&verifier, &nonce)
-            .map_err(|_| BambooError::unauthorized("login", "Invalid callback data"))?;
+        let claims = id_token.claims(&verifier, &nonce).map_err(|err| {
+            log::error!("Failed to get id token claims: {err}");
+            BambooError::unauthorized("login", "Invalid callback data")
+        })?;
 
         if let Some(expected_access_token_hash) = claims.access_token_hash() {
             let actual_access_token_hash = AccessTokenHash::from_token(
@@ -136,13 +157,13 @@ pub async fn login_callback(
         }
 
         let access_token = token_response.access_token().clone();
-        // session.renew();
         let _ = session.insert(ACCESS_TOKEN, access_token.clone());
 
         validate_user(access_token, client.clone()).await?;
 
         Ok(Redirect::to("/"))
     } else {
+        session.purge();
         Err(BambooError::unauthorized("login", "Invalid callback data"))
     }
 }

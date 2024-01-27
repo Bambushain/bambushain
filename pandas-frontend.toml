@@ -4,7 +4,7 @@ target = "pandas/frontend/index.html"
 # Build in release mode.
 release = false
 # The output dir for all final assets.
-dist = "dist-pandas"
+dist = "dist-pandas/dist"
 # The public URL from which assets are to be served.
 public_url = "/static/"
 wasm-opt = "z"
