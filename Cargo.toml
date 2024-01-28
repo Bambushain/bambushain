@@ -54,6 +54,7 @@ members = [
     "groves/frontend/base",
     "groves/frontend/base/routing",
     "groves/frontend/sections",
+    "groves/frontend/sections/groves",
     "groves/frontend/sections/layout",
     "groves/frontend/sections/login",
     "pandas",

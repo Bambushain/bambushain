@@ -173,7 +173,7 @@ pub async fn logout(
     session: Session,
     env_service: EnvService,
     host: Host,
-) -> Result<Redirect, BambooError> {
+) -> BambooResult<Redirect> {
     let access_token = session
         .get::<AccessToken>(ACCESS_TOKEN)
         .map_err(|err| {
