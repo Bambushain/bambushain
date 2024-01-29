@@ -42,6 +42,7 @@ members = [
     "common/backend/migration",
     "common/backend/response",
     "common/backend/services",
+    "common/backend/utils",
     "common/core",
     "common/core/entities",
     "common/core/error",

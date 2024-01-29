@@ -6,7 +6,7 @@ use openidconnect::{
 use serde::{Deserialize, Serialize};
 
 use bamboo_common::backend::services::EnvService;
-use bamboo_common::core::error::{BambooError, BambooErrorResult, BambooResult};
+use bamboo_common::core::error::{BambooError, BambooResult};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ZitadelClaims {
@@ -43,7 +43,7 @@ pub async fn get_client(host: String, env_service: EnvService) -> BambooResult<C
     Ok(client)
 }
 
-pub async fn validate_user(access_token: AccessToken, client: CoreClient) -> BambooErrorResult {
+pub async fn validate_user(access_token: AccessToken, client: CoreClient) -> BambooResult<String> {
     let user_info: UserInfoClaims<ZitadelClaims, CoreGenderClaim> = client
         .user_info(access_token.clone(), None)
         .map_err(|_| BambooError::unauthorized("login", "Invalid user"))?
@@ -65,6 +65,14 @@ pub async fn validate_user(access_token: AccessToken, client: CoreClient) -> Bam
 
         Err(BambooError::unauthorized("login", "Token invalid"))
     } else {
-        Ok(())
+        user_info
+            .name()
+            .ok_or(BambooError::unauthorized("user", "The name is required"))
+            .map(|name| {
+                name.iter()
+                    .next()
+                    .map(|(_, name)| name.to_string())
+                    .ok_or(BambooError::unauthorized("user", "The name is required"))
+            })?
     }
 }

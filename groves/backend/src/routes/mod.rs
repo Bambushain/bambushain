@@ -23,6 +23,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
                 .wrap(authenticate!()),
         )
         .service(groves::get_groves)
+        .service(groves::create_grove)
         .service(
             actix_web_lab::web::spa()
                 .index_file(format!("{frontend_base_path}/dist/index.html"))
