@@ -31,9 +31,10 @@
     CARGO_PROFILE_RELEASE_LTO: "true"
     CARGO_PROFILE_RELEASE_STRIP: "symbols"
   cache:
-    key: $CI_PROJECT_NAME-pandas-web
+    key: $CI_PROJECT_NAME-web
     paths:
       - $CI_PROJECT_DIR/pandas-dist/
+      - $CI_PROJECT_DIR/groves-dist/
       - $CI_PROJECT_DIR/target/
       - $CI_PROJECT_DIR/.cargo/
       - $CI_PROJECT_DIR/Cargo.lock
