@@ -1,6 +1,4 @@
 use actix_web::{delete, get, post, put, web};
-use rand::distributions::Alphanumeric;
-use rand::Rng;
 
 use bamboo_common::backend::response::*;
 use bamboo_common::backend::services::{DbConnection, EnvService};
