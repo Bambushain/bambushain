@@ -77,9 +77,49 @@ fn create_grove_dialog(on_saved: &Callback<Grove>, on_close: &Callback<()>) -> H
 #[function_component(GrovesPage)]
 pub fn groves_page() -> Html {
     log::debug!("Render groves overview");
-    let groves_state = use_async(async move { api::get_groves().await });
-
     let create_grove_open_toggle = use_bool_toggle(false);
+    let grove_to_suspend_state = use_state_eq(|| None as Option<Grove>);
+    let grove_to_resume_state = use_state_eq(|| None as Option<Grove>);
+
+    let groves_state = use_async(async move { api::get_groves().await });
+    let suspend_grove_state = {
+        let grove_to_suspend_state = grove_to_suspend_state.clone();
+
+        let groves_state = groves_state.clone();
+
+        use_async(async move {
+            if let Some(grove) = (*grove_to_suspend_state).clone() {
+                grove_to_suspend_state.set(None);
+                let result = api::suspend_grove(grove.id).await;
+                if result.is_ok() {
+                    groves_state.run();
+                }
+
+                result
+            } else {
+                Ok(())
+            }
+        })
+    };
+    let resume_grove_state = {
+        let grove_to_resume_state = grove_to_resume_state.clone();
+
+        let groves_state = groves_state.clone();
+
+        use_async(async move {
+            if let Some(grove) = (*grove_to_resume_state).clone() {
+                grove_to_resume_state.set(None);
+                let result = api::resume_grove(grove.id).await;
+                if result.is_ok() {
+                    groves_state.run();
+                }
+
+                result
+            } else {
+                Ok(())
+            }
+        })
+    };
 
     let close_create_dialog = use_callback(create_grove_open_toggle.clone(), |_, toggle| {
         toggle.set(false)
@@ -95,6 +135,26 @@ pub fn groves_page() -> Html {
         },
     );
 
+    let close_suspend_dialog = use_callback(grove_to_suspend_state.clone(), |_, state| {
+        state.set(None);
+    });
+    let open_suspend_dialog = use_callback(grove_to_suspend_state.clone(), |grove, state| {
+        state.set(Some(grove));
+    });
+    let confirm_suspend_dialog = use_callback(suspend_grove_state.clone(), |_, state| {
+        state.run();
+    });
+
+    let close_resume_dialog = use_callback(grove_to_resume_state.clone(), |_, state| {
+        state.set(None);
+    });
+    let open_resume_dialog = use_callback(grove_to_resume_state.clone(), |grove, state| {
+        state.set(Some(grove));
+    });
+    let confirm_resume_dialog = use_callback(resume_grove_state.clone(), |_, state| {
+        state.run();
+    });
+
     {
         let groves_state = groves_state.clone();
 
@@ -109,8 +169,14 @@ pub fn groves_page() -> Html {
             if groves_state.loading {
                 <CosmoProgressRing />
             } else if groves_state.error.is_some() {
-                <CosmoMessage header="Fehler beim Laden" message="Leider konnten die Haine nicht geladen werden"/>
+                <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Laden" message="Leider konnten die Haine nicht geladen werden"/>
             } else if let Some(data) = groves_state.data.clone() {
+                if suspend_grove_state.error.is_some() {
+                    <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Pausieren" message="Leider konnte der Hain nicht pausiert werden" />
+                }
+                if resume_grove_state.error.is_some() {
+                    <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Starten" message="Leider konnte der Hain nicht gestartet werden" />
+                }
                 <CosmoToolbar>
                     <CosmoToolbarGroup>
                         <CosmoButton label="Neuer Hain" on_click={open_create_dialog} />
@@ -118,6 +184,12 @@ pub fn groves_page() -> Html {
                 </CosmoToolbar>
                 <CosmoTable headers={vec![AttrValue::from("#"), AttrValue::from("Name"), AttrValue::from("Pausiert"), AttrValue::from("Aktiviert"), AttrValue::from("Aktionen")]}>
                     {for data.iter().map(|grove| {
+                        let open_suspend_dialog = open_suspend_dialog.clone();
+                        let open_resume_dialog = open_resume_dialog.clone();
+
+                        let suspend_grove = grove.clone();
+                        let resume_grove = grove.clone();
+
                         CosmoTableRow::from_table_cells(vec![
                             CosmoTableCell::from_html(html!({grove.id}), None),
                             CosmoTableCell::from_html(html!({grove.name.clone()}), None),
@@ -139,8 +211,8 @@ pub fn groves_page() -> Html {
                                 <>
                                     <CosmoToolbarGroup>
                                         <CosmoButton label="Mods anzeigen" />
-                                        <CosmoButton label="Starten" enabled={grove.is_suspended} />
-                                        <CosmoButton label="Pausieren" enabled={!grove.is_suspended} />
+                                        <CosmoButton label="Starten" enabled={grove.is_suspended} on_click={move |_| open_resume_dialog.emit(resume_grove.clone())} />
+                                        <CosmoButton label="Pausieren" enabled={!grove.is_suspended} on_click={move |_| open_suspend_dialog.emit(suspend_grove.clone())} />
                                         <CosmoButton label="Löschen" />
                                     </CosmoToolbarGroup>
                                 </>
@@ -150,6 +222,12 @@ pub fn groves_page() -> Html {
                 </CosmoTable>
                 if *create_grove_open_toggle {
                     <CreateGroveDialog on_close={close_create_dialog} on_saved={saved_create_dialog} />
+                }
+                if let Some(grove) = (*grove_to_suspend_state).clone() {
+                    <CosmoConfirm title="Hain pausieren" message={format!("Soll der Hain {} pausiert werden? Wenn der Hain pausiert wird kann sich niemand mehr anmelden.", grove.name.clone())} decline_label="Nicht pausieren" confirm_label="Hain pausieren" confirm_type={CosmoModalType::Warning} on_confirm={confirm_suspend_dialog.clone()} on_decline={close_suspend_dialog.clone()} />
+                }
+                if let Some(grove) = (*grove_to_resume_state).clone() {
+                    <CosmoConfirm title="Hain starten" message={format!("Soll der Hain {} gestartet werden? Wenn der Hain gestartet wird können sich die Pandas wieder anmelden.", grove.name.clone())} decline_label="Nicht starten" confirm_label="Hain starten" confirm_type={CosmoModalType::Warning} on_confirm={confirm_resume_dialog.clone()} on_decline={close_resume_dialog.clone()} />
                 }
             }
         </>

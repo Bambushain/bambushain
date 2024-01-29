@@ -1,6 +1,6 @@
 use bamboo_common::core::entities::grove::CreateGroveRequest;
 use bamboo_common::core::entities::Grove;
-use bamboo_common::frontend::api::{get, post, BambooApiResult};
+use bamboo_common::frontend::api::{delete, get, post, put_no_body_no_content, BambooApiResult};
 
 pub async fn get_groves() -> BambooApiResult<Vec<Grove>> {
     log::debug!("Get all groves");
@@ -18,4 +18,14 @@ pub async fn create_grove(
         &CreateGroveRequest::new(grove_name, mod_name, mod_email),
     )
     .await
+}
+
+pub async fn suspend_grove(id: i32) -> BambooApiResult<()> {
+    log::debug!("Suspend grove {id}");
+    delete(format!("/api/grove/{id}/suspension")).await
+}
+
+pub async fn resume_grove(id: i32) -> BambooApiResult<()> {
+    log::debug!("Resume grove {id}");
+    put_no_body_no_content(format!("/api/grove/{id}/suspension")).await
 }

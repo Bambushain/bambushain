@@ -165,3 +165,29 @@ pub async fn delete_grove(id: i32, db: &DatabaseConnection) -> BambooErrorResult
         })
         .map(|_| ())
 }
+
+pub async fn suspend_grove(id: i32, db: &DatabaseConnection) -> BambooErrorResult {
+    grove::Entity::update_many()
+        .col_expr(grove::Column::IsSuspended, Expr::value(true))
+        .filter(grove::Column::Id.eq(id))
+        .exec(db)
+        .await
+        .map_err(|err| {
+            log::error!("{err}");
+            BambooError::database("grove", "Failed to suspend grove")
+        })
+        .map(|_| ())
+}
+
+pub async fn resume_grove(id: i32, db: &DatabaseConnection) -> BambooErrorResult {
+    grove::Entity::update_many()
+        .col_expr(grove::Column::IsSuspended, Expr::value(false))
+        .filter(grove::Column::Id.eq(id))
+        .exec(db)
+        .await
+        .map_err(|err| {
+            log::error!("{err}");
+            BambooError::database("grove", "Failed to resume grove")
+        })
+        .map(|_| ())
+}

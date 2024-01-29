@@ -1,6 +1,8 @@
-use actix_web::{get, post, web};
+use actix_web::{delete, get, post, put, web};
 
-use bamboo_common::backend::response::{check_missing_fields, created, list};
+use bamboo_common::backend::response::{
+    check_invalid_path, check_missing_fields, created, list, no_content,
+};
 use bamboo_common::backend::services::{DbConnection, EnvService};
 use bamboo_common::backend::utils::get_random_password;
 use bamboo_common::backend::{dbal, mailing};
@@ -9,6 +11,7 @@ use bamboo_common::core::entities::{Grove, User};
 use bamboo_common::core::error::{BambooApiResponseResult, BambooApiResult};
 
 use crate::middleware::authenticate_user::{authenticate, Username};
+use crate::path::GrovePath;
 
 #[get("/api/grove", wrap = "authenticate!()")]
 pub async fn get_groves(db: DbConnection) -> BambooApiResponseResult {
@@ -47,4 +50,28 @@ pub async fn create_grove(
     .await?;
 
     Ok(created!(grove))
+}
+
+#[delete("/api/grove/{grove_id}/suspension", wrap = "authenticate!()")]
+pub async fn suspend_grove(
+    path: Option<web::Path<GrovePath>>,
+    db: DbConnection,
+) -> BambooApiResponseResult {
+    let path = check_invalid_path!(path, "grove")?;
+
+    dbal::suspend_grove(path.grove_id, &db)
+        .await
+        .map(|_| no_content!())
+}
+
+#[put("/api/grove/{grove_id}/suspension", wrap = "authenticate!()")]
+pub async fn resume_grove(
+    path: Option<web::Path<GrovePath>>,
+    db: DbConnection,
+) -> BambooApiResponseResult {
+    let path = check_invalid_path!(path, "grove")?;
+
+    dbal::resume_grove(path.grove_id, &db)
+        .await
+        .map(|_| no_content!())
 }
