@@ -26,6 +26,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
         .service(groves::create_grove)
         .service(groves::suspend_grove)
         .service(groves::resume_grove)
+        .service(groves::delete_grove)
         .service(
             actix_web_lab::web::spa()
                 .index_file(format!("{frontend_base_path}/dist/index.html"))

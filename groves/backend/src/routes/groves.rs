@@ -64,6 +64,18 @@ pub async fn suspend_grove(
         .map(|_| no_content!())
 }
 
+#[delete("/api/grove/{grove_id}", wrap = "authenticate!()")]
+pub async fn delete_grove(
+    path: Option<web::Path<GrovePath>>,
+    db: DbConnection,
+) -> BambooApiResponseResult {
+    let path = check_invalid_path!(path, "grove")?;
+
+    dbal::delete_grove(path.grove_id, &db)
+        .await
+        .map(|_| no_content!())
+}
+
 #[put("/api/grove/{grove_id}/suspension", wrap = "authenticate!()")]
 pub async fn resume_grove(
     path: Option<web::Path<GrovePath>>,

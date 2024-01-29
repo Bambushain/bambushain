@@ -20,6 +20,11 @@ pub async fn create_grove(
     .await
 }
 
+pub async fn delete_grove(id: i32) -> BambooApiResult<()> {
+    log::debug!("Delete grove {id}");
+    delete(format!("/api/grove/{id}")).await
+}
+
 pub async fn suspend_grove(id: i32) -> BambooApiResult<()> {
     log::debug!("Suspend grove {id}");
     delete(format!("/api/grove/{id}/suspension")).await

@@ -80,6 +80,7 @@ pub fn groves_page() -> Html {
     let create_grove_open_toggle = use_bool_toggle(false);
     let grove_to_suspend_state = use_state_eq(|| None as Option<Grove>);
     let grove_to_resume_state = use_state_eq(|| None as Option<Grove>);
+    let grove_to_delete_state = use_state_eq(|| None as Option<Grove>);
 
     let groves_state = use_async(async move { api::get_groves().await });
     let suspend_grove_state = {
@@ -110,6 +111,25 @@ pub fn groves_page() -> Html {
             if let Some(grove) = (*grove_to_resume_state).clone() {
                 grove_to_resume_state.set(None);
                 let result = api::resume_grove(grove.id).await;
+                if result.is_ok() {
+                    groves_state.run();
+                }
+
+                result
+            } else {
+                Ok(())
+            }
+        })
+    };
+    let delete_grove_state = {
+        let grove_to_delete_state = grove_to_delete_state.clone();
+
+        let groves_state = groves_state.clone();
+
+        use_async(async move {
+            if let Some(grove) = (*grove_to_delete_state).clone() {
+                grove_to_delete_state.set(None);
+                let result = api::delete_grove(grove.id).await;
                 if result.is_ok() {
                     groves_state.run();
                 }
@@ -155,6 +175,16 @@ pub fn groves_page() -> Html {
         state.run();
     });
 
+    let close_delete_dialog = use_callback(grove_to_delete_state.clone(), |_, state| {
+        state.set(None);
+    });
+    let open_delete_dialog = use_callback(grove_to_delete_state.clone(), |grove, state| {
+        state.set(Some(grove));
+    });
+    let confirm_delete_dialog = use_callback(delete_grove_state.clone(), |_, state| {
+        state.run();
+    });
+
     {
         let groves_state = groves_state.clone();
 
@@ -177,6 +207,9 @@ pub fn groves_page() -> Html {
                 if resume_grove_state.error.is_some() {
                     <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Starten" message="Leider konnte der Hain nicht gestartet werden" />
                 }
+                if delete_grove_state.error.is_some() {
+                    <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Leider konnte der Hain nicht gelöscht werden" />
+                }
                 <CosmoToolbar>
                     <CosmoToolbarGroup>
                         <CosmoButton label="Neuer Hain" on_click={open_create_dialog} />
@@ -186,9 +219,11 @@ pub fn groves_page() -> Html {
                     {for data.iter().map(|grove| {
                         let open_suspend_dialog = open_suspend_dialog.clone();
                         let open_resume_dialog = open_resume_dialog.clone();
+                        let open_delete_dialog = open_delete_dialog.clone();
 
                         let suspend_grove = grove.clone();
                         let resume_grove = grove.clone();
+                        let delete_grove = grove.clone();
 
                         CosmoTableRow::from_table_cells(vec![
                             CosmoTableCell::from_html(html!({grove.id}), None),
@@ -213,7 +248,7 @@ pub fn groves_page() -> Html {
                                         <CosmoButton label="Mods anzeigen" />
                                         <CosmoButton label="Starten" enabled={grove.is_suspended} on_click={move |_| open_resume_dialog.emit(resume_grove.clone())} />
                                         <CosmoButton label="Pausieren" enabled={!grove.is_suspended} on_click={move |_| open_suspend_dialog.emit(suspend_grove.clone())} />
-                                        <CosmoButton label="Löschen" />
+                                        <CosmoButton label="Löschen" on_click={move |_| open_delete_dialog.emit(delete_grove.clone())} />
                                     </CosmoToolbarGroup>
                                 </>
                             ), None),
@@ -228,6 +263,9 @@ pub fn groves_page() -> Html {
                 }
                 if let Some(grove) = (*grove_to_resume_state).clone() {
                     <CosmoConfirm title="Hain starten" message={format!("Soll der Hain {} gestartet werden? Wenn der Hain gestartet wird können sich die Pandas wieder anmelden.", grove.name.clone())} decline_label="Nicht starten" confirm_label="Hain starten" confirm_type={CosmoModalType::Warning} on_confirm={confirm_resume_dialog.clone()} on_decline={close_resume_dialog.clone()} />
+                }
+                if let Some(grove) = (*grove_to_delete_state).clone() {
+                    <CosmoConfirm title="Hain löschen" message={format!("Soll der Hain {} gelöscht werden? Wenn der Hain gelöscht wird, werden alle Pandas, Events und Charaktere.\nEine Alternative ist es den Hain zu pausieren und den Mods Bescheid zu geben warum du den Hain pausiert hast", grove.name.clone())} decline_label="Nicht löschen" confirm_label="Hain löschen" confirm_type={CosmoModalType::Negative} on_confirm={confirm_delete_dialog.clone()} on_decline={close_delete_dialog.clone()} />
                 }
             }
         </>
