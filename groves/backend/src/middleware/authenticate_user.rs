@@ -1,5 +1,5 @@
 use actix_session::Session;
-use actix_web::{body, dev, Error};
+use actix_web::{body, dev, Error, HttpMessage};
 use actix_web_lab::middleware::Next;
 use openidconnect::AccessToken;
 
@@ -7,6 +7,8 @@ use bamboo_common::backend::services::EnvService;
 use bamboo_common::core::error::BambooError;
 
 use crate::authentication::{get_client, validate_user, ACCESS_TOKEN};
+
+pub type Username = String;
 
 pub async fn authenticate_user(
     session: Session,
@@ -26,8 +28,10 @@ pub async fn authenticate_user(
             BambooError::unauthorized("login", "Invalid session")
         })?
         .ok_or_else(|| BambooError::unauthorized("login", "Invalid session"))?;
-    validate_user(access_token, client).await?;
+    let name = validate_user(access_token, client).await?;
     session.renew();
+
+    req.extensions_mut().insert(name as Username);
 
     next.call(req).await
 }

@@ -15,7 +15,7 @@ fn format_title(s: AttrValue) -> AttrValue {
 #[function_component(App)]
 pub fn app() -> Html {
     html!(
-        <CosmoPageLayout primary_color="#598C79" primary_color_dark="#598C79" default_title="Hainverwaltung" format_title={format_title}>
+        <CosmoPageLayout primary_color="#6275D5" primary_color_dark="#6275D5" default_title="Hainverwaltung" format_title={format_title}>
             <BrowserRouter>
                 <Layout />
             </BrowserRouter>

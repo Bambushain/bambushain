@@ -4,6 +4,7 @@ use crate::middleware::authenticate_user::authenticate;
 use bamboo_common::backend::services::{EnvService, EnvironmentService};
 
 mod authentication;
+mod groves;
 
 pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     let environment_service = EnvService::new(EnvironmentService::new());
@@ -21,6 +22,11 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
                 .to(HttpResponse::NoContent)
                 .wrap(authenticate!()),
         )
+        .service(groves::get_groves)
+        .service(groves::create_grove)
+        .service(groves::suspend_grove)
+        .service(groves::resume_grove)
+        .service(groves::delete_grove)
         .service(
             actix_web_lab::web::spa()
                 .index_file(format!("{frontend_base_path}/dist/index.html"))

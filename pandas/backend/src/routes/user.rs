@@ -4,6 +4,7 @@ use rand::Rng;
 
 use bamboo_common::backend::response::*;
 use bamboo_common::backend::services::{DbConnection, EnvService};
+use bamboo_common::backend::utils::get_random_password;
 use bamboo_common::backend::{dbal, mailing};
 use bamboo_common::core::entities::*;
 use bamboo_common::core::error::*;
@@ -12,14 +13,6 @@ use crate::middleware::authenticate_user::{authenticate, Authentication};
 use crate::middleware::check_mod::is_mod;
 use crate::middleware::identify_grove::{grove, CurrentGrove};
 use crate::path;
-
-fn get_random_password() -> String {
-    rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(12)
-        .map(char::from)
-        .collect::<String>()
-}
 
 #[get("/api/user", wrap = "authenticate!()", wrap = "grove!()")]
 pub async fn get_users(current_grove: CurrentGrove, db: DbConnection) -> BambooApiResponseResult {

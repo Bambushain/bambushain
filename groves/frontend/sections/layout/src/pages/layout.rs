@@ -7,6 +7,7 @@ use yew_hooks::{use_async, use_mount};
 use yew_router::prelude::*;
 
 use bamboo_groves_frontend_base::routing::AppRoute;
+use bamboo_groves_frontend_section_groves::GrovesPage;
 use bamboo_groves_frontend_section_login::LoginPage;
 
 use crate::api;
@@ -21,7 +22,12 @@ fn switch_sub_menu(route: AppRoute) -> Html {
 fn switch_app(route: AppRoute) -> Html {
     match route {
         AppRoute::Groves => html!(
-            <h1>{"Hello World"}</h1>
+            <>
+                <Helmet>
+                    <title>{"Haine"}</title>
+                </Helmet>
+                <GrovesPage />
+            </>
         ),
         AppRoute::Home => html!(
             <Redirect<AppRoute> to={AppRoute::Groves} />

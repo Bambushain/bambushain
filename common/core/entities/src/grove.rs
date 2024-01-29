@@ -67,3 +67,21 @@ impl Model {
         }
     }
 }
+
+#[derive(Serialize, Deserialize, Debug, Eq, Ord, PartialOrd, PartialEq, Clone, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateGroveRequest {
+    pub grove_name: String,
+    pub mod_name: String,
+    pub mod_email: String,
+}
+
+impl CreateGroveRequest {
+    pub fn new(grove_name: String, mod_name: String, mod_email: String) -> Self {
+        Self {
+            grove_name,
+            mod_name,
+            mod_email,
+        }
+    }
+}
