@@ -75,7 +75,6 @@ fn create_grove_dialog(on_saved: &Callback<Grove>, on_close: &Callback<()>) -> H
     )
 }
 
-#[autoprops]
 #[function_component(GrovesPage)]
 pub fn groves_page() -> Html {
     log::debug!("Render groves overview");

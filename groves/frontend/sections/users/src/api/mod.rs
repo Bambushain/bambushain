@@ -1,5 +1,5 @@
 use bamboo_common::core::entities::{Grove, GroveUser};
-use bamboo_common::frontend::api::{delete, get, BambooApiResult};
+use bamboo_common::frontend::api::{get, put_no_body_no_content, BambooApiResult};
 
 pub async fn get_users(id: i32) -> BambooApiResult<Vec<GroveUser>> {
     log::debug!("Get all users for grove {id}");
@@ -11,7 +11,7 @@ pub async fn get_grove(id: i32) -> BambooApiResult<Grove> {
     get(format!("/api/grove/{id}")).await
 }
 
-pub async fn delete_user(grove_id: i32, id: i32) -> BambooApiResult<()> {
-    log::debug!("Delete user {id}");
-    delete(format!("/api/grove/{grove_id}/user/{id}")).await
+pub async fn reset_password(grove_id: i32, id: i32) -> BambooApiResult<()> {
+    log::debug!("Reset password for user {id}");
+    put_no_body_no_content(format!("/api/grove/{grove_id}/user/{id}/password")).await
 }
