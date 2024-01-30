@@ -1,7 +1,7 @@
 use actix_web::{delete, get, post, put, web};
 
 use bamboo_common::backend::response::{
-    check_invalid_path, check_missing_fields, created, list, no_content,
+    check_invalid_path, check_missing_fields, created, list, no_content, ok,
 };
 use bamboo_common::backend::services::{DbConnection, EnvService};
 use bamboo_common::backend::utils::get_random_password;
@@ -16,6 +16,17 @@ use crate::path::GrovePath;
 #[get("/api/grove", wrap = "authenticate!()")]
 pub async fn get_groves(db: DbConnection) -> BambooApiResponseResult {
     dbal::get_groves(&db).await.map(|data| list!(data))
+}
+
+#[get("/api/grove/{grove_id}", wrap = "authenticate!()")]
+pub async fn get_grove(
+    path: Option<web::Path<GrovePath>>,
+    db: DbConnection,
+) -> BambooApiResult<Grove> {
+    let path = check_invalid_path!(path, "grove")?;
+    dbal::get_grove_by_id(path.grove_id, &db)
+        .await
+        .map(|grove| ok!(grove))
 }
 
 #[post("/api/grove", wrap = "authenticate!()")]

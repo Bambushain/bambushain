@@ -837,7 +837,7 @@ pub fn custom_fields_page() -> Html {
                 *dragged_item_id_ref.borrow(),
                 *drop_new_position_ref.borrow(),
             )
-                .await
+            .await
             {
                 Err(err)
             } else {

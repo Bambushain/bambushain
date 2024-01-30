@@ -9,3 +9,4 @@ license.workspace = true
 [dependencies]
 bamboo-groves-frontend-section-layout = { path = "layout" }
 bamboo-groves-frontend-section-login = { path = "login" }
+bamboo-groves-frontend-section-users = { path = "users" }

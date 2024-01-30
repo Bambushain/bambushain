@@ -58,6 +58,7 @@ members = [
     "groves/frontend/sections/groves",
     "groves/frontend/sections/layout",
     "groves/frontend/sections/login",
+    "groves/frontend/sections/users",
     "pandas",
     "pandas/backend",
     "pandas/frontend",

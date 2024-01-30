@@ -1,12 +1,12 @@
 use std::cmp::Ordering;
 
-use sea_orm::{IntoActiveModel, IntoSimpleExpr, NotSet, QueryOrder, QuerySelect};
-use sea_orm::ActiveValue::Set;
 use sea_orm::prelude::*;
 use sea_orm::sea_query::Expr;
+use sea_orm::ActiveValue::Set;
+use sea_orm::{IntoActiveModel, IntoSimpleExpr, NotSet, QueryOrder, QuerySelect};
 
-use bamboo_common_core::entities::{custom_character_field, custom_character_field_option};
 use bamboo_common_core::entities::*;
+use bamboo_common_core::entities::{custom_character_field, custom_character_field_option};
 use bamboo_common_core::error::*;
 
 pub async fn get_custom_fields(
@@ -130,12 +130,12 @@ pub async fn create_custom_field(
         user_id: Set(user_id),
         position: Set(custom_field.position as i32),
     }
-        .insert(db)
-        .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("character", "Failed to create custom field")
-        })?;
+    .insert(db)
+    .await
+    .map_err(|err| {
+        log::error!("{err}");
+        BambooError::database("character", "Failed to create custom field")
+    })?;
 
     let models = custom_field
         .values
@@ -282,12 +282,12 @@ pub async fn create_custom_field_option(
         custom_character_field_id: Set(custom_field_id),
         label: Set(label),
     }
-        .insert(db)
-        .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("character", "Failed to create custom field option")
-        })
+    .insert(db)
+    .await
+    .map_err(|err| {
+        log::error!("{err}");
+        BambooError::database("character", "Failed to create custom field option")
+    })
 }
 
 pub async fn update_custom_field_option(

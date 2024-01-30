@@ -95,20 +95,20 @@ pub fn free_companies() -> Html {
                 *selected_id_state,
                 FreeCompany::new((*name_state).to_string()),
             )
-                .await
-                .map(|_| {
-                    free_companies_state.run();
-                    edit_open_state.set(false);
-                    name_state.set("".into());
-                    unreported_error_toggle.set(false)
-                })
-                .map_err(|err| {
-                    unreported_error_toggle.set(true);
-                    error_message_form_state.set("update_free_company".into());
-                    bamboo_error_state.set(err.clone());
+            .await
+            .map(|_| {
+                free_companies_state.run();
+                edit_open_state.set(false);
+                name_state.set("".into());
+                unreported_error_toggle.set(false)
+            })
+            .map_err(|err| {
+                unreported_error_toggle.set(true);
+                error_message_form_state.set("update_free_company".into());
+                bamboo_error_state.set(err.clone());
 
-                    err
-                })
+                err
+            })
         })
     };
     let delete_state = {

@@ -1,5 +1,5 @@
-use sea_orm_migration::prelude::*;
 use sea_orm_migration::prelude::extension::postgres::Type;
+use sea_orm_migration::prelude::*;
 use sea_orm_migration::sea_orm::{EnumIter, Iterable};
 
 use crate::m20220101_000001_create_schemas::Schemas;

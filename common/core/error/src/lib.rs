@@ -105,7 +105,7 @@ impl Responder for BambooError {
             | BambooErrorCode::Mailing
             | BambooErrorCode::Unknown => HttpResponse::InternalServerError(),
         }
-            .body(serde_json::to_string(&self).unwrap())
+        .body(serde_json::to_string(&self).unwrap())
     }
 }
 

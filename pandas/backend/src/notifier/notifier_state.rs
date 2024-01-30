@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use actix_web::{Responder, web};
+use actix_web::{web, Responder};
 
 use bamboo_common::core::entities::{Event, User};
 

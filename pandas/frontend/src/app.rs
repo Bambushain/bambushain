@@ -28,13 +28,12 @@ pub fn app() -> Html {
     )
 }
 
-
 pub fn start_frontend() {
     console_log::init_with_level(
         Level::from_str(get_log_level().unwrap_or(Level::Warn.to_string()).as_str())
             .unwrap_or(Level::Warn),
     )
-        .expect("error initializing log");
+    .expect("error initializing log");
 
     yew::Renderer::<App>::new().render();
 }

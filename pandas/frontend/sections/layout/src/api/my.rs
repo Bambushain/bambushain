@@ -2,10 +2,7 @@ use bamboo_common::core::entities::*;
 use bamboo_common::frontend::api::BambooApiResult;
 use bamboo_pandas_frontend_base::api;
 
-pub async fn change_my_password(
-    old_password: String,
-    new_password: String,
-) -> BambooApiResult<()> {
+pub async fn change_my_password(old_password: String, new_password: String) -> BambooApiResult<()> {
     log::debug!("Change my password");
     api::put_no_content(
         "/api/my/password",
@@ -14,7 +11,7 @@ pub async fn change_my_password(
             new_password,
         },
     )
-        .await
+    .await
 }
 
 pub async fn update_my_profile(profile: UpdateProfile) -> BambooApiResult<()> {

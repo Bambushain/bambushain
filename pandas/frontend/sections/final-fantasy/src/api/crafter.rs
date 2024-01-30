@@ -7,7 +7,7 @@ pub async fn get_crafters(character_id: i32) -> BambooApiResult<Vec<Crafter>> {
     get(format!(
         "/api/final-fantasy/character/{character_id}/crafter"
     ))
-        .await
+    .await
 }
 
 pub async fn create_crafter(character_id: i32, crafter: Crafter) -> BambooApiResult<Crafter> {
@@ -16,7 +16,7 @@ pub async fn create_crafter(character_id: i32, crafter: Crafter) -> BambooApiRes
         format!("/api/final-fantasy/character/{character_id}/crafter"),
         &crafter,
     )
-        .await
+    .await
 }
 
 pub async fn update_crafter(character_id: i32, id: i32, crafter: Crafter) -> BambooApiResult<()> {
@@ -25,7 +25,7 @@ pub async fn update_crafter(character_id: i32, id: i32, crafter: Crafter) -> Bam
         format!("/api/final-fantasy/character/{character_id}/crafter/{id}"),
         &crafter,
     )
-        .await
+    .await
 }
 
 pub async fn delete_crafter(character_id: i32, id: i32) -> BambooApiResult<()> {
@@ -33,5 +33,5 @@ pub async fn delete_crafter(character_id: i32, id: i32) -> BambooApiResult<()> {
     delete(format!(
         "/api/final-fantasy/character/{character_id}/crafter/{id}"
     ))
-        .await
+    .await
 }

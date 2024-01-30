@@ -82,14 +82,14 @@ fn modify_character_modal(
         ),
         |_,
          (
-             race_state,
-             world_state,
-             name_state,
-             custom_fields_map,
-             free_company_state,
-             free_companies,
-             on_save,
-         )| {
+            race_state,
+            world_state,
+            name_state,
+            custom_fields_map,
+            free_company_state,
+            free_companies,
+            on_save,
+        )| {
             let custom_fields = custom_fields_map
                 .current()
                 .iter()
@@ -565,7 +565,7 @@ pub fn character_page() -> Html {
                                 unreported_error_toggle.set(true);
                                 "Der Charakter konnte nicht hinzugefügt werden"
                             }
-                                .into(),
+                            .into(),
                         );
 
                         err
