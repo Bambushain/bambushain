@@ -57,3 +57,14 @@ pub async fn reset_user_password(
         ))
     }
 }
+
+#[put("/api/grove/{grove_id}/user/{user_id}/mod", wrap = "authenticate!()")]
+pub async fn make_user_mod(
+    path: Option<web::Path<GroveUserPath>>,
+    db: DbConnection,
+) -> BambooApiResponseResult {
+    let path = check_invalid_path!(path, "user")?;
+    dbal::change_mod_status(path.grove_id, path.user_id, true, &db)
+        .await
+        .map(|_| no_content!())
+}

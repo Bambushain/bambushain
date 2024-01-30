@@ -31,6 +31,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
         .service(groves::delete_grove)
         .service(user::get_users)
         .service(user::reset_user_password)
+        .service(user::make_user_mod)
         .service(
             actix_web_lab::web::spa()
                 .index_file(format!("{frontend_base_path}/dist/index.html"))
