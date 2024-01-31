@@ -16,7 +16,6 @@ chrono = { workspace = true }
 date-range = { workspace = true }
 log = { workspace = true }
 parking_lot = { workspace = true }
-rand = { workspace = true }
 sea-orm = { workspace = true }
 sentry = { workspace = true }
 serde = { workspace = true }

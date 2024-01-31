@@ -15,7 +15,6 @@ bounce = { workspace = true }
 gloo-utils = { workspace = true }
 log = { workspace = true }
 yew = { workspace = true }
-yew-autoprops = { workspace = true }
 yew-cosmo = { workspace = true }
 yew-hooks = { workspace = true }
 yew-router = { workspace = true }

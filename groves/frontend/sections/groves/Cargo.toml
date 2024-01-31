@@ -8,8 +8,6 @@ license.workspace = true
 bamboo-common = { path = "../../../../common", features = ["frontend"] }
 bamboo-groves-frontend-base-routing = { path = "../../base/routing" }
 
-bounce = { workspace = true }
-gloo-utils = { workspace = true }
 log = { workspace = true }
 yew = { workspace = true }
 yew-autoprops = { workspace = true }

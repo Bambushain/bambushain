@@ -24,3 +24,6 @@ strum_macros = { workspace = true, optional = true }
 [features]
 backend = ["dep:actix-web", "dep:sea-orm", "dep:bamboo-common-backend-macros"]
 frontend = ["dep:strum", "dep:strum_macros"]
+
+[package.metadata.cargo-machete]
+ignored = ["actix-web", "strum"]

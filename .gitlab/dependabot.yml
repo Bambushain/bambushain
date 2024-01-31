@@ -1,14 +1,6 @@
 version: 2
 updates:
   - package-ecosystem: cargo
-    directory: /common
-    schedule:
-      interval: daily
-  - package-ecosystem: cargo
-    directory: /pandas
-    schedule:
-      interval: daily
-  - package-ecosystem: cargo
-    directory: /groves
+    directory: /
     schedule:
       interval: daily
