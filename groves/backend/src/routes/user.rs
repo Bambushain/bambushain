@@ -1,4 +1,4 @@
-use actix_web::{get, put, web};
+use actix_web::{delete, get, put, web};
 
 use bamboo_common::backend::response::{check_invalid_path, list, no_content};
 use bamboo_common::backend::services::{DbConnection, EnvService};
@@ -65,6 +65,17 @@ pub async fn make_user_mod(
 ) -> BambooApiResponseResult {
     let path = check_invalid_path!(path, "user")?;
     dbal::change_mod_status(path.grove_id, path.user_id, true, &db)
+        .await
+        .map(|_| no_content!())
+}
+
+#[delete("/api/grove/{grove_id}/user/{user_id}/mod", wrap = "authenticate!()")]
+pub async fn remove_user_mod(
+    path: Option<web::Path<GroveUserPath>>,
+    db: DbConnection,
+) -> BambooApiResponseResult {
+    let path = check_invalid_path!(path, "user")?;
+    dbal::change_mod_status(path.grove_id, path.user_id, false, &db)
         .await
         .map(|_| no_content!())
 }

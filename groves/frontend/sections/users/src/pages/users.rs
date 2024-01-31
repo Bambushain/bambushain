@@ -15,6 +15,7 @@ pub fn users_page(grove_id: i32) -> Html {
     log::debug!("Render users overview");
     let user_to_reset_password_state = use_state_eq(|| None as Option<GroveUser>);
     let user_to_make_mod_state = use_state_eq(|| None as Option<GroveUser>);
+    let user_to_remove_mod_state = use_state_eq(|| None as Option<GroveUser>);
 
     let users_state = use_async(async move { api::get_users(grove_id).await });
     let grove_state = use_async(async move { api::get_grove(grove_id).await });
@@ -56,6 +57,25 @@ pub fn users_page(grove_id: i32) -> Html {
             }
         })
     };
+    let remove_user_mod_state = {
+        let user_to_remove_mod_state = user_to_remove_mod_state.clone();
+
+        let users_state = users_state.clone();
+
+        use_async(async move {
+            if let Some(user) = (*user_to_remove_mod_state).clone() {
+                user_to_remove_mod_state.set(None);
+                let result = api::remove_user_mod(grove_id, user.id).await;
+                if result.is_ok() {
+                    users_state.run();
+                }
+
+                result
+            } else {
+                Ok(())
+            }
+        })
+    };
 
     let close_reset_password_dialog =
         use_callback(user_to_reset_password_state.clone(), |_, state| {
@@ -76,6 +96,18 @@ pub fn users_page(grove_id: i32) -> Html {
         state.set(Some(grove));
     });
     let confirm_make_user_mod_dialog = use_callback(make_user_mod_state.clone(), |_, state| {
+        state.run();
+    });
+
+    let close_remove_user_mod_dialog =
+        use_callback(user_to_remove_mod_state.clone(), |_, state| {
+            state.set(None);
+        });
+    let open_remove_user_mod_dialog =
+        use_callback(user_to_remove_mod_state.clone(), |grove, state| {
+            state.set(Some(grove));
+        });
+    let confirm_remove_user_mod_dialog = use_callback(remove_user_mod_state.clone(), |_, state| {
         state.run();
     });
 
@@ -104,13 +136,21 @@ pub fn users_page(grove_id: i32) -> Html {
                 if reset_password_state.error.is_some() {
                     <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Zurücksetzen" message="Leider konnte das Passwort nicht zurückgesetzt werden" />
                 }
+                if make_user_mod_state.error.is_some() {
+                    <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Ernennen" message="Leider konnte der Benutzer nicht zum Mod ernannt werden" />
+                }
+                if remove_user_mod_state.error.is_some() {
+                    <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Entziehen" message="Leider konnten dem Benutzer die Modrecht nicht entzogen werden" />
+                }
                 <CosmoTable headers={vec![AttrValue::from("#"), AttrValue::from("Name"), AttrValue::from("Email"), AttrValue::from("Ist Mod"), AttrValue::from("Aktionen")]}>
                     {for data.iter().map(|user| {
                         let open_reset_password_dialog = open_reset_password_dialog.clone();
                         let open_make_user_mod_dialog = open_make_user_mod_dialog.clone();
+                        let open_remove_user_mod_dialog = open_remove_user_mod_dialog.clone();
 
                         let reset_password_user = user.clone();
                         let user_to_make_mod = user.clone();
+                        let user_to_remove_mod = user.clone();
 
                         CosmoTableRow::from_table_cells(vec![
                             CosmoTableCell::from_html(html!({user.id}), None),
@@ -127,7 +167,7 @@ pub fn users_page(grove_id: i32) -> Html {
                                 <>
                                     <CosmoToolbarGroup>
                                         <CosmoButton label="Passwort zurücksetzen" enabled={user.is_mod} on_click={move |_| open_reset_password_dialog.emit(reset_password_user.clone())} />
-                                        <CosmoButton label="Modrechte entziehen" enabled={user.is_mod} />
+                                        <CosmoButton label="Modrechte entziehen" enabled={user.is_mod} on_click={move |_| open_remove_user_mod_dialog.emit(user_to_remove_mod.clone())} />
                                         <CosmoButton label="Zum Mod machen" enabled={!user.is_mod} on_click={move |_| open_make_user_mod_dialog.emit(user_to_make_mod.clone())} />
                                     </CosmoToolbarGroup>
                                 </>
@@ -139,7 +179,10 @@ pub fn users_page(grove_id: i32) -> Html {
                     <CosmoConfirm title="Passwort zurücksetzen" message={format!("Soll das Passwort von {} zurückgesetzt werden?", user.display_name.clone())} decline_label="Nicht zurücksetzen" confirm_label="Passwort zurücksetzen" confirm_type={CosmoModalType::Warning} on_confirm={confirm_reset_password_dialog.clone()} on_decline={close_reset_password_dialog.clone()} />
                 }
                 if let Some(user) = (*user_to_make_mod_state).clone() {
-                    <CosmoConfirm title="Zum Mod ernennen" message={format!("Soll der Benutzer {} zum Mod gemacht werden?\nBitte beachte, dass Mods volle Kontrolle über einen Hain haben.", user.display_name.clone())} decline_label="Nicht zum mod ernennen" confirm_label="Zum Mod ernennen" confirm_type={CosmoModalType::Warning} on_confirm={confirm_make_user_mod_dialog.clone()} on_decline={close_make_user_mod_dialog.clone()} />
+                    <CosmoConfirm title="Zum Mod ernennen" message={format!("Soll der Benutzer {} zum Mod gemacht werden?\nBitte beachte, dass Mods volle Kontrolle über einen Hain haben.", user.display_name.clone())} decline_label="Nicht zum Mod ernennen" confirm_label="Zum Mod ernennen" confirm_type={CosmoModalType::Warning} on_confirm={confirm_make_user_mod_dialog.clone()} on_decline={close_make_user_mod_dialog.clone()} />
+                }
+                if let Some(user) = (*user_to_remove_mod_state).clone() {
+                    <CosmoConfirm title="Modrechte entziehen" message={format!("Sollen dem Benutzer {} die Modrechte entzogen werden?.", user.display_name.clone())} decline_label="Nicht entziehen" confirm_label="Modrechte entziehen" confirm_type={CosmoModalType::Warning} on_confirm={confirm_remove_user_mod_dialog.clone()} on_decline={close_remove_user_mod_dialog.clone()} />
                 }
             }
         </>
