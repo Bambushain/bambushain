@@ -17,12 +17,7 @@ pub struct GlitchTipErrorRequest {
 }
 
 impl GlitchTipErrorRequest {
-    pub fn new(
-        page: String,
-        form: String,
-        full_url: String,
-        bamboo_error: BambooError,
-    ) -> Self {
+    pub fn new(page: String, form: String, full_url: String, bamboo_error: BambooError) -> Self {
         Self {
             page,
             form,

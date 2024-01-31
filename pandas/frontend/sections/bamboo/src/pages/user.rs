@@ -5,9 +5,9 @@ use yew_cosmo::prelude::*;
 use yew_hooks::use_mount;
 use yew_hooks::{use_async, use_bool_toggle};
 
-use bamboo_pandas_frontend_base::error;
 use bamboo_common::frontend::api::ApiError;
 use bamboo_common::frontend::ui::{BambooCard, BambooCardList};
+use bamboo_pandas_frontend_base::error;
 
 use crate::api;
 

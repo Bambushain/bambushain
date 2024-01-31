@@ -7,7 +7,7 @@ use yew_router::hooks::use_navigator;
 
 use bamboo_common::core::entities::{ForgotPassword, Login};
 use bamboo_pandas_frontend_base::routing::{AppRoute, LegalRoute};
-use bamboo_pandas_frontend_base::storage as storage;
+use bamboo_pandas_frontend_base::storage;
 
 use crate::api;
 
@@ -41,7 +41,7 @@ fn login_content() -> Html {
                 (*password_state).to_string(),
                 two_factor_code,
             ))
-                .await
+            .await
             {
                 Ok(either::Left(result)) => {
                     storage::set_token(result.token);
@@ -69,7 +69,7 @@ fn login_content() -> Html {
             api::forgot_password(ForgotPassword {
                 email: (*email_state).to_string(),
             })
-                .await
+            .await
         })
     };
 

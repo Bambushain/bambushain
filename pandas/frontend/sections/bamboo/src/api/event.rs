@@ -15,7 +15,7 @@ pub async fn get_events(range: Rc<DateRange>) -> BambooApiResult<Vec<Event>> {
             ("end", range.until().format("%F").to_string().as_str()),
         ],
     )
-        .await
+    .await
 }
 
 pub async fn create_event(event: Event) -> BambooApiResult<Event> {

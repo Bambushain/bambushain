@@ -18,6 +18,7 @@ pub use crate::free_company::Model as FreeCompany;
 pub use crate::grove::Model as Grove;
 pub use crate::support::*;
 pub use crate::token::Model as Token;
+pub use crate::user::GroveUser;
 pub use crate::user::Model as User;
 pub use crate::user::TotpQrCode;
 pub use crate::user::UpdateProfile;

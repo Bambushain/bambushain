@@ -1,9 +1,9 @@
-use sea_orm::{IntoActiveModel, NotSet, QueryOrder};
-use sea_orm::ActiveValue::Set;
 use sea_orm::prelude::*;
+use sea_orm::ActiveValue::Set;
+use sea_orm::{IntoActiveModel, NotSet, QueryOrder};
 
-use bamboo_common_core::entities::{character, fighter};
 use bamboo_common_core::entities::*;
+use bamboo_common_core::entities::{character, fighter};
 use bamboo_common_core::error::*;
 
 pub async fn get_fighters(

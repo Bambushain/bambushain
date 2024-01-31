@@ -11,11 +11,11 @@ use yew_router::prelude::*;
 
 use bamboo_common::core::entities::user::UpdateProfile;
 use bamboo_common::frontend::api::{ApiError, CONFLICT, FORBIDDEN, NOT_FOUND};
-use bamboo_pandas_frontend_base::{error, storage};
 use bamboo_pandas_frontend_base::routing::{
     AppRoute, BambooGroveRoute, FinalFantasyRoute, LegalRoute, LicensesRoute, ModAreaRoute,
     SupportRoute,
 };
+use bamboo_pandas_frontend_base::{error, storage};
 use bamboo_pandas_frontend_section_authentication::LoginPage;
 use bamboo_pandas_frontend_section_bamboo::CalendarPage;
 use bamboo_pandas_frontend_section_bamboo::UsersPage;
@@ -502,19 +502,19 @@ fn change_password_dialog(on_close: &Callback<()>, mods: &Vec<AttrValue>) -> Htm
                 (*old_password_state).to_string(),
                 (*new_password_state).to_string(),
             )
-                .await
-                .map(|_| {
-                    api::logout();
-                    navigator
-                        .expect("Navigator should be available")
-                        .push(&AppRoute::Login);
-                    unreported_error_toggle.set(false);
-                })
-                .map_err(|err| {
-                    unreported_error_toggle.set(true);
-                    bamboo_error_state.set(err.clone());
-                    err
-                })
+            .await
+            .map(|_| {
+                api::logout();
+                navigator
+                    .expect("Navigator should be available")
+                    .push(&AppRoute::Login);
+                unreported_error_toggle.set(false);
+            })
+            .map_err(|err| {
+                unreported_error_toggle.set(true);
+                bamboo_error_state.set(err.clone());
+                err
+            })
         })
     };
 
@@ -608,16 +608,16 @@ fn update_my_profile_dialog(on_close: &Callback<()>) -> Html {
                 (*display_name_state).to_string(),
                 (*discord_name_state).to_string(),
             ))
-                .await
-                .map(|_| {
-                    unreported_error_toggle.set(false);
-                    on_close.emit(())
-                })
-                .map_err(|err| {
-                    unreported_error_toggle.set(true);
-                    bamboo_error_state.set(err.clone());
-                    err
-                })
+            .await
+            .map(|_| {
+                unreported_error_toggle.set(false);
+                on_close.emit(())
+            })
+            .map_err(|err| {
+                unreported_error_toggle.set(true);
+                bamboo_error_state.set(err.clone());
+                err
+            })
         })
     };
     let disable_totp_state = {
@@ -762,7 +762,7 @@ fn enable_totp_dialog(on_close: &Callback<()>) -> Html {
                 (*code_state).to_string(),
                 (*current_password_state).to_string(),
             )
-                .await
+            .await
             {
                 log::error!("Failed to validate token: {err}");
                 unreported_error_toggle.set(true);

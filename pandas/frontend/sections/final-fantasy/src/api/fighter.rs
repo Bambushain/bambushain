@@ -7,7 +7,7 @@ pub async fn get_fighters(character_id: i32) -> BambooApiResult<Vec<Fighter>> {
     get(format!(
         "/api/final-fantasy/character/{character_id}/fighter"
     ))
-        .await
+    .await
 }
 
 pub async fn create_fighter(character_id: i32, fighter: Fighter) -> BambooApiResult<Fighter> {
@@ -16,7 +16,7 @@ pub async fn create_fighter(character_id: i32, fighter: Fighter) -> BambooApiRes
         format!("/api/final-fantasy/character/{character_id}/fighter"),
         &fighter,
     )
-        .await
+    .await
 }
 
 pub async fn update_fighter(character_id: i32, id: i32, fighter: Fighter) -> BambooApiResult<()> {
@@ -25,7 +25,7 @@ pub async fn update_fighter(character_id: i32, id: i32, fighter: Fighter) -> Bam
         format!("/api/final-fantasy/character/{character_id}/fighter/{id}"),
         &fighter,
     )
-        .await
+    .await
 }
 
 pub async fn delete_fighter(character_id: i32, id: i32) -> BambooApiResult<()> {
@@ -33,5 +33,5 @@ pub async fn delete_fighter(character_id: i32, id: i32) -> BambooApiResult<()> {
     delete(format!(
         "/api/final-fantasy/character/{character_id}/fighter/{id}"
     ))
-        .await
+    .await
 }

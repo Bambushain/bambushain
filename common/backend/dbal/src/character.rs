@@ -1,14 +1,14 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use sea_orm::{Condition, IntoActiveModel, NotSet, QueryOrder, QuerySelect};
-use sea_orm::ActiveValue::Set;
 use sea_orm::prelude::*;
 use sea_orm::sea_query::Expr;
+use sea_orm::ActiveValue::Set;
+use sea_orm::{Condition, IntoActiveModel, NotSet, QueryOrder, QuerySelect};
 
+use bamboo_common_core::entities::*;
 use bamboo_common_core::entities::{
     character, custom_character_field, custom_character_field_option, custom_character_field_value,
 };
-use bamboo_common_core::entities::*;
 use bamboo_common_core::error::*;
 
 use crate::free_company::get_free_company;
@@ -228,7 +228,7 @@ pub async fn update_character(
         user_id,
         db,
     )
-        .await?
+    .await?
     {
         return Err(BambooError::exists_already(
             "character",
@@ -249,7 +249,8 @@ pub async fn update_character(
         )
         .col_expr(
             character::Column::Race,
-            Expr::val(character.race).as_enum(bamboo_common_core::entities::character::CharacterRaceEnum),
+            Expr::val(character.race)
+                .as_enum(bamboo_common_core::entities::character::CharacterRaceEnum),
         )
         .exec(db)
         .await

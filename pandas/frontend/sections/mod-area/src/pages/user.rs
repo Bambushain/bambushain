@@ -8,7 +8,7 @@ use yew_hooks::use_mount;
 use yew_hooks::{use_async, use_bool_toggle, use_unmount};
 
 use bamboo_common::core::entities::*;
-use bamboo_common::frontend::api::{CONFLICT, FORBIDDEN, NOT_FOUND, ApiError};
+use bamboo_common::frontend::api::{ApiError, CONFLICT, FORBIDDEN, NOT_FOUND};
 use bamboo_pandas_frontend_base::{error, storage};
 
 use crate::api;
@@ -72,21 +72,21 @@ fn create_user_modal(on_saved: &Callback<WebUser>, on_close: &Callback<()>) -> H
                 (*discord_name_state).to_string(),
                 *is_mod_toggle,
             ))
-                .await
-                .map(|data| {
-                    log::debug!("User was created successfully");
-                    unreported_error_toggle.set(false);
-                    on_saved.emit(data.clone());
+            .await
+            .map(|data| {
+                log::debug!("User was created successfully");
+                unreported_error_toggle.set(false);
+                on_saved.emit(data.clone());
 
-                    data
-                })
-                .map_err(|err| {
-                    log::warn!("Failed to create user {err}");
-                    unreported_error_toggle.set(true);
-                    bamboo_error_state.set(err.clone());
+                data
+            })
+            .map_err(|err| {
+                log::warn!("Failed to create user {err}");
+                unreported_error_toggle.set(true);
+                bamboo_error_state.set(err.clone());
 
-                    err
-                })
+                err
+            })
         })
     };
 
@@ -184,14 +184,14 @@ fn update_profile_dialog(
                     (*discord_name_state).to_string(),
                 ),
             )
-                .await
-                .map(|_| on_update.emit(()))
-                .map_err(|err| {
-                    bamboo_error_state.set(err.clone());
-                    unreported_error_toggle.set(true);
+            .await
+            .map(|_| on_update.emit(()))
+            .map_err(|err| {
+                bamboo_error_state.set(err.clone());
+                unreported_error_toggle.set(true);
 
-                    err
-                })
+                err
+            })
         })
     };
 
@@ -438,13 +438,13 @@ fn user_details(user: &WebUser, on_delete: &Callback<()>, on_update: &Callback<(
         ),
         |_,
          (
-             confirm_state,
-             delete_state,
-             make_mod_state,
-             remove_mod_state,
-             disable_totp_state,
-             change_password_state,
-         )| match **confirm_state {
+            confirm_state,
+            delete_state,
+            make_mod_state,
+            remove_mod_state,
+            disable_totp_state,
+            change_password_state,
+        )| match **confirm_state {
             UserConfirmActions::MakeMod => make_mod_state.run(),
             UserConfirmActions::RemoveMod => remove_mod_state.run(),
             UserConfirmActions::DisableTotp => disable_totp_state.run(),

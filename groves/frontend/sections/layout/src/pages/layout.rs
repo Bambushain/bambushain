@@ -1,7 +1,6 @@
 use bounce::helmet::Helmet;
 use gloo_utils::window;
 use yew::prelude::*;
-use yew_autoprops::autoprops;
 use yew_cosmo::prelude::*;
 use yew_hooks::{use_async, use_mount};
 use yew_router::prelude::*;
@@ -9,18 +8,15 @@ use yew_router::prelude::*;
 use bamboo_groves_frontend_base::routing::AppRoute;
 use bamboo_groves_frontend_section_groves::GrovesPage;
 use bamboo_groves_frontend_section_login::LoginPage;
+use bamboo_groves_frontend_section_users::UsersPage;
 
 use crate::api;
 
-fn switch_sub_menu(route: AppRoute) -> Html {
-    match route {
-        AppRoute::Groves => html!(),
-        AppRoute::Home => html!(),
-    }
-}
-
 fn switch_app(route: AppRoute) -> Html {
     match route {
+        AppRoute::Home => html!(
+            <Redirect<AppRoute> to={AppRoute::Groves} />
+        ),
         AppRoute::Groves => html!(
             <>
                 <Helmet>
@@ -29,45 +25,36 @@ fn switch_app(route: AppRoute) -> Html {
                 <GrovesPage />
             </>
         ),
-        AppRoute::Home => html!(
-            <Redirect<AppRoute> to={AppRoute::Groves} />
+        AppRoute::Users { grove_id } => html!(
+            <>
+                <Helmet>
+                    <title>{"Benutzer"}</title>
+                </Helmet>
+                <UsersPage grove_id={grove_id} />
+            </>
         ),
     }
 }
 
-fn render_main_menu_entry(
-    label: impl Into<AttrValue> + Clone,
-    to: AppRoute,
-    active: AppRoute,
-) -> impl Fn(AppRoute) -> Html {
-    move |route| {
-        let is_active = route.eq(&active) || route.eq(&to);
+fn render_groves_route_sub_menu_entry(route: AppRoute) -> Html {
+    let is_active = matches!(route, AppRoute::Groves);
 
-        html!(
-            <CosmoMainMenuItemLink<AppRoute> to={to.clone()} label={label.clone().into()} is_active={is_active} />
-        )
-    }
+    html!(
+        <CosmoSubMenuItemLink<AppRoute> to={AppRoute::Groves} is_active={is_active} label="Haine" />
+    )
 }
 
-fn render_sub_menu_entry<Route: Routable + Clone + 'static>(
-    label: impl Into<AttrValue> + Clone,
-    to: Route,
-) -> impl Fn(Route) -> Html {
-    move |route| {
-        let is_active = route.eq(&to);
+fn render_users_route_sub_menu_entry(route: AppRoute) -> Html {
+    let is_active = matches!(route, AppRoute::Users { .. });
 
-        html!(
-            <CosmoSubMenuItemLink<Route> to={to.clone()} label={label.clone().into()} is_active={is_active} />
-        )
-    }
+    html!(
+        <CosmoSubMenuItem label="Benutzer" is_active={is_active} />
+    )
 }
 
-#[autoprops]
 #[function_component(Layout)]
 pub fn layout() -> Html {
     log::debug!("Render app layout");
-    let profile_picture = AttrValue::from("/static/logo.webp");
-
     let logout = use_callback((), |_, _| {
         let _ = window().location().set_href("/api/logout");
     });
@@ -97,12 +84,15 @@ pub fn layout() -> Html {
             </>
         } else if authenticated_state.data.is_some() {
             <>
-                <CosmoTopBar profile_picture={profile_picture} has_right_item={true} right_item_on_click={logout} right_item_label="Abmelden"/>
+                <CosmoTopBar profile_picture="/static/logo.webp" has_right_item={true} right_item_on_click={logout} right_item_label="Abmelden"/>
                 <CosmoMenuBar>
                     <CosmoMainMenu>
-                        <Switch<AppRoute> render={render_main_menu_entry("Haine", AppRoute::Groves, AppRoute::Groves)} />
+                         <CosmoMainMenuItemLink<AppRoute> to={AppRoute::Groves} label="Hainverwaltung" is_active={true} />
                     </CosmoMainMenu>
-                    <Switch<AppRoute> render={switch_sub_menu} />
+                    <CosmoSubMenuBar>
+                        <Switch<AppRoute> render={render_groves_route_sub_menu_entry} />
+                        <Switch<AppRoute> render={render_users_route_sub_menu_entry} />
+                    </CosmoSubMenuBar>
                 </CosmoMenuBar>
                 <CosmoPageBody>
                     <Switch<AppRoute> render={switch_app} />

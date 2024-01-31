@@ -37,7 +37,7 @@ impl ToString for ColorYiqResult {
             ColorYiqResult::Light => "#ffffff",
             ColorYiqResult::Dark => "#333333",
         }
-            .to_string()
+        .to_string()
     }
 }
 
@@ -193,18 +193,18 @@ fn add_event_dialog(
                 *color_state,
                 *is_private_state,
             ))
-                .await
-                .map(|evt| {
-                    on_added.emit(evt);
-                    unreported_error_toggle.set(false)
-                })
-                .map_err(|err| {
-                    log::error!("Failed to create event {err}");
-                    unreported_error_toggle.set(true);
-                    bamboo_error_state.set(err.clone());
+            .await
+            .map(|evt| {
+                on_added.emit(evt);
+                unreported_error_toggle.set(false)
+            })
+            .map_err(|err| {
+                log::error!("Failed to create event {err}");
+                unreported_error_toggle.set(true);
+                bamboo_error_state.set(err.clone());
 
-                    err
-                })
+                err
+            })
         })
     };
 

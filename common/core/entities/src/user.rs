@@ -209,3 +209,25 @@ pub struct TotpQrCode {
     pub qr_code: String,
     pub secret: String,
 }
+
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "backend", derive(Responder))]
+pub struct GroveUser {
+    #[serde(default)]
+    pub id: i32,
+    pub display_name: String,
+    pub email: String,
+    pub is_mod: bool,
+}
+
+impl From<Model> for crate::GroveUser {
+    fn from(value: Model) -> Self {
+        Self {
+            id: value.id,
+            is_mod: value.is_mod,
+            display_name: value.display_name.to_string(),
+            email: value.email.to_string(),
+        }
+    }
+}

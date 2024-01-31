@@ -4,9 +4,11 @@ use yew_autoprops::autoprops;
 use yew_cosmo::prelude::*;
 use yew_hooks::{use_async, use_bool_toggle, use_mount};
 use yew_icons::{Icon, IconId};
+use yew_router::prelude::use_navigator;
 
 use bamboo_common::core::entities::Grove;
 use bamboo_common::frontend::api::CONFLICT;
+use bamboo_groves_frontend_base_routing::AppRoute;
 
 use crate::api;
 
@@ -73,10 +75,11 @@ fn create_grove_dialog(on_saved: &Callback<Grove>, on_close: &Callback<()>) -> H
     )
 }
 
-#[autoprops]
 #[function_component(GrovesPage)]
 pub fn groves_page() -> Html {
     log::debug!("Render groves overview");
+    let navigator = use_navigator().expect("Router needs to be available");
+
     let create_grove_open_toggle = use_bool_toggle(false);
     let grove_to_suspend_state = use_state_eq(|| None as Option<Grove>);
     let grove_to_resume_state = use_state_eq(|| None as Option<Grove>);
@@ -185,6 +188,10 @@ pub fn groves_page() -> Html {
         state.run();
     });
 
+    let open_users_page = use_callback(navigator.clone(), |grove: Grove, navigator| {
+        navigator.push(&AppRoute::Users { grove_id: grove.id });
+    });
+
     {
         let groves_state = groves_state.clone();
 
@@ -220,10 +227,12 @@ pub fn groves_page() -> Html {
                         let open_suspend_dialog = open_suspend_dialog.clone();
                         let open_resume_dialog = open_resume_dialog.clone();
                         let open_delete_dialog = open_delete_dialog.clone();
+                        let open_users_page = open_users_page.clone();
 
                         let suspend_grove = grove.clone();
                         let resume_grove = grove.clone();
                         let delete_grove = grove.clone();
+                        let users_grove = grove.clone();
 
                         CosmoTableRow::from_table_cells(vec![
                             CosmoTableCell::from_html(html!({grove.id}), None),
@@ -245,7 +254,7 @@ pub fn groves_page() -> Html {
                             CosmoTableCell::from_html(html!(
                                 <>
                                     <CosmoToolbarGroup>
-                                        <CosmoButton label="Mods anzeigen" />
+                                        <CosmoButton label="Mods anzeigen" on_click={move |_| open_users_page.emit(users_grove.clone())} />
                                         <CosmoButton label="Starten" enabled={grove.is_suspended} on_click={move |_| open_resume_dialog.emit(resume_grove.clone())} />
                                         <CosmoButton label="Pausieren" enabled={!grove.is_suspended} on_click={move |_| open_suspend_dialog.emit(suspend_grove.clone())} />
                                         <CosmoButton label="Löschen" on_click={move |_| open_delete_dialog.emit(delete_grove.clone())} />

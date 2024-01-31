@@ -167,6 +167,7 @@ pub async fn change_password(
         ));
     }
 
+    let user = dbal::get_user(current_grove.grove.id, path.user_id, &db).await?;
     let new_password = get_random_password();
     dbal::change_password(
         current_grove.grove.id,
@@ -176,7 +177,6 @@ pub async fn change_password(
     )
     .await?;
 
-    let user = dbal::get_user(current_grove.grove.id, path.user_id, &db).await?;
     mailing::user::send_password_changed(
         user.display_name.clone(),
         user.email.clone(),

@@ -1,12 +1,13 @@
 [package]
-name = "bamboo-groves-frontend-section-groves"
+name = "bamboo-groves-frontend-section-users"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
 [dependencies]
 bamboo-common = { path = "../../../../common", features = ["frontend"] }
-bamboo-groves-frontend-base-routing = { path = "../../base/routing" }
 
 bounce = { workspace = true }
 gloo-utils = { workspace = true }

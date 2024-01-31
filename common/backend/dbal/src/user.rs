@@ -113,7 +113,7 @@ pub async fn get_user_by_email_or_username(
 pub async fn get_users(grove_id: i32, db: &DatabaseConnection) -> BambooResult<Vec<User>> {
     user::Entity::find()
         .filter(user::Column::GroveId.eq(grove_id))
-        .order_by_asc(user::Column::Email)
+        .order_by_asc(user::Column::DisplayName)
         .all(db)
         .await
         .map_err(|err| {
@@ -131,7 +131,7 @@ pub async fn get_users_with_mod_rights(
     user::Entity::find()
         .filter(user::Column::IsMod.eq(true))
         .filter(user::Column::GroveId.eq(grove.id))
-        .order_by_asc(user::Column::Email)
+        .order_by_asc(user::Column::DisplayName)
         .all(db)
         .await
         .map_err(|err| {
@@ -324,4 +324,19 @@ pub async fn disable_totp(grove_id: i32, id: i32, db: &DatabaseConnection) -> Ba
         .await
         .map_err(|_| BambooError::database("user", "Failed to disable totp"))
         .map(|_| ())
+}
+
+pub async fn get_users_filtered_for_management(
+    grove_id: i32,
+    db: &DatabaseConnection,
+) -> BambooResult<Vec<User>> {
+    user::Entity::find()
+        .filter(user::Column::GroveId.eq(grove_id))
+        .order_by_asc(user::Column::Id)
+        .all(db)
+        .await
+        .map_err(|err| {
+            log::error!("{err}");
+            BambooError::database("user", "Failed to load users")
+        })
 }

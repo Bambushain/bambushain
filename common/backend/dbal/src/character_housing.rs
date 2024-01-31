@@ -1,9 +1,9 @@
-use sea_orm::{IntoActiveModel, NotSet, QueryOrder};
-use sea_orm::ActiveValue::Set;
 use sea_orm::prelude::*;
+use sea_orm::ActiveValue::Set;
+use sea_orm::{IntoActiveModel, NotSet, QueryOrder};
 
-use bamboo_common_core::entities::{character, character_housing};
 use bamboo_common_core::entities::*;
+use bamboo_common_core::entities::{character, character_housing};
 use bamboo_common_core::error::*;
 
 pub async fn get_character_housings(
@@ -118,7 +118,7 @@ pub async fn create_character_housing(
         housing.plot,
         db,
     )
-        .await?
+    .await?
     {
         return Err(BambooError::exists_already(
             "character_housing",
@@ -152,7 +152,7 @@ pub async fn update_character_housing(
         housing.plot,
         db,
     )
-        .await?
+    .await?
     {
         return Err(BambooError::exists_already(
             "character_housing",

@@ -9,6 +9,7 @@ bamboo-common = { path = "../../../../common", features = ["frontend"] }
 bamboo-groves-frontend-base = { path = "../../base" }
 bamboo-groves-frontend-section-groves = { path = "../../sections/groves" }
 bamboo-groves-frontend-section-login = { path = "../../sections/login" }
+bamboo-groves-frontend-section-users = { path = "../../sections/users" }
 
 bounce = { workspace = true }
 gloo-utils = { workspace = true }

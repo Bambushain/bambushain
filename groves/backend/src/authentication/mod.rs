@@ -1,7 +1,7 @@
 use openidconnect::core::{CoreClient, CoreGenderClaim, CoreProviderMetadata, CoreRevocableToken};
 use openidconnect::reqwest::async_http_client;
 use openidconnect::{
-    AccessToken, AdditionalClaims, ClientId, IssuerUrl, RedirectUrl, UserInfoClaims,
+    AccessToken, AdditionalClaims, ClientId, IssuerUrl, RedirectUrl, RevocationUrl, UserInfoClaims,
 };
 use serde::{Deserialize, Serialize};
 
@@ -15,7 +15,7 @@ pub struct ZitadelClaims {
 
 impl AdditionalClaims for ZitadelClaims {}
 
-pub const ACCESS_TOKEN: &'static str = "access_token";
+pub const ACCESS_TOKEN: &str = "access_token";
 
 pub async fn get_client(host: String, env_service: EnvService) -> BambooResult<CoreClient> {
     let provider_metadata = CoreProviderMetadata::discover_async(
@@ -30,7 +30,7 @@ pub async fn get_client(host: String, env_service: EnvService) -> BambooResult<C
     .await
     .map_err(|_| BambooError::unauthorized("login", "Invalid configuration"))?;
 
-    let client = CoreClient::from_provider_metadata(
+    let mut client = CoreClient::from_provider_metadata(
         provider_metadata,
         ClientId::new(env_service.get_env("CLIENT_ID", "")),
         None,
@@ -39,6 +39,12 @@ pub async fn get_client(host: String, env_service: EnvService) -> BambooResult<C
         RedirectUrl::new(format!("https://{host}/api/login/callback").to_string())
             .map_err(|_| BambooError::unauthorized("login", "Invalid configuration"))?,
     );
+
+    if let Some(revocation_url) = env_service.get_env_opt("REVOCATION_URL") {
+        if let Ok(revocation_url) = RevocationUrl::new(revocation_url) {
+            client = client.set_revocation_uri(revocation_url);
+        }
+    }
 
     Ok(client)
 }

@@ -1,4 +1,4 @@
-use actix_web::{body, dev, Error, web};
+use actix_web::{body, dev, web, Error};
 use actix_web_lab::middleware::Next;
 
 use bamboo_common::backend::services::DbConnection;
