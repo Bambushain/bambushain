@@ -17,9 +17,9 @@ use crate::middleware::authenticate_user::authenticate;
 use crate::query;
 use crate::query::LoginCallbackQuery;
 
-const AUTH_PKCE_VERIFIER: &'static str = "auth-pkce-verifier";
-const AUTH_CSRF_TOKEN: &'static str = "auth-csrf-token";
-const AUTH_NONCE: &'static str = "auth-nonce";
+const AUTH_PKCE_VERIFIER: &str = "auth-pkce-verifier";
+const AUTH_CSRF_TOKEN: &str = "auth-csrf-token";
+const AUTH_NONCE: &str = "auth-nonce";
 
 #[get("/api/login")]
 pub async fn login(
@@ -112,10 +112,10 @@ async fn perform_login_callback(
     let _ = session.remove(AUTH_NONCE);
     let _ = session.remove(AUTH_PKCE_VERIFIER);
 
-    if callback.state == csrf_token.secret().to_string() {
+    if callback.state == *csrf_token.secret() {
         let client = get_client(host.into(), env_service.clone()).await?;
         let token_response = client
-            .exchange_code(AuthorizationCode::new(callback.code.clone().into()))
+            .exchange_code(AuthorizationCode::new(callback.code.clone()))
             .set_pkce_verifier(pkce_verifier)
             .request_async(async_http_client)
             .await
@@ -130,7 +130,7 @@ async fn perform_login_callback(
 
         let mut valid_audiences = env_service
             .get_env("ADDITIONAL_AUDIENCES", "")
-            .split(",")
+            .split(',')
             .map(String::from)
             .collect::<Vec<String>>();
         valid_audiences.push(env_service.get_env("CLIENT_ID", ""));

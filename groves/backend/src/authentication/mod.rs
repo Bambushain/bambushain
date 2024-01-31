@@ -15,7 +15,7 @@ pub struct ZitadelClaims {
 
 impl AdditionalClaims for ZitadelClaims {}
 
-pub const ACCESS_TOKEN: &'static str = "access_token";
+pub const ACCESS_TOKEN: &str = "access_token";
 
 pub async fn get_client(host: String, env_service: EnvService) -> BambooResult<CoreClient> {
     let provider_metadata = CoreProviderMetadata::discover_async(
