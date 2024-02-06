@@ -78,13 +78,13 @@ members = [
 ]
 
 [workspace.package]
-version = "2.0.1"
+version = "3.0.0"
 edition = "2021"
 license = "MIT"
 
 [workspace.dependencies]
 actix-session = { version = "0.9.0", features = ["cookie-session"] }
-actix-web = "4.4.1"
+actix-web = "4.5.1"
 actix-web-lab = { version = "0.20.2", features = ["spa"] }
 async-trait = "0.1.77"
 base64 = "0.21.7"
@@ -119,12 +119,12 @@ sentry = { version = "0.32.2", default-features = false, features = ["backtrace"
 sentry-actix = "0.32.2"
 serde = { version = "1.0.196", features = ["derive"] }
 serde_json = "1.0.113"
-strum = "0.25.0"
+strum = "0.26.1"
 sha2 = "0.10.8"
-strum_macros = "0.25.3"
+strum_macros = "0.26.1"
 stylist = { version = "0.13.0", features = ["yew"] }
 syn = "2.0.48"
-tokio = "1.35.1"
+tokio = "1.36.0"
 totp-rs = { version = "5.5.1", features = ["qr", "gen_secret"] }
 uuid = { version = "1.7.0", features = ["v4"] }
 wasm-bindgen = "0.2.90"
@@ -145,16 +145,16 @@ groves-backend = ["dep:bamboo-groves", "bamboo-groves/backend", "dep:actix-web"]
 
 [profile.web-dev]
 inherits = "dev"
-# optimization for size ( more aggressive )
+# optimization for size (more aggressive)
 opt-level = "z"
 
 [profile.web-release]
 inherits = "release"
-# less code to include into binary
+# less code to include in binary
 panic = "abort"
-# optimization over all codebase ( better optimization, slower build )
+# optimization over all codebase (better optimization, slower build)
 codegen-units = 1
-# optimization for size ( more aggressive )
+# optimization for size (more aggressive)
 opt-level = "z"
 # link time optimization using whole-program analysis
 lto = true

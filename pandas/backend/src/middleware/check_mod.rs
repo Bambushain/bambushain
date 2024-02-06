@@ -4,16 +4,21 @@ use actix_web_lab::middleware::Next;
 use bamboo_common::backend::services::DbConnection;
 use bamboo_common::core::error::BambooError;
 
-use crate::header;
 use crate::middleware::helpers;
+use crate::{cookie, header};
 
 pub(crate) async fn check_mod(
     db: DbConnection,
     authorization: Option<web::Header<header::AuthorizationHeader>>,
+    auth_cookie: Option<cookie::BambooAuthCookie>,
     req: dev::ServiceRequest,
     next: Next<impl body::MessageBody>,
 ) -> Result<dev::ServiceResponse<impl body::MessageBody>, Error> {
-    let (_, user) = helpers::get_user_and_token_by_header(&db, authorization).await?;
+    let (_, user) = if authorization.is_some() {
+        helpers::get_user_and_token_by_header(&db, authorization).await?
+    } else {
+        helpers::get_user_and_token_by_cookie(&db, auth_cookie).await?
+    };
 
     if user.is_mod {
         next.call(req).await
