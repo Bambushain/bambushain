@@ -121,7 +121,7 @@ docker-build-pandas-testing:
   extends:
     - .base-kaniko
   script:
-    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/pandas.dockerfile" --destination "${CI_REGISTRY_IMAGE}/pandas:2.0.0-test-$CI_PIPELINE_IID"
+    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/pandas.dockerfile" --destination "${CI_REGISTRY_IMAGE}/pandas:$CI_PIPELINE_IID-test"
   needs:
     - build-server
     - build-web
@@ -145,7 +145,7 @@ docker-build-groves-testing:
   extends:
     - .base-kaniko
   script:
-    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/groves.dockerfile" --destination "${CI_REGISTRY_IMAGE}/groves:2.0.0-test-$CI_PIPELINE_IID"
+    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/groves.dockerfile" --destination "${CI_REGISTRY_IMAGE}/groves:$CI_PIPELINE_IID-test"
   needs:
     - build-server
     - build-web
