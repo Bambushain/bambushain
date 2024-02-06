@@ -1,6 +1,7 @@
 use std::ops::Deref;
 
 use strum::IntoEnumIterator;
+use stylist::yew::use_style;
 use yew::prelude::*;
 use yew_autoprops::autoprops;
 use yew_cosmo::prelude::*;
@@ -8,6 +9,7 @@ use yew_hooks::{use_async, use_bool_toggle, use_effect_update, use_mount};
 
 use bamboo_common::core::entities::*;
 use bamboo_common::frontend::api::{ApiError, CONFLICT, NOT_FOUND};
+use bamboo_common::frontend::ui::{BambooCard, BambooCardList};
 use bamboo_pandas_frontend_base::error;
 
 use crate::api;
@@ -365,6 +367,14 @@ pub fn crafter_details(character: &Character) -> Html {
         })
     }
 
+    let logo_style = use_style!(
+        r#"
+position: absolute;
+top: 0.75rem;
+right: 0.75rem;    
+"#
+    );
+
     if crafter_state.loading {
         html!(
             <CosmoProgressRing />
@@ -400,7 +410,7 @@ pub fn crafter_details(character: &Character) -> Html {
                         <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Der Handwerker konnte nicht gelöscht werden" />
                     }
                 }
-                <CosmoTable headers={vec![AttrValue::from(""), AttrValue::from("Job"), AttrValue::from("Level"), AttrValue::from("Aktionen")]}>
+                <BambooCardList>
                     {for data.iter().map(|crafter| {
                         let edit_crafter = crafter.clone();
                         let delete_crafter = crafter.clone();
@@ -408,21 +418,27 @@ pub fn crafter_details(character: &Character) -> Html {
                         let on_edit_open = on_edit_open.clone();
                         let on_delete_open = on_delete_open.clone();
 
-                        CosmoTableRow::from_table_cells(vec![
-                            CosmoTableCell::from_html(html!(<img src={format!("/static/crafter_jobs/{}", crafter.job.get_file_name())} />), None),
-                            CosmoTableCell::from_html(html!({crafter.job.to_string()}), None),
-                            CosmoTableCell::from_html(html!({crafter.level.clone().unwrap_or("".into())}), None),
-                            CosmoTableCell::from_html(html!(
+                        html!(
+                            <BambooCard title={crafter.job.to_string()} buttons={html!(
                                 <>
-                                    <CosmoToolbarGroup>
-                                        <CosmoButton label="Bearbeiten" on_click={move |_| on_edit_open.emit(edit_crafter.clone())} />
-                                        <CosmoButton label="Löschen" on_click={move |_| on_delete_open.emit(delete_crafter.clone())} />
-                                    </CosmoToolbarGroup>
+                                    <CosmoButton label="Bearbeiten" on_click={move |_| on_edit_open.emit(edit_crafter.clone())} />
+                                    <CosmoButton label="Löschen" on_click={move |_| on_delete_open.emit(delete_crafter.clone())} />
                                 </>
-                            ), None),
-                        ], Some(crafter.id.into()))
+                            )}>
+                                <img class={logo_style.clone()} src={format!("/static/crafter_jobs/{}", crafter.job.get_file_name())} />
+                                if let Some(level) = crafter.level.clone() {
+                                    if level.is_empty() {
+                                        <span>{"Kein Level angegeben"}</span><br/>
+                                    } else {
+                                        <span>{format!("Level {level}")}</span><br/>
+                                    }
+                                } else {
+                                    <span>{"Kein Level angegeben"}</span><br/>
+                                }
+                            </BambooCard>
+                        )
                     })}
-                </CosmoTable>
+                </BambooCardList>
                 {match (*action_state).clone() {
                     CrafterActions::Create => html!(
                         <ModifyCrafterModal on_error_close={report_unknown_error.clone()} has_unknown_error={*unreported_error_toggle} crafter={new_crafter.unwrap_or(Crafter::default())} character_id={character.id} jobs={all_jobs} is_edit={false} error_message={(*error_message_state).clone()} has_error={create_state.error.is_some()} on_close={on_modal_action_close} title="Handwerker hinzufügen" save_label="Handwerker hinzufügen" on_save={on_modal_create_save} />
