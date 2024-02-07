@@ -7,5 +7,9 @@ license.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+bamboo-common-core = { path = "../../core" }
+
 actix-web = { workspace = true }
+rust-s3 = { workspace = true }
 sea-orm = { workspace = true }
+log = { workspace = true }

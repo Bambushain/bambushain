@@ -1,5 +1,6 @@
 use actix_web::{web, HttpResponse};
 
+use bamboo_common::backend::services::minio_service::MinioClient;
 use bamboo_common::backend::services::{EnvService, EnvironmentService};
 
 use crate::middleware::authenticate_user::authenticate;

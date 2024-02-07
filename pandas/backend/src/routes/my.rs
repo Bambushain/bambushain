@@ -1,8 +1,9 @@
+use actix_web::web::Bytes;
 use actix_web::{delete, get, post, put, web};
 
 use bamboo_common::backend::dbal;
 use bamboo_common::backend::response::*;
-use bamboo_common::backend::services::DbConnection;
+use bamboo_common::backend::services::{DbConnection, MinioService};
 use bamboo_common::core::entities::*;
 use bamboo_common::core::error::*;
 
@@ -123,6 +124,18 @@ pub async fn disable_totp(
 #[delete("/api/my", wrap = "authenticate!()")]
 pub async fn leave(authentication: Authentication, db: DbConnection) -> BambooApiResponseResult {
     dbal::delete_user(authentication.user.grove_id, authentication.user.id, &db)
+        .await
+        .map(|_| no_content!())
+}
+
+#[put("/api/my/picture", wrap = "authenticate!()")]
+pub async fn upload_profile_picture(
+    authentication: Authentication,
+    minio: MinioService,
+    body: Bytes,
+) -> BambooApiResponseResult {
+    minio
+        .upload_profile_picture(authentication.user.id, &body)
         .await
         .map(|_| no_content!())
 }
