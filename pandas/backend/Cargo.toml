@@ -11,6 +11,7 @@ bamboo-common = { path = "../../common", features = ["backend"] }
 
 actix-web = { workspace = true }
 actix-web-lab = { workspace = true }
+bytes = { workspace = true }
 bytestring = { workspace = true }
 chrono = { workspace = true }
 date-range = { workspace = true }

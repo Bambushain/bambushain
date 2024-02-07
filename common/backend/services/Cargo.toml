@@ -10,6 +10,7 @@ license.workspace = true
 bamboo-common-core = { path = "../../core" }
 
 actix-web = { workspace = true }
+bytes = { workspace = true }
 rust-s3 = { workspace = true }
 sea-orm = { workspace = true }
 log = { workspace = true }

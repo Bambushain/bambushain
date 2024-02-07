@@ -133,7 +133,7 @@ pub fn start_server() -> std::io::Result<()> {
                 .wrap(sentry_actix::Sentry::new())
                 .wrap(middleware::Compress::default())
                 .app_data(bamboo_common::backend::services::MinioService::new(
-                    minio_client,
+                    minio_client.clone(),
                 ))
                 .app_data(notifier::Notifier::new(notifier.clone()))
                 .app_data(DbConnection::new(db.clone()))

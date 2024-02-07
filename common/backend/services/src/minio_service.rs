@@ -1,9 +1,10 @@
+use bytes::Bytes;
 use s3::creds::Credentials;
 use s3::error::S3Error;
 use s3::{Bucket, Region};
 use std::str::FromStr;
 
-use bamboo_common_core::error::{BambooError, BambooErrorResult};
+use bamboo_common_core::error::{BambooError, BambooErrorResult, BambooResult};
 
 #[derive(Clone)]
 pub struct MinioClient {
@@ -57,6 +58,23 @@ impl MinioClient {
             Err(BambooError::io("user", "Failed to save profile picture"))
         } else {
             Ok(())
+        }
+    }
+
+    pub async fn get_profile_picture(&self, user_id: i32) -> BambooResult<Bytes> {
+        let response = self
+            .bucket
+            .get_object(self.get_profile_picture_path(user_id))
+            .await
+            .map_err(|err| {
+                log::error!("Failed to get profile picture {err}");
+                BambooError::io("user", "Failed to get profile picture")
+            })?;
+        if response.status_code() != 200 {
+            Err(BambooError::io("user", "Failed to get profile picture"))
+        } else {
+            let data = response.bytes().clone();
+            Ok(data)
         }
     }
 }
