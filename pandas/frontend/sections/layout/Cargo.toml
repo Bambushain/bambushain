@@ -16,8 +16,10 @@ bamboo-pandas-frontend-section-mod-area = { path = "../../sections/mod-area" }
 bamboo-pandas-frontend-section-support = { path = "../../sections/support" }
 
 bounce = { workspace = true }
+chrono = { workspace = true }
 log = { workspace = true }
 stylist = { workspace = true }
+web-sys = { workspace = true }
 yew = { workspace = true }
 yew-autoprops = { workspace = true }
 yew-cosmo = { workspace = true }

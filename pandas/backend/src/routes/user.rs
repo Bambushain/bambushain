@@ -1,7 +1,7 @@
-use actix_web::{delete, get, post, put, web};
+use actix_web::{delete, get, post, put, web, Responder};
 
 use bamboo_common::backend::response::*;
-use bamboo_common::backend::services::{DbConnection, EnvService};
+use bamboo_common::backend::services::{DbConnection, EnvService, MinioService};
 use bamboo_common::backend::utils::get_random_password;
 use bamboo_common::backend::{dbal, mailing};
 use bamboo_common::core::entities::*;
@@ -238,4 +238,23 @@ pub async fn disable_totp(
     dbal::disable_totp(current_grove.grove.id, path.user_id, &db)
         .await
         .map(|_| no_content!())
+}
+
+#[get("/api/user/{user_id}/picture", wrap = "authenticate!()")]
+pub async fn get_profile_picture(
+    path: Option<path::UserPath>,
+    minio: MinioService,
+) -> impl Responder {
+    if let Ok(path) = check_invalid_path!(path, "user") {
+        let profile_picture = minio.get_profile_picture(path.user_id).await;
+        if let Ok(profile_picture) = profile_picture {
+            return actix_web::HttpResponse::Ok().body(profile_picture);
+        }
+    }
+
+    actix_web::HttpResponse::Ok()
+        .content_type("image/svg+xml")
+        .body(bytes::Bytes::from(include_str!(
+            "../assets/default-profile-picture.svg"
+        )))
 }

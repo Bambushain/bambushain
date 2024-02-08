@@ -38,3 +38,8 @@ pub async fn leave() -> BambooApiResult<()> {
     log::debug!("Leaving the grove");
     api::delete("/api/my").await
 }
+
+pub async fn upload_profile_picture(file: web_sys::File) -> BambooApiResult<()> {
+    log::debug!("Change profile picture");
+    api::upload_file("/api/my/picture", file).await
+}

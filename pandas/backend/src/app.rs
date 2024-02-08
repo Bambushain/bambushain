@@ -4,6 +4,7 @@ use actix_web::{middleware, App, HttpServer};
 
 use bamboo_common::backend::dbal;
 use bamboo_common::backend::migration::{IntoSchemaManagerConnection, Migrator, MigratorTrait};
+use bamboo_common::backend::services::minio_service::MinioClient;
 use bamboo_common::backend::services::DbConnection;
 
 use crate::notifier;
@@ -90,6 +91,17 @@ pub fn start_server() -> std::io::Result<()> {
             .map_err(std::io::Error::other)?;
         log::info!("Successfully migrated database");
         let groves = dbal::get_groves(&db).await.map_err(std::io::Error::other)?;
+        let minio_client = MinioClient::new(
+            std::env::var("S3_BUCKET").map_err(std::io::Error::other)?,
+            std::env::var("S3_ACCESS_KEY").map_err(std::io::Error::other)?,
+            std::env::var("S3_SECRET_KEY").map_err(std::io::Error::other)?,
+            std::env::var("S3_REGION").map_err(std::io::Error::other)?,
+            std::env::var("S3_ENDPOINT").ok(),
+            std::env::var("S3_USE_PATH_STYLE")
+                .ok()
+                .map_or(false, |val| val.to_lowercase() == "true"),
+        )
+        .map_err(std::io::Error::other)?;
 
         if groves.is_empty()
             || groves
@@ -120,6 +132,9 @@ pub fn start_server() -> std::io::Result<()> {
             App::new()
                 .wrap(sentry_actix::Sentry::new())
                 .wrap(middleware::Compress::default())
+                .app_data(bamboo_common::backend::services::MinioService::new(
+                    minio_client.clone(),
+                ))
                 .app_data(notifier::Notifier::new(notifier.clone()))
                 .app_data(DbConnection::new(db.clone()))
                 .configure(routes::configure_routes)

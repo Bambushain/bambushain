@@ -75,17 +75,26 @@ pub fn users_page() -> Html {
             <>
                 <CosmoTitle title="Pandas" />
                 <BambooCardList>
-                    {for data.iter().map(|user| html!(
-                        <BambooCard title={user.display_name.clone()}>
-                            <CosmoAnchor href={format!("mailto:{}", user.email.clone())}>{user.email.clone()}</CosmoAnchor>
-                            if !user.discord_name.is_empty() {
-                                <span>{"Auf Discord bekannt als "}<CosmoStrong>{user.discord_name.clone()}</CosmoStrong></span>
-                            }
-                            if user.is_mod {
-                                <span>{user.display_name.clone()}{" ist ein "}<CosmoStrong>{"Mod"}</CosmoStrong></span>
-                            }
-                        </BambooCard>
-                    ))}
+                    {for data.iter().map(|user|
+                        {
+                            let profile_picture = format!(
+                                "/api/user/{}/picture#time={}",
+                                user.id,
+                                chrono::offset::Local::now().timestamp_millis()
+                            );
+                            html!(
+                                <BambooCard title={user.display_name.clone()} prepend={html!(<img style="max-height:7rem;" src={profile_picture} />)}>
+                                    <CosmoAnchor href={format!("mailto:{}", user.email.clone())}>{user.email.clone()}</CosmoAnchor>
+                                    if !user.discord_name.is_empty() {
+                                        <span>{"Auf Discord bekannt als "}<CosmoStrong>{user.discord_name.clone()}</CosmoStrong></span>
+                                    }
+                                    if user.is_mod {
+                                        <span>{user.display_name.clone()}{" ist ein "}<CosmoStrong>{"Mod"}</CosmoStrong></span>
+                                    }
+                                </BambooCard>
+                            )
+                        }
+                    )}
                 </BambooCardList>
             </>
         )

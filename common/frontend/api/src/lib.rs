@@ -250,3 +250,16 @@ pub async fn put_no_body_no_content(uri: impl Into<String>) -> BambooApiResult<(
 
     handle_response_code(request).await
 }
+
+pub async fn upload_file(uri: impl Into<String>, file: web_sys::File) -> BambooApiResult<()> {
+    let uri = uri.into();
+    log::debug!("Execute put request against {uri}");
+    let request = Request::put(uri.as_str())
+        .body(file)
+        .unwrap()
+        .send()
+        .await
+        .map_err(|_| ApiError::send_error())?;
+
+    handle_response_code(request).await
+}

@@ -11,19 +11,21 @@ bamboo-common = { path = "../../common", features = ["backend"] }
 
 actix-web = { workspace = true }
 actix-web-lab = { workspace = true }
+bytes = { workspace = true }
 bytestring = { workspace = true }
 chrono = { workspace = true }
 date-range = { workspace = true }
+env_logger = { workspace = true }
 log = { workspace = true }
 parking_lot = { workspace = true }
+rust-s3 = { workspace = true }
 sea-orm = { workspace = true }
 sentry = { workspace = true }
+sentry-actix = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
 totp-rs = { workspace = true }
-env_logger = { workspace = true }
-sentry-actix = { workspace = true }
 
 [build-dependencies]
 bamboo-common = { path = "../../common", features = ["core", "backend"] }
