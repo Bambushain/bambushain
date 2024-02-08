@@ -1,5 +1,5 @@
 use actix_web::web::Bytes;
-use actix_web::{delete, get, post, put, web, Responder};
+use actix_web::{delete, get, post, put, web};
 
 use bamboo_common::backend::dbal;
 use bamboo_common::backend::response::*;
@@ -138,17 +138,4 @@ pub async fn upload_profile_picture(
         .upload_profile_picture(authentication.user.id, &body)
         .await
         .map(|_| no_content!())
-}
-
-#[get("/api/my/picture", wrap = "authenticate!()")]
-pub async fn get_profile_picture(
-    authentication: Authentication,
-    minio: MinioService,
-) -> impl Responder {
-    let profile_picture = minio.get_profile_picture(authentication.user.id).await;
-    if let Ok(profile_picture) = profile_picture {
-        profile_picture
-    } else {
-        bytes::Bytes::from_static(include_bytes!("../assets/default-profile-picture.svg"))
-    }
 }

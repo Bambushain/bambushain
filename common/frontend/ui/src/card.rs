@@ -10,6 +10,7 @@ pub fn bamboo_card(
     children: &Children,
     title: AttrValue,
     #[prop_or_default] buttons: &Option<VNode>,
+    #[prop_or_default] prepend: &Option<VNode>,
 ) -> Html {
     let card_style = use_style!(
         r#"
@@ -27,17 +28,10 @@ button {
     );
     let card_content_style = use_style!(
         r#"
-border: var(--input-border-width) solid var(--control-border-color);
 border-radius: var(--border-radius);
-padding: 0.5rem 1rem;
-height: 100%;
-display: flex;
-flex-flow: column;
-gap: 0.25rem;
-
-h5 {
-    margin-top: 0;
-}
+display: grid;
+grid-template-columns: [prepend] auto [text] 1fr; 
+border: var(--input-border-width) solid var(--control-border-color);
         "#
     );
     let card_content_with_buttons_style = use_style!(
@@ -45,6 +39,32 @@ h5 {
 margin-bottom: calc(var(--input-border-width) * -1 * 2);
         "#
     );
+    let card_content_text_style = use_style!(
+        r#"
+padding: 0.5rem 1rem;
+height: 100%;
+display: flex;
+flex-flow: column;
+gap: 0.25rem;
+grid-column: text;
+
+h5 {
+    margin-top: 0;
+}
+    "#
+    );
+    let card_content_prepend = use_style!(
+        r#"
+grid-column: prepend;
+
+img {
+    object-fit: cover;
+    border-top-left-radius: var(--border-radius);
+    border-bottom-left-radius: var(--border-radius);
+}
+    "#
+    );
+
     let card_content_classes = if buttons.is_some() {
         classes!(card_content_style, card_content_with_buttons_style)
     } else {
@@ -54,8 +74,15 @@ margin-bottom: calc(var(--input-border-width) * -1 * 2);
     html!(
         <div class={card_style}>
             <div class={card_content_classes}>
-                <CosmoHeader level={CosmoHeaderLevel::H5} header={title} />
-                {for children.iter()}
+                if let Some(prepend) = prepend {
+                    <div class={card_content_prepend}>
+                        {prepend.clone()}
+                    </div>
+                }
+                <div class={card_content_text_style}>
+                    <CosmoHeader level={CosmoHeaderLevel::H5} header={title} />
+                    {for children.iter()}
+                </div>
             </div>
             if let Some(buttons) = buttons {
                 <CosmoToolbarGroup>

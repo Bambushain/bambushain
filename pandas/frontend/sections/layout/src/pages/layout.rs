@@ -6,7 +6,7 @@ use stylist::yew::use_style;
 use yew::prelude::*;
 use yew_autoprops::autoprops;
 use yew_cosmo::prelude::*;
-use yew_hooks::{use_async, use_bool_toggle, use_mount, UseAsyncHandle};
+use yew_hooks::{use_async, use_bool_toggle, use_mount, use_update, UseAsyncHandle};
 use yew_router::prelude::*;
 
 use bamboo_common::core::entities::user::UpdateProfile;
@@ -567,6 +567,8 @@ fn update_my_profile_dialog(on_close: &Callback<()>) -> Html {
 
     let bamboo_error_state = use_state_eq(ApiError::default);
 
+    let profile_picture_state = use_state_eq(|| None as Option<web_sys::File>);
+
     let email_state = use_state_eq(|| AttrValue::from(profile_atom.profile.email.clone()));
     let display_name_state =
         use_state_eq(|| AttrValue::from(profile_atom.profile.display_name.clone()));
@@ -578,6 +580,9 @@ fn update_my_profile_dialog(on_close: &Callback<()>) -> Html {
         use_callback(display_name_state.clone(), |value, state| state.set(value));
     let update_discord_name =
         use_callback(discord_name_state.clone(), |value, state| state.set(value));
+    let select_profile_picture = use_callback(profile_picture_state.clone(), |value, state| {
+        state.set(Some(value))
+    });
 
     let report_unknown_error = use_callback(
         (bamboo_error_state.clone(), unreported_error_toggle.clone()),
@@ -596,28 +601,57 @@ fn update_my_profile_dialog(on_close: &Callback<()>) -> Html {
 
         let bamboo_error_state = bamboo_error_state.clone();
 
+        let profile_atom_setter = profile_atom_setter.clone();
+
         let email_state = email_state.clone();
         let display_name_state = display_name_state.clone();
         let discord_name_state = discord_name_state.clone();
 
+        let profile_picture_state = profile_picture_state.clone();
+
         let on_close = on_close.clone();
 
         use_async(async move {
-            api::update_my_profile(UpdateProfile::new(
+            let result = api::update_my_profile(UpdateProfile::new(
                 (*email_state).to_string(),
                 (*display_name_state).to_string(),
                 (*discord_name_state).to_string(),
             ))
             .await
-            .map(|_| {
-                unreported_error_toggle.set(false);
-                on_close.emit(())
-            })
+            .map(|_| unreported_error_toggle.set(false))
             .map_err(|err| {
                 unreported_error_toggle.set(true);
                 bamboo_error_state.set(err.clone());
                 err
-            })
+            });
+            if result.is_ok() {
+                if let Some(profile_picture) = (*profile_picture_state).clone() {
+                    let profile_result = api::upload_profile_picture(profile_picture)
+                        .await
+                        .map(|_| {
+                            unreported_error_toggle.set(false);
+                            on_close.emit(())
+                        })
+                        .map_err(|err| {
+                            unreported_error_toggle.set(true);
+                            bamboo_error_state.set(err.clone());
+                            err
+                        });
+
+                    if profile_result.is_ok() {
+                        if let Ok(profile) = api::get_my_profile().await {
+                            profile_atom_setter(profile.into());
+                        }
+                    }
+
+                    profile_result
+                } else {
+                    on_close.emit(());
+                    result
+                }
+            } else {
+                result
+            }
         })
     };
     let disable_totp_state = {
@@ -702,6 +736,7 @@ fn update_my_profile_dialog(on_close: &Callback<()>) -> Html {
                     <CosmoTextBox label="Email" input_type={CosmoTextBoxType::Email} required={true} on_input={update_email} value={(*email_state).clone()} />
                     <CosmoTextBox label="Name" required={true} on_input={update_display_name} value={(*display_name_state).clone()} />
                     <CosmoTextBox label="Discord Name (optional)" on_input={update_discord_name} value={(*discord_name_state).clone()} />
+                    <CosmoFilePicker label="Profilbild (optional)" on_select={select_profile_picture} />
                 </CosmoInputGroup>
             </CosmoModal>
             if *disable_totp_open_toggle {
@@ -864,9 +899,15 @@ fn top_bar() -> Html {
     log::debug!("Render top bar");
     let navigator = use_navigator().expect("Navigator should be available");
 
+    let profile_atom = use_atom_value::<storage::CurrentUser>();
+
     let profile_open_toggle = use_bool_toggle(false);
     let password_open_toggle = use_bool_toggle(false);
     let leave_grove_open_toggle = use_bool_toggle(false);
+
+    let profile_user_id = use_state(|| profile_atom.profile.id);
+
+    let update = use_update();
 
     let mods_state: UseAsyncHandle<_, ApiError> = use_async(async move {
         Ok(if let Ok(users) = api::get_users().await {
@@ -892,10 +933,13 @@ fn top_bar() -> Html {
         api::logout();
         navigator.push(&AppRoute::Login);
     });
-    let open_update_my_profile =
-        use_callback(profile_open_toggle.clone(), |_, profile_open_state| {
-            profile_open_state.set(true)
-        });
+    let open_update_my_profile = use_callback(
+        (profile_user_id.clone(), profile_open_toggle.clone()),
+        |_, (state, toggle)| {
+            toggle.set(true);
+            state.set(-1);
+        },
+    );
     let open_change_password = use_callback(
         (mods_state.clone(), password_open_toggle.clone()),
         |_, (mods_state, password_open_state)| {
@@ -910,17 +954,35 @@ fn top_bar() -> Html {
         toggle.set(false)
     });
     let leave_grove = use_callback(leave_grove_state.clone(), |_, state| state.run());
+    let profile_updated = use_callback(
+        (
+            profile_user_id.clone(),
+            profile_open_toggle.clone(),
+            profile_atom.clone(),
+        ),
+        move |_, (state, toggle, profile_atom)| {
+            toggle.set(false);
+            state.set(profile_atom.profile.id);
+            update()
+        },
+    );
+
+    let profile_picture = format!(
+        "/api/user/{}/picture#time={}",
+        *profile_user_id,
+        chrono::offset::Local::now().timestamp_millis()
+    );
 
     html!(
         <>
-            <CosmoTopBar profile_picture="/static/logo.webp" has_right_item={true} right_item_on_click={logout} right_item_label="Abmelden">
+            <CosmoTopBar profile_picture={profile_picture} has_right_item={true} right_item_on_click={logout} right_item_label="Abmelden">
                 <CosmoTopBarItemLink<AppRoute> label="Rechtliches" to={AppRoute::LegalRoot} />
                 <CosmoTopBarItem label="Mein Profil" on_click={open_update_my_profile} />
                 <CosmoTopBarItem label="Passwort ändern" on_click={open_change_password} />
                 <CosmoTopBarItem label="Hain verlassen" on_click={open_leave_grove} />
             </CosmoTopBar>
             if *profile_open_toggle {
-                <UpdateMyProfileDialog on_close={move |_| profile_open_toggle.set(false)} />
+                <UpdateMyProfileDialog on_close={profile_updated} />
             }
             if *password_open_toggle {
                 if let Some(data) = &mods_state.data {
