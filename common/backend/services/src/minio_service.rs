@@ -32,7 +32,7 @@ impl MinioClient {
             None,
             None,
         )
-        .map_err(|err| S3Error::Credentials(err))?;
+        .map_err(S3Error::Credentials)?;
         let mut bucket = Bucket::new(bucket_name.as_str(), region, credentials)?.with_path_style();
         if use_path_style {
             bucket.set_path_style();
