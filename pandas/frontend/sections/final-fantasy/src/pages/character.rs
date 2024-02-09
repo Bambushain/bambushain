@@ -668,7 +668,7 @@ pub fn character_page() -> Html {
                                     <CosmoTabItem label="Kämpfer">
                                         <FighterDetails character={character.clone()} />
                                     </CosmoTabItem>
-                                    <CosmoTabItem label="Crafter">
+                                    <CosmoTabItem label="Handwerker">
                                         <CrafterDetails character={character.clone()} />
                                     </CosmoTabItem>
                                     <CosmoTabItem label="Unterkünfte">
