@@ -1,0 +1,2618 @@
+openapi: 3.0.3
+info:
+  title: Bambushain
+  version: 1.7.0
+  description: Bambushain Server API
+  contact:
+    name: Panda Helferlein
+    url: https://pandas.bambushain.app
+    email: panda.helferlein@bambushain.app
+servers:
+  - url: https://pandas.bambushain.app
+    description: Bambushain Production Server
+  - url: https://testsystem.bambushain.app
+    description: Bambushain Test Server
+paths:
+  /api/login:
+    summary: Path for login related actions
+    description: >-
+      Perform a POST request to login, a DELETE request to logout and a HEAD
+      request to validate the API key
+    post:
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/login_request'
+        required: true
+      tags:
+        - Authentication
+      responses:
+        '200':
+          description: Returned when the username, password and two factor code are valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/login_response'
+        '204':
+          description: Returned when the request for the two factor code was successful
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+          description: The username, password or two factor code are invalid
+      operationId: login
+      summary: Performs a login or requests the two factor code
+      description: Performs the login
+      security:
+        - Panda: [ ]
+    delete:
+      tags:
+        - Authentication
+      responses:
+        '204':
+          description: The logout was successful
+        '401':
+          description: The api token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+      operationId: logout
+      summary: Performs a logout
+      description: Performs a logout and deletes the api token from the server
+    head:
+      tags:
+        - Authentication
+      responses:
+        '204':
+          description: The api token is valid
+        '401':
+          description: The api token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+      operationId: validate_token
+      summary: Validates the api token
+      description: >-
+        Checks whether the api token passed in the `Authorization`-header is
+        valid
+    parameters: [ ]
+  /api/user:
+    summary: Path for user related operations
+    description: >-
+      Perform a GET request to get the list of all users or perform a POST
+      request to create a new user
+    get:
+      tags:
+        - User
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/user'
+          description: A list of users
+        '401':
+          description: The api token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+      operationId: get_users
+      summary: Get a list of all users
+      description: Gets a list with all users
+    post:
+      requestBody:
+        description: The data for the new user
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/user'
+        required: true
+      tags:
+        - User
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/user'
+          description: The user was created successfully
+        '400':
+          description: The data is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '401':
+          description: The api token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+          description: The user is no mod
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+          description: A user with the given username or email exists
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+          description: Unknown error
+      security:
+        - Panda: [ ]
+      operationId: create_user
+      summary: Creates a new user
+      description: Creates a new user with the given values
+  /api/my/picture:
+    summary: Path to change a users profile picture
+    description: >-
+      Perform a a PUT request to change the current users profile picture
+    put:
+      requestBody:
+        description: The current users profile picture
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+        required: true
+      tags:
+        - Profile
+      responses:
+        '204':
+          description: The profile was updated successfully
+        '401':
+          description: The api token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+      operationId: update_my_profile_picture
+      summary: Updates the current users profile picture
+      description: Updates the current users profile picture
+  /api/my/profile:
+    summary: Path for actions around the profile
+    description: >-
+      Perform a GET request to get the currently logged in user or a PUT request
+      to change the current users profile data
+    get:
+      tags:
+        - Profile
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/user'
+          description: The current users profile
+        '401':
+          description: The api token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+      operationId: get_my_profile
+      summary: Gets the current user
+      description: Gets the current users profile
+    put:
+      requestBody:
+        description: The current users profile
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/update_my_profile'
+        required: true
+      tags:
+        - Profile
+      responses:
+        '204':
+          description: The profile was updated successfully
+        '400':
+          description: The data is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '401':
+          description: The api token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+      operationId: update_my_profile
+      summary: Updates the current users profile
+      description: Updates the current users profile
+  /api/my/profile/password:
+    summary: Path to change the current users password
+    description: Perform a PUT request to change the current users password
+    put:
+      requestBody:
+        description: The current and new password
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/change_my_password'
+        required: true
+      tags:
+        - Profile
+      responses:
+        '204':
+          description: The password was changed successfully
+        '400':
+          description: The data is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '401':
+          description: The api token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+          description: The current password is wrong
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+          description: The current user seems to have been deleted
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+      operationId: change_my_password
+      summary: Changes the current users password
+      description: >-
+        Changes the current users password, while checking if the old password
+        is valid
+  /api/final-fantasy/character/{character_id}/crafter:
+    summary: Paths for crafter actions
+    description: >-
+      Perform a GET request to get a list of all crafters for the current user
+      or perform a POST request to create a new crafter
+    get:
+      tags:
+        - Crafter
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/crafter'
+          description: A list of crafters
+        '401':
+          description: The api token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+      operationId: get_crafters
+      summary: Get list of crafter
+      description: Gets a list of all crafters the current user has configured
+    post:
+      requestBody:
+        description: The crafter to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/crafter'
+        required: true
+      tags:
+        - Crafter
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/crafter'
+          description: The created crafter
+        '401':
+          description: The api token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+          description: A crafter with the given job already exists
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+      operationId: create_crafter
+      summary: Creates a new crafter for the current user
+      description: Creates a new crafter for the current user
+    parameters:
+      - in: path
+        name: character_id
+        description: ''
+        schema:
+          type: number
+        required: true
+  /api/final-fantasy/character/{character_id}/fighter:
+    summary: Paths for fighter actions
+    description: >-
+      Perform a GET request to get a list of all fighters for the current user
+      or perform a POST request to create a new fighter
+    get:
+      tags:
+        - Fighter
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/fighter'
+          description: A list of fighters
+        '401':
+          description: The api token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+      operationId: get_fighters
+      summary: Get list of fighter
+      description: Gets a list of all fighters the current user has configured
+    post:
+      requestBody:
+        description: The fighter to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/fighter'
+        required: true
+      tags:
+        - Fighter
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/fighter'
+          description: The created fighter
+        '401':
+          description: The api token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+          description: A fighter with the given job already exists
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+      operationId: create_fighter
+      summary: Creates a new fighter for the current user
+      description: Creates a new fighter for the current user
+    parameters:
+      - in: path
+        name: character_id
+        description: ''
+        schema:
+          type: number
+        required: true
+  /api/final-fantasy/character/{character_id}/housing:
+    summary: Paths for housing actions
+    description: >-
+      Perform a GET request to get a list of all housings for the current character
+      or perform a POST request to create a new housing
+    get:
+      tags:
+        - Character Housing
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/character_housing'
+          description: A list of housings
+        '401':
+          description: The api token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+      operationId: get_housings
+      summary: Get list of housing
+      description: Gets a list of all housings the current user has configured
+    post:
+      requestBody:
+        description: The housing to create
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/character_housing'
+        required: true
+      tags:
+        - Character Housing
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/character_housing'
+          description: The created housing
+        '401':
+          description: The api token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+          description: A housing with the given data already exists
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+      operationId: create_housing
+      summary: Creates a new housing for the current user
+      description: Creates a new housing for the current user
+    parameters:
+      - in: path
+        name: character_id
+        description: ''
+        schema:
+          type: number
+        required: true
+  /api/final-fantasy/character/{character_id}/crafter/{id}:
+    summary: Path for actions around a specific crafter
+    description: >-
+      Perform a GET request to get a crafter by job, perform a PUT request to
+      update a crafter or perform a DELETE request to delete a crafter
+    get:
+      tags:
+        - Crafter
+      responses:
+        '200':
+          description: The crafter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/crafter'
+        '401':
+          description: The api token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+          description: A crafter with the given id does not exist
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+      operationId: get_crafter
+      summary: Get a crafter by job
+      description: Gets the crafter with the given job
+    put:
+      requestBody:
+        description: The crafter data to update to
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/crafter'
+        required: true
+      tags:
+        - Crafter
+      responses:
+        '204':
+          description: The crafter was updated successfully
+        '400':
+          description: The data is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '401':
+          description: The api token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+          description: A crafter with the given id does not exist
+        '409':
+          description: A crafter with the given job already
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      operationId: update_crafter
+      summary: Updates the given crafter
+      description: Updates the given crafter with the new values
+    delete:
+      tags:
+        - Crafter
+      responses:
+        '204':
+          description: Successfully deleted the crafter
+        '401':
+          description: The api token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+          description: A crafter with the given id does not exist
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      operationId: delete_crafter
+      summary: Delete the given crafter
+      description: Deletes the given crafter
+    parameters:
+      - in: path
+        name: character_id
+        description: The id of the character
+        schema:
+          type: number
+        required: true
+      - in: path
+        name: id
+        description: The id of the crafter
+        schema:
+          type: number
+        required: true
+  /api/final-fantasy/character/{character_id}/fighter/{id}:
+    summary: Path for actions around a specific fighter
+    description: >-
+      Perform a GET request to get a fighter by job, perform a PUT request to
+      update a fighter or perform a DELETE request to delete a fighter
+    get:
+      tags:
+        - Fighter
+      responses:
+        '200':
+          description: The fighter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/fighter'
+        '401':
+          description: The api token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+          description: A fighter with the given id does not exist
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+      operationId: get_fighter
+      summary: Get a fighter by job
+      description: Gets the fighter with the given job
+    put:
+      requestBody:
+        description: The fighter data to update to
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/fighter'
+        required: true
+      tags:
+        - Fighter
+      responses:
+        '204':
+          description: The fighter was updated successfully
+        '400':
+          description: The data is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '401':
+          description: The api token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+          description: A fighter with the given id does not exist
+        '409':
+          description: A fighter with the given job already
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      operationId: update_fighter
+      summary: Updates the given fighter
+      description: Updates the given fighter with the new values
+    delete:
+      tags:
+        - Fighter
+      responses:
+        '204':
+          description: Successfully deleted the fighter
+        '401':
+          description: The api token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+          description: A fighter with the given id does not exist
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      operationId: delete_fighter
+      summary: Delete the given fighter
+      description: Deletes the given fighter
+    parameters:
+      - in: path
+        name: character_id
+        description: The id of the character
+        schema:
+          type: number
+        required: true
+      - in: path
+        name: id
+        description: The id of the fighter
+        schema:
+          type: number
+        required: true
+  /api/final-fantasy/character/{character_id}/housing/{id}:
+    summary: Path for actions around a specific housing
+    description: >-
+      Perform a GET request to get a housing by id, perform a PUT request to
+      update a housing or perform a DELETE request to delete a housing
+    get:
+      tags:
+        - Character Housing
+      responses:
+        '200':
+          description: The housing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/character_housing'
+        '401':
+          description: The api token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+          description: A housing with the given id does not exist
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+      operationId: get_housing
+      summary: Get a housing by job
+      description: Gets the housing with the given job
+    put:
+      requestBody:
+        description: The housing data to update to
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/character_housing'
+        required: true
+      tags:
+        - Character Housing
+      responses:
+        '204':
+          description: The housing was updated successfully
+        '400':
+          description: The data is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '401':
+          description: The api token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+          description: A housing with the given id does not exist
+        '409':
+          description: A housing with the given dara already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      operationId: update_housing
+      summary: Updates the given housing
+      description: Updates the given housing with the new values
+    delete:
+      tags:
+        - Character Housing
+      responses:
+        '204':
+          description: Successfully deleted the housing
+        '401':
+          description: The api token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+          description: A housing with the given id does not exist
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      operationId: delete_housing
+      summary: Delete the given housing
+      description: Deletes the given housing
+    parameters:
+      - in: path
+        name: character_id
+        description: The id of the character
+        schema:
+          type: number
+        required: true
+      - in: path
+        name: id
+        description: The id of the housing
+        schema:
+          type: number
+        required: true
+  /api/user/{id}:
+    summary: Path for actions relating to a specific user
+    description: >-
+      Execute a GET request to get the user with the given username or a DELETE
+      request to delete the given user
+    get:
+      tags:
+        - User
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/user'
+          description: The user with the given id
+        '401':
+          description: The acccess token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+          description: The user was not found
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+      operationId: get_user
+      summary: Gets the given user
+      description: Gets the user by the given username
+    delete:
+      tags:
+        - User
+      responses:
+        '204':
+          description: The user was deleted successfully
+        '401':
+          description: The access token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '403':
+          description: The current user is no mod
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+          description: The user was not found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+          description: It is not possible to delete yourself
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+          description: Unkown error
+      security:
+        - Panda: [ ]
+      operationId: delete_user
+      summary: Deletes the given user
+      description: Deletes the user with the given username
+    parameters:
+      - in: path
+        name: id
+        description: The id of the user
+        schema:
+          type: number
+        required: true
+  /api/user/{id}/mod:
+    summary: Path for actions related to users mod status
+    description: >-
+      Perform a PUT request to make the given user mod or DELETE to revoke the
+      mod rights
+    put:
+      tags:
+        - User
+      responses:
+        '204':
+          description: The user is now mod
+        '401':
+          description: The access token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '403':
+          description: The user is no mod
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+          description: The user was not found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+          description: You can't make yourself mod
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+      operationId: make_user_mod
+      summary: Gives the given user mod status
+      description: Gives the given user the mod status
+    delete:
+      tags:
+        - User
+      responses:
+        '204':
+          description: The user is no longer a mod
+        '401':
+          description: The access token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '403':
+          description: The user is no mod
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '404':
+          description: The user was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '409':
+          description: You can't revoke your own mod rights
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+      operationId: revoke_user_mod_rights
+      summary: Revokes the mod rights for the given user
+      description: Revokes the mod rights for the given user
+    parameters:
+      - in: path
+        name: id
+        description: The id of the user
+        schema:
+          type: number
+        required: true
+  /api/user/{id}/password:
+    summary: Path for actions to change the password
+    description: Perform a PUT request to change the password
+    put:
+      tags:
+        - User
+      responses:
+        '204':
+          description: The users password was changed and all tokens deleted
+        '401':
+          description: The access token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '403':
+          description: The user is no mod
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+          description: The user was not found
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+          description: You can't change your own password with this method
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+      operationId: change_password
+      summary: Changes the password for the given user
+      description: >-
+        Changes the password for the given user. Cannot be used to changes the
+        current users password
+    parameters:
+      - in: path
+        name: id
+        description: The id of the user
+        schema:
+          type: number
+        required: true
+  /api/user/{id}/profile:
+    summary: Path for actions for updating the profile of a user
+    description: Perform a PUT request to update the profile for the given user
+    put:
+      requestBody:
+        description: The data to update the user with
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/update_my_profile'
+        required: true
+      tags:
+        - User
+      responses:
+        '204':
+          description: The user profile was updated successfully
+        '400':
+          description: The data is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '401':
+          description: The access token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '403':
+          description: The user is no mod
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '404':
+          description: The user was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '409':
+          description: The email or username exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+      operationId: update_user_profile
+      summary: Update the profile
+      description: Updates the profile of the given user
+    parameters:
+      - in: path
+        name: id
+        description: The id of the user
+        schema:
+          type: number
+        required: true
+  /api/user/{id}/picture:
+    summary: Path for a users profile picture
+    description: Perform a GET request to get the given users profile picture
+    get:
+      tags:
+        - User
+      responses:
+        '200':
+          description: The user profile was updated successfully
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '401':
+          description: The access token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '404':
+          description: The user was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+      operationId: get_user_profile_picture
+      summary: Get the profile picture
+      description: Gets the current users profile picture
+    parameters:
+      - in: path
+        name: id
+        description: The id of the user
+        schema:
+          type: number
+        required: true
+  /api/user/{id}/totp:
+    summary: Path for actions for changing totp of a user
+    description: Perform a DELETE request to reset totp of a user
+    delete:
+      tags:
+        - User
+      responses:
+        '204':
+          description: The users totp was reset successfully
+        '400':
+          description: The data is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '401':
+          description: The access token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '403':
+          description: The user is no mod
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '404':
+          description: The user was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '409':
+          description: The email or username exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+      operationId: disable_totp
+      summary: Reset totp
+      description: Resets the totp of the given user
+    parameters:
+      - in: path
+        name: id
+        description: The id of the user
+        schema:
+          type: number
+        required: true
+  /api/my/totp:
+    post:
+      summary: Enables TOTP for the current user
+      description: ''
+      operationId: enable_totp
+      tags:
+        - Profile
+      responses:
+        '200':
+          description: TOTP enabled, the code needs to be validated now
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/enable_totp_response'
+        '401':
+          description: The access token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unkown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+  /api/my/totp/validate:
+    put:
+      summary: Validates the given code and marks the TOTP status as enabled
+      description: ''
+      operationId: validate_totp
+      tags:
+        - Profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/validate_totp_request'
+      responses:
+        '204':
+          description: Successfully validated
+        '400':
+          description: Already validated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '401':
+          description: The access token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '403':
+          description: The code is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unkown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+  /api/final-fantasy/character:
+    get:
+      summary: Get a list of all characters for the current user
+      description: ''
+      operationId: get_characters
+      tags:
+        - Character
+      responses:
+        '200':
+          description: A list with all characters
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/character'
+        '401':
+          description: The access token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+    post:
+      summary: Create a new character
+      description: ''
+      operationId: create_character
+      tags:
+        - Character
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/character'
+      responses:
+        '201':
+          description: Character was created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/character'
+        '400':
+          description: The data is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '401':
+          description: The access token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '409':
+          description: The character already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unkown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+  /api/final-fantasy/character/{id}:
+    get:
+      summary: Gets the character by id
+      description: ''
+      operationId: get_character_by_id
+      tags:
+        - Character
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/character'
+          description: The character
+        '401':
+          description: The access token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '404':
+          description: The character was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+    delete:
+      summary: Deletes the given character
+      description: ''
+      operationId: delete_character
+      tags:
+        - Character
+      responses:
+        '204':
+          description: The character was deleted
+        '404':
+          description: The character was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unkown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+    put:
+      summary: Updates the given character
+      description: ''
+      operationId: update_character
+      tags:
+        - Character
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/character'
+      responses:
+        '204':
+          description: Character was successfully updated
+        '400':
+          description: The data is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '401':
+          description: The access token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '404':
+          description: The character was not found
+      security:
+        - Panda: [ ]
+    parameters:
+      - in: path
+        name: id
+        description: The id of the character
+        schema:
+          type: number
+        required: true
+  /api/final-fantasy/character/custom-field:
+    get:
+      summary: Gets a list of all character custom fields
+      description: ''
+      operationId: get_custom_fields
+      tags:
+        - Character
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/custom_character_field'
+          description: A list with all custom fields
+        '401':
+          description: The access token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+    post:
+      summary: Creates a new character custom field
+      description: ''
+      operationId: create_custom_field
+      tags:
+        - Character
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/modify_custom_character_field_request'
+      responses:
+        '201':
+          description: Created the custom field
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/custom_character_field'
+        '400':
+          description: The data is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '401':
+          description: The access token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '409':
+          description: The custom field already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unkown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+  /api/final-fantasy/character/custom-field/{id}:
+    delete:
+      summary: Deletes the given custom field
+      description: ''
+      operationId: delete_custom_field
+      tags:
+        - Character
+      responses:
+        '204':
+          description: The field was deleted
+        '401':
+          description: The access token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '404':
+          description: The custom field was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unkown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+    get:
+      summary: 'Gets the custom field with the given '
+      description: ''
+      operationId: get_custom_field_by_id
+      tags:
+        - Character
+      responses:
+        '200':
+          description: The custom field
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '401':
+          description: The access token ist invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '404':
+          description: The custom field was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+    put:
+      summary: Updates the given custom field
+      description: ''
+      operationId: update_custom_field
+      tags:
+        - Character
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/modify_custom_character_field_request'
+      responses:
+        '204':
+          description: Updated successfully
+        '400':
+          description: The data is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '401':
+          description: The access token ist invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '404':
+          description: The custom field was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+    parameters:
+      - in: path
+        name: id
+        description: The id of the custom field
+        schema:
+          type: number
+        required: true
+  /api/final-fantasy/character/custom-field/{id}/{position}:
+    put:
+      summary: Moves the given custom field to the new position
+      description: ''
+      operationId: move_custom_field
+      tags:
+        - Character
+      responses:
+        '204':
+          description: Successfully moved the custom field
+        '401':
+          description: The access token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '404':
+          description: The custom field was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+    parameters:
+      - in: path
+        name: id
+        description: The id of the custom field
+        schema:
+          type: number
+        required: true
+      - in: path
+        name: position
+        description: The new position
+        schema:
+          type: number
+        required: true
+  /api/final-fantasy/character/custom-field/{field_id}/option:
+    get:
+      summary: Gets all options for the given custom field
+      description: ''
+      operationId: get_custom_field_options
+      tags:
+        - Character
+      responses:
+        '200':
+          description: A list of all options
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/custom_character_field_option'
+        '401':
+          description: The access token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '404':
+          description: The custom field was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unkown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+    post:
+      summary: Creates a new option for the given custom field
+      description: ''
+      operationId: create_custom_field_option
+      tags:
+        - Character
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+      responses:
+        '201':
+          description: Successfully created the option
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/custom_character_field_option'
+        '400':
+          description: The data is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '401':
+          description: The access token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '404':
+          description: The custom field was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+    parameters:
+      - in: path
+        name: field_id
+        description: The id of the custom field
+        schema:
+          type: number
+        required: true
+  /api/final-fantasy/character/custom-field/{field_id}/option/{id}:
+    delete:
+      summary: Deletes the given option
+      description: ''
+      operationId: delete_custom_field_option
+      tags:
+        - Character
+      responses:
+        '204':
+          description: Successfully deleted the option
+        '401':
+          description: The access token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '404':
+          description: The custom field was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+    put:
+      summary: Updates the given option
+      description: ''
+      operationId: update_custom_field_option
+      tags:
+        - Character
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+      responses:
+        '204':
+          description: Successfully updated the option
+        '400':
+          description: The data is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '401':
+          description: The access token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '404':
+          description: The custom field was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unkown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+    parameters:
+      - in: path
+        name: field_id
+        description: The id of the custom field
+        schema:
+          type: number
+        required: true
+      - in: path
+        name: id
+        description: The id of the custom field option
+        schema:
+          type: number
+        required: true
+  /api/final-fantasy/free-company:
+    get:
+      summary: Gets all free companies
+      description: ''
+      operationId: get_free_companies
+      tags:
+        - Character
+      responses:
+        '200':
+          description: A list with all free companies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/free_company'
+        '401':
+          description: The access token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+    post:
+      summary: Creates a new free company
+      description: ''
+      operationId: create_free_company
+      tags:
+        - Character
+      responses:
+        '201':
+          description: Successfully created the free company
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/free_company'
+        '400':
+          description: The data is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '401':
+          description: The access token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '409':
+          description: The free company already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unkown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+  /api/final-fantasy/free-company/{id}:
+    get:
+      summary: Get free company by id
+      description: ''
+      operationId: get_free_company_by_id
+      tags:
+        - Character
+      responses:
+        '200':
+          description: The free company
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/free_company'
+        '401':
+          description: The access token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '404':
+          description: The free company was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+    delete:
+      summary: Deletes the given free company
+      description: ''
+      operationId: delete_free_company
+      tags:
+        - Character
+      responses:
+        '204':
+          description: Successfully deleted the free company
+          content: { }
+        '401':
+          description: The access token is invalid
+        '404':
+          description: The free company was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+    put:
+      summary: Updates the given free company
+      description: ''
+      operationId: update_free_company
+      tags:
+        - Character
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/free_company'
+      responses:
+        '204':
+          description: Successfully updates the free company
+        '400':
+          description: The data is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '401':
+          description: The access token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '404':
+          description: The free company was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unkown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+    parameters:
+      - in: path
+        name: id
+        description: The id of the free company
+        schema:
+          type: number
+        required: true
+  /api/bamboo-grove/event:
+    get:
+      summary: Gets all events for the given date range
+      description: ''
+      operationId: get_events
+      tags:
+        - Calendar
+      parameters:
+        - in: query
+          name: start
+          description: ''
+          schema:
+            type: string
+            format: date
+          required: true
+        - in: query
+          name: end
+          description: ''
+          schema:
+            type: string
+            format: date
+          required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/event'
+          description: All events
+        '400':
+          description: The start date cannot be after the end date
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '401':
+          description: The access token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unkown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+      deprecated: false
+    post:
+      summary: Creates a new event
+      description: ''
+      operationId: create_event
+      tags:
+        - Calendar
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/event'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+          description: Event was created
+        '400':
+          description: The data is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '401':
+          description: The access token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unkown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+  /api/bamboo-grove/event/{id}:
+    delete:
+      summary: Deletes the given event
+      description: ''
+      operationId: delete_event
+      tags:
+        - Calendar
+      responses:
+        '204':
+          description: Successfully deleted
+        '401':
+          description: The access token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unknown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+    put:
+      summary: Updates the given event
+      description: ''
+      operationId: update_event
+      tags:
+        - Calendar
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/event'
+      responses:
+        '204':
+          description: Successfully updated the event
+        '400':
+          description: The data is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '401':
+          description: The access token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+        '500':
+          description: Unkown error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_details'
+      security:
+        - Panda: [ ]
+    parameters:
+      - in: path
+        name: id
+        description: The id of the event
+        schema:
+          type: number
+        required: true
+components:
+  schemas:
+    login_request:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+        twoFactorCode:
+          type: string
+      required:
+        - email
+        - password
+    login_response:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/user'
+        token:
+          type: string
+      required:
+        - user
+        - token
+      additionalProperties: false
+    user:
+      type: object
+      properties:
+        id:
+          type: integer
+        displayName:
+          type: string
+        email:
+          type: string
+          format: email
+        isMod:
+          type: boolean
+        discordName:
+          type: string
+        appTotpEnabled:
+          type: boolean
+      required:
+        - displayName
+        - email
+        - isMod
+        - discordName
+        - appTotpEnabled
+    update_my_profile:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+        discordName:
+          type: string
+      required:
+        - email
+        - displayName
+        - discordName
+    change_my_password:
+      type: object
+      properties:
+        oldPassword:
+          type: string
+        newPassword:
+          type: string
+      required:
+        - oldPassword
+        - newPassword
+    crafter:
+      type: object
+      properties:
+        id:
+          type: integer
+        job:
+          type: string
+          enum:
+            - Carpenter
+            - Blacksmith
+            - Armorer
+            - Goldsmith
+            - Leatherworker
+            - Weaver
+            - Alchemist
+            - Culinarian
+            - Miner
+            - Botanist
+            - Fisher
+        level:
+          type: string
+        characterId:
+          type: integer
+      required:
+        - job
+        - characterId
+    fighter:
+      type: object
+      properties:
+        id:
+          type: integer
+        job:
+          type: string
+          enum:
+            - Paladin
+            - Warrior
+            - DarkKnight
+            - Gunbreaker
+            - WhiteMage
+            - Scholar
+            - Astrologian
+            - Sage
+            - Monk
+            - Dragoon
+            - Ninja
+            - Samurai
+            - Reaper
+            - Bard
+            - Machinist
+            - Dancer
+            - BlackMage
+            - Summoner
+            - RedMage
+            - BlueMage
+        level:
+          type: string
+        gearScore:
+          type: string
+        characterId:
+          type: integer
+      required:
+        - job
+        - characterId
+    character_housing:
+      type: object
+      properties:
+        id:
+          type: integer
+        district:
+          type: string
+          enum:
+            - TheLavenderBeds
+            - Mist
+            - TheGoblet
+            - Shirogane
+            - Empyreum
+        ward:
+          type: integer
+        plot:
+          type: integer
+        characterId:
+          type: integer
+      required:
+        - district
+        - ward
+        - plot
+        - characterId
+    error_details:
+      title: Root Type for ErrorDetails
+      type: object
+      properties:
+        entityType:
+          type: string
+          enum:
+            - user
+            - character
+            - crafter
+            - custom_field
+            - event
+            - fighter
+            - free_company
+        errorType:
+          enum:
+            - NotFound
+            - ExistsAlready
+            - InvalidData
+            - Io
+            - Db
+            - Serialization
+            - Validation
+            - InsufficientRights
+            - Unauthorized
+            - Unknown
+            - Crypto
+          type: string
+        message:
+          type: string
+      example:
+        entityType: crafter
+        errorType: NotFound
+        message: The crafter was not found
+      required:
+        - message
+        - errorType
+        - entityType
+    character:
+      type: object
+      properties:
+        id:
+          type: integer
+        race:
+          type: string
+          enum:
+            - Hyur
+            - Elezen
+            - Lalafell
+            - Miqote
+            - Roegadyn
+            - AuRa
+            - Hrothgar
+            - Viera
+        name:
+          type: string
+        world:
+          type: string
+        customFields:
+          type: array
+          items:
+            type: object
+            properties: { }
+        freeCompany:
+          $ref: '#/components/schemas/free_company'
+      required:
+        - race
+        - name
+        - world
+    free_company:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+        - id
+        - name
+    custom_character_field_option:
+      type: object
+      properties:
+        id:
+          type: integer
+        label:
+          type: string
+      required:
+        - id
+        - label
+      additionalProperties: false
+    custom_character_field:
+      type: object
+      properties:
+        id:
+          type: integer
+        label:
+          type: string
+        position:
+          type: integer
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/custom_character_field_option'
+      required:
+        - id
+        - label
+        - position
+        - options
+    event:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        color:
+          type: string
+      required:
+        - id
+        - title
+        - description
+        - startDate
+        - endDate
+        - color
+    validate_totp_request:
+      type: object
+      properties:
+        code:
+          type: string
+        password:
+          type: string
+      required:
+        - code
+        - password
+      additionalProperties: false
+    enable_totp_response:
+      type: object
+      properties:
+        qrCode:
+          type: string
+        secret:
+          type: string
+      required:
+        - qrCode
+        - secret
+      additionalProperties: false
+    modify_custom_character_field_request:
+      type: object
+      required:
+        - values
+        - label
+        - position
+      properties:
+        values:
+          type: array
+          items:
+            type: string
+        label:
+          type: string
+        position:
+          type: integer
+  securitySchemes:
+    Panda:
+      type: apiKey
+      description: The Pandaparty API key
+      name: Authorization
+      in: header
+  parameters: { }
+security:
+  - Panda: [ ]
+tags:
+  - name: Authentication
+    description: All endpoints around the authentication of users
+  - name: Profile
+    description: All endpoints around the current users profile
+  - name: User
+    description: All endpoints around the users of pandaparty
+  - name: Crafter
+    description: All endpoints around the crafter of the current character
+  - name: Fighter
+    description: All endpoints around the fighter of the current character
+  - name: Calendar
+    description: All endpoints around the calendar of pandaparty
+  - name: Character
+    description: All endpoints around the character of the current user
+  - name: Character Housing
+    description: All endpoints around the character housing of the current character
