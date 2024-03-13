@@ -9,7 +9,7 @@
   extends:
     - .base-cargo
   cache:
-    key: $CI_PROJECT_NAME-server
+    key: $CI_PROJECT_NAME-$ARCH-server
     paths:
       - $CI_PROJECT_DIR/target/
       - $CI_PROJECT_DIR/.cargo/
@@ -58,6 +58,12 @@ lint-server:
   stage: lint
   script:
     - cargo clippy --release --features groves-backend --features pandas-backend --bin groves-server --bin pandas-server
+  parallel:
+    matrix:
+      - ARCH: amd64
+      - ARCH: arm64
+  tags:
+    - runner-${ARCH}
 
 lint-web:
   extends:
@@ -72,12 +78,21 @@ build-server:
     - .base-server-cache
   script:
     - cargo build --release --bin pandas-server --bin groves-server --features pandas-backend --features groves-backend
+    - mkdir $ARCH
+    - cp target/release/pandas-server $ARCH/pandas-server
+    - cp target/release/groves-server $ARCH/groves-server
   needs:
     - lint-server
   artifacts:
     paths:
-      - target/release/pandas-server
-      - target/release/groves-server
+      - $ARCH/pandas-server
+      - $ARCH/groves-server
+  parallel:
+    matrix:
+      - ARCH: amd64
+      - ARCH: arm64
+  tags:
+    - runner-${ARCH}
 
 build-web:
   stage: build
@@ -107,12 +122,18 @@ docker-build-pandas:
   extends:
     - .base-kaniko
   script:
-    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/pandas.dockerfile" --destination "${CI_REGISTRY_IMAGE}/pandas:${CI_COMMIT_TAG}" --destination "${CI_REGISTRY_IMAGE}/pandas:latest"
+    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/pandas.dockerfile" --destination "${CI_REGISTRY_IMAGE}/pandas/${ARCH}:${CI_COMMIT_TAG}" --destination "${CI_REGISTRY_IMAGE}/pandas/${ARCH}:latest" --build-arg "ARCH=$ARCH"
   needs:
     - build-server
     - build-web
   rules:
     - if: $CI_COMMIT_TAG
+  parallel:
+    matrix:
+      - ARCH: amd64
+      - ARCH: arm64
+  tags:
+    - runner-${ARCH}
 
 docker-build-pandas-testing:
   stage: deploy
@@ -121,36 +142,142 @@ docker-build-pandas-testing:
   extends:
     - .base-kaniko
   script:
-    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/pandas.dockerfile" --destination "${CI_REGISTRY_IMAGE}/pandas:$CI_PIPELINE_IID-test"
+    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/pandas.dockerfile" --destination "${CI_REGISTRY_IMAGE}/pandas/${ARCH}:$CI_PIPELINE_IID-test" --build-arg "ARCH=$ARCH"
   needs:
     - build-server
     - build-web
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
+  parallel:
+    matrix:
+      - ARCH: amd64
+      - ARCH: arm64
+  tags:
+    - runner-${ARCH}
 
 docker-build-groves:
   stage: deploy
   extends:
     - .base-kaniko
   script:
-    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/groves.dockerfile" --destination "${CI_REGISTRY_IMAGE}/groves:${CI_COMMIT_TAG}" --destination "${CI_REGISTRY_IMAGE}/groves:latest"
+    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/groves.dockerfile" --destination "${CI_REGISTRY_IMAGE}/groves/${ARCH}:${CI_COMMIT_TAG}" --destination "${CI_REGISTRY_IMAGE}/groves:latest" --build-arg "ARCH=$ARCH"
   needs:
     - build-server
     - build-web
   rules:
     - if: $CI_COMMIT_TAG
+  parallel:
+    matrix:
+      - ARCH: amd64
+      - ARCH: arm64
+  tags:
+    - runner-${ARCH}
 
 docker-build-groves-testing:
   stage: deploy
   extends:
     - .base-kaniko
   script:
-    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/groves.dockerfile" --destination "${CI_REGISTRY_IMAGE}/groves:$CI_PIPELINE_IID-test"
+    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/groves.dockerfile" --destination "${CI_REGISTRY_IMAGE}/groves/${ARCH}:$CI_PIPELINE_IID-test" --build-arg "ARCH=$ARCH"
   needs:
     - build-server
     - build-web
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
+  parallel:
+    matrix:
+      - ARCH: amd64
+      - ARCH: arm64
+  tags:
+    - runner-${ARCH}
+
+merge-pandas-testing-manifests:
+  stage: deploy
+  needs:
+    - job: docker-build-pandas-testing
+      artifacts: false
+  image:
+    name: mplatform/manifest-tool:alpine
+    entrypoint: [""]
+  script:
+    - >-
+      manifest-tool
+      --username=${CI_REGISTRY_USER}
+      --password=${CI_REGISTRY_PASSWORD}
+      push from-args
+      --platforms linux/amd64,linux/arm64
+      --template ${CI_REGISTRY_IMAGE}/pandas/ARCH:$CI_PIPELINE_IID-test
+      --target ${CI_REGISTRY_IMAGE}/pandas:$CI_PIPELINE_IID-test
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+merge-groves-testing-manifests:
+  stage: deploy
+  needs:
+    - job: docker-build-groves-testing
+      artifacts: false
+  image:
+    name: mplatform/manifest-tool:alpine
+    entrypoint: [""]
+  script:
+    - >-
+      manifest-tool
+      --username=${CI_REGISTRY_USER}
+      --password=${CI_REGISTRY_PASSWORD}
+      push from-args
+      --platforms linux/amd64,linux/arm64
+      --template ${CI_REGISTRY_IMAGE}/groves/ARCH:$CI_PIPELINE_IID-test
+      --target ${CI_REGISTRY_IMAGE}/groves:$CI_PIPELINE_IID-test
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+merge-pandas-manifests:
+  stage: deploy
+  needs:
+    - job: docker-build-pandas
+      artifacts: false
+  image:
+    name: mplatform/manifest-tool:alpine
+    entrypoint: [""]
+  script:
+    - >-
+      manifest-tool
+      --username=${CI_REGISTRY_USER}
+      --password=${CI_REGISTRY_PASSWORD}
+      push from-args
+      --platforms linux/amd64,linux/arm64
+      --template ${CI_REGISTRY_IMAGE}/pandas/ARCH:$TAG
+      --target ${CI_REGISTRY_IMAGE}/pandas:$TAG
+  rules:
+    - if: $CI_COMMIT_TAG
+  parallel:
+    matrix:
+      - TAG: $CI_COMMIT_TAG
+      - TAG: latest
+
+merge-groves-manifests:
+  stage: deploy
+  needs:
+    - job: docker-build-groves
+      artifacts: false
+  image:
+    name: mplatform/manifest-tool:alpine
+    entrypoint: [""]
+  script:
+    - >-
+      manifest-tool
+      --username=${CI_REGISTRY_USER}
+      --password=${CI_REGISTRY_PASSWORD}
+      push from-args
+      --platforms linux/amd64,linux/arm64
+      --template ${CI_REGISTRY_IMAGE}/groves/ARCH:$TAG
+      --target ${CI_REGISTRY_IMAGE}/groves:$TAG
+  rules:
+    - if: $CI_COMMIT_TAG
+  parallel:
+    matrix:
+      - TAG: $CI_COMMIT_TAG
+      - TAG: latest
 
 pages:
   image: library/node:latest
