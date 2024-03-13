@@ -122,7 +122,7 @@ docker-build-pandas:
   extends:
     - .base-kaniko
   script:
-    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/pandas.dockerfile" --destination "${CI_REGISTRY_IMAGE}/pandas/${ARCH}:${CI_COMMIT_TAG}" --destination "${CI_REGISTRY_IMAGE}/pandas/${ARCH}:latest" --build-arg "ARCH=$ARCH"
+    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/pandas.${ARCH}.dockerfile" --destination "${CI_REGISTRY_IMAGE}/pandas/${ARCH}:${CI_COMMIT_TAG}" --destination "${CI_REGISTRY_IMAGE}/pandas/${ARCH}:latest"
   needs:
     - build-server
     - build-web
@@ -142,7 +142,7 @@ docker-build-pandas-testing:
   extends:
     - .base-kaniko
   script:
-    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/pandas.dockerfile" --destination "${CI_REGISTRY_IMAGE}/pandas/${ARCH}:$CI_PIPELINE_IID-test" --build-arg "ARCH=$ARCH"
+    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/pandas.${ARCH}.dockerfile" --destination "${CI_REGISTRY_IMAGE}/pandas/${ARCH}:$CI_PIPELINE_IID-test"
   needs:
     - build-server
     - build-web
@@ -160,7 +160,7 @@ docker-build-groves:
   extends:
     - .base-kaniko
   script:
-    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/groves.dockerfile" --destination "${CI_REGISTRY_IMAGE}/groves/${ARCH}:${CI_COMMIT_TAG}" --destination "${CI_REGISTRY_IMAGE}/groves:latest" --build-arg "ARCH=$ARCH"
+    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/groves.${ARCH}.dockerfile" --destination "${CI_REGISTRY_IMAGE}/groves/${ARCH}:${CI_COMMIT_TAG}" --destination "${CI_REGISTRY_IMAGE}/groves:latest"
   needs:
     - build-server
     - build-web
@@ -178,7 +178,7 @@ docker-build-groves-testing:
   extends:
     - .base-kaniko
   script:
-    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/groves.dockerfile" --destination "${CI_REGISTRY_IMAGE}/groves/${ARCH}:$CI_PIPELINE_IID-test" --build-arg "ARCH=$ARCH"
+    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/groves.${ARCH}.dockerfile" --destination "${CI_REGISTRY_IMAGE}/groves/${ARCH}:$CI_PIPELINE_IID-test"
   needs:
     - build-server
     - build-web
