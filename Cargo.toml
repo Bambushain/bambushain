@@ -118,7 +118,7 @@ rust-s3 = "0.33.0"
 sea-orm = { version = "0.12.15", features = ["with-json", "runtime-actix-rustls", "sqlx-postgres"] }
 sea-orm-migration = { version = "0.12.15", features = ["sqlx-mysql", "runtime-tokio-rustls"] }
 sentry = { version = "0.32.2", default-features = false, features = ["backtrace", "contexts", "panic", "debug-images", "reqwest", "rustls", "log"] }
-sentry-actix = "0.32.2"
+sentry-actix = "0.33.0"
 serde = { version = "1.0.197", features = ["derive"] }
 serde_json = "1.0.115"
 strum = "0.26.2"
