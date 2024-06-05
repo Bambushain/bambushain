@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use actix_web::{middleware, App, HttpServer};
 
 use bamboo_common::backend::dbal;
@@ -51,35 +49,10 @@ async fn setup_google_playstore_user(db: &sea_orm::DatabaseConnection) -> std::i
 }
 
 pub fn start_server() -> std::io::Result<()> {
-    let mut log_builder =
-        env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"));
-    let logger = sentry::integrations::log::SentryLogger::with_dest(log_builder.build());
+    let logger =
+        env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).build();
 
     log::set_boxed_logger(Box::new(logger)).unwrap();
-    log::set_max_level(log::LevelFilter::Info);
-
-    log::info!("Configure glitchtip");
-    let _sentry = sentry::init(sentry::ClientOptions {
-        release: sentry::release_name!(),
-        before_send: Some(Arc::new(|mut event| {
-            if let Some(mut request) = event.request {
-                request.cookies = None;
-                let _ = request.headers.remove_entry("authorization");
-                let _ = request.headers.remove_entry("x-forwarded-for");
-                let _ = request.headers.remove_entry("x-forwarded-host");
-                let _ = request.headers.remove_entry("x-forwarded-proto");
-                let _ = request.headers.remove_entry("x-forwarded-server");
-                let _ = request.headers.remove_entry("x-real-ip");
-                let _ = request.headers.remove_entry("cookie");
-                event.request = Some(request);
-            };
-            Some(event)
-        })),
-        attach_stacktrace: true,
-        auto_session_tracking: true,
-        session_mode: sentry::SessionMode::Request,
-        ..sentry::ClientOptions::default()
-    });
 
     actix_web::rt::System::new().block_on(async {
         log::info!("Open the bamboo grove");
@@ -130,7 +103,6 @@ pub fn start_server() -> std::io::Result<()> {
 
         HttpServer::new(move || {
             App::new()
-                .wrap(sentry_actix::Sentry::new())
                 .wrap(middleware::Compress::default())
                 .app_data(bamboo_common::backend::services::MinioService::new(
                     minio_client.clone(),
