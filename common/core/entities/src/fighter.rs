@@ -61,6 +61,10 @@ pub enum FighterJob {
     RedMage,
     #[cfg_attr(feature = "backend", sea_orm(string_value = "blue_mage"))]
     BlueMage,
+    #[cfg_attr(feature = "backend", sea_orm(string_value = "viper"))]
+    Viper,
+    #[cfg_attr(feature = "backend", sea_orm(string_value = "pictomancer"))]
+    Pictomancer,
 }
 
 impl FighterJob {
@@ -86,8 +90,10 @@ impl FighterJob {
             FighterJob::Summoner => "summoner.webp",
             FighterJob::RedMage => "redmage.webp",
             FighterJob::BlueMage => "bluemage.webp",
+            FighterJob::Viper => "viper.webp",
+            FighterJob::Pictomancer => "pictomancer.webp",
         }
-        .to_string()
+            .to_string()
     }
 
     pub fn get_job_name(self) -> String {
@@ -112,8 +118,10 @@ impl FighterJob {
             FighterJob::Summoner => "Summoner",
             FighterJob::RedMage => "RedMage",
             FighterJob::BlueMage => "BlueMage",
+            FighterJob::Viper => "Viper",
+            FighterJob::Pictomancer => "Pictomancer",
         }
-        .to_string()
+            .to_string()
     }
 }
 
@@ -152,8 +160,10 @@ impl ToString for FighterJob {
             FighterJob::Summoner => "Beschwörer",
             FighterJob::RedMage => "Rotmagier",
             FighterJob::BlueMage => "Blaumagier",
+            FighterJob::Viper => "Viper",
+            FighterJob::Pictomancer => "Piktomant"
         }
-        .to_string()
+            .to_string()
     }
 }
 
@@ -180,6 +190,8 @@ impl From<String> for FighterJob {
             "Summoner" => FighterJob::Summoner,
             "RedMage" => FighterJob::RedMage,
             "BlueMage" => FighterJob::BlueMage,
+            "Viper" => FighterJob::Viper,
+            "Piktomant" => FighterJob::Pictomancer,
             _ => unreachable!(),
         }
     }

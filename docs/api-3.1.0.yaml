@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Bambushain
-  version: 3.0.0
+  version: 3.1.0
   description: Bambushain Server API
   contact:
     name: Panda Helferlein
@@ -2388,6 +2388,8 @@ components:
             - Summoner
             - RedMage
             - BlueMage
+            - Viper
+            - Pictomancer
         level:
           type: string
         gearScore:
@@ -2593,7 +2595,7 @@ components:
   securitySchemes:
     Panda:
       type: apiKey
-      description: The Pandaparty API key
+      description: The Bambushain API key
       name: Authorization
       in: header
   parameters: { }
@@ -2605,13 +2607,13 @@ tags:
   - name: Profile
     description: All endpoints around the current users profile
   - name: User
-    description: All endpoints around the users of pandaparty
+    description: All endpoints around the users of Bambushain
   - name: Crafter
     description: All endpoints around the crafter of the current character
   - name: Fighter
     description: All endpoints around the fighter of the current character
   - name: Calendar
-    description: All endpoints around the calendar of pandaparty
+    description: All endpoints around the calendar of Bambushain
   - name: Character
     description: All endpoints around the character of the current user
   - name: Character Housing
