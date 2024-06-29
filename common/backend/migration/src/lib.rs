@@ -25,6 +25,7 @@ mod m20231230_001307_update_table_user_add_column_grove_id;
 mod m20231230_231220_update_table_character_change_unique;
 mod m20240117_125532_fix_foreign_key_custom_character_field;
 mod m20240628_235106_dawntrail_jobs;
+mod m20240629_094035_character_world_name_unique_fix;
 
 pub struct Migrator;
 
@@ -57,6 +58,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20231230_231220_update_table_character_change_unique::Migration),
             Box::new(m20240117_125532_fix_foreign_key_custom_character_field::Migration),
             Box::new(m20240628_235106_dawntrail_jobs::Migration),
+            Box::new(m20240629_094035_character_world_name_unique_fix::Migration),
         ]
     }
 }
