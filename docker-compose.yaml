@@ -1,7 +1,7 @@
 version: "3"
 services:
   bamboo-postgres:
-    image: library/postgres:15-alpine
+    image: library/postgres:14-alpine
     environment:
       POSTGRES_DB: bamboo
       POSTGRES_PASSWORD: bamboo

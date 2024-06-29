@@ -14,7 +14,7 @@ impl MigrationTrait for Migration {
             .drop_foreign_key(
                 ForeignKey::drop()
                     .table((Schemas::FinalFantasy, CustomCharacterFieldValue::Table))
-                    .name("custom_character_field_value_custom_character_field_id_fkey1")
+                    .name("custom_character_field_value_custom_character_field_id_fkey")
                     .to_owned(),
             )
             .await?;
