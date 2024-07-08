@@ -1,11 +1,32 @@
-use actix_web::{web, HttpResponse};
-
-use crate::middleware::authenticate_user::authenticate;
+use std::fs::File;
+use actix_web::web;
 use bamboo_common::backend::services::{EnvService, EnvironmentService};
+use uuid::Uuid;
 
-mod authentication;
 mod groves;
 mod user;
+
+fn prepare_index_file(frontend_base_path: impl Into<String> + std::fmt::Display) -> impl Into<String> + std::fmt::Display + Clone {
+    let err = "index.html must be available";
+
+    let index_file = File::open(format!("{frontend_base_path}/dist/index.html")).expect(err);
+
+    let mut engine = handlebars::Handlebars::new();
+    let tmpl = std::io::read_to_string(index_file).expect(err);
+    handlebars::handlebars_helper!(get_env: |key: String| {
+        let environment_service = EnvironmentService::new();
+        environment_service.get_env(key, "")
+    });
+    engine.register_helper("get_env", Box::new(get_env));
+
+    let mut tmp_file_name = std::env::temp_dir();
+    tmp_file_name.push(format!("{}.html", Uuid::new_v4()));
+
+    let output = File::create(tmp_file_name.clone()).expect(err);
+    engine.render_template_to_write(tmpl.as_str(), &None::<String>, output).expect(err);
+
+    format!("{}", tmp_file_name.display())
+}
 
 pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     let environment_service = EnvService::new(EnvironmentService::new());
@@ -13,16 +34,11 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     let frontend_base_path = environment_service.get_env("FRONTEND_DIR", ".");
     log::info!("Frontend base path: {frontend_base_path}");
 
+    log::info!("Prepare the index.html file with the environment data");
+    let index_file = prepare_index_file(frontend_base_path.clone());
+    log::info!("The index file is stored in {}", index_file.clone());
+
     cfg.app_data(environment_service)
-        .service(authentication::login)
-        .service(authentication::login_callback)
-        .service(authentication::logout)
-        .route(
-            "/api/login",
-            web::head()
-                .to(HttpResponse::NoContent)
-                .wrap(authenticate!()),
-        )
         .service(groves::get_groves)
         .service(groves::get_grove)
         .service(groves::create_grove)
@@ -35,7 +51,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
         .service(user::remove_user_mod)
         .service(
             actix_web_lab::web::spa()
-                .index_file(format!("{frontend_base_path}/dist/index.html"))
+                .index_file(index_file.into())
                 .static_resources_location(format!("{frontend_base_path}/dist"))
                 .static_resources_mount("/static")
                 .finish(),

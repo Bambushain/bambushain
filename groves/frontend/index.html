@@ -30,6 +30,11 @@
     <meta content="#6275D5" name="msapplication-TileColor">
     <meta content="#6275D5" name="theme-color">
     <meta content="width=device-width, initial-scale=1" name="viewport">
+
+    <meta content="{{ get_env 'FRONTEND_CLIENT_ID' }}" name="bamboo-client-id">
+    <meta content="{{ get_env 'ISSUER_URL' }}" name="bamboo-issuer-url">
+    <meta content="{{ get_env 'CLIENT_ID' }}" name="bamboo-aud">
+    <meta content="{{ get_env 'OIDC_AUD' }}" name="bamboo-aud">
 </head>
 <body>
 </body>

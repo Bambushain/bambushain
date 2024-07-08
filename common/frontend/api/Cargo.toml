@@ -10,6 +10,7 @@ license.workspace = true
 bamboo-common-core = { path = "../../core" }
 
 gloo-net = { workspace = true }
+gloo-storage = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

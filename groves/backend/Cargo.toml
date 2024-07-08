@@ -9,10 +9,12 @@ license.workspace = true
 [dependencies]
 bamboo-common = { path = "../../common", features = ["backend"] }
 
-actix-session = { workspace = true }
 actix-web = { workspace = true }
 actix-web-lab = { workspace = true }
 env_logger = { workspace = true }
+handlebars = { workspace = true }
 log = { workspace = true }
 openidconnect = { workspace = true }
 serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
