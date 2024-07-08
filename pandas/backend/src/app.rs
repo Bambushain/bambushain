@@ -42,9 +42,9 @@ async fn setup_google_playstore_user(db: &sea_orm::DatabaseConnection) -> std::i
             password,
             db,
         )
-            .await
-            .map_err(std::io::Error::other)
-            .map(|_| ())
+        .await
+        .map_err(std::io::Error::other)
+        .map(|_| ())
     }
 }
 
@@ -57,7 +57,9 @@ pub fn start_server() -> std::io::Result<()> {
             .await
             .map_err(std::io::Error::other)?;
 
-        let migrations = Migrator::get_pending_migrations(&db).await.map_err(std::io::Error::other)?;
+        let migrations = Migrator::get_pending_migrations(&db)
+            .await
+            .map_err(std::io::Error::other)?;
         log::info!("Running {} migrations", migrations.len());
 
         Migrator::up(&db, None)
@@ -75,22 +77,22 @@ pub fn start_server() -> std::io::Result<()> {
                 .ok()
                 .map_or(false, |val| val.to_lowercase() == "true"),
         )
-            .map_err(std::io::Error::other)?;
+        .map_err(std::io::Error::other)?;
 
         if groves.is_empty()
             || groves
-            .iter()
-            .filter(|grove| grove.name == *"Google")
-            .count()
-            == groves.len()
+                .iter()
+                .filter(|grove| grove.name == *"Google")
+                .count()
+                == groves.len()
         {
             log::info!("Create initial grove as it doesn't exist");
             let initial_grove = dbal::create_grove(
                 std::env::var("INITIAL_GROVE").expect("Needs INITIAL_GROVE"),
                 &db,
             )
-                .await
-                .map_err(std::io::Error::other)?;
+            .await
+            .map_err(std::io::Error::other)?;
 
             log::info!("Migrate existing users and events to the new grove");
             dbal::migrate_between_groves(None, initial_grove.id, &db)
@@ -112,9 +114,9 @@ pub fn start_server() -> std::io::Result<()> {
                 .app_data(DbConnection::new(db.clone()))
                 .configure(routes::configure_routes)
         })
-            .bind(("0.0.0.0", 8070))?
-            .run()
-            .await
+        .bind(("0.0.0.0", 8070))?
+        .run()
+        .await
     })?;
     Ok(())
 }

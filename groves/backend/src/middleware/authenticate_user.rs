@@ -1,39 +1,39 @@
-use actix_session::Session;
 use actix_web::{body, dev, Error, HttpMessage};
 use actix_web_lab::middleware::Next;
-use openidconnect::AccessToken;
-
 use bamboo_common::backend::services::EnvService;
 use bamboo_common::core::error::BambooError;
+use openidconnect::AccessToken;
 
-use crate::authentication::{get_client, validate_user, ACCESS_TOKEN};
+use crate::authentication::{get_client, validate_user};
 
 pub type Username = String;
 
 pub async fn authenticate_user(
-    session: Session,
     req: dev::ServiceRequest,
     next: Next<impl body::MessageBody>,
 ) -> Result<dev::ServiceResponse<impl body::MessageBody>, Error> {
-    let connection_info = req.connection_info().clone();
-    let host = connection_info.host();
     let env_service = req
         .app_data::<EnvService>()
         .ok_or(BambooError::unauthorized("login", "Invalid data"))?;
-    let client = get_client(host.into(), env_service.clone()).await?;
-    let access_token = session
-        .get::<AccessToken>(ACCESS_TOKEN)
-        .map_err(|err| {
-            log::error!("{ACCESS_TOKEN}: {err}");
-            BambooError::unauthorized("login", "Invalid session")
-        })?
-        .ok_or_else(|| BambooError::unauthorized("login", "Invalid session"))?;
-    let name = validate_user(access_token, client).await?;
-    session.renew();
+    let client = get_client(env_service.clone()).await?;
+    let authorization_header = req.headers().get("Authorization");
+    if let Some(authorization_header) = authorization_header {
+        let access_token = authorization_header
+            .to_str()
+            .map_err(|_| BambooError::unauthorized("login", "Invalid header"))?
+            .to_string();
+        if let Some(access_token) = access_token.strip_prefix("Bearer ") {
+            let name = validate_user(AccessToken::new(access_token.to_string()), client).await?;
 
-    req.extensions_mut().insert(name as Username);
+            req.extensions_mut().insert(name as Username);
 
-    next.call(req).await
+            next.call(req).await
+        } else {
+            Err(BambooError::unauthorized("login", "Invalid header").into())
+        }
+    } else {
+        Err(BambooError::unauthorized("login", "Invalid authorization").into())
+    }
 }
 
 macro_rules! authenticate {

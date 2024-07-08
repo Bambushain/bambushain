@@ -1,19 +1,11 @@
-use gloo_utils::window;
 use stylist::yew::use_style;
 use yew::prelude::*;
+use yew_autoprops::autoprops;
 use yew_cosmo::prelude::*;
 
+#[autoprops]
 #[function_component(LoginContent)]
-fn login_content() -> Html {
-    let perform_login = use_callback((), |_, _| {
-        if let Err(err) = window().location().set_href("/api/login") {
-            log::error!(
-                "Failed to start login: {}",
-                err.as_string().unwrap_or("".to_string())
-            );
-        }
-    });
-
+fn login_content(on_login: &Callback<()>) -> Html {
     let login_around_style = use_style!(
         r#"
 position: fixed;
@@ -58,15 +50,16 @@ border-radius: var(--border-radius);
         <div class={login_around_style}>
             <div class={classes!(login_container_style, "login-page")}>
                 <CosmoTitle title="Anmelden" />
-                <CosmoButton state={CosmoButtonType::Primary} on_click={perform_login} label="Anmelden mit Zitadel"/>
+                <CosmoButton state={CosmoButtonType::Primary} on_click={on_login} label="Anmelden mit Zitadel"/>
             </div>
         </div>
     )
 }
 
+#[autoprops]
 #[function_component(LoginPage)]
-pub fn login_page() -> Html {
+pub fn login_page(on_login: &Callback<()>) -> Html {
     html!(
-        <LoginContent />
+        <LoginContent on_login={on_login} />
     )
 }

@@ -1,7 +1,7 @@
-use sea_orm_migration::prelude::*;
 use crate::extension::postgres::Type;
 use crate::m20220101_000001_create_schemas::Schemas;
-use crate::sea_orm::{EnumIter};
+use crate::sea_orm::EnumIter;
+use sea_orm_migration::prelude::*;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -13,13 +13,14 @@ impl MigrationTrait for Migration {
             .alter_type(
                 Type::alter()
                     .name((Schemas::FinalFantasy, Alias::new("fighter_job")))
-                    .add_value(FighterJob::Viper)
-            ).await?;
+                    .add_value(FighterJob::Viper),
+            )
+            .await?;
         manager
             .alter_type(
                 Type::alter()
                     .name((Schemas::FinalFantasy, Alias::new("fighter_job")))
-                    .add_value(FighterJob::Pictomancer)
+                    .add_value(FighterJob::Pictomancer),
             )
             .await
     }

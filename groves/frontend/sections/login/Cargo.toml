@@ -11,4 +11,5 @@ log = { workspace = true }
 stylist = { workspace = true }
 gloo-utils = { workspace = true }
 yew = { workspace = true }
+yew-autoprops = { workspace = true }
 yew-cosmo = { workspace = true }

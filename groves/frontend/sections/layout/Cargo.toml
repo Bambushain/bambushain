@@ -12,9 +12,13 @@ bamboo-groves-frontend-section-login = { path = "../../sections/login" }
 bamboo-groves-frontend-section-users = { path = "../../sections/users" }
 
 bounce = { workspace = true }
+gloo-storage = { workspace = true }
 gloo-utils = { workspace = true }
 log = { workspace = true }
+url = { workspace = true }
+web-sys = { workspace = true }
 yew = { workspace = true }
 yew-cosmo = { workspace = true }
 yew-hooks = { workspace = true }
+yew-oauth2 = { workspace = true }
 yew-router = { workspace = true }
