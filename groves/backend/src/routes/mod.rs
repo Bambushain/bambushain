@@ -1,12 +1,14 @@
-use std::fs::File;
 use actix_web::web;
 use bamboo_common::backend::services::{EnvService, EnvironmentService};
+use std::fs::File;
 use uuid::Uuid;
 
 mod groves;
 mod user;
 
-fn prepare_index_file(frontend_base_path: impl Into<String> + std::fmt::Display) -> impl Into<String> + std::fmt::Display + Clone {
+fn prepare_index_file(
+    frontend_base_path: impl Into<String> + std::fmt::Display,
+) -> impl Into<String> + std::fmt::Display + Clone {
     let err = "index.html must be available";
 
     let index_file = File::open(format!("{frontend_base_path}/dist/index.html")).expect(err);
@@ -23,7 +25,9 @@ fn prepare_index_file(frontend_base_path: impl Into<String> + std::fmt::Display)
     tmp_file_name.push(format!("{}.html", Uuid::new_v4()));
 
     let output = File::create(tmp_file_name.clone()).expect(err);
-    engine.render_template_to_write(tmpl.as_str(), &None::<String>, output).expect(err);
+    engine
+        .render_template_to_write(tmpl.as_str(), &None::<String>, output)
+        .expect(err);
 
     format!("{}", tmp_file_name.display())
 }

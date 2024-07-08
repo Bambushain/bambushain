@@ -1,8 +1,8 @@
 use actix_web::{body, dev, Error, HttpMessage};
 use actix_web_lab::middleware::Next;
-use openidconnect::AccessToken;
 use bamboo_common::backend::services::EnvService;
 use bamboo_common::core::error::BambooError;
+use openidconnect::AccessToken;
 
 use crate::authentication::{get_client, validate_user};
 

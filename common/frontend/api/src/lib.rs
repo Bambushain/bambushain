@@ -145,16 +145,14 @@ pub async fn handle_response_code(response: Response) -> BambooApiResult<()> {
 }
 
 macro_rules! authorization_header {
-    () => {
-        {
-            let headers = Headers::new();
-            if let Ok(access_token) = SessionStorage::get::<String>("/bamboo/access-token") {
-                headers.set("Authorization", format!("Bearer {access_token}").as_str());
-            }
-
-            headers
+    () => {{
+        let headers = Headers::new();
+        if let Ok(access_token) = SessionStorage::get::<String>("/bamboo/access-token") {
+            headers.set("Authorization", format!("Bearer {access_token}").as_str());
         }
-    };
+
+        headers
+    }};
 }
 
 macro_rules! request_with_response {

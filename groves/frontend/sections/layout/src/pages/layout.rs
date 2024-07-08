@@ -1,15 +1,15 @@
-use std::fmt::Display;
 use bounce::helmet::Helmet;
 use gloo_storage::{SessionStorage, Storage};
 use gloo_utils::{head, window};
+use std::fmt::Display;
 use url::Url;
-use web_sys::Element;
 use web_sys::wasm_bindgen::JsCast;
+use web_sys::Element;
 use yew::prelude::*;
 use yew_cosmo::prelude::*;
 use yew_oauth2::agent::{LoginOptions, OAuth2Operations};
 use yew_oauth2::hook::use_latest_access_token;
-use yew_oauth2::openid::{Config, OAuth2, use_auth_agent};
+use yew_oauth2::openid::{use_auth_agent, Config, OAuth2};
 use yew_oauth2::prelude::{Authenticated, NotAuthenticated};
 use yew_router::prelude::*;
 
@@ -137,7 +137,7 @@ fn get_meta_attributes(key: impl Into<String> + Display) -> Vec<String> {
             .get_attribute("content")
             .expect(error.as_str());
         values.push(value);
-    };
+    }
 
     values
 }
@@ -145,10 +145,14 @@ fn get_meta_attributes(key: impl Into<String> + Display) -> Vec<String> {
 #[function_component(Layout)]
 pub fn layout() -> Html {
     let redirect_url = window().location().origin().expect("Should have origin");
-    let login_options = LoginOptions::new().with_redirect_url(Url::parse(redirect_url.as_str()).unwrap());
-    let config = Config::new(get_meta_attribute("bamboo-client-id"), get_meta_attribute("bamboo-issuer-url"))
-        .with_additional_trusted_audiences(get_meta_attributes("bamboo-aud"))
-        .with_after_logout_url(redirect_url);
+    let login_options =
+        LoginOptions::new().with_redirect_url(Url::parse(redirect_url.as_str()).unwrap());
+    let config = Config::new(
+        get_meta_attribute("bamboo-client-id"),
+        get_meta_attribute("bamboo-issuer-url"),
+    )
+    .with_additional_trusted_audiences(get_meta_attributes("bamboo-aud"))
+    .with_after_logout_url(redirect_url);
 
     html!(
         <OAuth2 {config} scopes={vec!["openid".to_string(), "profile".to_string()]} login_options={login_options}>

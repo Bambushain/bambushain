@@ -1,6 +1,8 @@
 use openidconnect::core::{CoreClient, CoreProviderMetadata, CoreUserInfoClaims};
 use openidconnect::reqwest::async_http_client;
-use openidconnect::{AccessToken, AdditionalClaims, ClientId, ClientSecret, IssuerUrl, RevocationUrl};
+use openidconnect::{
+    AccessToken, AdditionalClaims, ClientId, ClientSecret, IssuerUrl, RevocationUrl,
+};
 use serde::{Deserialize, Serialize};
 
 use bamboo_common::backend::services::EnvService;
@@ -23,8 +25,8 @@ pub async fn get_client(env_service: EnvService) -> BambooResult<CoreClient> {
             .map_err(|_| BambooError::unauthorized("login", "Invalid configuration"))?,
         async_http_client,
     )
-        .await
-        .map_err(|_| BambooError::unauthorized("login", "Invalid configuration"))?;
+    .await
+    .map_err(|_| BambooError::unauthorized("login", "Invalid configuration"))?;
 
     let mut client = CoreClient::from_provider_metadata(
         provider_metadata,
