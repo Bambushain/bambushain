@@ -191,7 +191,7 @@ impl From<String> for FighterJob {
             "RedMage" => FighterJob::RedMage,
             "BlueMage" => FighterJob::BlueMage,
             "Viper" => FighterJob::Viper,
-            "Piktomant" => FighterJob::Pictomancer,
+            "Pictomancer" => FighterJob::Pictomancer,
             _ => unreachable!(),
         }
     }
