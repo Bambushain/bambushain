@@ -1,8 +1,8 @@
-use std::cmp::Ordering;
-use std::fmt::{Display, Formatter};
 #[cfg(feature = "backend")]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
+use std::fmt::{Display, Formatter};
 
 #[cfg(feature = "backend")]
 use bamboo_common_backend_macros::*;
@@ -71,7 +71,7 @@ impl Ord for CharacterRace {
 
 impl Display for CharacterRace {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str( match self {
+        f.write_str(match self {
             Self::Hyur => "Hyuran",
             Self::Elezen => "Elezen",
             Self::Lalafell => "Lalafell",

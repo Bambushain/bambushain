@@ -1,6 +1,6 @@
 use actix_web::cookie::Cookie;
 use actix_web::{delete, post, web, HttpResponse};
-
+use bamboo_common::backend::dbal::create_token;
 use bamboo_common::backend::response::*;
 use bamboo_common::backend::services::{DbConnection, EnvService};
 use bamboo_common::backend::{dbal, mailing};
@@ -10,15 +10,25 @@ use bamboo_common::core::error::*;
 use crate::middleware::authenticate_user::{authenticate, Authentication};
 
 #[post("/api/login")]
-pub async fn login(
-    body: Option<web::Json<Login>>,
-    db: DbConnection,
-    env_service: EnvService,
-) -> BambooApiResponseResult {
+pub async fn login(body: Option<web::Json<Login>>, db: DbConnection) -> BambooApiResponseResult {
     let body = check_missing_fields!(body, "authentication")?;
 
-    if body.email.clone() == "playstore@google.bambushain" {
-        dbal::create_google_auth_token(body.password.clone(), &db)
+    let data = dbal::validate_auth(
+        body.email.clone(),
+        body.password.clone(),
+        body.two_factor_code.clone(),
+        &db,
+    )
+    .await
+    .map_err(|err| {
+        log::error!("Failed to login {err}");
+        BambooError::unauthorized("user", "Login data is invalid")
+    })?;
+
+    if data.requires_two_factor_code {
+        Ok(no_content!())
+    } else {
+        create_token(body.email.clone(), &db)
             .await
             .map_err(|err| {
                 log::error!("Failed to login {err}");
@@ -32,54 +42,9 @@ pub async fn login(
                         .http_only(true)
                         .finish(),
                 );
+
                 response
             })
-    } else if let Some(two_factor_code) = body.two_factor_code.clone() {
-        dbal::validate_auth_and_create_token(
-            body.email.clone(),
-            body.password.clone(),
-            two_factor_code,
-            &db,
-        )
-        .await
-        .map_err(|err| {
-            log::error!("Failed to login {err}");
-            BambooError::unauthorized("user", "Login data is invalid")
-        })
-        .map(|data| {
-            let mut response = list!(data.clone());
-            let _ = response.add_cookie(
-                &Cookie::build(crate::cookie::BAMBOO_AUTH_COOKIE, data.token.clone())
-                    .path("/")
-                    .http_only(true)
-                    .finish(),
-            );
-
-            response
-        })
-    } else {
-        let data = dbal::validate_auth_and_set_two_factor_code(
-            body.email.clone(),
-            body.password.clone(),
-            &db,
-        )
-        .await
-        .map_err(|err| {
-            log::error!("Failed to login {err}");
-            BambooError::unauthorized("user", "Login data is invalid")
-        })?;
-        if let Some(two_factor_code) = data.two_factor_code {
-            mailing::authentication::send_two_factor_mail(
-                data.user.display_name,
-                data.user.email,
-                two_factor_code,
-                env_service,
-            )
-            .await
-            .map(|_| no_content!())
-        } else {
-            Ok(no_content!())
-        }
     }
 }
 

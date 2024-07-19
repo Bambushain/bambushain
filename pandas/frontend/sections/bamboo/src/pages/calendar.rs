@@ -34,11 +34,10 @@ enum ColorYiqResult {
 
 impl Display for ColorYiqResult {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str(
-            match self {
-                ColorYiqResult::Light => "#ffffff",
-                ColorYiqResult::Dark => "#333333",
-            })
+        f.write_str(match self {
+            ColorYiqResult::Light => "#ffffff",
+            ColorYiqResult::Dark => "#333333",
+        })
     }
 }
 

@@ -57,7 +57,8 @@ pub async fn enable_totp(
     dbal::enable_my_totp(authentication.user.id, secret, &db)
         .await
         .map(|_| {
-            totp.account_name.clone_from(&authentication.user.display_name);
+            totp.account_name
+                .clone_from(&authentication.user.display_name);
             totp.issuer = Some("Bambushain".to_string());
             let qr = totp.get_qr_base64().map_err(|err| {
                 log::error!("Failed to enable totp {err}");

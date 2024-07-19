@@ -1,8 +1,8 @@
-use std::cmp::Ordering;
-use std::fmt::{Display, Formatter};
 #[cfg(feature = "backend")]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
+use std::fmt::{Display, Formatter};
 
 #[cfg(feature = "backend")]
 use bamboo_common_backend_macros::*;
@@ -42,7 +42,7 @@ impl HousingDistrict {
             HousingDistrict::Shirogane => "shirogane",
             HousingDistrict::Empyreum => "empyreum",
         }
-            .to_string()
+        .to_string()
     }
 }
 
@@ -110,7 +110,7 @@ impl HousingType {
             HousingType::FreeCompany => "free_company",
             HousingType::SharedApartment => "shared_appartment",
         }
-            .to_string()
+        .to_string()
     }
 }
 

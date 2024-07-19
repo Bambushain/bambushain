@@ -19,7 +19,7 @@ fn login_content() -> Html {
     let password_state = use_state_eq(|| AttrValue::from(""));
     let two_factor_code_state = use_state_eq(|| AttrValue::from(""));
 
-    let two_factor_code_requested_toggle = use_bool_toggle(false);
+    let two_factor_code_required_toggle = use_bool_toggle(false);
     let forgot_password_toggle = use_bool_toggle(false);
 
     let login = {
@@ -27,7 +27,7 @@ fn login_content() -> Html {
         let password_state = password_state.clone();
         let two_factor_code_state = two_factor_code_state.clone();
 
-        let two_factor_code_requested_toggle = two_factor_code_requested_toggle.clone();
+        let two_factor_code_required_toggle = two_factor_code_required_toggle.clone();
 
         use_async(async move {
             let two_factor_code = if (*two_factor_code_state).is_empty() {
@@ -49,11 +49,11 @@ fn login_content() -> Html {
                     Ok(())
                 }
                 Ok(either::Right(_)) => {
-                    two_factor_code_requested_toggle.set(true);
+                    two_factor_code_required_toggle.set(true);
                     Ok(())
                 }
                 Err(_) => {
-                    if *two_factor_code_requested_toggle {
+                    if *two_factor_code_required_toggle {
                         Err("Der Zwei Faktor Code ist ungültig")
                     } else {
                         Err("Die Email und das Passwort passen nicht zusammen")
@@ -169,7 +169,7 @@ align-items: center;
                         <Icon icon_id={IconId::LucideLogIn} /> {"Melde dich an und betrete den Bambushain"}
                     }
                 </p>
-                if !*two_factor_code_requested_toggle && !*forgot_password_toggle {
+                if !*two_factor_code_required_toggle && !*forgot_password_toggle {
                     <CosmoForm on_submit={login_submit} buttons={html!(
                         <>
                             <CosmoButton state={CosmoButtonType::Default} label="Passwort vergessen" on_click={forgot_password_click} />

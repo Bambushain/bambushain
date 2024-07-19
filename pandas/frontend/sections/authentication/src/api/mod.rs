@@ -1,5 +1,5 @@
 use bamboo_common::core::entities::*;
-use bamboo_common::frontend::api::BambooApiResult;
+use bamboo_common::frontend::api::{ApiError, BambooApiResult};
 use bamboo_pandas_frontend_base::*;
 
 pub async fn get_my_profile() -> BambooApiResult<WebUser> {
@@ -12,14 +12,14 @@ pub async fn get_my_profile() -> BambooApiResult<WebUser> {
 
 pub async fn login(login_data: Login) -> BambooApiResult<either::Either<LoginResult, ()>> {
     log::debug!("Execute login");
-    if login_data.two_factor_code.is_some()
-        || login_data.email.clone() == "playstore@google.bambushain"
-    {
-        let result = api::post("/api/login", &login_data).await?;
-        Ok(either::Left(result))
-    } else {
-        api::post_no_content("/api/login", &login_data).await?;
+    let response = api::post_response("/api/login", &login_data).await?;
+    if response.status() == 204 {
         Ok(either::Right(()))
+    } else {
+        Ok(
+            either::Left(serde_json::from_str(response.text().await.unwrap().as_str())
+                .map_err(|_| ApiError::json_deserialize_error())?)
+        )
     }
 }
 

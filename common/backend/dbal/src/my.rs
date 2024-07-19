@@ -98,7 +98,7 @@ pub async fn validate_my_totp(
     db: &DatabaseConnection,
 ) -> BambooResult<bool> {
     let user = dbal::get_user_by_id_only(id, db).await?;
-    let valid = dbal::validate_login(id, code, password.clone(), true, db)
+    let valid = dbal::validate_two_factor_code(id, code, password.clone(), true, db)
         .await
         .is_ok();
     let totp_secret = encrypt_string(user.totp_secret.unwrap(), password)?;
