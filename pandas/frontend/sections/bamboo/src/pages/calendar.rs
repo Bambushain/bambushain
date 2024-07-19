@@ -1,5 +1,6 @@
 #![allow(clippy::clone_on_copy)]
 
+use std::fmt::{Display, Formatter};
 use std::ops::Deref;
 use std::pin::Pin;
 use std::task::{Context, Poll};
@@ -31,13 +32,13 @@ enum ColorYiqResult {
     Dark,
 }
 
-impl ToString for ColorYiqResult {
-    fn to_string(&self) -> String {
-        match self {
-            ColorYiqResult::Light => "#ffffff",
-            ColorYiqResult::Dark => "#333333",
-        }
-        .to_string()
+impl Display for ColorYiqResult {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(
+            match self {
+                ColorYiqResult::Light => "#ffffff",
+                ColorYiqResult::Dark => "#333333",
+            })
     }
 }
 

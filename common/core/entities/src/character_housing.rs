@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-
+use std::fmt::{Display, Formatter};
 #[cfg(feature = "backend")]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -42,20 +42,19 @@ impl HousingDistrict {
             HousingDistrict::Shirogane => "shirogane",
             HousingDistrict::Empyreum => "empyreum",
         }
-        .to_string()
+            .to_string()
     }
 }
 
-impl ToString for HousingDistrict {
-    fn to_string(&self) -> String {
-        match self {
+impl Display for HousingDistrict {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
             HousingDistrict::TheLavenderBeds => "Lavendelbeete",
             HousingDistrict::Mist => "Dorf des Nebels",
             HousingDistrict::TheGoblet => "Kelchkuppe",
             HousingDistrict::Shirogane => "Shirogane",
             HousingDistrict::Empyreum => "Empyreum",
-        }
-        .to_string()
+        })
     }
 }
 
@@ -111,18 +110,17 @@ impl HousingType {
             HousingType::FreeCompany => "free_company",
             HousingType::SharedApartment => "shared_appartment",
         }
-        .to_string()
+            .to_string()
     }
 }
 
-impl ToString for HousingType {
-    fn to_string(&self) -> String {
-        match self {
+impl Display for HousingType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
             HousingType::Private => "Private Unterkunft",
             HousingType::FreeCompany => "Unterkunft einer Freien Gesellschaft",
             HousingType::SharedApartment => "Wohngemeinschaft",
-        }
-        .to_string()
+        })
     }
 }
 

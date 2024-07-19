@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-
+use std::fmt::{Display, Formatter};
 #[cfg(feature = "backend")]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -69,9 +69,9 @@ impl Ord for CharacterRace {
     }
 }
 
-impl ToString for CharacterRace {
-    fn to_string(&self) -> String {
-        match self {
+impl Display for CharacterRace {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str( match self {
             Self::Hyur => "Hyuran",
             Self::Elezen => "Elezen",
             Self::Lalafell => "Lalafell",
@@ -80,8 +80,7 @@ impl ToString for CharacterRace {
             Self::AuRa => "Au Ra",
             Self::Hrothgar => "Hrothgar",
             Self::Viera => "Viera",
-        }
-        .to_string()
+        })
     }
 }
 

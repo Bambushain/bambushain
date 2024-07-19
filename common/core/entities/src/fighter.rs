@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-
+use std::fmt::{Display, Formatter};
 #[cfg(feature = "backend")]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -93,7 +93,7 @@ impl FighterJob {
             FighterJob::Viper => "viper.webp",
             FighterJob::Pictomancer => "pictomancer.webp",
         }
-        .to_string()
+            .to_string()
     }
 
     pub fn get_job_name(self) -> String {
@@ -121,7 +121,7 @@ impl FighterJob {
             FighterJob::Viper => "Viper",
             FighterJob::Pictomancer => "Pictomancer",
         }
-        .to_string()
+            .to_string()
     }
 }
 
@@ -137,9 +137,9 @@ impl Ord for FighterJob {
     }
 }
 
-impl ToString for FighterJob {
-    fn to_string(&self) -> String {
-        match self {
+impl Display for FighterJob {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
             FighterJob::Paladin => "Paladin",
             FighterJob::Warrior => "Krieger",
             FighterJob::DarkKnight => "Dunkelritter",
@@ -162,8 +162,7 @@ impl ToString for FighterJob {
             FighterJob::BlueMage => "Blaumagier",
             FighterJob::Viper => "Viper",
             FighterJob::Pictomancer => "Piktomant",
-        }
-        .to_string()
+        })
     }
 }
 
