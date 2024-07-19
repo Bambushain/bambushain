@@ -16,10 +16,10 @@ pub async fn login(login_data: Login) -> BambooApiResult<either::Either<LoginRes
     if response.status() == 204 {
         Ok(either::Right(()))
     } else {
-        Ok(
-            either::Left(serde_json::from_str(response.text().await.unwrap().as_str())
-                .map_err(|_| ApiError::json_deserialize_error())?)
-        )
+        Ok(either::Left(
+            serde_json::from_str(response.text().await.unwrap().as_str())
+                .map_err(|_| ApiError::json_deserialize_error())?,
+        ))
     }
 }
 

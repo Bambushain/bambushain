@@ -22,7 +22,7 @@ impl MigrationTrait for Migration {
                     .add_column(ColumnDef::new(Event::UserId).integer().null())
                     .add_foreign_key(
                         ForeignKey::create()
-                            .from((Schemas::Bamboo, User::Table), Event::UserId)
+                            .from((Schemas::Bamboo, Event::Table), Event::UserId)
                             .to((Schemas::Authentication, User::Table), User::Id)
                             .on_delete(ForeignKeyAction::Cascade)
                             .get_foreign_key(),
