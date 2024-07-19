@@ -233,6 +233,36 @@ pub async fn post<IN: Serialize, OUT: DeserializeOwned>(
     handle_response(request).await
 }
 
+pub async fn post_response<IN: Serialize>(
+    uri: impl Into<String>,
+    body: &IN,
+) -> BambooApiResult<Response> {
+    let uri = uri.into();
+    log::debug!("Execute post request against {uri}");
+    let response = Request::post(uri.as_str())
+        .headers(authorization_header!())
+        .json(body)
+        .map_err(|_| ApiError::json_serialize_error())?
+        .send()
+        .await
+        .map_err(|_| ApiError::send_error())?;
+
+    log::debug!("Request executed successfully");
+    let status = response.status();
+    log::debug!("Response status code is {status}");
+    if 199 < status && 300 > status {
+        Ok(response)
+    } else {
+        log::debug!("Request status code is not in success range (200-299)");
+        let text = response.text().await.unwrap();
+        log::trace!("Error text: {text}");
+
+        Err(serde_json::from_str(text.as_str())
+            .map_err(|_| ApiError::json_deserialize_error())
+            .map(|err| ApiError::new(response.status(), err))?)
+    }
+}
+
 pub async fn delete(uri: impl Into<String>) -> BambooApiResult<()> {
     let uri = uri.into();
     log::debug!("Execute delete request against {uri}");

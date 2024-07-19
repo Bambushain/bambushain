@@ -43,7 +43,7 @@ pub struct LoginResult {
 #[cfg_attr(feature = "backend", derive(Responder))]
 pub struct TwoFactorResult {
     pub user: WebUser,
-    pub two_factor_code: Option<String>,
+    pub requires_two_factor_code: bool,
 }
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]

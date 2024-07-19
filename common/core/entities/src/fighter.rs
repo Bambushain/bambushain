@@ -1,8 +1,8 @@
-use std::cmp::Ordering;
-use std::fmt::{Display, Formatter};
 #[cfg(feature = "backend")]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
+use std::fmt::{Display, Formatter};
 
 #[cfg(feature = "backend")]
 use bamboo_common_backend_macros::*;
@@ -93,7 +93,7 @@ impl FighterJob {
             FighterJob::Viper => "viper.webp",
             FighterJob::Pictomancer => "pictomancer.webp",
         }
-            .to_string()
+        .to_string()
     }
 
     pub fn get_job_name(self) -> String {
@@ -121,7 +121,7 @@ impl FighterJob {
             FighterJob::Viper => "Viper",
             FighterJob::Pictomancer => "Pictomancer",
         }
-            .to_string()
+        .to_string()
     }
 }
 

@@ -1,6 +1,3 @@
-use base64::Engine;
-use rand::distributions::Uniform;
-use rand::Rng;
 use sea_orm::prelude::Expr;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{
@@ -14,21 +11,13 @@ use crate as dbal;
 use crate::user::get_users;
 use crate::{decrypt_string, encrypt_string};
 
-pub async fn create_google_auth_token(
-    password: String,
-    db: &DatabaseConnection,
-) -> BambooResult<LoginResult> {
-    let user =
-        crate::user::get_user_by_email_or_username("playstore@google.bambushain".to_string(), db)
-            .await
-            .map_err(|err| {
-                log::error!("Failed to load user playstore@google.bambushain: {err}");
-                BambooError::not_found("user", "User not found")
-            })?;
-
-    if !user.validate_password(password) {
-        return Err(BambooError::unauthorized("user", "Invalid login data"));
-    }
+pub async fn create_token(username: String, db: &DatabaseConnection) -> BambooResult<LoginResult> {
+    let user = crate::user::get_user_by_email_or_username(username.clone(), db)
+        .await
+        .map_err(|err| {
+            log::error!("Failed to load user {username}: {err}");
+            BambooError::not_found("user", "User not found")
+        })?;
 
     token::ActiveModel {
         id: NotSet,
@@ -47,52 +36,10 @@ pub async fn create_google_auth_token(
     })
 }
 
-pub async fn validate_auth_and_create_token(
+pub async fn validate_auth(
     username: String,
     password: String,
-    two_factor_code: String,
-    db: &DatabaseConnection,
-) -> BambooResult<LoginResult> {
-    let user = crate::user::get_user_by_email_or_username(username.clone(), db)
-        .await
-        .map_err(|err| {
-            log::error!("Failed to load user {username}: {err}");
-            BambooError::not_found("user", "User not found")
-        })?;
-
-    validate_login(user.id, two_factor_code, password, false, db).await?;
-
-    let result = token::ActiveModel {
-        id: NotSet,
-        token: Set(uuid::Uuid::new_v4().to_string()),
-        user_id: Set(user.id),
-    }
-    .insert(db)
-    .await
-    .map(|token| LoginResult {
-        token: token.token,
-        user: user.clone().into(),
-    })
-    .map_err(|err| {
-        log::error!("{err}");
-        BambooError::database("token", "Failed to create token")
-    });
-
-    let _ = bamboo_common_core::entities::user::Entity::update_many()
-        .col_expr(
-            bamboo_common_core::entities::user::Column::TwoFactorCode,
-            Expr::value::<Option<String>>(None),
-        )
-        .filter(bamboo_common_core::entities::user::Column::Id.eq(user.id))
-        .exec(db)
-        .await;
-
-    result
-}
-
-pub async fn validate_auth_and_set_two_factor_code(
-    username: String,
-    password: String,
+    two_factor_code: Option<String>,
     db: &DatabaseConnection,
 ) -> BambooResult<TwoFactorResult> {
     let user = crate::user::get_user_by_email_or_username(username.clone(), db)
@@ -107,35 +54,19 @@ pub async fn validate_auth_and_set_two_factor_code(
         return Err(BambooError::validation("token", "Password is invalid"));
     }
 
-    if user.totp_secret.is_some() && user.totp_validated.unwrap_or(false) {
-        return Ok(TwoFactorResult {
-            user: user.into(),
-            two_factor_code: None,
-        });
+    let mut requires_two_factor_code =
+        user.totp_secret.is_some() && user.totp_validated.unwrap_or(false);
+    if requires_two_factor_code {
+        if let Some(two_factor_code) = two_factor_code {
+            validate_two_factor_code(user.id, two_factor_code, password, false, db).await?;
+            requires_two_factor_code = false;
+        }
     }
 
-    let two_factor_code = rand::thread_rng()
-        .sample_iter(&Uniform::new(0, 10))
-        .take(6)
-        .map(|id| id.to_string())
-        .collect::<Vec<String>>()
-        .join("");
-
-    let encrypted_code = encrypt_string(two_factor_code.clone().into_bytes(), password)?;
-
-    bamboo_common_core::entities::user::Entity::update_many()
-        .col_expr(
-            bamboo_common_core::entities::user::Column::TwoFactorCode,
-            Expr::value(base64::prelude::BASE64_STANDARD.encode(encrypted_code)),
-        )
-        .filter(bamboo_common_core::entities::user::Column::Id.eq(user.id))
-        .exec(db)
-        .await
-        .map_err(|_| BambooError::validation("token", "Failed to set two factor code"))
-        .map(|_| TwoFactorResult {
-            user: user.clone().into(),
-            two_factor_code: Some(two_factor_code),
-        })
+    Ok(TwoFactorResult {
+        user: user.into(),
+        requires_two_factor_code,
+    })
 }
 
 pub async fn delete_token(token: String, db: &DatabaseConnection) -> BambooErrorResult {
@@ -167,7 +98,7 @@ pub async fn get_tokens_by_grove(
         })
 }
 
-pub async fn validate_login(
+pub async fn validate_two_factor_code(
     id: i32,
     code: String,
     password: String,
@@ -184,7 +115,7 @@ pub async fn validate_login(
     if initial_validation || user.totp_validated.unwrap_or(false) {
         validate_totp_token(code, password, user, db).await
     } else {
-        validate_email_token(code, password, user)
+        Ok(())
     }
 }
 
@@ -235,21 +166,5 @@ async fn validate_totp_token(
         Ok(())
     } else {
         Err(BambooError::crypto("user", "Failed to validate"))
-    }
-}
-
-fn validate_email_token(code: String, password: String, user: User) -> BambooErrorResult {
-    let two_factor_code = String::from_utf8_lossy(&decrypt_string(
-        base64::prelude::BASE64_STANDARD
-            .decode(user.two_factor_code.unwrap())
-            .map_err(|_| BambooError::unauthorized("user", "Failed to validate"))?,
-        password.clone(),
-    )?)
-    .into_owned();
-
-    if two_factor_code.eq(&code) {
-        Ok(())
-    } else {
-        Err(BambooError::unauthorized("user", "Failed to validate"))
     }
 }

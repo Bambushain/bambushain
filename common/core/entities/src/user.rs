@@ -29,8 +29,6 @@ pub struct Model {
     pub is_mod: bool,
     pub discord_name: String,
     #[cfg(feature = "backend")]
-    pub two_factor_code: Option<String>,
-    #[cfg(feature = "backend")]
     pub totp_secret: Option<Vec<u8>>,
     #[cfg(feature = "backend")]
     #[serde(default)]
@@ -116,8 +114,6 @@ impl Model {
             display_name,
             discord_name,
             #[cfg(feature = "backend")]
-            two_factor_code: None,
-            #[cfg(feature = "backend")]
             totp_secret: None,
             #[cfg(feature = "backend")]
             totp_secret_encrypted: false,
@@ -130,13 +126,10 @@ impl Model {
     #[cfg(feature = "backend")]
     pub fn validate_password(&self, password: String) -> bool {
         let result = bcrypt::verify(password, self.password.as_str());
-        match result {
-            Ok(res) => res,
-            Err(err) => {
-                log::error!("Failed to validate password {err}");
-                false
-            }
-        }
+        result.unwrap_or_else(|err| {
+            log::error!("Failed to validate password {err}");
+            false
+        })
     }
 }
 
