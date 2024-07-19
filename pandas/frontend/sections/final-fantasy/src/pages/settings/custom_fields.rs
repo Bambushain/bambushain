@@ -119,7 +119,7 @@ fn custom_field_options_dialog(
             if failed {
                 label_id_map.clear();
                 if let Ok(options) = api::get_custom_field_options(id).await {
-                    *passed_options_ref.borrow_mut() = options.clone();
+                    passed_options_ref.borrow_mut().clone_from(&options);
                     options_list.set(
                         options
                             .iter()

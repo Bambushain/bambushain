@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-
+use std::fmt::{Display, Formatter};
 #[cfg(feature = "backend")]
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -93,9 +93,9 @@ impl Ord for CrafterJob {
     }
 }
 
-impl ToString for CrafterJob {
-    fn to_string(&self) -> String {
-        match self {
+impl Display for CrafterJob {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
             CrafterJob::Carpenter => "Zimmerer",
             CrafterJob::Blacksmith => "Grobschmied",
             CrafterJob::Armorer => "Plattner",
@@ -107,8 +107,7 @@ impl ToString for CrafterJob {
             CrafterJob::Miner => "Minenarbeiter",
             CrafterJob::Botanist => "Gärtner",
             CrafterJob::Fisher => "Fischer",
-        }
-        .to_string()
+        })
     }
 }
 
