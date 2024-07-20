@@ -37,7 +37,7 @@ async fn setup_google_playstore_user(db: &sea_orm::DatabaseConnection) -> std::i
                 email,
                 "Google Playstore".to_string(),
                 "google".to_string(),
-                true,
+                false,
             ),
             password,
             db,
@@ -66,7 +66,6 @@ pub fn start_server() -> std::io::Result<()> {
             .await
             .map_err(std::io::Error::other)?;
         log::info!("Successfully migrated database");
-        let groves = dbal::get_groves(&db).await.map_err(std::io::Error::other)?;
         let minio_client = MinioClient::new(
             std::env::var("S3_BUCKET").map_err(std::io::Error::other)?,
             std::env::var("S3_ACCESS_KEY").map_err(std::io::Error::other)?,
@@ -78,27 +77,6 @@ pub fn start_server() -> std::io::Result<()> {
                 .map_or(false, |val| val.to_lowercase() == "true"),
         )
         .map_err(std::io::Error::other)?;
-
-        if groves.is_empty()
-            || groves
-                .iter()
-                .filter(|grove| grove.name == *"Google")
-                .count()
-                == groves.len()
-        {
-            log::info!("Create initial grove as it doesn't exist");
-            let initial_grove = dbal::create_grove(
-                std::env::var("INITIAL_GROVE").expect("Needs INITIAL_GROVE"),
-                &db,
-            )
-            .await
-            .map_err(std::io::Error::other)?;
-
-            log::info!("Migrate existing users and events to the new grove");
-            dbal::migrate_between_groves(None, initial_grove.id, &db)
-                .await
-                .map_err(std::io::Error::other)?;
-        }
 
         setup_google_playstore_user(&db).await?;
 

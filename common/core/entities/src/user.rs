@@ -34,9 +34,6 @@ pub struct Model {
     #[serde(default)]
     pub totp_secret_encrypted: bool,
     pub totp_validated: Option<bool>,
-    #[cfg(feature = "backend")]
-    #[serde(skip)]
-    pub grove_id: i32,
 }
 
 #[cfg(feature = "backend")]
@@ -48,14 +45,8 @@ pub enum Relation {
     Token,
     #[sea_orm(has_many = "super::event::Entity")]
     Event,
-    #[sea_orm(
-        belongs_to = "super::grove::Entity",
-        from = "Column::GroveId",
-        to = "super::grove::Column::Id",
-        on_update = "Cascade",
-        on_delete = "Cascade"
-    )]
-    Grove,
+    #[sea_orm(has_many = "super::grove_user::Entity")]
+    GroveUser,
 }
 
 #[cfg(feature = "backend")]
@@ -80,9 +71,9 @@ impl Related<super::event::Entity> for Entity {
 }
 
 #[cfg(feature = "backend")]
-impl Related<super::grove::Entity> for Entity {
+impl Related<super::grove_user::Entity> for Entity {
     fn to() -> RelationDef {
-        Relation::Grove.def()
+        Relation::GroveUser.def()
     }
 }
 
@@ -118,8 +109,6 @@ impl Model {
             #[cfg(feature = "backend")]
             totp_secret_encrypted: false,
             totp_validated: None,
-            #[cfg(feature = "backend")]
-            grove_id: -1,
         }
     }
 

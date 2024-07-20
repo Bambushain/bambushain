@@ -40,3 +40,4 @@ pub mod grove;
 pub mod support;
 pub mod token;
 pub mod user;
+mod grove_user;
