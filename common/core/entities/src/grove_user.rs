@@ -19,9 +19,9 @@ use serde::{Deserialize, Serialize};
 pub struct Model {
     pub is_mod: bool,
     #[sea_orm(primary_key)]
-    pub grove_id: String,
+    pub grove_id: i32,
     #[sea_orm(primary_key)]
-    pub user_id: String,
+    pub user_id: i32,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

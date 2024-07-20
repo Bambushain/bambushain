@@ -1,9 +1,9 @@
-use actix_web::{post, web, HttpResponse};
+use actix_web::{post, web};
 
 use bamboo_common::backend::mailing;
 use bamboo_common::backend::response::*;
 use bamboo_common::backend::services::EnvService;
-use bamboo_common::core::entities::{GlitchTipErrorRequest, SupportRequest};
+use bamboo_common::core::entities::SupportRequest;
 use bamboo_common::core::error::*;
 
 use crate::middleware::authenticate_user::{authenticate, Authentication};
@@ -23,11 +23,4 @@ pub async fn send_support_request(
     )
     .await
     .map(|_| no_content!())
-}
-
-#[post("/api/glitchtip", wrap = "authenticate!()")]
-pub async fn report_glitchtip_error(
-    _body: Option<web::Json<GlitchTipErrorRequest>>,
-) -> HttpResponse {
-    no_content!()
 }

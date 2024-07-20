@@ -1,9 +1,9 @@
 use actix_web::{middleware, App, HttpServer};
-
 use bamboo_common::backend::dbal;
 use bamboo_common::backend::migration::{Migrator, MigratorTrait};
 use bamboo_common::backend::services::minio_service::MinioClient;
 use bamboo_common::backend::services::DbConnection;
+use sea_orm::{ActiveModelTrait, IntoActiveModel};
 
 use crate::notifier;
 use crate::routes;
@@ -25,26 +25,34 @@ async fn setup_google_playstore_user(db: &sea_orm::DatabaseConnection) -> std::i
     let password = "NkWHoLDmzg4aVEx".to_string();
 
     if let Ok(user) = dbal::get_user_by_email_or_username(email.clone(), db).await {
-        dbal::change_password(user.grove_id, user.id, password, db)
+        dbal::set_password(user.id, password, db)
             .await
             .map_err(std::io::Error::other)
             .map(|_| ())
     } else {
         let grove = setup_google_playstore_grove(db).await?;
-        dbal::create_user(
-            grove.id,
+        let user = dbal::create_user(
             bamboo_common::core::entities::User::new(
                 email,
                 "Google Playstore".to_string(),
                 "google".to_string(),
-                false,
             ),
             password,
             db,
         )
         .await
-        .map_err(std::io::Error::other)
-        .map(|_| ())
+        .map_err(std::io::Error::other)?;
+        let grove_user = bamboo_common::core::entities::grove_user::Model {
+            grove_id: grove.id,
+            user_id: user.id,
+            is_mod: true,
+        };
+        grove_user
+            .into_active_model()
+            .save(db)
+            .await
+            .map_err(std::io::Error::other)
+            .map(|_| ())
     }
 }
 

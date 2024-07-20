@@ -6,6 +6,7 @@ use color_art::{color, Color};
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
+use crate::{Event, Grove, User};
 #[cfg(feature = "backend")]
 use bamboo_common_backend_macros::*;
 
@@ -104,5 +105,48 @@ impl Model {
 
     pub fn color(&self) -> Color {
         Color::from_str(self.color.as_str()).unwrap_or(color!(#9f2637))
+    }
+}
+
+#[derive(Responder, Serialize, Deserialize)]
+pub struct GroveEvent {
+    pub id: i32,
+    pub title: String,
+    pub description: String,
+    pub start_date: NaiveDate,
+    pub end_date: NaiveDate,
+    pub color: String,
+    pub is_private: bool,
+    pub user: Option<User>,
+    pub grove: Grove,
+}
+
+impl GroveEvent {
+    pub fn to_event(&self) -> Event {
+        Event {
+            id: self.id,
+            title: self.title.clone(),
+            description: self.description.clone(),
+            start_date: self.start_date,
+            end_date: self.end_date,
+            color: self.title.clone(),
+            is_private: self.is_private,
+            user_id: self.user.clone().map(|user| user.id),
+            grove_id: self.grove.id,
+        }
+    }
+
+    pub fn from_event(event: Event, user: Option<User>, grove: Grove) -> Self {
+        GroveEvent {
+            id: event.id,
+            title: event.title,
+            description: event.description,
+            start_date: event.start_date,
+            end_date: event.end_date,
+            color: event.color,
+            is_private: event.is_private,
+            user,
+            grove,
+        }
     }
 }

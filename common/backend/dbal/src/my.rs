@@ -18,7 +18,7 @@ pub async fn change_my_password(
         PasswordError::Unknown
     })?;
 
-    let user = dbal::get_user_by_id_only(id, db)
+    let user = dbal::get_user(id, db)
         .await
         .map_err(|_| PasswordError::UserNotFound)?;
     let is_valid = user.validate_password(old_password.clone());
@@ -97,7 +97,7 @@ pub async fn validate_my_totp(
     code: String,
     db: &DatabaseConnection,
 ) -> BambooResult<bool> {
-    let user = dbal::get_user_by_id_only(id, db).await?;
+    let user = dbal::get_user(id, db).await?;
     let valid = dbal::validate_two_factor_code(id, code, password.clone(), true, db)
         .await
         .is_ok();

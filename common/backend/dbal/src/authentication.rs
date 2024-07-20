@@ -8,7 +8,6 @@ use bamboo_common_core::entities::*;
 use bamboo_common_core::error::*;
 
 use crate as dbal;
-use crate::user::get_users;
 use crate::{decrypt_string, encrypt_string};
 
 pub async fn create_token(username: String, db: &DatabaseConnection) -> BambooResult<LoginResult> {
@@ -28,7 +27,7 @@ pub async fn create_token(username: String, db: &DatabaseConnection) -> BambooRe
     .await
     .map(|token| LoginResult {
         token: token.token,
-        user: user.clone().into(),
+        user,
     })
     .map_err(|err| {
         log::error!("{err}");
@@ -64,7 +63,7 @@ pub async fn validate_auth(
     }
 
     Ok(TwoFactorResult {
-        user: user.into(),
+        user,
         requires_two_factor_code,
     })
 }
@@ -81,23 +80,6 @@ pub async fn delete_token(token: String, db: &DatabaseConnection) -> BambooError
         })
 }
 
-pub async fn get_tokens_by_grove(
-    grove_id: i32,
-    db: &DatabaseConnection,
-) -> BambooResult<Vec<Token>> {
-    let users = get_users(grove_id, db).await?;
-    let users = users.iter().map(|user| user.id);
-    token::Entity::find()
-        .filter(user::Column::Id.is_in(users))
-        .inner_join(user::Entity)
-        .all(db)
-        .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("token", "Failed to get all tokens")
-        })
-}
-
 pub async fn validate_two_factor_code(
     id: i32,
     code: String,
@@ -105,7 +87,7 @@ pub async fn validate_two_factor_code(
     initial_validation: bool,
     db: &DatabaseConnection,
 ) -> BambooErrorResult {
-    let user = dbal::get_user_by_id_only(id, db).await?;
+    let user = dbal::get_user(id, db).await?;
 
     let password_valid = user.validate_password(password.clone());
     if !password_valid {

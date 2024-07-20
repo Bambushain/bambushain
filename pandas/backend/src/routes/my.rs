@@ -108,8 +108,8 @@ pub async fn validate_totp(
 }
 
 #[get("/api/my/profile", wrap = "authenticate!()")]
-pub async fn get_profile(authentication: Authentication) -> BambooApiResult<WebUser> {
-    Ok(ok!(authentication.user.clone().into()))
+pub async fn get_profile(authentication: Authentication) -> BambooApiResult<User> {
+    Ok(ok!(authentication.user.clone()))
 }
 
 #[delete("/api/my/totp", wrap = "authenticate!()")]
@@ -124,7 +124,7 @@ pub async fn disable_totp(
 
 #[delete("/api/my", wrap = "authenticate!()")]
 pub async fn leave(authentication: Authentication, db: DbConnection) -> BambooApiResponseResult {
-    dbal::delete_user(authentication.user.grove_id, authentication.user.id, &db)
+    dbal::delete_user(authentication.user.id, &db)
         .await
         .map(|_| no_content!())
 }

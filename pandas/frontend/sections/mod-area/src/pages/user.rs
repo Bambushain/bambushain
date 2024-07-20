@@ -70,7 +70,6 @@ fn create_user_modal(on_saved: &Callback<WebUser>, on_close: &Callback<()>) -> H
                 (*email_state).to_string(),
                 (*display_name_state).to_string(),
                 (*discord_name_state).to_string(),
-                *is_mod_toggle,
             ))
             .await
             .map(|data| {

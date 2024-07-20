@@ -12,7 +12,6 @@ mod custom_field;
 mod event;
 mod fighter;
 mod free_company;
-mod grove;
 mod licenses;
 mod my;
 mod sse;
@@ -36,14 +35,6 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
                 .wrap(authenticate!()),
         )
         .service(user::get_users)
-        .service(user::create_user)
-        .service(user::get_user)
-        .service(user::delete_user)
-        .service(user::update_user_profile)
-        .service(user::add_mod_user)
-        .service(user::remove_mod_user)
-        .service(user::change_password)
-        .service(user::disable_totp)
         .service(user::get_profile_picture)
         .service(event::get_events)
         .service(event::create_event)
@@ -93,12 +84,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
         .service(character_housing::update_character_housing)
         .service(character_housing::delete_character_housing)
         .service(support::send_support_request)
-        .service(support::report_glitchtip_error)
         .service(licenses::get_licenses)
-        .service(grove::get_grove)
-        .service(grove::disable_grove)
-        .service(grove::enable_grove)
-        .service(grove::delete_grove)
         .service(sse::event_sse_client)
         .service(
             actix_web_lab::web::spa()

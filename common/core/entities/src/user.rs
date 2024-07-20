@@ -1,5 +1,3 @@
-use std::fmt::{Display, Formatter};
-
 #[cfg(feature = "backend")]
 use sea_orm::entity::prelude::*;
 #[cfg(feature = "backend")]
@@ -26,13 +24,13 @@ pub struct Model {
     #[serde(skip)]
     pub password: String,
     pub display_name: String,
-    pub is_mod: bool,
     pub discord_name: String,
     #[cfg(feature = "backend")]
     pub totp_secret: Option<Vec<u8>>,
     #[cfg(feature = "backend")]
     #[serde(default)]
     pub totp_secret_encrypted: bool,
+    #[serde(rename = "appTotpEnabled")]
     pub totp_validated: Option<bool>,
 }
 
@@ -95,13 +93,12 @@ impl ActiveModel {
 }
 
 impl Model {
-    pub fn new(email: String, display_name: String, discord_name: String, is_mod: bool) -> Self {
+    pub fn new(email: String, display_name: String, discord_name: String) -> Self {
         Self {
             id: i32::default(),
             email,
             #[cfg(feature = "backend")]
             password: String::default(),
-            is_mod,
             display_name,
             discord_name,
             #[cfg(feature = "backend")]
@@ -119,43 +116,6 @@ impl Model {
             log::error!("Failed to validate password {err}");
             false
         })
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
-#[serde(rename_all = "camelCase")]
-#[cfg_attr(feature = "backend", derive(Responder))]
-pub struct WebUser {
-    #[serde(default)]
-    pub id: i32,
-    pub display_name: String,
-    pub email: String,
-    pub is_mod: bool,
-    pub discord_name: String,
-    #[serde(default)]
-    pub app_totp_enabled: bool,
-}
-
-impl From<Model> for WebUser {
-    fn from(value: Model) -> Self {
-        Self {
-            id: value.id,
-            is_mod: value.is_mod,
-            display_name: value.display_name.to_string(),
-            email: value.email.to_string(),
-            discord_name: value.discord_name.clone(),
-            app_totp_enabled: value.totp_validated.unwrap_or(false),
-        }
-    }
-}
-
-impl Display for WebUser {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str(
-            serde_json::to_string(self)
-                .unwrap_or(self.email.clone())
-                .as_str(),
-        )
     }
 }
 
@@ -190,26 +150,4 @@ pub struct ValidateTotp {
 pub struct TotpQrCode {
     pub qr_code: String,
     pub secret: String,
-}
-
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
-#[serde(rename_all = "camelCase")]
-#[cfg_attr(feature = "backend", derive(Responder))]
-pub struct GroveUser {
-    #[serde(default)]
-    pub id: i32,
-    pub display_name: String,
-    pub email: String,
-    pub is_mod: bool,
-}
-
-impl From<Model> for crate::GroveUser {
-    fn from(value: Model) -> Self {
-        Self {
-            id: value.id,
-            is_mod: value.is_mod,
-            display_name: value.display_name.to_string(),
-            email: value.email.to_string(),
-        }
-    }
 }
