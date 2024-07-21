@@ -11,5 +11,4 @@ bamboo-pandas-frontend-section-final-fantasy = { path = "final-fantasy" }
 bamboo-pandas-frontend-section-layout = { path = "layout" }
 bamboo-pandas-frontend-section-legal = { path = "legal" }
 bamboo-pandas-frontend-section-licenses = { path = "licenses" }
-bamboo-pandas-frontend-section-mod-area = { path = "mod-area" }
 bamboo-pandas-frontend-section-support = { path = "support" }

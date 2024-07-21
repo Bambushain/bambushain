@@ -12,7 +12,6 @@ bamboo-pandas-frontend-section-bamboo = { path = "../../sections/bamboo" }
 bamboo-pandas-frontend-section-final-fantasy = { path = "../../sections/final-fantasy" }
 bamboo-pandas-frontend-section-legal = { path = "../../sections/legal" }
 bamboo-pandas-frontend-section-licenses = { path = "../../sections/licenses" }
-bamboo-pandas-frontend-section-mod-area = { path = "../../sections/mod-area" }
 bamboo-pandas-frontend-section-support = { path = "../../sections/support" }
 
 bounce = { workspace = true }

@@ -34,7 +34,6 @@ pub struct Model {
     pub is_private: bool,
     #[serde(skip)]
     pub user_id: Option<i32>,
-    #[cfg(feature = "backend")]
     #[serde(skip)]
     pub grove_id: i32,
 }
@@ -86,6 +85,7 @@ impl Model {
         end_date: NaiveDate,
         color: Color,
         is_private: bool,
+        grove_id: i32,
     ) -> Self {
         Self {
             id: i32::default(),
@@ -96,6 +96,7 @@ impl Model {
             color: color.hex(),
             is_private,
             user_id: None,
+            grove_id,
         }
     }
 
@@ -108,7 +109,9 @@ impl Model {
     }
 }
 
-#[derive(Responder, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
+#[cfg_attr(feature = "backend", derive(Responder))]
+#[serde(rename_all = "camelCase")]
 pub struct GroveEvent {
     pub id: i32,
     pub title: String,

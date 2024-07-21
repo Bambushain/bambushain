@@ -13,7 +13,9 @@ pub async fn get_users(
     db: DbConnection,
     authentication: Authentication,
 ) -> BambooApiResponseResult {
-    dbal::get_users(authentication.user.id, &db).await.map(|data| list!(data))
+    dbal::get_users(authentication.user.id, &db)
+        .await
+        .map(|data| list!(data))
 }
 
 #[get("/api/user/{user_id}/picture", wrap = "authenticate!()")]

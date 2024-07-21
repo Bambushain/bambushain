@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
+use crate::User;
 #[cfg(feature = "backend")]
 use bamboo_common_backend_macros::*;
-use crate::User;
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 #[serde(rename_all = "camelCase")]

@@ -3,7 +3,7 @@ use bamboo_common::frontend::api::BambooApiResult;
 
 use crate::api::get;
 
-pub async fn get_users() -> BambooApiResult<Vec<WebUser>> {
+pub async fn get_users() -> BambooApiResult<Vec<User>> {
     log::debug!("Get users");
     get("/api/user").await
 }

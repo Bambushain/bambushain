@@ -6,14 +6,13 @@ use stylist::yew::use_style;
 use yew::prelude::*;
 use yew_autoprops::autoprops;
 use yew_cosmo::prelude::*;
-use yew_hooks::{use_async, use_bool_toggle, use_mount, use_update, UseAsyncHandle};
+use yew_hooks::{use_async, use_bool_toggle, use_mount, use_timeout, use_update};
 use yew_router::prelude::*;
 
 use bamboo_common::core::entities::user::UpdateProfile;
 use bamboo_common::frontend::api::{ApiError, CONFLICT, FORBIDDEN, NOT_FOUND};
 use bamboo_pandas_frontend_base::routing::{
-    AppRoute, BambooGroveRoute, FinalFantasyRoute, LegalRoute, LicensesRoute, ModAreaRoute,
-    SupportRoute,
+    AppRoute, BambooGroveRoute, FinalFantasyRoute, LegalRoute, LicensesRoute, SupportRoute,
 };
 use bamboo_pandas_frontend_base::{error, storage};
 use bamboo_pandas_frontend_section_authentication::LoginPage;
@@ -25,7 +24,6 @@ use bamboo_pandas_frontend_section_legal::{DataProtectionPage, ImprintPage};
 use bamboo_pandas_frontend_section_licenses::{
     BambooGrovePage, FontsPage, ImagesPage, SoftwareLicensesPage,
 };
-use bamboo_pandas_frontend_section_mod_area::{GroveManagementPage, UserManagementPage};
 use bamboo_pandas_frontend_section_support::ContactPage;
 
 use crate::api;
@@ -61,12 +59,6 @@ fn switch_sub_menu(route: AppRoute) -> Html {
         AppRoute::SupportRoot | AppRoute::Support => html!(
             <CosmoSubMenuBar>
                 <Switch<SupportRoute> render={render_sub_menu_entry("Kontakt", SupportRoute::Contact)} />
-            </CosmoSubMenuBar>
-        ),
-        AppRoute::ModAreaRoot | AppRoute::ModArea => html!(
-            <CosmoSubMenuBar>
-                <Switch<ModAreaRoute> render={render_sub_menu_entry("Benutzerverwaltung", ModAreaRoute::UserManagement)} />
-                <Switch<ModAreaRoute> render={render_sub_menu_entry("Hainverwaltung", ModAreaRoute::GroveManagement)} />
             </CosmoSubMenuBar>
         ),
         AppRoute::LegalRoot | AppRoute::Legal => html!(
@@ -145,27 +137,6 @@ fn switch_support(route: SupportRoute) -> Html {
     }
 }
 
-fn switch_mod_area(route: ModAreaRoute) -> Html {
-    match route {
-        ModAreaRoute::UserManagement => html!(
-            <>
-                <Helmet>
-                    <title>{"Benutzerverwaltung"}</title>
-                </Helmet>
-                <UserManagementPage />
-            </>
-        ),
-        ModAreaRoute::GroveManagement => html!(
-            <>
-                <Helmet>
-                    <title>{"Hainverwaltung"}</title>
-                </Helmet>
-                <GroveManagementPage />
-            </>
-        ),
-    }
-}
-
 fn switch_legal(route: LegalRoute) -> Html {
     match route {
         LegalRoute::Imprint => html!(
@@ -224,99 +195,52 @@ fn switch_licenses(route: LicensesRoute) -> Html {
     }
 }
 
-fn switch_app(is_mod: bool, grove_is_enabled: bool) -> impl Fn(AppRoute) -> Html {
-    move |route| {
-        if grove_is_enabled {
-            match route {
-                AppRoute::Home => html!(
-                    <Redirect<AppRoute> to={AppRoute::BambooGroveRoot} />
-                ),
-                AppRoute::BambooGroveRoot | AppRoute::BambooGrove => html!(
-                    <>
-                        <Helmet>
-                            <title>{"Bambushain"}</title>
-                        </Helmet>
-                        <Switch<BambooGroveRoute> render={switch_bamboo_grove} />
-                    </>
-                ),
-                AppRoute::FinalFantasyRoot | AppRoute::FinalFantasy => html!(
-                    <>
-                        <Helmet>
-                            <title>{"Final Fantasy"}</title>
-                        </Helmet>
-                        <Switch<FinalFantasyRoute> render={switch_final_fantasy} />
-                    </>
-                ),
-                AppRoute::SupportRoot | AppRoute::Support => html!(
-                    <>
-                        <Helmet>
-                            <title>{"Bambussupport"}</title>
-                        </Helmet>
-                        <Switch<SupportRoute> render={switch_support} />
-                    </>
-                ),
-                AppRoute::ModAreaRoot | AppRoute::ModArea => {
-                    if is_mod {
-                        html!(
-                            <>
-                                <Helmet>
-                                    <title>{"Mod Area"}</title>
-                                </Helmet>
-                                <Switch<ModAreaRoute> render={switch_mod_area} />
-                            </>
-                        )
-                    } else {
-                        html!(
-                            <Redirect<AppRoute> to={AppRoute::BambooGroveRoot} />
-                        )
-                    }
-                }
-                AppRoute::LegalRoot | AppRoute::Legal => html!(
-                    <>
-                        <Helmet>
-                            <title>{"Rechtliches"}</title>
-                        </Helmet>
-                        <Switch<LegalRoute> render={switch_legal} />
-                    </>
-                ),
-                AppRoute::LicensesRoot | AppRoute::Licenses => html!(
-                    <>
-                        <Helmet>
-                            <title>{"Lizenz"}</title>
-                        </Helmet>
-                        <Switch<LicensesRoute> render={switch_licenses} />
-                    </>
-                ),
-                AppRoute::Login => html!(),
-            }
-        } else {
-            match route {
-                AppRoute::LegalRoot | AppRoute::Legal => html!(
-                    <>
-                        <Helmet>
-                            <title>{"Rechtliches"}</title>
-                        </Helmet>
-                        <Switch<LegalRoute> render={switch_legal} />
-                    </>
-                ),
-                AppRoute::LicensesRoot | AppRoute::Licenses => html!(
-                    <>
-                        <Helmet>
-                            <title>{"Lizenz"}</title>
-                        </Helmet>
-                        <Switch<LicensesRoute> render={switch_licenses} />
-                    </>
-                ),
-                _ => html!(
-                    <>
-                        <Helmet>
-                            <title>{"Mod Area"}</title>
-                        </Helmet>
-                        <Switch<ModAreaRoute> render={switch_mod_area} />
-                    </>
-                ),
-            }
-        }
+fn switch_app(route: AppRoute) -> Html {
+    match route {
+        AppRoute::Home => html!(
+            <Redirect<AppRoute> to={AppRoute::BambooGroveRoot} />
+        ),
+        AppRoute::BambooGroveRoot | AppRoute::BambooGrove => html!(
+            <>
+                <Helmet>
+                    <title>{"Bambushain"}</title>
+                </Helmet>
+                <Switch<BambooGroveRoute> render={switch_bamboo_grove} />
+            </>
+        ),
+        AppRoute::FinalFantasyRoot | AppRoute::FinalFantasy => html!(
+            <>
+                <Helmet>
+                    <title>{"Final Fantasy"}</title>
+                </Helmet>
+                <Switch<FinalFantasyRoute> render={switch_final_fantasy} />
+            </>
+        ),
+        AppRoute::SupportRoot | AppRoute::Support => html!(
+            <>
+                <Helmet>
+                    <title>{"Bambussupport"}</title>
+                </Helmet>
+                <Switch<SupportRoute> render={switch_support} />
+            </>
+        ),
+        AppRoute::LegalRoot | AppRoute::Legal => html!(
+            <>
+                <Helmet>
+                    <title>{"Rechtliches"}</title>
+                </Helmet>
+                <Switch<LegalRoute> render={switch_legal} />
+            </>
+        ),
+        AppRoute::LicensesRoot | AppRoute::Licenses => html!(
+            <>
+                <Helmet>
+                    <title>{"Lizenz"}</title>
+                </Helmet>
+                <Switch<LicensesRoute> render={switch_licenses} />
+            </>
+        ),
+        AppRoute::Login => html!(),
     }
 }
 
@@ -375,30 +299,12 @@ fn app_layout() -> Html {
     log::debug!("Render app layout");
     let profile_atom_setter = use_atom_setter::<storage::CurrentUser>();
 
-    let grove_is_enabled = use_bool_toggle(true);
-
-    let navigator = use_navigator();
-
     let profile_state = use_async(async move {
         api::get_my_profile().await.map(|user| {
             profile_atom_setter(user.clone().into());
             user
         })
     });
-    let grove_state = {
-        let grove_is_enabled = grove_is_enabled.clone();
-
-        use_async(async move {
-            api::get_grove().await.map(|grove| {
-                if !grove.is_enabled {
-                    if let Some(navigator) = navigator {
-                        navigator.push(&AppRoute::ModAreaRoot);
-                    }
-                    grove_is_enabled.set(false);
-                }
-            })
-        })
-    };
 
     {
         let profile_state = profile_state.clone();
@@ -408,31 +314,25 @@ fn app_layout() -> Html {
                 "First render, so lets send the request to check if the token is valid and see"
             );
             profile_state.run();
-            grove_state.run();
         });
     }
 
     html!(
         if let Some(_) = &profile_state.error {
             <Redirect<AppRoute> to={AppRoute::Login} />
-        } else if let Some(profile) = &profile_state.data {
+        } else if profile_state.data.is_some() {
             <>
                 <Switch<AppRoute> render={switch_top_bar}/>
                 <CosmoMenuBar>
                     <CosmoMainMenu>
-                        if *grove_is_enabled {
-                            <Switch<AppRoute> render={render_main_menu_entry("Bambushain", AppRoute::BambooGroveRoot, AppRoute::BambooGrove)} />
-                            <Switch<AppRoute> render={render_main_menu_entry("Final Fantasy", AppRoute::FinalFantasyRoot, AppRoute::FinalFantasy)} />
-                            <Switch<AppRoute> render={render_main_menu_entry("Bambussupport", AppRoute::SupportRoot, AppRoute::Support)} />
-                        }
-                        if profile.is_mod {
-                            <Switch<AppRoute> render={render_main_menu_entry("Mod Area", AppRoute::ModAreaRoot, AppRoute::ModArea)} />
-                        }
+                        <Switch<AppRoute> render={render_main_menu_entry("Bambushain", AppRoute::BambooGroveRoot, AppRoute::BambooGrove)} />
+                        <Switch<AppRoute> render={render_main_menu_entry("Final Fantasy", AppRoute::FinalFantasyRoot, AppRoute::FinalFantasy)} />
+                        <Switch<AppRoute> render={render_main_menu_entry("Bambussupport", AppRoute::SupportRoot, AppRoute::Support)} />
                     </CosmoMainMenu>
                     <Switch<AppRoute> render={switch_sub_menu} />
                 </CosmoMenuBar>
                 <CosmoPageBody>
-                    <Switch<AppRoute> render={switch_app(profile.is_mod, *grove_is_enabled)} />
+                    <Switch<AppRoute> render={switch_app} />
                </CosmoPageBody>
             </>
         }
@@ -453,7 +353,7 @@ fn legal_layout() -> Html {
                 <Switch<AppRoute> render={switch_sub_menu} />
             </CosmoMenuBar>
             <CosmoPageBody>
-                <Switch<AppRoute> render={switch_app(false, true)} />
+                <Switch<AppRoute> render={switch_app} />
            </CosmoPageBody>
         </>
     )
@@ -461,7 +361,7 @@ fn legal_layout() -> Html {
 
 #[autoprops]
 #[function_component(ChangePasswordDialog)]
-fn change_password_dialog(on_close: &Callback<()>, mods: &Vec<AttrValue>) -> Html {
+fn change_password_dialog(on_close: &Callback<()>) -> Html {
     log::debug!("Open dialog to change password");
     let navigator = use_navigator();
 
@@ -534,7 +434,7 @@ fn change_password_dialog(on_close: &Callback<()>, mods: &Vec<AttrValue>) -> Htm
             )}>
                 if let Some(err) = &save_state.error {
                     if err.code == FORBIDDEN {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message="Wenn du möchtest dass es von einem Mod zurückgesetzt wird, einfach anschreiben" header="Das alte Passwort ist falsch" />
+                        <CosmoMessage message_type={CosmoMessageType::Negative} message="Falls du dein Passwort vergessen hast, melde dich bitte ab und klicke auf Passwort vergessen" header="Das alte Passwort ist falsch" />
                     } else if err.code == NOT_FOUND {
                         <CosmoMessage message_type={CosmoMessageType::Negative} message="Bitte versuch es erneut um einen Fehler auszuschließen" header="Du wurdest scheinbar gelöscht" />
                     } else if *unreported_error_toggle {
@@ -542,8 +442,6 @@ fn change_password_dialog(on_close: &Callback<()>, mods: &Vec<AttrValue>) -> Htm
                     } else {
                         <CosmoMessage message_type={CosmoMessageType::Negative} message="Leider konnte dein Passwort nicht geändert werden" header="Fehler beim ändern" />
                     }
-                } else {
-                    <CosmoMessage message_type={CosmoMessageType::Information} message={format!("Falls du dich an dein altes Passwort nicht erinnern kannst,\nwende dich an einen Mod: {}", mods.join(", "))} header="Ändere dein Passwort" />
                 }
                 <CosmoInputGroup>
                     <CosmoTextBox input_type={CosmoTextBoxType::Password} label="Aktuelles Passwort" on_input={update_old_password} value={(*old_password_state).clone()} required={true} />
@@ -704,7 +602,7 @@ fn update_my_profile_dialog(on_close: &Callback<()>) -> Html {
             <CosmoModal title="Profil bearbeiten" is_form={true} on_form_submit={on_save} buttons={html!(
                 <>
                     <CosmoButton on_click={on_close} label="Schließen" />
-                    if profile_atom.profile.app_totp_enabled {
+                    if profile_atom.profile.totp_validated.unwrap_or(false) {
                         <CosmoButton on_click={on_open_disable_totp} label="App Zwei Faktor deaktivieren" />
                     } else {
                         <CosmoButton on_click={on_enable_app_two_factor} label="App Zwei Faktor aktivieren" />
@@ -842,12 +740,59 @@ fn enable_totp_dialog(on_close: &Callback<()>) -> Html {
         },
     );
 
+    {
+        let enable_totp_state = enable_totp_state.clone();
+        #[allow(clippy::identity_op)]
+        use_timeout(move || {
+            enable_totp_state.run();
+        }, 1 * 1000);
+    }
+
     let img_style = use_style!(
         r#"
-width: 100%;
-height: auto;
+width: 24.5rem;
+height: 24.5rem;
 object-fit: scale-down;
+grid-area: code;
 "#
+    );
+    let logo_style = use_style!(
+        r#"
+width: 10rem;
+height: 10rem;
+place-self: center;
+grid-area: code;
+fill: var(--primary-color);
+stroke: var(--white);
+stroke-opacity: 1;
+stroke-width: 57.6;
+stroke-dasharray: none;
+stroke-linejoin: miter;
+paint-order: stroke markers fill;
+
+    path {
+    transform: scale(89%) translate(6%, 6%);
+}
+        "#
+    );
+    let container_style = use_style!(
+        r#"
+display: grid;
+gap: 1rem;
+grid-template-columns: [code] 24.5rem [details] auto;
+grid-template-areas: "code details";
+justify-content: center;
+align-items: start;
+        "#
+    );
+    let details_style = use_style!(
+        r#"
+grid-area: details;
+display: flex;
+flex-flow: column;
+max-width: 30vw;
+padding-top: 2rem;
+    "#
     );
 
     html!(
@@ -861,34 +806,51 @@ object-fit: scale-down;
                     <CosmoButton is_submit={true} label="App einrichten" />
                 </>
             )}>
-                if let Some(data) = &enable_totp_state.data {
-                    <img class={img_style} src={format!("data:image/png;base64,{}", data.qr_code.clone())} alt={data.secret.clone()} />
-                    if let Some(err) = &validate_totp_state.error {
-                        if err.code == FORBIDDEN {
-                            <CosmoMessage header="Code oder Passwort falsch" message="Der von dir eingegebene Code oder dein Passwort ist ungültig, versuch es nochmal" message_type={CosmoMessageType::Negative} />
-                        } else if *unreported_error_toggle {
-                            <CosmoMessage header="Fehler beim Aktivieren" message="Leider konnte Zwei Faktor per App nicht aktiviert werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
-                        } else {
-                            <CosmoMessage header="Fehler beim Aktivieren" message="Leider konnte Zwei Faktor per App nicht aktiviert werden" message_type={CosmoMessageType::Negative} />
-                        }
+                <div class={container_style}>
+                    if let Some(data) = &enable_totp_state.data {
+                        <img class={img_style} src={data.qr_code.clone()} alt={data.secret.clone()} />
+                        <svg class={logo_style} viewBox="0 0 512 512">
+                            <path d="M511.094,264.722c-1.136-3.307-28.511-81.137-89.171-95.166c-30.729-7.107-63.124,3.303-96.526,30.938v-35.663
+                                    c6.222-2.428,10.637-8.464,10.637-15.545s-4.415-13.117-10.637-15.545V21.124c0-9.22-7.475-16.696-16.696-16.696h-89.595
+                                    c-9.22,0-16.696,7.475-16.696,16.696v46.166c-18.137-33.54-41.579-53.478-69.951-59.406C71.508-4.849,13.992,54.3,11.574,56.825
+                                    C6.875,61.728,5.615,68.989,8.387,75.19c2.773,6.2,9.015,10.103,15.811,9.873c82.495-2.81,169.04,34.422,169.902,34.798
+                                    c2.146,0.936,4.415,1.391,6.668,1.391c0.55,0,1.097-0.031,1.643-0.085v12.741c-5.986,2.538-10.185,8.467-10.185,15.378
+                                    s4.2,12.84,10.185,15.378v99.481c-13.69-36.175-34.515-59.305-62.158-68.907C81.436,174.809,16.819,226.106,14.098,228.3
+                                    c-5.288,4.262-7.467,11.302-5.513,17.805c1.956,6.503,7.654,11.176,14.416,11.815c6.876,0.651,13.745,1.588,20.559,2.751
+                                    c-26.815,24.958-41.321,57.285-42.141,59.145c-2.739,6.214-1.443,13.469,3.281,18.349c3.208,3.314,7.561,5.083,11.999,5.083
+                                    c2.096,0,4.212-0.395,6.233-1.209c76.563-30.832,170.624-25.43,171.564-25.372c2.816,0.178,5.51-0.359,7.913-1.449v27.787
+                                    c-5.986,2.538-10.185,8.467-10.185,15.378s4.2,12.84,10.185,15.378v117.115c0,9.22,7.475,16.696,16.696,16.696H308.7
+                                    c9.22,0,16.696-7.475,16.696-16.696V373.928c6.222-2.428,10.637-8.464,10.637-15.545s-4.415-13.117-10.637-15.545v-97.236
+                                    c22.507,1.287,99.826,7.886,162.387,39.448c2.383,1.202,4.958,1.79,7.516,1.79c3.954,0,7.87-1.404,10.977-4.113
+                                    C511.396,278.264,513.3,271.144,511.094,264.722z M70.033,53.522c16.303-9.503,36.4-16.998,55.681-12.936
+                                    c16.129,3.398,30.358,14.887,42.528,34.277C142.992,66.766,107.92,57.514,70.033,53.522z M55.265,296.723
+                                    c8.409-10.079,18.888-19.87,31.085-25.859c14.339,4.315,27.897,9.235,40.144,14.176
+                                    C104.959,286.978,80.307,290.495,55.265,296.723z M72.688,232.553c17.389-7.306,38.216-12.161,56.607-5.773
+                                    c15.598,5.418,28.267,18.643,37.87,39.466C143.202,255.001,109.679,241.362,72.688,232.553z M292.005,474.18h-56.204v-99.102
+                                    h56.204V474.18z M292.005,341.687h-56.204V165.981h56.204V341.687z M292.005,132.589h-56.204v-94.77h56.204V132.589z
+                                     M361.327,215.325c19.184-12.489,36.925-16.945,52.99-13.256c19.207,4.408,34.299,19.645,45.106,35.114
+                                    C423.36,224.901,387.642,218.575,361.327,215.325z" />
+                        </svg>
+                    } else {
+                        <CosmoProgressRing />
                     }
-                    <CosmoInputGroup>
-                        <CosmoTextBox input_type={CosmoTextBoxType::Password} label="Aktuelles Passwort" required={true} on_input={update_password} value={(*current_password_state).clone()} />
-                        <CosmoTextBox label="Zwei Faktor Code" required={true} on_input={update_code} value={(*code_state).clone()} />
-                    </CosmoInputGroup>
-                } else {
-                    if enable_totp_state.error.is_some() {
-                        if *unreported_error_toggle {
-                            <CosmoMessage header="Fehler beim Aktivieren" message="Leider konnte Zwei Faktor per App nicht aktiviert werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
-                        } else {
-                            <CosmoMessage header="Fehler beim Aktivieren" message="Leider konnte Zwei Faktor per App nicht aktiviert werden" message_type={CosmoMessageType::Negative} />
+                    <div class={details_style}>
+                        <CosmoMessage header="Schritte zum Aktivieren" message="Zu erst musst du den QR Code mit einer App wie Authy oder dem Google Authenticator scannen.\nAnschließend gibst du in den Feldern dein aktuelles Passwort ein und der Code der dir in der App angezeigt wird." message_type={CosmoMessageType::Information} />
+                        if let Some(err) = &validate_totp_state.error {
+                            if err.code == FORBIDDEN {
+                                <CosmoMessage header="Code oder Passwort falsch" message="Der von dir eingegebene Code oder dein Passwort ist ungültig, versuch es nochmal" message_type={CosmoMessageType::Negative} />
+                            } else if *unreported_error_toggle {
+                                <CosmoMessage header="Fehler beim Aktivieren" message="Leider konnte Zwei Faktor per App nicht aktiviert werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
+                            } else {
+                                <CosmoMessage header="Fehler beim Aktivieren" message="Leider konnte Zwei Faktor per App nicht aktiviert werden" message_type={CosmoMessageType::Negative} />
+                            }
                         }
-                    }
-                    <CosmoParagraph>{r#"Hier kannst du deinen Zwei Faktor Code anpassen, von Haus aus sendet Bambushain einen Code an deine Emailadresse,
-du kannst allerdings auch eine App wie Google Authenticator oder Authy einrichten und dann damit einen Code generieren.
-Um eine App einzurichten, musst du unten auf App einrichten klicken.
-Anschließend kommt ein QR Code, den musst du scannen und danach einen Code aus deiner App eingeben."#}</CosmoParagraph>
-                }
+                        <CosmoInputGroup>
+                            <CosmoTextBox input_type={CosmoTextBoxType::Password} label="Aktuelles Passwort" required={true} on_input={update_password} value={(*current_password_state).clone()} />
+                            <CosmoTextBox label="Zwei Faktor Code" required={true} on_input={update_code} value={(*code_state).clone()} />
+                        </CosmoInputGroup>
+                    </div>
+                </div>
             </CosmoModal>
         </>
     )
@@ -908,23 +870,6 @@ fn top_bar() -> Html {
     let profile_user_id = use_state(|| profile_atom.profile.id);
 
     let update = use_update();
-
-    let mods_state: UseAsyncHandle<_, ApiError> = use_async(async move {
-        Ok(if let Ok(users) = api::get_users().await {
-            users
-                .into_iter()
-                .filter_map(|user| {
-                    if user.is_mod {
-                        Some(AttrValue::from(user.display_name))
-                    } else {
-                        None
-                    }
-                })
-                .collect::<Vec<AttrValue>>()
-        } else {
-            vec![]
-        })
-    });
     let leave_grove_state =
         use_async(async move { api::leave().await.map(|_| navigator.push(&AppRoute::Login)) });
 
@@ -940,13 +885,10 @@ fn top_bar() -> Html {
             state.set(-1);
         },
     );
-    let open_change_password = use_callback(
-        (mods_state.clone(), password_open_toggle.clone()),
-        |_, (mods_state, password_open_state)| {
+    let open_change_password =
+        use_callback(password_open_toggle.clone(), |_, password_open_state| {
             password_open_state.set(true);
-            mods_state.run();
-        },
-    );
+        });
     let open_leave_grove = use_callback(leave_grove_open_toggle.clone(), |_, toggle| {
         toggle.set(true)
     });
@@ -979,18 +921,16 @@ fn top_bar() -> Html {
                 <CosmoTopBarItemLink<AppRoute> label="Rechtliches" to={AppRoute::LegalRoot} />
                 <CosmoTopBarItem label="Mein Profil" on_click={open_update_my_profile} />
                 <CosmoTopBarItem label="Passwort ändern" on_click={open_change_password} />
-                <CosmoTopBarItem label="Hain verlassen" on_click={open_leave_grove} />
+                <CosmoTopBarItem label="Account löschen" on_click={open_leave_grove} />
             </CosmoTopBar>
             if *profile_open_toggle {
                 <UpdateMyProfileDialog on_close={profile_updated} />
             }
             if *password_open_toggle {
-                if let Some(data) = &mods_state.data {
-                    <ChangePasswordDialog on_close={move |_| password_open_toggle.set(false)} mods={data.clone()} />
-                }
+                <ChangePasswordDialog on_close={move |_| password_open_toggle.set(false)} />
             }
             if *leave_grove_open_toggle {
-                <CosmoConfirm confirm_type={CosmoModalType::Negative} on_confirm={leave_grove} on_decline={close_leave_grove} title="Hain verlassen" message="Bist du sicher, dass du den Hain verlassen möchtest?\nWenn du den Hain verlässt werden alle deine Daten gelöscht und können nicht wiederhergestellt werden." confirm_label="Hain verlassen" decline_label="Im Hain bleiben" />
+                <CosmoConfirm confirm_type={CosmoModalType::Negative} on_confirm={leave_grove} on_decline={close_leave_grove} title="Account löschen" message="Bist du sicher, dass du deinen Account löschen möchtest?\nWenn du deinen Account löscht, werden alle deine Daten gelöscht und können nicht wiederhergestellt werden." confirm_label="Account löschen" decline_label="Account behalten" />
             }
         </>
     )

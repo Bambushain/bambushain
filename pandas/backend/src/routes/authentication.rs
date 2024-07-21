@@ -1,9 +1,9 @@
 use actix_web::cookie::Cookie;
 use actix_web::{delete, post, web, HttpResponse};
+use bamboo_common::backend::dbal;
 use bamboo_common::backend::dbal::create_token;
 use bamboo_common::backend::response::*;
 use bamboo_common::backend::services::DbConnection;
-use bamboo_common::backend::dbal;
 use bamboo_common::core::entities::*;
 use bamboo_common::core::error::*;
 

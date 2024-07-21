@@ -1,11 +1,14 @@
 use actix_web::web::Bytes;
 use actix_web::{delete, get, post, put, web};
-
 use bamboo_common::backend::dbal;
 use bamboo_common::backend::response::*;
 use bamboo_common::backend::services::{DbConnection, MinioService};
 use bamboo_common::core::entities::*;
 use bamboo_common::core::error::*;
+use base64::Engine;
+use fast_qr::convert::svg::SvgBuilder;
+use fast_qr::convert::{Builder, Shape};
+use fast_qr::QRBuilder;
 
 use crate::middleware::authenticate_user::{authenticate, Authentication};
 
@@ -60,7 +63,8 @@ pub async fn enable_totp(
             totp.account_name
                 .clone_from(&authentication.user.display_name);
             totp.issuer = Some("Bambushain".to_string());
-            let qr = totp.get_qr_base64().map_err(|err| {
+            let totp_url = totp.get_url();
+            let qr = QRBuilder::new(totp_url).build().map_err(|err| {
                 log::error!("Failed to enable totp {err}");
                 actix_web::rt::spawn(async move {
                     let _ = dbal::disable_my_totp(authentication.user.id, &db).await;
@@ -68,9 +72,18 @@ pub async fn enable_totp(
 
                 BambooError::unknown("user", "Failed to create qr code")
             })?;
+            let qr_svg = SvgBuilder::default()
+                .shape(Shape::Circle)
+                .background_color("transparent")
+                .module_color("#598c79")
+                .to_str(&qr);
+            let qr_svg_data_url = format!(
+                "data:image/svg+xml;base64,{}",
+                base64::prelude::BASE64_STANDARD.encode(qr_svg)
+            );
 
             Ok(ok!(TotpQrCode {
-                qr_code: qr,
+                qr_code: qr_svg_data_url,
                 secret: totp.get_secret_base32(),
             }))
         })?

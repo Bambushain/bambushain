@@ -2,9 +2,9 @@ use bamboo_common::core::entities::*;
 use bamboo_common::frontend::api::{ApiError, BambooApiResult};
 use bamboo_pandas_frontend_base::*;
 
-pub async fn get_my_profile() -> BambooApiResult<WebUser> {
+pub async fn get_my_profile() -> BambooApiResult<User> {
     log::debug!("Get my profile");
-    api::get::<WebUser>("/api/my/profile").await.map_err(|err| {
+    api::get::<User>("/api/my/profile").await.map_err(|err| {
         storage::delete_token();
         err
     })

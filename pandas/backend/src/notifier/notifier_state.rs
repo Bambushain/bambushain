@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use actix_web::{web, Responder};
-use sea_orm::DatabaseConnection;
 use bamboo_common::core::entities::{Event, User};
+use sea_orm::DatabaseConnection;
 
 use crate::notifier::event::EventBroadcaster;
 

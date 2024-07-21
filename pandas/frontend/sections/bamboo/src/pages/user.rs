@@ -88,9 +88,6 @@ pub fn users_page() -> Html {
                                     if !user.discord_name.is_empty() {
                                         <span>{"Auf Discord bekannt als "}<CosmoStrong>{user.discord_name.clone()}</CosmoStrong></span>
                                     }
-                                    if user.is_mod {
-                                        <span>{user.display_name.clone()}{" ist ein "}<CosmoStrong>{"Mod"}</CosmoStrong></span>
-                                    }
                                 </BambooCard>
                             )
                         }

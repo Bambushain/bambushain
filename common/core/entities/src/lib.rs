@@ -35,6 +35,7 @@ pub mod event;
 pub mod fighter;
 pub mod free_company;
 pub mod grove;
+#[cfg(feature = "backend")]
 pub mod grove_user;
 pub mod support;
 pub mod token;

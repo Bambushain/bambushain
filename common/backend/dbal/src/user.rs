@@ -1,5 +1,5 @@
 use sea_orm::prelude::*;
-use sea_orm::sea_query::{Expr, Query};
+use sea_orm::sea_query::{Alias, Expr, IntoIden, Query, TableRef};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, EntityTrait, IntoActiveModel,
     JoinType, NotSet, QueryFilter, QueryOrder, QuerySelect, RelationTrait,
@@ -74,15 +74,25 @@ pub async fn get_user_by_email_or_username(
 
 pub async fn get_users(user_id: i32, db: &DatabaseConnection) -> BambooResult<Vec<User>> {
     user::Entity::find()
-        .inner_join(grove_user::Entity)
+        .distinct()
+        .join_rev(
+            JoinType::InnerJoin,
+            grove_user::Entity::belongs_to(user::Entity)
+                .from(grove_user::Column::UserId)
+                .to(user::Column::Id)
+                .into(),
+        )
         .filter(
             grove_user::Column::GroveId.in_subquery(
                 Query::select()
                     .column(grove_user::Column::GroveId)
-                    .from(grove_user::Entity)
+                    .from(TableRef::SchemaTable(
+                        Alias::new("grove").into_iden(),
+                        Alias::new("grove_user").into_iden(),
+                    ))
                     .cond_where(grove_user::Column::UserId.eq(user_id))
-                    .to_owned()
-            )
+                    .to_owned(),
+            ),
         )
         .order_by_asc(user::Column::DisplayName)
         .all(db)

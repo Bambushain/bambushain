@@ -192,6 +192,7 @@ fn add_event_dialog(
                 (*end_date_state).clone(),
                 *color_state,
                 *is_private_state,
+                -1,
             ))
             .await
             .map(|evt| {
@@ -311,6 +312,7 @@ fn edit_event_dialog(
                 *end_date_state,
                 *color_state,
                 event.is_private,
+                -1,
             );
             evt.id = event.id;
 

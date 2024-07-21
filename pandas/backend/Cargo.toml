@@ -11,11 +11,13 @@ bamboo-common = { path = "../../common", features = ["backend"] }
 
 actix-web = { workspace = true }
 actix-web-lab = { workspace = true }
+base64 = { workspace = true }
 bytes = { workspace = true }
 bytestring = { workspace = true }
 chrono = { workspace = true }
 date-range = { workspace = true }
 env_logger = { workspace = true }
+fast_qr = { workspace = true }
 log = { workspace = true }
 parking_lot = { workspace = true }
 sea-orm = { workspace = true }

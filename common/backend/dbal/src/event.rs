@@ -13,8 +13,13 @@ pub async fn get_events(
     db: &DatabaseConnection,
 ) -> BambooResult<Vec<GroveEvent>> {
     let events = event::Entity::find()
-        .join(JoinType::InnerJoin, grove::Relation::Event.def())
-        .join(JoinType::InnerJoin, grove_user::Relation::Grove.def())
+        .join_rev(
+            JoinType::InnerJoin,
+            grove_user::Entity::belongs_to(event::Entity)
+                .from(grove_user::Column::GroveId)
+                .to(event::Column::GroveId)
+                .into(),
+        )
         .filter(grove_user::Column::UserId.eq(user_id))
         .filter(
             Condition::any()
@@ -75,8 +80,13 @@ pub async fn get_events(
 
 pub async fn get_event(id: i32, user_id: i32, db: &DatabaseConnection) -> BambooResult<Event> {
     event::Entity::find_by_id(id)
-        .join(JoinType::InnerJoin, grove::Relation::Event.def())
-        .join(JoinType::InnerJoin, grove_user::Relation::Grove.def())
+        .join_rev(
+            JoinType::InnerJoin,
+            grove_user::Entity::belongs_to(event::Entity)
+                .from(grove_user::Column::GroveId)
+                .to(event::Column::GroveId)
+                .into(),
+        )
         .filter(grove_user::Column::UserId.eq(user_id))
         .filter(
             Condition::any()
