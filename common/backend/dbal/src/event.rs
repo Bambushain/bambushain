@@ -10,49 +10,51 @@ use bamboo_common_core::error::*;
 pub async fn get_events(
     range: DateRange,
     user_id: i32,
+    grove_id: Option<i32>,
     db: &DatabaseConnection,
 ) -> BambooResult<Vec<GroveEvent>> {
-    let events = event::Entity::find()
+    let query = event::Entity::find()
+        .distinct_on(vec![event::Column::Id])
         .join_rev(
-            JoinType::InnerJoin,
+            JoinType::LeftJoin,
             grove_user::Entity::belongs_to(event::Entity)
                 .from(grove_user::Column::GroveId)
                 .to(event::Column::GroveId)
                 .into(),
         )
-        .filter(grove_user::Column::UserId.eq(user_id))
         .filter(
             Condition::any()
-                .add(
-                    Condition::all()
-                        .add(event::Column::StartDate.gte(range.since()))
-                        .add(event::Column::StartDate.lte(range.until())),
-                )
-                .add(
-                    Condition::all()
-                        .add(event::Column::EndDate.gte(range.since()))
-                        .add(event::Column::EndDate.lte(range.until())),
-                ),
+                .add(event::Column::StartDate.between(range.since(), range.until()))
+                .add(event::Column::EndDate.between(range.since(), range.until())),
         )
         .filter(
             Condition::any()
-                .add(event::Column::IsPrivate.eq(false))
                 .add(
                     Condition::all()
                         .add(event::Column::IsPrivate.eq(true))
                         .add(event::Column::UserId.eq(user_id)),
+                )
+                .add(
+                    Condition::all()
+                        .add(event::Column::IsPrivate.eq(false))
+                        .add(grove_user::Column::UserId.eq(user_id)),
                 ),
-        )
-        .order_by_asc(event::Column::Id)
-        .all(db)
-        .await
-        .map_err(|err| {
-            log::error!("Failed to load events {err}");
-            BambooError::database("event", "Failed to load events")
-        })?;
+        );
+    let events = if let Some(grove_id) = grove_id {
+        query.filter(event::Column::GroveId.eq(grove_id))
+    } else {
+        query
+    }
+    .order_by_asc(event::Column::Id)
+    .all(db)
+    .await
+    .map_err(|err| {
+        log::error!("Failed to load events {err}");
+        BambooError::database("event", "Failed to load events")
+    })?;
 
     let users = super::get_users(user_id, db).await?;
-    let groves = super::get_groves(db).await?;
+    let groves = super::get_all_groves(db).await?;
 
     Ok(events
         .iter()
@@ -70,10 +72,10 @@ pub async fn get_events(
             };
             let grove = groves
                 .iter()
-                .find(|grove| grove.id == event.grove_id)
+                .find(|grove| grove.id == event.grove_id.unwrap_or(-1))
                 .cloned();
 
-            GroveEvent::from_event(event.clone(), user, grove.unwrap())
+            GroveEvent::from_event(event.clone(), user, grove)
         })
         .collect())
 }
@@ -81,7 +83,7 @@ pub async fn get_events(
 pub async fn get_event(id: i32, user_id: i32, db: &DatabaseConnection) -> BambooResult<Event> {
     event::Entity::find_by_id(id)
         .join_rev(
-            JoinType::InnerJoin,
+            JoinType::LeftJoin,
             grove_user::Entity::belongs_to(event::Entity)
                 .from(grove_user::Column::GroveId)
                 .to(event::Column::GroveId)

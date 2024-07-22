@@ -12,7 +12,8 @@ use yew_router::prelude::*;
 use bamboo_common::core::entities::user::UpdateProfile;
 use bamboo_common::frontend::api::{ApiError, CONFLICT, FORBIDDEN, NOT_FOUND};
 use bamboo_pandas_frontend_base::routing::{
-    AppRoute, BambooGroveRoute, FinalFantasyRoute, LegalRoute, LicensesRoute, SupportRoute,
+    AppRoute, BambooGroveRoute, FinalFantasyRoute, GroveRoute, LegalRoute, LicensesRoute,
+    SupportRoute,
 };
 use bamboo_pandas_frontend_base::{error, storage};
 use bamboo_pandas_frontend_section_authentication::LoginPage;
@@ -20,6 +21,7 @@ use bamboo_pandas_frontend_section_bamboo::CalendarPage;
 use bamboo_pandas_frontend_section_bamboo::UsersPage;
 use bamboo_pandas_frontend_section_final_fantasy::CharacterPage;
 use bamboo_pandas_frontend_section_final_fantasy::SettingsPage;
+use bamboo_pandas_frontend_section_groves::pages::groves::GroveDetails;
 use bamboo_pandas_frontend_section_legal::{DataProtectionPage, ImprintPage};
 use bamboo_pandas_frontend_section_licenses::{
     BambooGrovePage, FontsPage, ImagesPage, SoftwareLicensesPage,
@@ -42,6 +44,64 @@ pub fn switch(route: AppRoute) -> Html {
     }
 }
 
+#[function_component(GrovesMenu)]
+fn groves_menus() -> Html {
+    let groves_state = use_async(async move { api::get_groves().await });
+
+    {
+        let groves_state = groves_state.clone();
+        use_mount(move || {
+            groves_state.run();
+        });
+    }
+
+    if let Some(_) = &groves_state.error {
+        html!()
+    } else if let Some(groves) = &groves_state.data {
+        html!(
+            {for groves.iter().cloned().map(|grove| {
+                let name = grove.name.clone();
+
+                html!(
+                    <Switch<GroveRoute> render={render_sub_menu_entry(name.clone(), GroveRoute::Grove { id: grove.id })} />
+                )
+            })}
+        )
+    } else {
+        html!()
+    }
+}
+
+#[function_component(GrovesRoot)]
+fn groves_root() -> Html {
+    let groves_state = use_async(async move { api::get_groves().await });
+
+    {
+        let groves_state = groves_state.clone();
+        use_mount(move || {
+            groves_state.run();
+        });
+    }
+
+    if groves_state.error.is_some() {
+        html!(
+            <Redirect<GroveRoute> to={GroveRoute::AddGrove} />
+        )
+    } else if let Some(groves) = &groves_state.data {
+        let to = if let Some(first) = groves.first() {
+            GroveRoute::Grove { id: first.id }
+        } else {
+            GroveRoute::AddGrove
+        };
+
+        html!(
+            <Redirect<GroveRoute> to={to} />
+        )
+    } else {
+        html!()
+    }
+}
+
 fn switch_sub_menu(route: AppRoute) -> Html {
     match route {
         AppRoute::BambooGroveRoot | AppRoute::BambooGrove => html!(
@@ -54,6 +114,12 @@ fn switch_sub_menu(route: AppRoute) -> Html {
             <CosmoSubMenuBar>
                 <Switch<FinalFantasyRoute> render={render_sub_menu_entry("Meine Charaktere", FinalFantasyRoute::Characters)} />
                 <Switch<FinalFantasyRoute> render={render_sub_menu_entry("Personalisierung", FinalFantasyRoute::Settings)} />
+            </CosmoSubMenuBar>
+        ),
+        AppRoute::GrovesRoot | AppRoute::Groves => html!(
+            <CosmoSubMenuBar>
+                <GrovesMenu />
+                <Switch<GroveRoute> render={render_sub_menu_entry("Neuer Hain", GroveRoute::AddGrove)} />
             </CosmoSubMenuBar>
         ),
         AppRoute::SupportRoot | AppRoute::Support => html!(
@@ -99,6 +165,22 @@ fn switch_final_fantasy(route: FinalFantasyRoute) -> Html {
                 </Helmet>
                 <SettingsPage />
             </>
+        ),
+    }
+}
+
+fn switch_groves(route: GroveRoute) -> Html {
+    match route {
+        GroveRoute::AddGrove => html!(
+            <>
+                <Helmet>
+                    <title>{"Neuer Hain"}</title>
+                </Helmet>
+                <CosmoTitle title="Neuer Hain" />
+            </>
+        ),
+        GroveRoute::Grove { id } => html!(
+            <GroveDetails id={id} />
         ),
     }
 }
@@ -216,6 +298,17 @@ fn switch_app(route: AppRoute) -> Html {
                 <Switch<FinalFantasyRoute> render={switch_final_fantasy} />
             </>
         ),
+        AppRoute::GrovesRoot => html!(
+            <GrovesRoot />
+        ),
+        AppRoute::Groves => html!(
+            <>
+                <Helmet>
+                    <title>{"Meine Haine"}</title>
+                </Helmet>
+                <Switch<GroveRoute> render={switch_groves} />
+            </>
+        ),
         AppRoute::SupportRoot | AppRoute::Support => html!(
             <>
                 <Helmet>
@@ -327,6 +420,7 @@ fn app_layout() -> Html {
                     <CosmoMainMenu>
                         <Switch<AppRoute> render={render_main_menu_entry("Bambushain", AppRoute::BambooGroveRoot, AppRoute::BambooGrove)} />
                         <Switch<AppRoute> render={render_main_menu_entry("Final Fantasy", AppRoute::FinalFantasyRoot, AppRoute::FinalFantasy)} />
+                        <Switch<AppRoute> render={render_main_menu_entry("Meine Haine", AppRoute::GrovesRoot, AppRoute::Groves)} />
                         <Switch<AppRoute> render={render_main_menu_entry("Bambussupport", AppRoute::SupportRoot, AppRoute::Support)} />
                     </CosmoMainMenu>
                     <Switch<AppRoute> render={switch_sub_menu} />
@@ -743,9 +837,12 @@ fn enable_totp_dialog(on_close: &Callback<()>) -> Html {
     {
         let enable_totp_state = enable_totp_state.clone();
         #[allow(clippy::identity_op)]
-        use_timeout(move || {
-            enable_totp_state.run();
-        }, 1 * 1000);
+        use_timeout(
+            move || {
+                enable_totp_state.run();
+            },
+            1 * 1000,
+        );
     }
 
     let img_style = use_style!(

@@ -35,7 +35,7 @@ pub struct Model {
     #[serde(skip)]
     pub user_id: Option<i32>,
     #[serde(skip)]
-    pub grove_id: i32,
+    pub grove_id: Option<i32>,
 }
 
 #[cfg(feature = "backend")]
@@ -77,29 +77,6 @@ impl Related<super::grove::Entity> for Entity {
 impl ActiveModelBehavior for ActiveModel {}
 
 impl Model {
-    #[cfg(feature = "frontend")]
-    pub fn new(
-        title: String,
-        description: String,
-        start_date: NaiveDate,
-        end_date: NaiveDate,
-        color: Color,
-        is_private: bool,
-        grove_id: i32,
-    ) -> Self {
-        Self {
-            id: i32::default(),
-            title,
-            description,
-            start_date,
-            end_date,
-            color: color.hex(),
-            is_private,
-            user_id: None,
-            grove_id,
-        }
-    }
-
     pub fn set_color(&mut self, color: Color) {
         self.color = color.hex();
     }
@@ -121,7 +98,7 @@ pub struct GroveEvent {
     pub color: String,
     pub is_private: bool,
     pub user: Option<User>,
-    pub grove: Grove,
+    pub grove: Option<Grove>,
 }
 
 impl GroveEvent {
@@ -132,14 +109,14 @@ impl GroveEvent {
             description: self.description.clone(),
             start_date: self.start_date,
             end_date: self.end_date,
-            color: self.title.clone(),
+            color: self.color.clone(),
             is_private: self.is_private,
             user_id: self.user.clone().map(|user| user.id),
-            grove_id: self.grove.id,
+            grove_id: self.grove.clone().map(|grove| grove.id),
         }
     }
 
-    pub fn from_event(event: Event, user: Option<User>, grove: Grove) -> Self {
+    pub fn from_event(event: Event, user: Option<User>, grove: Option<Grove>) -> Self {
         GroveEvent {
             id: event.id,
             title: event.title,
@@ -149,6 +126,53 @@ impl GroveEvent {
             color: event.color,
             is_private: event.is_private,
             user,
+            grove,
+        }
+    }
+
+    #[cfg(feature = "backend")]
+    pub fn new(
+        title: String,
+        description: String,
+        start_date: NaiveDate,
+        end_date: NaiveDate,
+        color: String,
+        is_private: bool,
+        user: Option<User>,
+        grove: Option<Grove>,
+    ) -> Self {
+        GroveEvent {
+            id: -1,
+            title,
+            description,
+            start_date,
+            end_date,
+            color,
+            is_private,
+            user,
+            grove,
+        }
+    }
+
+    #[cfg(feature = "frontend")]
+    pub fn new(
+        title: String,
+        description: String,
+        start_date: NaiveDate,
+        end_date: NaiveDate,
+        color: String,
+        is_private: bool,
+        grove: Option<Grove>,
+    ) -> Self {
+        GroveEvent {
+            id: -1,
+            title,
+            description,
+            start_date,
+            end_date,
+            color,
+            is_private,
+            user: None,
             grove,
         }
     }

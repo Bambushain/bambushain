@@ -18,6 +18,7 @@ use crate::path;
 pub struct GetEventsQuery {
     pub start: NaiveDate,
     pub end: NaiveDate,
+    pub grove: Option<i32>,
 }
 
 #[get("/api/bamboo-grove/event", wrap = "authenticate!()")]
@@ -32,7 +33,7 @@ pub async fn get_events(
         BambooError::invalid_data("event", "The start date cannot be after the end date")
     })?;
 
-    dbal::get_events(range, authentication.user.id, &db)
+    dbal::get_events(range, authentication.user.id, query.grove, &db)
         .await
         .map(|data| list!(data))
 }
@@ -45,7 +46,6 @@ pub async fn create_event(
     db: DbConnection,
 ) -> BambooApiResult<Event> {
     let body = check_missing_fields!(body, "event")?;
-
     let data = dbal::create_event(body.into_inner(), authentication.user.id, &db).await?;
 
     notifier.notify_event_create(data.clone(), &db).await;

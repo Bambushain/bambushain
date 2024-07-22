@@ -12,6 +12,7 @@ mod custom_field;
 mod event;
 mod fighter;
 mod free_company;
+mod grove;
 mod licenses;
 mod my;
 mod sse;
@@ -34,6 +35,11 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
                 .to(HttpResponse::NoContent)
                 .wrap(authenticate!()),
         )
+        .service(grove::get_groves)
+        .service(grove::create_grove)
+        .service(grove::get_grove)
+        .service(grove::update_grove)
+        .service(grove::delete_grove)
         .service(user::get_users)
         .service(user::get_profile_picture)
         .service(event::get_events)

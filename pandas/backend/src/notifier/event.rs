@@ -75,7 +75,7 @@ impl EventBroadcaster {
         let clients = self.inner.lock().clients.clone();
         log::debug!("Has {} clients registered", clients.len());
         for (client, user) in clients {
-            if let Ok(groves) = dbal::get_groves_by_user(user.id, db).await {
+            if let Ok(groves) = dbal::get_groves(user.id, db).await {
                 Self::send_message(client, groves, user, evt.clone())
             }
         }
@@ -84,8 +84,10 @@ impl EventBroadcaster {
     fn send_message(client: Sender<sse::Event>, groves: Vec<Grove>, user: User, evt: event::Event) {
         let is_private_event_of_current_user =
             evt.event.is_private && Some(user.id) == evt.event.user_id;
-        let is_in_same_grove =
-            !evt.event.is_private && groves.iter().any(|g| g.id == evt.event.grove_id);
+        let is_in_same_grove = !evt.event.is_private
+            && groves
+                .iter()
+                .any(|g| g.id == evt.event.grove_id.unwrap_or(-1));
         if is_private_event_of_current_user || is_in_same_grove {
             actix_web::rt::spawn(async move {
                 log::debug!("Send event data");

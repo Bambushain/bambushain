@@ -9,6 +9,10 @@ pub enum AppRoute {
     BambooGroveRoot,
     #[at("/bamboo/*")]
     BambooGrove,
+    #[at("/groves")]
+    GrovesRoot,
+    #[at("/groves/*")]
+    Groves,
     #[at("/final-fantasy")]
     FinalFantasyRoot,
     #[at("/final-fantasy/*")]
@@ -49,6 +53,14 @@ pub enum BambooGroveRoute {
     Calendar,
     #[at("/bamboo/user")]
     User,
+}
+
+#[derive(Clone, Routable, PartialEq)]
+pub enum GroveRoute {
+    #[at("/groves/add")]
+    AddGrove,
+    #[at("/groves/:id")]
+    Grove { id: i32 },
 }
 
 #[derive(Clone, Routable, PartialEq)]

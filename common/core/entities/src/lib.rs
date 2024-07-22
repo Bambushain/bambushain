@@ -11,11 +11,14 @@ pub use crate::custom_character_field::Model as CustomCharacterField;
 pub use crate::custom_character_field_option::Model as CustomCharacterFieldOption;
 pub use crate::custom_character_field_value::Model as CustomCharacterFieldValue;
 pub use crate::dependency::*;
+pub use crate::event::GroveEvent;
 pub use crate::event::Model as Event;
 pub use crate::fighter::FighterJob;
 pub use crate::fighter::Model as Fighter;
 pub use crate::free_company::Model as FreeCompany;
 pub use crate::grove::Model as Grove;
+#[cfg(feature = "backend")]
+pub use crate::grove_user::Model as GroveUser;
 pub use crate::support::*;
 pub use crate::token::Model as Token;
 pub use crate::user::Model as User;

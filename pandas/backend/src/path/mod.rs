@@ -53,6 +53,11 @@ pub struct UserPathInfo {
     pub user_id: i32,
 }
 
+#[derive(Deserialize)]
+pub struct GrovePathInfo {
+    pub grove_id: i32,
+}
+
 pub type CharacterPath = web::Path<CharacterPathInfo>;
 pub type CharacterHousingPath = web::Path<CharacterHousingPathInfo>;
 pub type CrafterPath = web::Path<CrafterPathInfo>;
@@ -63,3 +68,4 @@ pub type EventPath = web::Path<EventPathInfo>;
 pub type FighterPath = web::Path<FighterPathInfo>;
 pub type FreeCompanyPath = web::Path<FreeCompanyPathInfo>;
 pub type UserPath = web::Path<UserPathInfo>;
+pub type GrovePath = web::Path<GrovePathInfo>;
