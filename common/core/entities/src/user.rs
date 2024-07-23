@@ -2,6 +2,8 @@
 use sea_orm::entity::prelude::*;
 #[cfg(feature = "backend")]
 use sea_orm::ActiveValue::Set;
+#[cfg(feature = "backend")]
+use sea_orm::FromQueryResult;
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "backend")]
@@ -154,7 +156,7 @@ pub struct TotpQrCode {
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 #[serde(rename_all = "camelCase")]
-#[cfg_attr(feature = "backend", derive(Responder))]
+#[cfg_attr(feature = "backend", derive(Responder, FromQueryResult))]
 pub struct GroveUser {
     #[serde(default)]
     pub id: i32,
