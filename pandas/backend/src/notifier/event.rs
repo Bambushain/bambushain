@@ -10,7 +10,7 @@ use tokio::sync::mpsc::error::SendError;
 use tokio::sync::mpsc::Sender;
 
 use bamboo_common::backend::dbal;
-use bamboo_common::core::entities::{Event, Grove, User};
+use bamboo_common::core::entities::{Grove, GroveEvent, User};
 
 use crate::sse::event;
 
@@ -83,11 +83,11 @@ impl EventBroadcaster {
 
     fn send_message(client: Sender<sse::Event>, groves: Vec<Grove>, user: User, evt: event::Event) {
         let is_private_event_of_current_user =
-            evt.event.is_private && Some(user.id) == evt.event.user_id;
-        let is_in_same_grove = !evt.event.is_private
+            evt.event.is_private && Some(user.id) == evt.clone().event.user.map(|u| u.id);
+        let is_in_same_grove = !evt.clone().event.is_private
             && groves
                 .iter()
-                .any(|g| g.id == evt.event.grove_id.unwrap_or(-1));
+                .any(|g| g.id == evt.clone().event.grove.map(|g| g.id).unwrap_or(-1));
         if is_private_event_of_current_user || is_in_same_grove {
             actix_web::rt::spawn(async move {
                 log::debug!("Send event data");
@@ -110,15 +110,15 @@ impl EventBroadcaster {
             .await
     }
 
-    pub async fn notify_create(&self, evt: Event, db: &DatabaseConnection) {
+    pub async fn notify_create(&self, evt: GroveEvent, db: &DatabaseConnection) {
         self.send_event(event::Event::created(evt), db).await
     }
 
-    pub async fn notify_update(&self, evt: Event, db: &DatabaseConnection) {
+    pub async fn notify_update(&self, evt: GroveEvent, db: &DatabaseConnection) {
         self.send_event(event::Event::updated(evt), db).await
     }
 
-    pub async fn notify_delete(&self, evt: Event, db: &DatabaseConnection) {
+    pub async fn notify_delete(&self, evt: GroveEvent, db: &DatabaseConnection) {
         self.send_event(event::Event::deleted(evt), db).await
     }
 }

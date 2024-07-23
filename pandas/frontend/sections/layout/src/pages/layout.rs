@@ -21,7 +21,7 @@ use bamboo_pandas_frontend_section_bamboo::CalendarPage;
 use bamboo_pandas_frontend_section_bamboo::UsersPage;
 use bamboo_pandas_frontend_section_final_fantasy::CharacterPage;
 use bamboo_pandas_frontend_section_final_fantasy::SettingsPage;
-use bamboo_pandas_frontend_section_groves::pages::groves::GroveDetails;
+use bamboo_pandas_frontend_section_groves::pages::groves::GroveDetailsPage;
 use bamboo_pandas_frontend_section_legal::{DataProtectionPage, ImprintPage};
 use bamboo_pandas_frontend_section_licenses::{
     BambooGrovePage, FontsPage, ImagesPage, SoftwareLicensesPage,
@@ -180,7 +180,7 @@ fn switch_groves(route: GroveRoute) -> Html {
             </>
         ),
         GroveRoute::Grove { id } => html!(
-            <GroveDetails id={id} />
+            <GroveDetailsPage id={id} />
         ),
     }
 }

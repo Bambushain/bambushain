@@ -7,7 +7,6 @@ use bamboo_common::backend::dbal;
 use bamboo_common::backend::response::*;
 use bamboo_common::backend::services::DbConnection;
 use bamboo_common::core::entities::event::GroveEvent;
-use bamboo_common::core::entities::Event;
 use bamboo_common::core::error::*;
 
 use crate::middleware::authenticate_user::{authenticate, Authentication};
@@ -44,7 +43,7 @@ pub async fn create_event(
     notifier: notifier::Notifier,
     authentication: Authentication,
     db: DbConnection,
-) -> BambooApiResult<Event> {
+) -> BambooApiResult<GroveEvent> {
     let body = check_missing_fields!(body, "event")?;
     let data = dbal::create_event(body.into_inner(), authentication.user.id, &db).await?;
 

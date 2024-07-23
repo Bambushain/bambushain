@@ -5,6 +5,7 @@ use sea_orm::{
     JoinType, NotSet, QueryFilter, QueryOrder, QuerySelect, RelationTrait,
 };
 
+use bamboo_common_core::entities::user::WebUser;
 use bamboo_common_core::entities::*;
 use bamboo_common_core::error::*;
 
@@ -72,7 +73,7 @@ pub async fn get_user_by_email_or_username(
         })?
 }
 
-pub async fn get_users(user_id: i32, db: &DatabaseConnection) -> BambooResult<Vec<User>> {
+pub async fn get_users(user_id: i32, db: &DatabaseConnection) -> BambooResult<Vec<WebUser>> {
     user::Entity::find()
         .distinct()
         .join_rev(
@@ -100,6 +101,57 @@ pub async fn get_users(user_id: i32, db: &DatabaseConnection) -> BambooResult<Ve
         .map_err(|err| {
             log::error!("{err}");
             BambooError::database("user", "Failed to load users")
+        })
+        .map(|users| {
+            users
+                .iter()
+                .cloned()
+                .map(|user| WebUser::from_user(user))
+                .collect::<Vec<WebUser>>()
+        })
+}
+
+pub async fn get_users_by_grove(
+    user_id: i32,
+    grove_id: i32,
+    db: &DatabaseConnection,
+) -> BambooResult<Vec<user::GroveUser>> {
+    user::Entity::find()
+        .distinct()
+        .find_with_related(grove_user::Entity)
+        .filter(
+            grove_user::Column::GroveId.in_subquery(
+                Query::select()
+                    .column(grove_user::Column::GroveId)
+                    .from(TableRef::SchemaTable(
+                        Alias::new("grove").into_iden(),
+                        Alias::new("grove_user").into_iden(),
+                    ))
+                    .cond_where(grove_user::Column::UserId.eq(user_id))
+                    .to_owned(),
+            ),
+        )
+        .filter(grove_user::Column::GroveId.eq(grove_id))
+        .order_by_asc(user::Column::DisplayName)
+        .all(db)
+        .await
+        .map_err(|err| {
+            log::error!("{err}");
+            BambooError::database("user", "Failed to load users")
+        })
+        .map(|items| {
+            items
+                .iter()
+                .cloned()
+                .map(|(user, grove_user)| {
+                    user::GroveUser::from_user(
+                        user,
+                        grove_user
+                            .iter()
+                            .any(|gu| gu.grove_id == grove_id && gu.is_mod),
+                    )
+                })
+                .collect::<Vec<user::GroveUser>>()
         })
 }
 

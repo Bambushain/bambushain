@@ -11,7 +11,9 @@ use std::rc::Rc;
 use std::task::{Context, Poll};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use web_sys::{EventSource, EventTarget, MessageEvent};
-use yew::{hook, use_callback, use_mut_ref, use_state_eq, Callback, UseStateHandle};
+use yew::{
+    hook, use_callback, use_effect_with, use_mut_ref, use_state_eq, Callback, UseStateHandle,
+};
 use yew_hooks::{use_async, use_list, use_mount, use_unmount, UseListHandle};
 
 struct CalendarEventSourceEvent {
@@ -95,8 +97,7 @@ impl CalendarEventSource {
 pub struct UseEventsHandle {
     pub events_list: UseListHandle<GroveEvent>,
     pub date_state: UseStateHandle<NaiveDate>,
-    pub start_date_state: UseStateHandle<NaiveDate>,
-    pub end_date_state: UseStateHandle<NaiveDate>,
+    pub grove_id_state: UseStateHandle<Option<i32>>,
     pub(crate) calendar_event_source_state: Rc<RefCell<CalendarEventSource>>,
     pub on_navigate: Callback<NaiveDate>,
 }
@@ -105,45 +106,36 @@ impl UseEventsHandle {
     pub(crate) fn new(
         events_list: UseListHandle<GroveEvent>,
         date_state: UseStateHandle<NaiveDate>,
-        start_date_state: UseStateHandle<NaiveDate>,
-        end_date_state: UseStateHandle<NaiveDate>,
+        grove_id_state: UseStateHandle<Option<i32>>,
         calendar_event_source_state: Rc<RefCell<CalendarEventSource>>,
         on_navigate: Callback<NaiveDate>,
     ) -> Self {
         Self {
             events_list,
             date_state,
-            start_date_state,
-            end_date_state,
+            grove_id_state,
             calendar_event_source_state,
             on_navigate,
         }
     }
-
-    pub fn navigate(&mut self, date: NaiveDate) {
-        self.on_navigate.emit(date);
-    }
 }
 
-#[hook]
-pub fn use_events(first_day: NaiveDate, grove_id: Option<i32>) -> UseEventsHandle {
-    let date_state = use_state_eq(|| first_day);
-
-    let first_day_offset = (*date_state).weekday() as i64 - 1;
+fn get_dates(date: NaiveDate) -> DateRange {
+    let first_day_offset = date.weekday() as i64 - 1;
     let first_day_offset = if first_day_offset < 0 {
         0
     } else {
         first_day_offset
     } as u64;
 
-    let last_day_of_month = (*date_state)
+    let last_day_of_month = date
         .checked_add_months(Months::new(1))
         .unwrap()
         .checked_sub_days(Days::new(1))
         .unwrap();
     log::debug!("Last day of month {}", last_day_of_month.clone());
 
-    let last_day_of_prev_month = (*date_state).checked_sub_days(Days::new(1)).unwrap();
+    let last_day_of_prev_month = date.checked_sub_days(Days::new(1)).unwrap();
     log::debug!("Last day of prev month {}", last_day_of_prev_month.clone());
 
     let offset_days = Days::new(first_day_offset);
@@ -160,38 +152,44 @@ pub fn use_events(first_day: NaiveDate, grove_id: Option<i32>) -> UseEventsHandl
         40 - total_days
     };
 
-    let first_day_of_next_month = (*date_state).checked_add_months(Months::new(1)).unwrap();
+    let first_day_of_next_month = date.checked_add_months(Months::new(1)).unwrap();
     let calendar_end_date = first_day_of_next_month
         .checked_add_days(Days::new(days_of_next_month))
         .unwrap();
 
+    DateRange::new(calendar_start_date, calendar_end_date).unwrap()
+}
+
+#[hook]
+pub fn use_events(first_day: NaiveDate, grove_id: Option<i32>) -> UseEventsHandle {
+    let date_state = use_state_eq(|| first_day);
+
+    let grove_id_state = use_state_eq(|| grove_id);
+
     let events_list = use_list(vec![] as Vec<GroveEvent>);
-    let start_date_state = use_state_eq(|| calendar_start_date);
-    let end_date_state = use_state_eq(|| calendar_end_date);
 
     let calendar_event_source_ref = use_mut_ref(CalendarEventSource::new);
 
-    let navigate = use_callback(date_state.clone(), |date, date_state| {
-        date_state.set(date)
-    });
+    let navigate = use_callback(date_state.clone(), |date, date_state| date_state.set(date));
 
     let handle = UseEventsHandle::new(
         events_list.clone(),
-        date_state,
-        start_date_state,
-        end_date_state,
+        date_state.clone(),
+        grove_id_state.clone(),
         calendar_event_source_ref,
         navigate,
     );
     let events_state = {
-        let range = DateRange::new(*handle.start_date_state, *handle.end_date_state).unwrap();
-
         let events_list = handle.events_list.clone();
 
-        let grove_id = grove_id.clone();
+        let date_state = date_state.clone();
+
+        let grove_id_state = grove_id_state.clone();
 
         use_async(async move {
-            api::get_events(range.into(), grove_id)
+            let range = get_dates(*date_state);
+
+            api::get_events(range.into(), *grove_id_state)
                 .await
                 .map(|data| events_list.set(data))
                 .map_err(|err| format!("{err}"))
@@ -199,18 +197,15 @@ pub fn use_events(first_day: NaiveDate, grove_id: Option<i32>) -> UseEventsHandl
     };
 
     let event_created = use_callback(
-        (
-            handle.events_list.clone(),
-            handle.start_date_state.clone(),
-            handle.end_date_state.clone(),
-        ),
-        |event: GroveEvent, (events_list, since, until)| {
+        (handle.events_list.clone(), handle.date_state.clone()),
+        |event: GroveEvent, (events_list, date_state)| {
             log::debug!(
                 "Someone created a new event, adding it to the list if it is in current range"
             );
             log::debug!("Got event {event:?}");
-            if (event.start_date >= **since && event.start_date <= **until)
-                || (event.end_date >= **since && event.end_date <= **until)
+            let range = get_dates(**date_state);
+            if (event.start_date >= range.since() && event.start_date <= range.until())
+                || (event.end_date >= range.since() && event.end_date <= range.until())
             {
                 log::debug!("The event is in range, lets add it to the list");
                 events_list.push(event.clone());
@@ -218,16 +213,13 @@ pub fn use_events(first_day: NaiveDate, grove_id: Option<i32>) -> UseEventsHandl
         },
     );
     let event_updated = use_callback(
-        (
-            handle.events_list.clone(),
-            handle.start_date_state.clone(),
-            handle.end_date_state.clone(),
-        ),
-        |event: GroveEvent, (events_list, since, until)| {
+        (handle.events_list.clone(), handle.date_state.clone()),
+        |event: GroveEvent, (events_list, date_state)| {
             log::debug!("Someone updated an event, if we have it loaded, lets update it");
             log::debug!("Got event {event:?}");
-            if (event.start_date >= **since && event.start_date <= **until)
-                || (event.end_date >= **since && event.end_date <= **until)
+            let range = get_dates(**date_state);
+            if (event.start_date >= range.since() && event.start_date <= range.until())
+                || (event.end_date >= range.since() && event.end_date <= range.until())
             {
                 log::debug!("The event is in range");
 
@@ -263,20 +255,32 @@ pub fn use_events(first_day: NaiveDate, grove_id: Option<i32>) -> UseEventsHandl
         });
     }
     {
-        let events_state = events_state.clone();
-        let handle = handle.clone();
+        let mount_handle = handle.clone();
+        let date_events_state = events_state.clone();
+        let grove_events_state = events_state.clone();
 
         let event_created = event_created.clone();
         let event_updated = event_updated.clone();
         let event_deleted = event_deleted.clone();
 
+        use_effect_with(handle.date_state.clone(), move |_| {
+            date_events_state.run();
+
+            || {}
+        });
+
+        use_effect_with(handle.grove_id_state.clone(), move |_| {
+            grove_events_state.run();
+
+            || {}
+        });
+
         use_mount(move || {
             log::debug!("Start event source for calendar on /sse/event");
-            let mut source = handle.calendar_event_source_state.borrow_mut();
+            let mut source = mount_handle.calendar_event_source_state.borrow_mut();
             source.register_handler("created", event_created.clone());
             source.register_handler("updated", event_updated.clone());
             source.register_handler("deleted", event_deleted.clone());
-            events_state.run();
         })
     }
 

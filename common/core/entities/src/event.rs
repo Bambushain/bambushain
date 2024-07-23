@@ -6,9 +6,10 @@ use color_art::{color, Color};
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::{Event, Grove, User};
+use crate::{Event, Grove};
 #[cfg(feature = "backend")]
 use bamboo_common_backend_macros::*;
+use crate::user::WebUser;
 
 fn set_false() -> bool {
     false
@@ -97,7 +98,7 @@ pub struct GroveEvent {
     pub end_date: NaiveDate,
     pub color: String,
     pub is_private: bool,
-    pub user: Option<User>,
+    pub user: Option<WebUser>,
     pub grove: Option<Grove>,
 }
 
@@ -116,7 +117,7 @@ impl GroveEvent {
         }
     }
 
-    pub fn from_event(event: Event, user: Option<User>, grove: Option<Grove>) -> Self {
+    pub fn from_event(event: Event, user: Option<WebUser>, grove: Option<Grove>) -> Self {
         GroveEvent {
             id: event.id,
             title: event.title,
@@ -138,7 +139,7 @@ impl GroveEvent {
         end_date: NaiveDate,
         color: String,
         is_private: bool,
-        user: Option<User>,
+        user: Option<WebUser>,
         grove: Option<Grove>,
     ) -> Self {
         GroveEvent {

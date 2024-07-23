@@ -2,6 +2,7 @@ use std::fmt::Display;
 
 use actix_web_lab::sse;
 use serde::{Deserialize, Serialize};
+use bamboo_common::core::entities::GroveEvent;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum EventAction {
@@ -22,7 +23,7 @@ impl Display for EventAction {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Event {
-    pub event: bamboo_common::core::entities::Event,
+    pub event: GroveEvent,
     pub action: EventAction,
 }
 
@@ -36,19 +37,19 @@ impl From<Event> for sse::Event {
 }
 
 impl Event {
-    fn new(action: EventAction, event: bamboo_common::core::entities::Event) -> Self {
+    fn new(action: EventAction, event: GroveEvent) -> Self {
         Self { event, action }
     }
 
-    pub fn created(event: bamboo_common::core::entities::Event) -> Self {
+    pub fn created(event: GroveEvent) -> Self {
         Self::new(EventAction::Created, event)
     }
 
-    pub fn updated(event: bamboo_common::core::entities::Event) -> Self {
+    pub fn updated(event: GroveEvent) -> Self {
         Self::new(EventAction::Updated, event)
     }
 
-    pub fn deleted(event: bamboo_common::core::entities::Event) -> Self {
+    pub fn deleted(event: GroveEvent) -> Self {
         Self::new(EventAction::Deleted, event)
     }
 }
