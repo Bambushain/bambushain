@@ -60,7 +60,7 @@ fn add_event_dialog(
 
     let color_state = use_state_eq(|| AttrValue::from(Color::random().hex_full()));
 
-    let is_private_state = use_state_eq(|| false);
+    let is_private_state = use_state_eq(|| grove_id.is_none());
     let unreported_error_toggle = use_state_eq(|| false);
 
     let bamboo_error_state = use_state_eq(ApiError::default);
@@ -105,12 +105,15 @@ fn add_event_dialog(
         let on_added = on_added.clone();
 
         use_async(async move {
-            let grove = if *is_private_state {
-                grove_id_state.map(|id| groves.iter().cloned().find(|grove| grove.id == id))
+            let grove = if !*is_private_state {
+                if let Some(id) = *grove_id_state {
+                    groves.iter().cloned().find(|grove| grove.id == id)
+                } else {
+                    None
+                }
             } else {
-                Some(None)
-            }
-            .unwrap();
+                None
+            };
 
             api::create_event(GroveEvent::new(
                 (*title_state).to_string(),
@@ -192,7 +195,15 @@ fn add_event_dialog(
                 } else if save_state.error.is_some() {
                     <CosmoMessage message_type={CosmoMessageType::Negative} message="Das Event konnte leider nicht erstellt werden" header="Fehler beim Speichern" />
                 }
-                if !*is_private_state {
+                if grove_id.is_some() {
+                    <CosmoInputGroup>
+                        <CosmoTextBox width={CosmoInputWidth::Medium} label="Titel" value={(*title_state).clone()} on_input={title_input} />
+                        <CosmoTextArea width={CosmoInputWidth::Medium} label="Beschreibung" value={(*description_state).clone()} on_input={description_input} />
+                        <CosmoColorPicker width={CosmoInputWidth::Medium} label="Farbe" value={Color::from_hex((*color_state).as_str()).unwrap()} on_input={color_input} />
+                        <CosmoDatePicker width={CosmoInputWidth::Medium} label="Von" value={*start_date} readonly={true} on_input={|_| {}} />
+                        <CosmoDatePicker width={CosmoInputWidth::Medium} label="Bis" min={*start_date} value={(*end_date_state).clone()} on_input={end_date_input} />
+                    </CosmoInputGroup>
+                } else if !*is_private_state {
                     <CosmoInputGroup>
                         <CosmoTextBox width={CosmoInputWidth::Medium} label="Titel" value={(*title_state).clone()} on_input={title_input} />
                         <CosmoTextArea width={CosmoInputWidth::Medium} label="Beschreibung" value={(*description_state).clone()} on_input={description_input} />
@@ -735,6 +746,8 @@ fn calendar_data(
     let render_day = move |day: NaiveDate| {
         let events = events_for_day(day);
         let groves = groves.clone();
+
+        log::debug!("{grove_id:#?}");
 
         html!(
             <Day grove_id={grove_id} groves={groves} events={events} key={day.format("%F").to_string()} day={day.day()} month={day.month()} year={day.year()} selected_month={date.month()} />

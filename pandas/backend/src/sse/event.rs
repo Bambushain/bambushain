@@ -1,8 +1,8 @@
 use std::fmt::Display;
 
 use actix_web_lab::sse;
-use serde::{Deserialize, Serialize};
 use bamboo_common::core::entities::GroveEvent;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum EventAction {

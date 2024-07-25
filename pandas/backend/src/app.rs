@@ -15,7 +15,7 @@ async fn setup_google_playstore_grove(
         .await
         .map_err(std::io::Error::other)?)
     {
-        dbal::create_grove("Google".to_string(), user_id, db)
+        dbal::create_grove("Google".to_string(), false, user_id, db)
             .await
             .map_err(std::io::Error::other)
             .map(|_| ())

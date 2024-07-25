@@ -1,8 +1,8 @@
 use sea_orm::prelude::*;
-use sea_orm::sea_query::{Alias, Expr, IntoIden, Query, TableRef};
+use sea_orm::sea_query::{Expr, IntoCondition};
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, EntityTrait, IntoActiveModel,
-    JoinType, NotSet, QueryFilter, QueryOrder, QuerySelect, RelationTrait,
+    ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, EntityTrait, FromQueryResult,
+    IntoActiveModel, JoinType, NotSet, QueryFilter, QueryOrder, QuerySelect, RelationTrait,
 };
 
 use bamboo_common_core::entities::user::WebUser;
@@ -73,53 +73,37 @@ pub async fn get_user_by_email_or_username(
         })?
 }
 
-pub async fn get_users(user_id: i32, db: &DatabaseConnection) -> BambooResult<Vec<WebUser>> {
-    user::Entity::find()
-        .distinct()
-        .join_rev(
-            JoinType::InnerJoin,
-            grove_user::Entity::belongs_to(user::Entity)
-                .from(grove_user::Column::UserId)
-                .to(user::Column::Id)
-                .into(),
-        )
-        .filter(
-            grove_user::Column::GroveId.in_subquery(
-                Query::select()
-                    .column(grove_user::Column::GroveId)
-                    .from(TableRef::SchemaTable(
-                        Alias::new("grove").into_iden(),
-                        Alias::new("grove_user").into_iden(),
-                    ))
-                    .cond_where(grove_user::Column::UserId.eq(user_id))
-                    .to_owned(),
-            ),
-        )
-        .order_by_asc(user::Column::DisplayName)
-        .all(db)
-        .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("user", "Failed to load users")
-        })
-        .map(|users| {
-            users
-                .iter()
-                .cloned()
-                .map(|user| WebUser::from_user(user))
-                .collect::<Vec<WebUser>>()
-        })
+pub enum BannedStatus {
+    Banned,
+    Unbanned,
+    All,
 }
 
-pub async fn get_users_by_grove(
+async fn get_users_from_db<U>(
     user_id: i32,
-    grove_id: i32,
+    additional_filter: Option<Condition>,
+    banned_status: BannedStatus,
     db: &DatabaseConnection,
-) -> BambooResult<Vec<user::GroveUser>> {
+) -> BambooResult<Vec<U>>
+where
+    U: FromQueryResult,
+{
     let sub_query = &mut grove_user::Entity::find()
         .select_only()
         .column(grove_user::Column::GroveId)
         .filter(grove_user::Column::UserId.eq(user_id));
+
+    let mut filter = Condition::all()
+        .add(grove_user::Column::GroveId.in_subquery(QuerySelect::query(sub_query).to_owned()));
+
+    if let Some(additional_filter) = additional_filter {
+        filter = filter.add(additional_filter);
+    }
+    filter = match banned_status {
+        BannedStatus::Banned => filter.add(grove_user::Column::IsBanned.eq(true)),
+        BannedStatus::Unbanned => filter.add(grove_user::Column::IsBanned.eq(false)),
+        BannedStatus::All => filter,
+    };
 
     user::Entity::find()
         .select_only()
@@ -128,6 +112,7 @@ pub async fn get_users_by_grove(
         .column_as(user::Column::DiscordName, "discord_name")
         .column_as(user::Column::DisplayName, "display_name")
         .column_as(grove_user::Column::IsMod, "is_mod")
+        .column_as(grove_user::Column::IsBanned, "is_banned")
         .join(
             JoinType::LeftJoin,
             user::Entity::belongs_to(grove_user::Entity)
@@ -135,16 +120,34 @@ pub async fn get_users_by_grove(
                 .to(grove_user::Column::UserId)
                 .into(),
         )
-        .filter(grove_user::Column::GroveId.eq(grove_id))
-        .filter(grove_user::Column::GroveId.in_subquery(QuerySelect::query(sub_query).to_owned()))
+        .filter(filter)
         .order_by_asc(user::Column::DisplayName)
-        .into_model::<user::GroveUser>()
+        .into_model::<U>()
         .all(db)
         .await
         .map_err(|err| {
             log::error!("{err}");
             BambooError::database("user", "Failed to load users")
         })
+}
+
+pub async fn get_users(user_id: i32, db: &DatabaseConnection) -> BambooResult<Vec<WebUser>> {
+    get_users_from_db(user_id, None, BannedStatus::Unbanned, db).await
+}
+
+pub async fn get_users_by_grove(
+    user_id: i32,
+    grove_id: i32,
+    banned_status: BannedStatus,
+    db: &DatabaseConnection,
+) -> BambooResult<Vec<user::GroveUser>> {
+    get_users_from_db(
+        user_id,
+        Some(grove_user::Column::GroveId.eq(grove_id).into_condition()),
+        banned_status,
+        db,
+    )
+    .await
 }
 
 pub(crate) async fn user_exists_by_id(

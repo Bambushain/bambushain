@@ -1,5 +1,4 @@
 use actix_web::{web, HttpResponse};
-
 use bamboo_common::backend::services::{EnvService, EnvironmentService};
 
 use crate::middleware::authenticate_user::authenticate;
@@ -39,7 +38,12 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
         .service(grove::create_grove)
         .service(grove::get_grove)
         .service(grove::update_grove)
+        .service(grove::update_grove_mods)
         .service(grove::delete_grove)
+        .service(grove::ban_user)
+        .service(grove::unban_user)
+        .service(grove::enable_invite)
+        .service(grove::disable_invite)
         .service(user::get_users)
         .service(user::get_profile_picture)
         .service(event::get_events)
@@ -96,7 +100,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             actix_web_lab::web::spa()
                 .index_file(format!("{frontend_base_path}/dist/index.html"))
                 .static_resources_location(format!("{frontend_base_path}/dist"))
-                .static_resources_mount("/static")
+                .static_resources_mount("/pandas/static")
                 .finish(),
         );
 }

@@ -164,38 +164,17 @@ pub struct GroveUser {
     pub display_name: String,
     pub discord_name: String,
     pub is_mod: bool,
-}
-
-impl GroveUser {
-    pub fn from_user(user: Model, is_mod: bool) -> Self {
-        Self {
-            id: user.id,
-            email: user.email,
-            display_name: user.display_name,
-            discord_name: user.discord_name,
-            is_mod,
-        }
-    }
+    #[serde(skip_serializing_if = "std::ops::Not::not", default = "bool::default")]
+    pub is_banned: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
 #[serde(rename_all = "camelCase")]
-#[cfg_attr(feature = "backend", derive(Responder))]
+#[cfg_attr(feature = "backend", derive(Responder, FromQueryResult))]
 pub struct WebUser {
     #[serde(default)]
     pub id: i32,
     pub email: String,
     pub display_name: String,
     pub discord_name: String,
-}
-
-impl WebUser {
-    pub fn from_user(user: Model) -> Self {
-        Self {
-            id: user.id,
-            email: user.email,
-            display_name: user.display_name,
-            discord_name: user.discord_name,
-        }
-    }
 }

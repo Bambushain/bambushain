@@ -18,6 +18,7 @@ use serde::{Deserialize, Serialize};
 #[sea_orm(table_name = "grove_user", schema_name = "grove")]
 pub struct Model {
     pub is_mod: bool,
+    pub is_banned: bool,
     #[sea_orm(primary_key)]
     pub grove_id: i32,
     #[sea_orm(primary_key)]

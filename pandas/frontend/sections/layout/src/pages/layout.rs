@@ -22,6 +22,7 @@ use bamboo_pandas_frontend_section_bamboo::UsersPage;
 use bamboo_pandas_frontend_section_final_fantasy::CharacterPage;
 use bamboo_pandas_frontend_section_final_fantasy::SettingsPage;
 use bamboo_pandas_frontend_section_groves::pages::groves::GroveDetailsPage;
+use bamboo_pandas_frontend_section_groves::state::grove::use_groves;
 use bamboo_pandas_frontend_section_legal::{DataProtectionPage, ImprintPage};
 use bamboo_pandas_frontend_section_licenses::{
     BambooGrovePage, FontsPage, ImagesPage, SoftwareLicensesPage,
@@ -46,60 +47,35 @@ pub fn switch(route: AppRoute) -> Html {
 
 #[function_component(GrovesMenu)]
 fn groves_menus() -> Html {
-    let groves_state = use_async(async move { api::get_groves().await });
+    let groves_atom = use_groves();
 
-    {
-        let groves_state = groves_state.clone();
-        use_mount(move || {
-            groves_state.run();
-        });
-    }
+    html!(
+        {for (*groves_atom).groves.iter().cloned().map(|grove| {
+            let name = grove.name.clone();
 
-    if let Some(_) = &groves_state.error {
-        html!()
-    } else if let Some(groves) = &groves_state.data {
-        html!(
-            {for groves.iter().cloned().map(|grove| {
-                let name = grove.name.clone();
-
-                html!(
-                    <Switch<GroveRoute> render={render_sub_menu_entry(name.clone(), GroveRoute::Grove { id: grove.id })} />
-                )
-            })}
-        )
-    } else {
-        html!()
-    }
+            html!(
+                <Switch<GroveRoute> render={render_sub_menu_entry(name.clone(), GroveRoute::Grove { id: grove.id, name: grove.name })} />
+            )
+        })}
+    )
 }
 
 #[function_component(GrovesRoot)]
 fn groves_root() -> Html {
-    let groves_state = use_async(async move { api::get_groves().await });
+    let groves_atom = use_groves();
 
-    {
-        let groves_state = groves_state.clone();
-        use_mount(move || {
-            groves_state.run();
-        });
-    }
-
-    if groves_state.error.is_some() {
-        html!(
-            <Redirect<GroveRoute> to={GroveRoute::AddGrove} />
-        )
-    } else if let Some(groves) = &groves_state.data {
-        let to = if let Some(first) = groves.first() {
-            GroveRoute::Grove { id: first.id }
-        } else {
-            GroveRoute::AddGrove
-        };
-
-        html!(
-            <Redirect<GroveRoute> to={to} />
-        )
+    let to = if let Some(first) = (*groves_atom).groves.first() {
+        GroveRoute::Grove {
+            id: first.id,
+            name: first.name.clone(),
+        }
     } else {
-        html!()
-    }
+        GroveRoute::AddGrove
+    };
+
+    html!(
+        <Redirect<GroveRoute> to={to} />
+    )
 }
 
 fn switch_sub_menu(route: AppRoute) -> Html {
@@ -179,8 +155,8 @@ fn switch_groves(route: GroveRoute) -> Html {
                 <CosmoTitle title="Neuer Hain" />
             </>
         ),
-        GroveRoute::Grove { id } => html!(
-            <GroveDetailsPage id={id} />
+        GroveRoute::Grove { id, name } => html!(
+            <GroveDetailsPage id={id} name={name} />
         ),
     }
 }

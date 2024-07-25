@@ -1,16 +1,24 @@
+use crate::middleware::authenticate_user::{authenticate, Authentication};
+use crate::path;
 use actix_web::{get, web, Responder};
 use bamboo_common::backend::dbal;
+use bamboo_common::backend::dbal::BannedStatus;
 use bamboo_common::backend::response::*;
 use bamboo_common::backend::services::{DbConnection, MinioService};
 use bamboo_common::core::error::*;
 use serde::Deserialize;
 
-use crate::middleware::authenticate_user::{authenticate, Authentication};
-use crate::path;
+fn is_false() -> bool {
+    false
+}
 
 #[derive(Deserialize)]
 struct UsersQuery {
     pub grove: Option<i32>,
+    #[serde(default = "is_false", rename = "banned")]
+    pub banned_only: bool,
+    #[serde(default = "is_false")]
+    pub all: bool,
 }
 
 #[get("/api/user", wrap = "authenticate!()")]
@@ -22,9 +30,20 @@ pub async fn get_users(
     let query = check_invalid_query!(query, "user")?;
 
     if let Some(grove) = query.grove {
-        dbal::get_users_by_grove(authentication.user.id, grove.clone(), &db)
-            .await
-            .map(|data| list!(data))
+        dbal::get_users_by_grove(
+            authentication.user.id,
+            grove.clone(),
+            if query.banned_only {
+                BannedStatus::Banned
+            } else if query.all {
+                BannedStatus::All
+            } else {
+                BannedStatus::Unbanned
+            },
+            &db,
+        )
+        .await
+        .map(|data| list!(data))
     } else {
         dbal::get_users(authentication.user.id, &db)
             .await

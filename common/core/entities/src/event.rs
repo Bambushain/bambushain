@@ -6,10 +6,10 @@ use color_art::{color, Color};
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
+use crate::user::WebUser;
 use crate::{Event, Grove};
 #[cfg(feature = "backend")]
 use bamboo_common_backend_macros::*;
-use crate::user::WebUser;
 
 fn set_false() -> bool {
     false

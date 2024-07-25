@@ -112,7 +112,7 @@ justify-content: center;
 align-items: center;
 height: 100vh;
 width: 100vw;
-background: url("/static/background-login.webp");
+background: url("/pandas/static/background-login.webp");
 background-size: cover;
 background-position-y: bottom;
 

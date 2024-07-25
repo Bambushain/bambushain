@@ -49,6 +49,7 @@ impl From<LoadEvent> for GroveEvent {
             Some(Grove {
                 id,
                 name: value.grove_name.unwrap(),
+                invite_secret: None,
             })
         } else {
             None
@@ -180,7 +181,6 @@ pub async fn get_event(id: i32, user_id: i32, db: &DatabaseConnection) -> Bamboo
     get_event_query(
         user_id,
         Condition::all()
-            .add(grove_user::Column::UserId.eq(user_id))
             .add(event::Column::Id.eq(id)),
     )
     .one(db)

@@ -6,7 +6,7 @@ release = false
 # The output dir for all final assets.
 dist = "dist-pandas/dist"
 # The public URL from which assets are to be served.
-public_url = "/static/"
+public_url = "/pandas/static/"
 wasm-opt = "z"
 
 [watch]
