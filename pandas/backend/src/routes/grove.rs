@@ -4,8 +4,8 @@ use bamboo_common::backend::dbal;
 use bamboo_common::backend::response::*;
 use bamboo_common::backend::services::DbConnection;
 use bamboo_common::core::entities::grove::{CreateGrove, JoinGrove};
-use bamboo_common::core::entities::*;
 use bamboo_common::core::entities::user::JoinStatus;
+use bamboo_common::core::entities::*;
 use bamboo_common::core::error::*;
 
 use crate::middleware::authenticate_user::{authenticate, Authentication};

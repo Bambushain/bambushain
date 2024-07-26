@@ -178,24 +178,20 @@ pub async fn get_events(
 }
 
 pub async fn get_event(id: i32, user_id: i32, db: &DatabaseConnection) -> BambooResult<GroveEvent> {
-    get_event_query(
-        user_id,
-        Condition::all()
-            .add(event::Column::Id.eq(id)),
-    )
-    .one(db)
-    .await
-    .map_err(|err| {
-        log::error!("Failed to load events {err}");
-        BambooError::database("event", "Failed to load events")
-    })
-    .map(|data| {
-        if let Some(data) = data {
-            Ok(data.into())
-        } else {
-            Err(BambooError::not_found("event", "The event was not found"))
-        }
-    })?
+    get_event_query(user_id, Condition::all().add(event::Column::Id.eq(id)))
+        .one(db)
+        .await
+        .map_err(|err| {
+            log::error!("Failed to load events {err}");
+            BambooError::database("event", "Failed to load events")
+        })
+        .map(|data| {
+            if let Some(data) = data {
+                Ok(data.into())
+            } else {
+                Err(BambooError::not_found("event", "The event was not found"))
+            }
+        })?
 }
 
 pub async fn create_event(
