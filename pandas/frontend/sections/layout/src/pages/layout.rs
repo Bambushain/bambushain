@@ -21,7 +21,9 @@ use bamboo_pandas_frontend_section_bamboo::CalendarPage;
 use bamboo_pandas_frontend_section_bamboo::UsersPage;
 use bamboo_pandas_frontend_section_final_fantasy::CharacterPage;
 use bamboo_pandas_frontend_section_final_fantasy::SettingsPage;
-use bamboo_pandas_frontend_section_groves::pages::groves::{AddGrovePage, GroveDetailsPage};
+use bamboo_pandas_frontend_section_groves::pages::groves::{
+    AddGrovePage, GroveDetailsPage, GroveInvitePage,
+};
 use bamboo_pandas_frontend_section_groves::state::grove::use_groves;
 use bamboo_pandas_frontend_section_legal::{DataProtectionPage, ImprintPage};
 use bamboo_pandas_frontend_section_licenses::{
@@ -36,7 +38,7 @@ pub fn switch(route: AppRoute) -> Html {
         AppRoute::Login => html!(
             <>
                 <Helmet>
-                    <title>{"Anmelden"}</title>
+                    <title>{ "Anmelden" }</title>
                 </Helmet>
                 <LoginPage />
             </>
@@ -50,13 +52,13 @@ fn groves_menus() -> Html {
     let groves_atom = use_groves();
 
     html!(
-        {for (*groves_atom).groves.iter().cloned().map(|grove| {
+        { for (*groves_atom).groves.iter().cloned().map(|grove| {
             let name = grove.name.clone();
 
             html!(
                 <Switch<GroveRoute> render={render_sub_menu_entry(name.clone(), GroveRoute::Grove { id: grove.id, name: grove.name })} />
             )
-        })}
+        }) }
     )
 }
 
@@ -73,48 +75,70 @@ fn groves_root() -> Html {
         GroveRoute::AddGrove
     };
 
-    html!(
-        <Redirect<GroveRoute> to={to} />
-    )
+    html!(<Redirect<GroveRoute> to={to} />)
 }
 
 fn switch_sub_menu(route: AppRoute) -> Html {
     match route {
         AppRoute::BambooGroveRoot | AppRoute::BambooGrove => html!(
             <CosmoSubMenuBar>
-                <Switch<BambooGroveRoute> render={render_sub_menu_entry("Event Kalender", BambooGroveRoute::Calendar)} />
-                <Switch<BambooGroveRoute> render={render_sub_menu_entry("Pandas", BambooGroveRoute::User)} />
+                <Switch<BambooGroveRoute>
+                    render={render_sub_menu_entry("Event Kalender", BambooGroveRoute::Calendar)}
+                />
+                <Switch<BambooGroveRoute>
+                    render={render_sub_menu_entry("Pandas", BambooGroveRoute::User)}
+                />
             </CosmoSubMenuBar>
         ),
         AppRoute::FinalFantasyRoot | AppRoute::FinalFantasy => html!(
             <CosmoSubMenuBar>
-                <Switch<FinalFantasyRoute> render={render_sub_menu_entry("Meine Charaktere", FinalFantasyRoute::Characters)} />
-                <Switch<FinalFantasyRoute> render={render_sub_menu_entry("Personalisierung", FinalFantasyRoute::Settings)} />
+                <Switch<FinalFantasyRoute>
+                    render={render_sub_menu_entry("Meine Charaktere", FinalFantasyRoute::Characters)}
+                />
+                <Switch<FinalFantasyRoute>
+                    render={render_sub_menu_entry("Personalisierung", FinalFantasyRoute::Settings)}
+                />
             </CosmoSubMenuBar>
         ),
         AppRoute::GrovesRoot | AppRoute::Groves => html!(
             <CosmoSubMenuBar>
                 <GrovesMenu />
-                <Switch<GroveRoute> render={render_sub_menu_entry("Neuer Hain", GroveRoute::AddGrove)} />
+                <Switch<GroveRoute>
+                    render={render_sub_menu_entry("Neuer Hain", GroveRoute::AddGrove)}
+                />
             </CosmoSubMenuBar>
         ),
         AppRoute::SupportRoot | AppRoute::Support => html!(
             <CosmoSubMenuBar>
-                <Switch<SupportRoute> render={render_sub_menu_entry("Kontakt", SupportRoute::Contact)} />
+                <Switch<SupportRoute>
+                    render={render_sub_menu_entry("Kontakt", SupportRoute::Contact)}
+                />
             </CosmoSubMenuBar>
         ),
         AppRoute::LegalRoot | AppRoute::Legal => html!(
             <CosmoSubMenuBar>
-                <Switch<LegalRoute> render={render_sub_menu_entry("Impressum", LegalRoute::Imprint)} />
-                <Switch<LegalRoute> render={render_sub_menu_entry("Datenschutzerklärung", LegalRoute::DataProtection)} />
+                <Switch<LegalRoute>
+                    render={render_sub_menu_entry("Impressum", LegalRoute::Imprint)}
+                />
+                <Switch<LegalRoute>
+                    render={render_sub_menu_entry("Datenschutzerklärung", LegalRoute::DataProtection)}
+                />
             </CosmoSubMenuBar>
         ),
         AppRoute::LicensesRoot | AppRoute::Licenses => html!(
             <CosmoSubMenuBar>
-                <Switch<LicensesRoute> render={render_sub_menu_entry("Bambushain Lizenz", LicensesRoute::BambooGrove)} />
-                <Switch<LicensesRoute> render={render_sub_menu_entry("Bildlizenzen", LicensesRoute::Images)} />
-                <Switch<LicensesRoute> render={render_sub_menu_entry("Schriftlizenzen", LicensesRoute::Fonts)} />
-                <Switch<LicensesRoute> render={render_sub_menu_entry("Softwarelizenzen", LicensesRoute::Software)} />
+                <Switch<LicensesRoute>
+                    render={render_sub_menu_entry("Bambushain Lizenz", LicensesRoute::BambooGrove)}
+                />
+                <Switch<LicensesRoute>
+                    render={render_sub_menu_entry("Bildlizenzen", LicensesRoute::Images)}
+                />
+                <Switch<LicensesRoute>
+                    render={render_sub_menu_entry("Schriftlizenzen", LicensesRoute::Fonts)}
+                />
+                <Switch<LicensesRoute>
+                    render={render_sub_menu_entry("Softwarelizenzen", LicensesRoute::Software)}
+                />
             </CosmoSubMenuBar>
         ),
         _ => {
@@ -129,7 +153,7 @@ fn switch_final_fantasy(route: FinalFantasyRoute) -> Html {
         FinalFantasyRoute::Characters => html!(
             <>
                 <Helmet>
-                    <title>{"Meine Charaktere"}</title>
+                    <title>{ "Meine Charaktere" }</title>
                 </Helmet>
                 <CharacterPage />
             </>
@@ -137,7 +161,7 @@ fn switch_final_fantasy(route: FinalFantasyRoute) -> Html {
         FinalFantasyRoute::Settings => html!(
             <>
                 <Helmet>
-                    <title>{"Personalisierung"}</title>
+                    <title>{ "Personalisierung" }</title>
                 </Helmet>
                 <SettingsPage />
             </>
@@ -147,12 +171,13 @@ fn switch_final_fantasy(route: FinalFantasyRoute) -> Html {
 
 fn switch_groves(route: GroveRoute) -> Html {
     match route {
-        GroveRoute::AddGrove => html!(
-            <AddGrovePage />
-        ),
-        GroveRoute::Grove { id, name } => html!(
-            <GroveDetailsPage id={id} name={name} />
-        ),
+        GroveRoute::AddGrove => html!(<AddGrovePage />),
+        GroveRoute::Grove { id, name } => html!(<GroveDetailsPage id={id} name={name} />),
+        GroveRoute::GroveInvite {
+            id,
+            name,
+            invite_secret,
+        } => html!(<GroveInvitePage id={id} name={name} invite_secret={invite_secret} />),
     }
 }
 
@@ -161,7 +186,7 @@ fn switch_bamboo_grove(route: BambooGroveRoute) -> Html {
         BambooGroveRoute::Calendar => html!(
             <>
                 <Helmet>
-                    <title>{"Event Kalender"}</title>
+                    <title>{ "Event Kalender" }</title>
                 </Helmet>
                 <CalendarPage />
             </>
@@ -169,7 +194,7 @@ fn switch_bamboo_grove(route: BambooGroveRoute) -> Html {
         BambooGroveRoute::User => html!(
             <>
                 <Helmet>
-                    <title>{"Pandas"}</title>
+                    <title>{ "Pandas" }</title>
                 </Helmet>
                 <UsersPage />
             </>
@@ -182,7 +207,7 @@ fn switch_support(route: SupportRoute) -> Html {
         SupportRoute::Contact => html!(
             <>
                 <Helmet>
-                    <title>{"Kontakt"}</title>
+                    <title>{ "Kontakt" }</title>
                 </Helmet>
                 <ContactPage />
             </>
@@ -195,7 +220,7 @@ fn switch_legal(route: LegalRoute) -> Html {
         LegalRoute::Imprint => html!(
             <>
                 <Helmet>
-                    <title>{"Impressum"}</title>
+                    <title>{ "Impressum" }</title>
                 </Helmet>
                 <ImprintPage />
             </>
@@ -203,7 +228,7 @@ fn switch_legal(route: LegalRoute) -> Html {
         LegalRoute::DataProtection => html!(
             <>
                 <Helmet>
-                    <title>{"Datenschutzerklärung"}</title>
+                    <title>{ "Datenschutzerklärung" }</title>
                 </Helmet>
                 <DataProtectionPage />
             </>
@@ -216,7 +241,7 @@ fn switch_licenses(route: LicensesRoute) -> Html {
         LicensesRoute::BambooGrove => html!(
             <>
                 <Helmet>
-                    <title>{"Bambushain Lizenz"}</title>
+                    <title>{ "Bambushain Lizenz" }</title>
                 </Helmet>
                 <BambooGrovePage />
             </>
@@ -224,7 +249,7 @@ fn switch_licenses(route: LicensesRoute) -> Html {
         LicensesRoute::Images => html!(
             <>
                 <Helmet>
-                    <title>{"Bildlizenzen"}</title>
+                    <title>{ "Bildlizenzen" }</title>
                 </Helmet>
                 <ImagesPage />
             </>
@@ -232,7 +257,7 @@ fn switch_licenses(route: LicensesRoute) -> Html {
         LicensesRoute::Fonts => html!(
             <>
                 <Helmet>
-                    <title>{"Schriftlizenzen"}</title>
+                    <title>{ "Schriftlizenzen" }</title>
                 </Helmet>
                 <FontsPage />
             </>
@@ -240,7 +265,7 @@ fn switch_licenses(route: LicensesRoute) -> Html {
         LicensesRoute::Software => html!(
             <>
                 <Helmet>
-                    <title>{"Softwarelizenzen"}</title>
+                    <title>{ "Softwarelizenzen" }</title>
                 </Helmet>
                 <SoftwareLicensesPage />
             </>
@@ -250,13 +275,11 @@ fn switch_licenses(route: LicensesRoute) -> Html {
 
 fn switch_app(route: AppRoute) -> Html {
     match route {
-        AppRoute::Home => html!(
-            <Redirect<AppRoute> to={AppRoute::BambooGroveRoot} />
-        ),
+        AppRoute::Home => html!(<Redirect<AppRoute> to={AppRoute::BambooGroveRoot} />),
         AppRoute::BambooGroveRoot | AppRoute::BambooGrove => html!(
             <>
                 <Helmet>
-                    <title>{"Bambushain"}</title>
+                    <title>{ "Bambushain" }</title>
                 </Helmet>
                 <Switch<BambooGroveRoute> render={switch_bamboo_grove} />
             </>
@@ -264,18 +287,16 @@ fn switch_app(route: AppRoute) -> Html {
         AppRoute::FinalFantasyRoot | AppRoute::FinalFantasy => html!(
             <>
                 <Helmet>
-                    <title>{"Final Fantasy"}</title>
+                    <title>{ "Final Fantasy" }</title>
                 </Helmet>
                 <Switch<FinalFantasyRoute> render={switch_final_fantasy} />
             </>
         ),
-        AppRoute::GrovesRoot => html!(
-            <GrovesRoot />
-        ),
+        AppRoute::GrovesRoot => html!(<GrovesRoot />),
         AppRoute::Groves => html!(
             <>
                 <Helmet>
-                    <title>{"Meine Haine"}</title>
+                    <title>{ "Meine Haine" }</title>
                 </Helmet>
                 <Switch<GroveRoute> render={switch_groves} />
             </>
@@ -283,7 +304,7 @@ fn switch_app(route: AppRoute) -> Html {
         AppRoute::SupportRoot | AppRoute::Support => html!(
             <>
                 <Helmet>
-                    <title>{"Bambussupport"}</title>
+                    <title>{ "Bambussupport" }</title>
                 </Helmet>
                 <Switch<SupportRoute> render={switch_support} />
             </>
@@ -291,7 +312,7 @@ fn switch_app(route: AppRoute) -> Html {
         AppRoute::LegalRoot | AppRoute::Legal => html!(
             <>
                 <Helmet>
-                    <title>{"Rechtliches"}</title>
+                    <title>{ "Rechtliches" }</title>
                 </Helmet>
                 <Switch<LegalRoute> render={switch_legal} />
             </>
@@ -299,7 +320,7 @@ fn switch_app(route: AppRoute) -> Html {
         AppRoute::LicensesRoot | AppRoute::Licenses => html!(
             <>
                 <Helmet>
-                    <title>{"Lizenz"}</title>
+                    <title>{ "Lizenz" }</title>
                 </Helmet>
                 <Switch<LicensesRoute> render={switch_licenses} />
             </>
@@ -317,7 +338,11 @@ fn render_main_menu_entry(
         let is_active = route.eq(&active) || route.eq(&to);
 
         html!(
-            <CosmoMainMenuItemLink<AppRoute> to={to.clone()} label={label.clone().into()} is_active={is_active} />
+            <CosmoMainMenuItemLink<AppRoute>
+                to={to.clone()}
+                label={label.clone().into()}
+                is_active={is_active}
+            />
         )
     }
 }
@@ -330,7 +355,11 @@ fn render_sub_menu_entry<Route: Routable + Clone + 'static>(
         let is_active = route.eq(&to);
 
         html!(
-            <CosmoSubMenuItemLink<Route> to={to.clone()} label={label.clone().into()} is_active={is_active} />
+            <CosmoSubMenuItemLink<Route>
+                to={to.clone()}
+                label={label.clone().into()}
+                is_active={is_active}
+            />
         )
     }
 }
@@ -339,13 +368,9 @@ fn switch_top_bar(route: AppRoute) -> Html {
     match route {
         AppRoute::Login => html!(),
         AppRoute::LegalRoot | AppRoute::Legal | AppRoute::LicensesRoot | AppRoute::Licenses => {
-            html!(
-                <TopBarLegal />
-            )
+            html!(<TopBarLegal />)
         }
-        _ => html!(
-            <TopBar />
-        ),
+        _ => html!(<TopBar />),
     }
 }
 
@@ -386,19 +411,27 @@ fn app_layout() -> Html {
             <Redirect<AppRoute> to={AppRoute::Login} />
         } else if profile_state.data.is_some() {
             <>
-                <Switch<AppRoute> render={switch_top_bar}/>
+                <Switch<AppRoute> render={switch_top_bar} />
                 <CosmoMenuBar>
                     <CosmoMainMenu>
-                        <Switch<AppRoute> render={render_main_menu_entry("Bambushain", AppRoute::BambooGroveRoot, AppRoute::BambooGrove)} />
-                        <Switch<AppRoute> render={render_main_menu_entry("Final Fantasy", AppRoute::FinalFantasyRoot, AppRoute::FinalFantasy)} />
-                        <Switch<AppRoute> render={render_main_menu_entry("Meine Haine", AppRoute::GrovesRoot, AppRoute::Groves)} />
-                        <Switch<AppRoute> render={render_main_menu_entry("Bambussupport", AppRoute::SupportRoot, AppRoute::Support)} />
+                        <Switch<AppRoute>
+                            render={render_main_menu_entry("Bambushain", AppRoute::BambooGroveRoot, AppRoute::BambooGrove)}
+                        />
+                        <Switch<AppRoute>
+                            render={render_main_menu_entry("Final Fantasy", AppRoute::FinalFantasyRoot, AppRoute::FinalFantasy)}
+                        />
+                        <Switch<AppRoute>
+                            render={render_main_menu_entry("Meine Haine", AppRoute::GrovesRoot, AppRoute::Groves)}
+                        />
+                        <Switch<AppRoute>
+                            render={render_main_menu_entry("Bambussupport", AppRoute::SupportRoot, AppRoute::Support)}
+                        />
                     </CosmoMainMenu>
                     <Switch<AppRoute> render={switch_sub_menu} />
                 </CosmoMenuBar>
                 <CosmoPageBody>
                     <Switch<AppRoute> render={switch_app} />
-               </CosmoPageBody>
+                </CosmoPageBody>
             </>
         }
     )
@@ -409,17 +442,21 @@ fn legal_layout() -> Html {
     log::debug!("Render legal layout");
     html!(
         <>
-            <Switch<AppRoute> render={switch_top_bar}/>
+            <Switch<AppRoute> render={switch_top_bar} />
             <CosmoMenuBar>
                 <CosmoMainMenu>
-                    <Switch<AppRoute> render={render_main_menu_entry("Rechtliches", AppRoute::LegalRoot, AppRoute::Legal)} />
-                    <Switch<AppRoute> render={render_main_menu_entry("Lizenzen", AppRoute::LicensesRoot, AppRoute::Licenses)} />
+                    <Switch<AppRoute>
+                        render={render_main_menu_entry("Rechtliches", AppRoute::LegalRoot, AppRoute::Legal)}
+                    />
+                    <Switch<AppRoute>
+                        render={render_main_menu_entry("Lizenzen", AppRoute::LicensesRoot, AppRoute::Licenses)}
+                    />
                 </CosmoMainMenu>
                 <Switch<AppRoute> render={switch_sub_menu} />
             </CosmoMenuBar>
             <CosmoPageBody>
                 <Switch<AppRoute> render={switch_app} />
-           </CosmoPageBody>
+            </CosmoPageBody>
         </>
     )
 }
@@ -489,28 +526,62 @@ fn change_password_dialog(on_close: &Callback<()>) -> Html {
     html!(
         <>
             <Helmet>
-                <title>{"Passwort ändern"}</title>
+                <title>{ "Passwort ändern" }</title>
             </Helmet>
-            <CosmoModal title="Passwort ändern" is_form={true} on_form_submit={on_save} buttons={html!(
+            <CosmoModal
+                title="Passwort ändern"
+                is_form=true
+                on_form_submit={on_save}
+                buttons={html!(
                 <>
                     <CosmoButton on_click={on_close} label="Abbrechen" />
                     <CosmoButton is_submit={true} label="Passwort ändern" />
                 </>
-            )}>
+            )}
+            >
                 if let Some(err) = &save_state.error {
                     if err.code == FORBIDDEN {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message="Falls du dein Passwort vergessen hast, melde dich bitte ab und klicke auf Passwort vergessen" header="Das alte Passwort ist falsch" />
+                        <CosmoMessage
+                            message_type={CosmoMessageType::Negative}
+                            message="Falls du dein Passwort vergessen hast, melde dich bitte ab und klicke auf Passwort vergessen"
+                            header="Das alte Passwort ist falsch"
+                        />
                     } else if err.code == NOT_FOUND {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message="Bitte versuch es erneut um einen Fehler auszuschließen" header="Du wurdest scheinbar gelöscht" />
+                        <CosmoMessage
+                            message_type={CosmoMessageType::Negative}
+                            message="Bitte versuch es erneut um einen Fehler auszuschließen"
+                            header="Du wurdest scheinbar gelöscht"
+                        />
                     } else if *unreported_error_toggle {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message="Leider konnte dein Passwort nicht geändert werden" header="Fehler beim ändern" actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
+                        <CosmoMessage
+                            message_type={CosmoMessageType::Negative}
+                            message="Leider konnte dein Passwort nicht geändert werden"
+                            header="Fehler beim ändern"
+                            actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)}
+                        />
                     } else {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message="Leider konnte dein Passwort nicht geändert werden" header="Fehler beim ändern" />
+                        <CosmoMessage
+                            message_type={CosmoMessageType::Negative}
+                            message="Leider konnte dein Passwort nicht geändert werden"
+                            header="Fehler beim ändern"
+                        />
                     }
                 }
                 <CosmoInputGroup>
-                    <CosmoTextBox input_type={CosmoTextBoxType::Password} label="Aktuelles Passwort" on_input={update_old_password} value={(*old_password_state).clone()} required={true} />
-                    <CosmoTextBox input_type={CosmoTextBoxType::Password} label="Neues Passwort" on_input={update_new_password} value={(*new_password_state).clone()} required={true} />
+                    <CosmoTextBox
+                        input_type={CosmoTextBoxType::Password}
+                        label="Aktuelles Passwort"
+                        on_input={update_old_password}
+                        value={(*old_password_state).clone()}
+                        required=true
+                    />
+                    <CosmoTextBox
+                        input_type={CosmoTextBoxType::Password}
+                        label="Neues Passwort"
+                        on_input={update_new_password}
+                        value={(*new_password_state).clone()}
+                        required=true
+                    />
                 </CosmoInputGroup>
             </CosmoModal>
         </>
@@ -662,9 +733,13 @@ fn update_my_profile_dialog(on_close: &Callback<()>) -> Html {
     html!(
         <>
             <Helmet>
-                <title>{"Profil bearbeiten"}</title>
+                <title>{ "Profil bearbeiten" }</title>
             </Helmet>
-            <CosmoModal title="Profil bearbeiten" is_form={true} on_form_submit={on_save} buttons={html!(
+            <CosmoModal
+                title="Profil bearbeiten"
+                is_form=true
+                on_form_submit={on_save}
+                buttons={html!(
                 <>
                     <CosmoButton on_click={on_close} label="Schließen" />
                     if profile_atom.profile.totp_validated.unwrap_or(false) {
@@ -674,36 +749,93 @@ fn update_my_profile_dialog(on_close: &Callback<()>) -> Html {
                     }
                     <CosmoButton is_submit={true} label="Profil speichern" />
                 </>
-            )}>
+            )}
+            >
                 if let Some(err) = &save_state.error {
                     if err.code == NOT_FOUND {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message="Bitte versuch es erneut um einen Fehler auszuschließen" header="Du wurdest scheinbar gelöscht" />
+                        <CosmoMessage
+                            message_type={CosmoMessageType::Negative}
+                            message="Bitte versuch es erneut um einen Fehler auszuschließen"
+                            header="Du wurdest scheinbar gelöscht"
+                        />
                     } else if err.code == CONFLICT {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message="Die Email oder der Name ist leider schon vergeben" header="Leider schon vergeben" />
+                        <CosmoMessage
+                            message_type={CosmoMessageType::Negative}
+                            message="Die Email oder der Name ist leider schon vergeben"
+                            header="Leider schon vergeben"
+                        />
                     } else if *unreported_error_toggle {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message="Dein Profil konnte leider nicht gespeichert werden" header="Fehler beim Speichern" actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                        <CosmoMessage
+                            message_type={CosmoMessageType::Negative}
+                            message="Dein Profil konnte leider nicht gespeichert werden"
+                            header="Fehler beim Speichern"
+                            actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)}
+                        />
                     } else {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message="Dein Profil konnte leider nicht gespeichert werden" header="Fehler beim Speichern" />
+                        <CosmoMessage
+                            message_type={CosmoMessageType::Negative}
+                            message="Dein Profil konnte leider nicht gespeichert werden"
+                            header="Fehler beim Speichern"
+                        />
                     }
                 }
                 if let Some(err) = &disable_totp_state.error {
                     if err.code == NOT_FOUND {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message="Bitte versuch es erneut um einen Fehler auszuschließen" header="Du wurdest scheinbar gelöscht" />
+                        <CosmoMessage
+                            message_type={CosmoMessageType::Negative}
+                            message="Bitte versuch es erneut um einen Fehler auszuschließen"
+                            header="Du wurdest scheinbar gelöscht"
+                        />
                     } else if *unreported_error_toggle {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message="Zwei Faktor per App konnte leider nicht deaktiviert werden" header="Fehler beim Deaktivieren" actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
+                        <CosmoMessage
+                            message_type={CosmoMessageType::Negative}
+                            message="Zwei Faktor per App konnte leider nicht deaktiviert werden"
+                            header="Fehler beim Deaktivieren"
+                            actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)}
+                        />
                     } else {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message="Zwei Faktor per App konnte leider nicht deaktiviert werden" header="Fehler beim Deaktivieren" />
+                        <CosmoMessage
+                            message_type={CosmoMessageType::Negative}
+                            message="Zwei Faktor per App konnte leider nicht deaktiviert werden"
+                            header="Fehler beim Deaktivieren"
+                        />
                     }
                 }
                 <CosmoInputGroup>
-                    <CosmoTextBox label="Email" input_type={CosmoTextBoxType::Email} required={true} on_input={update_email} value={(*email_state).clone()} />
-                    <CosmoTextBox label="Name" required={true} on_input={update_display_name} value={(*display_name_state).clone()} />
-                    <CosmoTextBox label="Discord Name (optional)" on_input={update_discord_name} value={(*discord_name_state).clone()} />
-                    <CosmoFilePicker label="Profilbild (optional)" on_select={select_profile_picture} />
+                    <CosmoTextBox
+                        label="Email"
+                        input_type={CosmoTextBoxType::Email}
+                        required=true
+                        on_input={update_email}
+                        value={(*email_state).clone()}
+                    />
+                    <CosmoTextBox
+                        label="Name"
+                        required=true
+                        on_input={update_display_name}
+                        value={(*display_name_state).clone()}
+                    />
+                    <CosmoTextBox
+                        label="Discord Name (optional)"
+                        on_input={update_discord_name}
+                        value={(*discord_name_state).clone()}
+                    />
+                    <CosmoFilePicker
+                        label="Profilbild (optional)"
+                        on_select={select_profile_picture}
+                    />
                 </CosmoInputGroup>
             </CosmoModal>
             if *disable_totp_open_toggle {
-                <CosmoConfirm confirm_type={CosmoModalType::Warning} message="Möchtest du deine Zwei Faktor Authentifizierung per App deaktivieren? Du bekommst dann wieder eine Email." title="Zwei Faktor Authentifizierung deaktivieren" on_decline={on_close_disable_totp} on_confirm={on_disable_totp} confirm_label="Deaktivieren" decline_label="Nicht deaktivieren" />
+                <CosmoConfirm
+                    confirm_type={CosmoModalType::Warning}
+                    message="Möchtest du deine Zwei Faktor Authentifizierung per App deaktivieren? Du bekommst dann wieder eine Email."
+                    title="Zwei Faktor Authentifizierung deaktivieren"
+                    on_decline={on_close_disable_totp}
+                    on_confirm={on_disable_totp}
+                    confirm_label="Deaktivieren"
+                    decline_label="Nicht deaktivieren"
+                />
             }
             if *app_two_factor_open_toggle {
                 <EnableTotpDialog on_close={move |_| app_two_factor_open_toggle.set(false)} />
@@ -866,19 +998,29 @@ padding-top: 2rem;
     html!(
         <>
             <Helmet>
-                <title>{"Zwei Faktor per App aktivieren"}</title>
+                <title>{ "Zwei Faktor per App aktivieren" }</title>
             </Helmet>
-            <CosmoModal title="Zwei Faktor per App aktivieren" is_form={true} on_form_submit={on_form_submit} buttons={html!(
+            <CosmoModal
+                title="Zwei Faktor per App aktivieren"
+                is_form=true
+                on_form_submit={on_form_submit}
+                buttons={html!(
                 <>
                     <CosmoButton on_click={on_close.clone()} label="Abbrechen" />
                     <CosmoButton is_submit={true} label="App einrichten" />
                 </>
-            )}>
+            )}
+            >
                 <div class={container_style}>
                     if let Some(data) = &enable_totp_state.data {
-                        <img class={img_style} src={data.qr_code.clone()} alt={data.secret.clone()} />
+                        <img
+                            class={img_style}
+                            src={data.qr_code.clone()}
+                            alt={data.secret.clone()}
+                        />
                         <svg class={logo_style} viewBox="0 0 512 512">
-                            <path d="M511.094,264.722c-1.136-3.307-28.511-81.137-89.171-95.166c-30.729-7.107-63.124,3.303-96.526,30.938v-35.663
+                            <path
+                                d="M511.094,264.722c-1.136-3.307-28.511-81.137-89.171-95.166c-30.729-7.107-63.124,3.303-96.526,30.938v-35.663
                                     c6.222-2.428,10.637-8.464,10.637-15.545s-4.415-13.117-10.637-15.545V21.124c0-9.22-7.475-16.696-16.696-16.696h-89.595
                                     c-9.22,0-16.696,7.475-16.696,16.696v46.166c-18.137-33.54-41.579-53.478-69.951-59.406C71.508-4.849,13.992,54.3,11.574,56.825
                                     C6.875,61.728,5.615,68.989,8.387,75.19c2.773,6.2,9.015,10.103,15.811,9.873c82.495-2.81,169.04,34.422,169.902,34.798
@@ -897,25 +1039,54 @@ padding-top: 2rem;
                                     c15.598,5.418,28.267,18.643,37.87,39.466C143.202,255.001,109.679,241.362,72.688,232.553z M292.005,474.18h-56.204v-99.102
                                     h56.204V474.18z M292.005,341.687h-56.204V165.981h56.204V341.687z M292.005,132.589h-56.204v-94.77h56.204V132.589z
                                      M361.327,215.325c19.184-12.489,36.925-16.945,52.99-13.256c19.207,4.408,34.299,19.645,45.106,35.114
-                                    C423.36,224.901,387.642,218.575,361.327,215.325z" />
+                                    C423.36,224.901,387.642,218.575,361.327,215.325z"
+                            />
                         </svg>
                     } else {
                         <CosmoProgressRing />
                     }
                     <div class={details_style}>
-                        <CosmoMessage header="Schritte zum Aktivieren" message="Zu erst musst du den QR Code mit einer App wie Authy oder dem Google Authenticator scannen.\nAnschließend gibst du in den Feldern dein aktuelles Passwort ein und der Code der dir in der App angezeigt wird." message_type={CosmoMessageType::Information} />
+                        <CosmoMessage
+                            header="Schritte zum Aktivieren"
+                            message="Zu erst musst du den QR Code mit einer App wie Authy oder dem Google Authenticator scannen.\nAnschließend gibst du in den Feldern dein aktuelles Passwort ein und der Code der dir in der App angezeigt wird."
+                            message_type={CosmoMessageType::Information}
+                        />
                         if let Some(err) = &validate_totp_state.error {
                             if err.code == FORBIDDEN {
-                                <CosmoMessage header="Code oder Passwort falsch" message="Der von dir eingegebene Code oder dein Passwort ist ungültig, versuch es nochmal" message_type={CosmoMessageType::Negative} />
+                                <CosmoMessage
+                                    header="Code oder Passwort falsch"
+                                    message="Der von dir eingegebene Code oder dein Passwort ist ungültig, versuch es nochmal"
+                                    message_type={CosmoMessageType::Negative}
+                                />
                             } else if *unreported_error_toggle {
-                                <CosmoMessage header="Fehler beim Aktivieren" message="Leider konnte Zwei Faktor per App nicht aktiviert werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
+                                <CosmoMessage
+                                    header="Fehler beim Aktivieren"
+                                    message="Leider konnte Zwei Faktor per App nicht aktiviert werden"
+                                    message_type={CosmoMessageType::Negative}
+                                    actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)}
+                                />
                             } else {
-                                <CosmoMessage header="Fehler beim Aktivieren" message="Leider konnte Zwei Faktor per App nicht aktiviert werden" message_type={CosmoMessageType::Negative} />
+                                <CosmoMessage
+                                    header="Fehler beim Aktivieren"
+                                    message="Leider konnte Zwei Faktor per App nicht aktiviert werden"
+                                    message_type={CosmoMessageType::Negative}
+                                />
                             }
                         }
                         <CosmoInputGroup>
-                            <CosmoTextBox input_type={CosmoTextBoxType::Password} label="Aktuelles Passwort" required={true} on_input={update_password} value={(*current_password_state).clone()} />
-                            <CosmoTextBox label="Zwei Faktor Code" required={true} on_input={update_code} value={(*code_state).clone()} />
+                            <CosmoTextBox
+                                input_type={CosmoTextBoxType::Password}
+                                label="Aktuelles Passwort"
+                                required=true
+                                on_input={update_password}
+                                value={(*current_password_state).clone()}
+                            />
+                            <CosmoTextBox
+                                label="Zwei Faktor Code"
+                                required=true
+                                on_input={update_code}
+                                value={(*code_state).clone()}
+                            />
                         </CosmoInputGroup>
                     </div>
                 </div>
@@ -985,7 +1156,12 @@ fn top_bar() -> Html {
 
     html!(
         <>
-            <CosmoTopBar profile_picture={profile_picture} has_right_item={true} right_item_on_click={logout} right_item_label="Abmelden">
+            <CosmoTopBar
+                profile_picture={profile_picture}
+                has_right_item=true
+                right_item_on_click={logout}
+                right_item_label="Abmelden"
+            >
                 <CosmoTopBarItemLink<AppRoute> label="Rechtliches" to={AppRoute::LegalRoot} />
                 <CosmoTopBarItem label="Mein Profil" on_click={open_update_my_profile} />
                 <CosmoTopBarItem label="Passwort ändern" on_click={open_change_password} />
@@ -998,7 +1174,15 @@ fn top_bar() -> Html {
                 <ChangePasswordDialog on_close={move |_| password_open_toggle.set(false)} />
             }
             if *leave_grove_open_toggle {
-                <CosmoConfirm confirm_type={CosmoModalType::Negative} on_confirm={leave_grove} on_decline={close_leave_grove} title="Account löschen" message="Bist du sicher, dass du deinen Account löschen möchtest?\nWenn du deinen Account löscht, werden alle deine Daten gelöscht und können nicht wiederhergestellt werden." confirm_label="Account löschen" decline_label="Account behalten" />
+                <CosmoConfirm
+                    confirm_type={CosmoModalType::Negative}
+                    on_confirm={leave_grove}
+                    on_decline={close_leave_grove}
+                    title="Account löschen"
+                    message="Bist du sicher, dass du deinen Account löschen möchtest?\nWenn du deinen Account löscht, werden alle deine Daten gelöscht und können nicht wiederhergestellt werden."
+                    confirm_label="Account löschen"
+                    decline_label="Account behalten"
+                />
             }
         </>
     )
@@ -1014,7 +1198,12 @@ fn top_bar_legal() -> Html {
     });
 
     html!(
-        <CosmoTopBar profile_picture="/static/logo.webp" has_right_item={true} right_item_on_click={back} right_item_label="Zum Hain">
+        <CosmoTopBar
+            profile_picture="/static/logo.webp"
+            has_right_item=true
+            right_item_on_click={back}
+            right_item_label="Zum Hain"
+        >
             <CosmoTopBarItemLink<AppRoute> label="" to={AppRoute::BambooGroveRoot} />
         </CosmoTopBar>
     )
@@ -1023,7 +1212,7 @@ fn top_bar_legal() -> Html {
 #[function_component(Layout)]
 fn layout() -> Html {
     log::info!("Run layout");
-    html!(
-        <Switch<AppRoute> render={switch_layout} />
-    )
+    use_groves();
+
+    html!(<Switch<AppRoute> render={switch_layout} />)
 }

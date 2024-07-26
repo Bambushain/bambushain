@@ -1,4 +1,5 @@
-use bamboo_common::core::entities::grove::CreateGrove;
+use bamboo_common::core::entities::grove::{CreateGrove, JoinGrove};
+use bamboo_common::core::entities::user::JoinStatus;
 use bamboo_common::core::entities::Grove;
 use bamboo_common::frontend::api;
 use bamboo_common::frontend::api::BambooApiResult;
@@ -36,4 +37,18 @@ pub async fn disable_invite(id: i32) -> BambooApiResult<()> {
 pub async fn create_grove(name: String, invite_on: bool) -> BambooApiResult<Grove> {
     log::debug!("Create grove {name} with invites on {invite_on}");
     api::post("/api/grove", &CreateGrove { name, invite_on }).await
+}
+
+pub async fn join_grove(id: i32, invite_secret: String) -> BambooApiResult<()> {
+    log::debug!("Join grove {id} with secret {invite_secret}");
+    api::post(
+        format!("/api/grove/{id}/join"),
+        &JoinGrove { invite_secret },
+    )
+    .await
+}
+
+pub async fn check_join_status(id: i32) -> BambooApiResult<JoinStatus> {
+    log::debug!("Check join status for grove {id}");
+    api::get(format!("/api/grove/{id}/join")).await
 }

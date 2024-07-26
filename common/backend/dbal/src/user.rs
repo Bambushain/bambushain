@@ -1,5 +1,5 @@
 use sea_orm::prelude::*;
-use sea_orm::sea_query::{Expr, IntoCondition};
+use sea_orm::sea_query::{Alias, Expr, IntoCondition};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, EntityTrait, FromQueryResult,
     IntoActiveModel, JoinType, NotSet, QueryFilter, QueryOrder, QuerySelect, RelationTrait,
@@ -107,6 +107,7 @@ where
 
     user::Entity::find()
         .select_only()
+        .distinct_on(vec![Alias::new("id")])
         .column_as(user::Column::Id, "id")
         .column_as(user::Column::Email, "email")
         .column_as(user::Column::DiscordName, "discord_name")

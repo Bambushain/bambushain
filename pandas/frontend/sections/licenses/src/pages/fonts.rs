@@ -8,11 +8,15 @@ pub fn fonts() -> Html {
             <CosmoSideListItem label="Albert Sans">
                 <CosmoTitle title="Albert Sans" />
                 <CosmoParagraph>
-                    {"Die Standardschrift von Bambushain ist "}<CosmoAnchor href="https://github.com/usted/Albert-Sans">{"Albert Sans"}</CosmoAnchor>{". Albert Sans ist unter der SIL Open Font License lizensiert. Details dazu unten."}
+                    { "Die Standardschrift von Bambushain ist " }
+                    <CosmoAnchor href="https://github.com/usted/Albert-Sans">
+                        { "Albert Sans" }
+                    </CosmoAnchor>
+                    { ". Albert Sans ist unter der SIL Open Font License lizensiert. Details dazu unten." }
                 </CosmoParagraph>
                 <CosmoHeader level={CosmoHeaderLevel::H2} header="Lizenz" />
                 <CosmoPre>
-                    {"Copyright 2021 The Albert Sans Project Authors (https://github.com/usted/Albert-Sans)
+                    { "Copyright 2021 The Albert Sans Project Authors (https://github.com/usted/Albert-Sans)
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:
@@ -104,20 +108,29 @@ COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
 INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
 DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
-OTHER DEALINGS IN THE FONT SOFTWARE."}
+OTHER DEALINGS IN THE FONT SOFTWARE." }
                 </CosmoPre>
                 <CosmoParagraph>
-                    {"Du findest die SIL Open Font License hier: "}<CosmoAnchor href="https://github.com/usted/Albert-Sans/blob/d1f97cb52a3a4aa8871b36551849180b55296b85/OFL.txt">{"SIL Open Font License"}</CosmoAnchor>
+                    { "Du findest die SIL Open Font License hier: " }
+                    <CosmoAnchor
+                        href="https://github.com/usted/Albert-Sans/blob/d1f97cb52a3a4aa8871b36551849180b55296b85/OFL.txt"
+                    >
+                        { "SIL Open Font License" }
+                    </CosmoAnchor>
                 </CosmoParagraph>
             </CosmoSideListItem>
             <CosmoSideListItem label="Urbanist">
                 <CosmoTitle title="Urbanist" />
                 <CosmoParagraph>
-                    {"Für Menüs, Überschriften und ähnliches benutzt Bambushain "}<CosmoAnchor href="https://github.com/coreyhu/Urbanist">{"Urbanist"}</CosmoAnchor>{". Urbanist ist unter der SIL Open Font License lizensiert. Details dazu unten."}
+                    { "Für Menüs, Überschriften und ähnliches benutzt Bambushain " }
+                    <CosmoAnchor href="https://github.com/coreyhu/Urbanist">
+                        { "Urbanist" }
+                    </CosmoAnchor>
+                    { ". Urbanist ist unter der SIL Open Font License lizensiert. Details dazu unten." }
                 </CosmoParagraph>
                 <CosmoHeader level={CosmoHeaderLevel::H2} header="Lizenz" />
                 <CosmoPre>
-                    {"Copyright 2024 The Urbanist Project Authors (https://github.com/coreyhu/Urbanist)
+                    { "Copyright 2024 The Urbanist Project Authors (https://github.com/coreyhu/Urbanist)
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:
@@ -209,10 +222,15 @@ COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
 INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
 DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
-OTHER DEALINGS IN THE FONT SOFTWARE."}
+OTHER DEALINGS IN THE FONT SOFTWARE." }
                 </CosmoPre>
                 <CosmoParagraph>
-                    {"Du findest die SIL Open Font License hier: "}<CosmoAnchor href="https://github.com/coreyhu/Urbanist/blob/85fc494ec15ac07da7e96705b6839f6773e3cab7/OFL.txt">{"SIL Open Font License"}</CosmoAnchor>
+                    { "Du findest die SIL Open Font License hier: " }
+                    <CosmoAnchor
+                        href="https://github.com/coreyhu/Urbanist/blob/85fc494ec15ac07da7e96705b6839f6773e3cab7/OFL.txt"
+                    >
+                        { "SIL Open Font License" }
+                    </CosmoAnchor>
                 </CosmoParagraph>
             </CosmoSideListItem>
         </CosmoSideList>

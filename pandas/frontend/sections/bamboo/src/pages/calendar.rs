@@ -23,7 +23,11 @@ height: calc(var(--page-height) - var(--title-font-size) - 0.5rem);
         <>
             <CosmoTitle title="Event Kalender" />
             <div class={calendar_container_style}>
-                <Calendar events={events.events_list.current().deref().clone()} date={*events.date_state} on_navigate={events.on_navigate} />
+                <Calendar
+                    events={events.events_list.current().deref().clone()}
+                    date={*events.date_state}
+                    on_navigate={events.on_navigate}
+                />
             </div>
         </>
     )

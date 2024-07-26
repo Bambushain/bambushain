@@ -178,3 +178,14 @@ pub struct WebUser {
     pub display_name: String,
     pub discord_name: String,
 }
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Ord, PartialOrd)]
+#[cfg_attr(feature = "backend", derive(Responder))]
+pub enum JoinStatus {
+    #[serde(rename = "joined")]
+    Joined,
+    #[serde(rename = "not-joined")]
+    NotJoined,
+    #[serde(rename = "banned")]
+    Banned,
+}

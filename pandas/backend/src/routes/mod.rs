@@ -44,6 +44,8 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
         .service(grove::unban_user)
         .service(grove::enable_invite)
         .service(grove::disable_invite)
+        .service(grove::join_grove)
+        .service(grove::check_join_status)
         .service(user::get_users)
         .service(user::get_profile_picture)
         .service(event::get_events)

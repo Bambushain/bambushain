@@ -184,43 +184,151 @@ fn add_event_dialog(
 
     html!(
         <>
-            <CosmoModal title="Event hinzufügen" on_form_submit={form_submit} is_form={true} buttons={html!(
+            <CosmoModal
+                title="Event hinzufügen"
+                on_form_submit={form_submit}
+                is_form=true
+                buttons={html!(
                 <>
                     <CosmoButton label="Abbrechen" on_click={on_cancel.clone()} />
                     <CosmoButton label="Event speichern" is_submit={true} />
                 </>
-            )}>
+            )}
+            >
                 if save_state.error.is_some() && *unreported_error_toggle {
-                    <CosmoMessage message_type={CosmoMessageType::Negative} message="Das Event konnte leider nicht erstellt werden" header="Fehler beim Speichern" actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                    <CosmoMessage
+                        message_type={CosmoMessageType::Negative}
+                        message="Das Event konnte leider nicht erstellt werden"
+                        header="Fehler beim Speichern"
+                        actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)}
+                    />
                 } else if save_state.error.is_some() {
-                    <CosmoMessage message_type={CosmoMessageType::Negative} message="Das Event konnte leider nicht erstellt werden" header="Fehler beim Speichern" />
+                    <CosmoMessage
+                        message_type={CosmoMessageType::Negative}
+                        message="Das Event konnte leider nicht erstellt werden"
+                        header="Fehler beim Speichern"
+                    />
                 }
                 if grove_id.is_some() {
                     <CosmoInputGroup>
-                        <CosmoTextBox width={CosmoInputWidth::Medium} label="Titel" value={(*title_state).clone()} on_input={title_input} />
-                        <CosmoTextArea width={CosmoInputWidth::Medium} label="Beschreibung" value={(*description_state).clone()} on_input={description_input} />
-                        <CosmoColorPicker width={CosmoInputWidth::Medium} label="Farbe" value={Color::from_hex((*color_state).as_str()).unwrap()} on_input={color_input} />
-                        <CosmoDatePicker width={CosmoInputWidth::Medium} label="Von" value={*start_date} readonly={true} on_input={|_| {}} />
-                        <CosmoDatePicker width={CosmoInputWidth::Medium} label="Bis" min={*start_date} value={(*end_date_state).clone()} on_input={end_date_input} />
+                        <CosmoTextBox
+                            width={CosmoInputWidth::Medium}
+                            label="Titel"
+                            value={(*title_state).clone()}
+                            on_input={title_input}
+                        />
+                        <CosmoTextArea
+                            width={CosmoInputWidth::Medium}
+                            label="Beschreibung"
+                            value={(*description_state).clone()}
+                            on_input={description_input}
+                        />
+                        <CosmoColorPicker
+                            width={CosmoInputWidth::Medium}
+                            label="Farbe"
+                            value={Color::from_hex((*color_state).as_str()).unwrap()}
+                            on_input={color_input}
+                        />
+                        <CosmoDatePicker
+                            width={CosmoInputWidth::Medium}
+                            label="Von"
+                            value={*start_date}
+                            readonly=true
+                            on_input={|_| {}}
+                        />
+                        <CosmoDatePicker
+                            width={CosmoInputWidth::Medium}
+                            label="Bis"
+                            min={*start_date}
+                            value={(*end_date_state).clone()}
+                            on_input={end_date_input}
+                        />
                     </CosmoInputGroup>
                 } else if !*is_private_state {
                     <CosmoInputGroup>
-                        <CosmoTextBox width={CosmoInputWidth::Medium} label="Titel" value={(*title_state).clone()} on_input={title_input} />
-                        <CosmoTextArea width={CosmoInputWidth::Medium} label="Beschreibung" value={(*description_state).clone()} on_input={description_input} />
-                        <CosmoColorPicker width={CosmoInputWidth::Medium} label="Farbe" value={Color::from_hex((*color_state).as_str()).unwrap()} on_input={color_input} />
-                        <CosmoDatePicker width={CosmoInputWidth::Medium} label="Von" value={*start_date} readonly={true} on_input={|_| {}} />
-                        <CosmoDatePicker width={CosmoInputWidth::Medium} label="Bis" min={*start_date} value={(*end_date_state).clone()} on_input={end_date_input} />
-                        <CosmoSwitch label="Nur für mich" checked={*is_private_state} on_check={is_private_checked} />
-                        <CosmoModernSelect label="Hain" required={true} items={groves.iter().map(|grove| CosmoModernSelectItem::new(grove.name.clone(), grove.id.to_string(), grove.id == (*grove_id_state).unwrap_or(-1))).collect::<Vec<CosmoModernSelectItem>>()} on_select={grove_select} />
+                        <CosmoTextBox
+                            width={CosmoInputWidth::Medium}
+                            label="Titel"
+                            value={(*title_state).clone()}
+                            on_input={title_input}
+                        />
+                        <CosmoTextArea
+                            width={CosmoInputWidth::Medium}
+                            label="Beschreibung"
+                            value={(*description_state).clone()}
+                            on_input={description_input}
+                        />
+                        <CosmoColorPicker
+                            width={CosmoInputWidth::Medium}
+                            label="Farbe"
+                            value={Color::from_hex((*color_state).as_str()).unwrap()}
+                            on_input={color_input}
+                        />
+                        <CosmoDatePicker
+                            width={CosmoInputWidth::Medium}
+                            label="Von"
+                            value={*start_date}
+                            readonly=true
+                            on_input={|_| {}}
+                        />
+                        <CosmoDatePicker
+                            width={CosmoInputWidth::Medium}
+                            label="Bis"
+                            min={*start_date}
+                            value={(*end_date_state).clone()}
+                            on_input={end_date_input}
+                        />
+                        <CosmoSwitch
+                            label="Nur für mich"
+                            checked={*is_private_state}
+                            on_check={is_private_checked}
+                        />
+                        <CosmoModernSelect
+                            label="Hain"
+                            required=true
+                            items={groves.iter().map(|grove| CosmoModernSelectItem::new(grove.name.clone(), grove.id.to_string(), grove.id == (*grove_id_state).unwrap_or(-1))).collect::<Vec<CosmoModernSelectItem>>()}
+                            on_select={grove_select}
+                        />
                     </CosmoInputGroup>
                 } else {
                     <CosmoInputGroup>
-                        <CosmoTextBox width={CosmoInputWidth::Medium} label="Titel" value={(*title_state).clone()} on_input={title_input} />
-                        <CosmoTextArea width={CosmoInputWidth::Medium} label="Beschreibung" value={(*description_state).clone()} on_input={description_input} />
-                        <CosmoColorPicker width={CosmoInputWidth::Medium} label="Farbe" value={Color::from_hex((*color_state).as_str()).unwrap()} on_input={color_input} />
-                        <CosmoDatePicker width={CosmoInputWidth::Medium} label="Von" value={*start_date} readonly={true} on_input={|_| {}} />
-                        <CosmoDatePicker width={CosmoInputWidth::Medium} label="Bis" min={*start_date} value={(*end_date_state).clone()} on_input={end_date_input} />
-                        <CosmoSwitch label="Nur für mich" checked={*is_private_state} on_check={is_private_checked} />
+                        <CosmoTextBox
+                            width={CosmoInputWidth::Medium}
+                            label="Titel"
+                            value={(*title_state).clone()}
+                            on_input={title_input}
+                        />
+                        <CosmoTextArea
+                            width={CosmoInputWidth::Medium}
+                            label="Beschreibung"
+                            value={(*description_state).clone()}
+                            on_input={description_input}
+                        />
+                        <CosmoColorPicker
+                            width={CosmoInputWidth::Medium}
+                            label="Farbe"
+                            value={Color::from_hex((*color_state).as_str()).unwrap()}
+                            on_input={color_input}
+                        />
+                        <CosmoDatePicker
+                            width={CosmoInputWidth::Medium}
+                            label="Von"
+                            value={*start_date}
+                            readonly=true
+                            on_input={|_| {}}
+                        />
+                        <CosmoDatePicker
+                            width={CosmoInputWidth::Medium}
+                            label="Bis"
+                            min={*start_date}
+                            value={(*end_date_state).clone()}
+                            on_input={end_date_input}
+                        />
+                        <CosmoSwitch
+                            label="Nur für mich"
+                            checked={*is_private_state}
+                            on_check={is_private_checked}
+                        />
                     </CosmoInputGroup>
                 }
             </CosmoModal>
@@ -383,46 +491,144 @@ fn edit_event_dialog(
 
     html!(
         <>
-            <CosmoModal title="Event bearbeiten" on_form_submit={form_submit} is_form={true} buttons={html!(
+            <CosmoModal
+                title="Event bearbeiten"
+                on_form_submit={form_submit}
+                is_form=true
+                buttons={html!(
                 <>
                     <CosmoButton state={CosmoButtonType::Negative} label="Event löschen" on_click={open_delete} />
                     <CosmoButton label="Abbrechen" on_click={on_cancel.clone()} />
                     <CosmoButton label="Event speichern" is_submit={true} />
                 </>
-            )}>
+            )}
+            >
                 if save_state.error.is_some() && *unreported_error_toggle {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message="Das Event konnte leider nicht geändert werden" header="Fehler beim Speichern" actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                    <CosmoMessage
+                        message_type={CosmoMessageType::Negative}
+                        message="Das Event konnte leider nicht geändert werden"
+                        header="Fehler beim Speichern"
+                        actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)}
+                    />
                 } else if save_state.error.is_some() {
-                    <CosmoMessage message_type={CosmoMessageType::Negative} message="Das Event konnte leider nicht geändert werden" header="Fehler beim Speichern" />
+                    <CosmoMessage
+                        message_type={CosmoMessageType::Negative}
+                        message="Das Event konnte leider nicht geändert werden"
+                        header="Fehler beim Speichern"
+                    />
                 }
                 if delete_state.error.is_some() && *unreported_error_toggle {
-                    <CosmoMessage message_type={CosmoMessageType::Negative} message="Das Event konnte leider nicht gelöscht werden" header="Fehler beim Löschen" actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
+                    <CosmoMessage
+                        message_type={CosmoMessageType::Negative}
+                        message="Das Event konnte leider nicht gelöscht werden"
+                        header="Fehler beim Löschen"
+                        actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)}
+                    />
                 } else if delete_state.error.is_some() {
-                    <CosmoMessage message_type={CosmoMessageType::Negative} message="Das Event konnte leider nicht gelöscht werden" header="Fehler beim Löschen" />
+                    <CosmoMessage
+                        message_type={CosmoMessageType::Negative}
+                        message="Das Event konnte leider nicht gelöscht werden"
+                        header="Fehler beim Löschen"
+                    />
                 }
                 if event.grove.is_some() && !*is_private_state {
                     <CosmoInputGroup>
-                        <CosmoTextBox width={CosmoInputWidth::Medium} label="Titel" value={(*title_state).clone()} on_input={title_input} />
-                        <CosmoTextArea width={CosmoInputWidth::Medium} label="Beschreibung" value={(*description_state).clone()} on_input={description_input} />
-                        <CosmoColorPicker width={CosmoInputWidth::Medium} label="Farbe" value={Color::from_hex((*color_state).as_str()).unwrap()} on_input={color_input} />
-                        <CosmoDatePicker width={CosmoInputWidth::Medium} label="Von" value={event.start_date} readonly={true} on_input={|_| {}} />
-                        <CosmoDatePicker width={CosmoInputWidth::Medium} label="Bis" min={event.start_date} value={*end_date_state} on_input={end_date_input} />
-                        <CosmoSwitch label="Nur für mich" checked={*is_private_state} on_check={is_private_checked} />
-                        <CosmoModernSelect label="Hain" required={true} items={grove_items} on_select={grove_select} />
+                        <CosmoTextBox
+                            width={CosmoInputWidth::Medium}
+                            label="Titel"
+                            value={(*title_state).clone()}
+                            on_input={title_input}
+                        />
+                        <CosmoTextArea
+                            width={CosmoInputWidth::Medium}
+                            label="Beschreibung"
+                            value={(*description_state).clone()}
+                            on_input={description_input}
+                        />
+                        <CosmoColorPicker
+                            width={CosmoInputWidth::Medium}
+                            label="Farbe"
+                            value={Color::from_hex((*color_state).as_str()).unwrap()}
+                            on_input={color_input}
+                        />
+                        <CosmoDatePicker
+                            width={CosmoInputWidth::Medium}
+                            label="Von"
+                            value={event.start_date}
+                            readonly=true
+                            on_input={|_| {}}
+                        />
+                        <CosmoDatePicker
+                            width={CosmoInputWidth::Medium}
+                            label="Bis"
+                            min={event.start_date}
+                            value={*end_date_state}
+                            on_input={end_date_input}
+                        />
+                        <CosmoSwitch
+                            label="Nur für mich"
+                            checked={*is_private_state}
+                            on_check={is_private_checked}
+                        />
+                        <CosmoModernSelect
+                            label="Hain"
+                            required=true
+                            items={grove_items}
+                            on_select={grove_select}
+                        />
                     </CosmoInputGroup>
                 } else {
                     <CosmoInputGroup>
-                        <CosmoTextBox width={CosmoInputWidth::Medium} label="Titel" value={(*title_state).clone()} on_input={title_input} />
-                        <CosmoTextArea width={CosmoInputWidth::Medium} label="Beschreibung" value={(*description_state).clone()} on_input={description_input} />
-                        <CosmoColorPicker width={CosmoInputWidth::Medium} label="Farbe" value={Color::from_hex((*color_state).as_str()).unwrap()} on_input={color_input} />
-                        <CosmoDatePicker width={CosmoInputWidth::Medium} label="Von" value={event.start_date} readonly={true} on_input={|_| {}} />
-                        <CosmoDatePicker width={CosmoInputWidth::Medium} label="Bis" min={event.start_date} value={*end_date_state} on_input={end_date_input} />
-                        <CosmoSwitch label="Nur für mich" checked={*is_private_state} on_check={is_private_checked} />
+                        <CosmoTextBox
+                            width={CosmoInputWidth::Medium}
+                            label="Titel"
+                            value={(*title_state).clone()}
+                            on_input={title_input}
+                        />
+                        <CosmoTextArea
+                            width={CosmoInputWidth::Medium}
+                            label="Beschreibung"
+                            value={(*description_state).clone()}
+                            on_input={description_input}
+                        />
+                        <CosmoColorPicker
+                            width={CosmoInputWidth::Medium}
+                            label="Farbe"
+                            value={Color::from_hex((*color_state).as_str()).unwrap()}
+                            on_input={color_input}
+                        />
+                        <CosmoDatePicker
+                            width={CosmoInputWidth::Medium}
+                            label="Von"
+                            value={event.start_date}
+                            readonly=true
+                            on_input={|_| {}}
+                        />
+                        <CosmoDatePicker
+                            width={CosmoInputWidth::Medium}
+                            label="Bis"
+                            min={event.start_date}
+                            value={*end_date_state}
+                            on_input={end_date_input}
+                        />
+                        <CosmoSwitch
+                            label="Nur für mich"
+                            checked={*is_private_state}
+                            on_check={is_private_checked}
+                        />
                     </CosmoInputGroup>
                 }
             </CosmoModal>
             if *delete_event_open_state {
-                <CosmoConfirm confirm_type={CosmoModalType::Warning} title="Event löschen" message={format!("Soll das Event {} wirklich gelöscht werden?", event.title.clone())} confirm_label="Event löschen" decline_label="Nicht löschen" on_confirm={delete_confirm} on_decline={delete_decline} />
+                <CosmoConfirm
+                    confirm_type={CosmoModalType::Warning}
+                    title="Event löschen"
+                    message={format!("Soll das Event {} wirklich gelöscht werden?", event.title.clone())}
+                    confirm_label="Event löschen"
+                    decline_label="Nicht löschen"
+                    on_confirm={delete_confirm}
+                    on_decline={delete_decline}
+                />
             }
         </>
     )
@@ -550,25 +756,38 @@ text-overflow: ellipsis;
     html!(
         <>
             if *edit_open_toggle {
-                <EditEventDialog groves={groves.clone()} event={event.clone()} on_updated={on_updated} on_deleted={on_deleted} on_cancel={on_cancel} />
+                <EditEventDialog
+                    groves={groves.clone()}
+                    event={event.clone()}
+                    on_updated={on_updated}
+                    on_deleted={on_deleted}
+                    on_cancel={on_cancel}
+                />
             }
             <span class={event_style}>
-                {event.title.clone()}
+                { event.title.clone() }
                 <a onclick={move |_| edit_open_toggle.set(true)}>
-                    <Icon icon_id={IconId::LucidePencil} width="16px" height="16px" class={classes!(edit_style, "panda-calendar-edit")} />
+                    <Icon
+                        icon_id={IconId::LucidePencil}
+                        width="16px"
+                        height="16px"
+                        class={classes!(edit_style, "panda-calendar-edit")}
+                    />
                 </a>
                 <div class={classes!("panda-calendar-description", description_style.clone())}>
                     <hgroup class={event_header}>
                         <CosmoHeader level={CosmoHeaderLevel::H3} header={event.title.clone()} />
-                        <CosmoHeader level={CosmoHeaderLevel::H5} header={
-                            if let Some(grove) = event.grove.clone() {
+                        <CosmoHeader
+                            level={CosmoHeaderLevel::H5}
+                            header={if let Some(grove) = event.grove.clone() {
                                 {grove.name}
                             } else {
                                 "Privates Event".to_string()
-                            }} />
+                            }}
+                        />
                     </hgroup>
-                    <p>{event.description.clone()}</p>
-                    <span class={arrow_style}></span>
+                    <p>{ event.description.clone() }</p>
+                    <span class={arrow_style} />
                 </div>
             </span>
         </>
@@ -674,13 +893,23 @@ z-index: 1;
     html!(
         <>
             if *add_event_open_toggle {
-                <AddEventDialog grove_id={grove_id} groves={groves.clone()} start_date={NaiveDate::from_ymd_opt(year, month, day).unwrap()} on_added={on_added} on_cancel={on_cancel} />
+                <AddEventDialog
+                    grove_id={grove_id}
+                    groves={groves.clone()}
+                    start_date={NaiveDate::from_ymd_opt(year, month, day).unwrap()}
+                    on_added={on_added}
+                    on_cancel={on_cancel}
+                />
             }
             <div class={classes!(style)}>
-                <Icon onclick={move |_| add_event_open_toggle.set(true)} icon_id={IconId::LucideCalendarPlus} class={classes!(add_style, "panda-calendar-add")} />
-                {for events.iter().map(move |evt| html!(
+                <Icon
+                    onclick={move |_| add_event_open_toggle.set(true)}
+                    icon_id={IconId::LucideCalendarPlus}
+                    class={classes!(add_style, "panda-calendar-add")}
+                />
+                { for events.iter().map(move |evt| html!(
                     <EventEntry groves={groves.clone()} key={evt.id} event={evt.clone()} />
-                ))}
+                )) }
             </div>
         </>
     )
@@ -750,17 +979,26 @@ fn calendar_data(
         log::debug!("{grove_id:#?}");
 
         html!(
-            <Day grove_id={grove_id} groves={groves} events={events} key={day.format("%F").to_string()} day={day.day()} month={day.month()} year={day.year()} selected_month={date.month()} />
+            <Day
+                grove_id={grove_id}
+                groves={groves}
+                events={events}
+                key={day.format("%F").to_string()}
+                day={day.day()}
+                month={day.month()}
+                year={day.year()}
+                selected_month={date.month()}
+            />
         )
     };
 
     html!(
         <>
             if first_day_offset > 0 {
-                {for DateRange::new(calendar_start_date, last_day_of_prev_month).unwrap().into_iter().map(render_day.clone())}
+                { for DateRange::new(calendar_start_date, last_day_of_prev_month).unwrap().into_iter().map(render_day.clone()) }
             }
-            {for DateRange::new(first_day_of_month, last_day_of_month).unwrap().into_iter().map(render_day.clone())}
-            {for DateRange::new(first_day_of_next_month, calendar_end_date).unwrap().into_iter().map(render_day.clone())}
+            { for DateRange::new(first_day_of_month, last_day_of_month).unwrap().into_iter().map(render_day.clone()) }
+            { for DateRange::new(first_day_of_next_month, calendar_end_date).unwrap().into_iter().map(render_day.clone()) }
         </>
     )
 }
@@ -865,21 +1103,28 @@ text-align: center;
         <div class={calendar_style}>
             <div class={calendar_header_style}>
                 <span class={classes!(calendar_action_style.clone(), calendar_action_prev_style)}>
-                    <a onclick={move |_| prev.emit(prev_month)}>{prev_month.format_localized("%B %Y", Locale::de_DE).to_string()}</a>
+                    <a onclick={move |_| prev.emit(prev_month)}>
+                        { prev_month.format_localized("%B %Y", Locale::de_DE).to_string() }
+                    </a>
                 </span>
-                <CosmoHeader level={CosmoHeaderLevel::H2} header={date.format_localized("%B %Y", Locale::de_DE).to_string()} />
+                <CosmoHeader
+                    level={CosmoHeaderLevel::H2}
+                    header={date.format_localized("%B %Y", Locale::de_DE).to_string()}
+                />
                 <span class={classes!(calendar_action_style.clone(), calendar_action_next_style)}>
-                    <a onclick={move |_| next.emit(next_month)}>{next_month.format_localized("%B %Y", Locale::de_DE).to_string()}</a>
+                    <a onclick={move |_| next.emit(next_month)}>
+                        { next_month.format_localized("%B %Y", Locale::de_DE).to_string() }
+                    </a>
                 </span>
             </div>
             <div class={calendar_container_style}>
-                <div class={calendar_weekday_style.clone()}>{"Montag"}</div>
-                <div class={calendar_weekday_style.clone()}>{"Dienstag"}</div>
-                <div class={calendar_weekday_style.clone()}>{"Mittwoch"}</div>
-                <div class={calendar_weekday_style.clone()}>{"Donnerstag"}</div>
-                <div class={calendar_weekday_style.clone()}>{"Freitag"}</div>
-                <div class={calendar_weekday_style.clone()}>{"Samstag"}</div>
-                <div class={calendar_weekday_style}>{"Sonntag"}</div>
+                <div class={calendar_weekday_style.clone()}>{ "Montag" }</div>
+                <div class={calendar_weekday_style.clone()}>{ "Dienstag" }</div>
+                <div class={calendar_weekday_style.clone()}>{ "Mittwoch" }</div>
+                <div class={calendar_weekday_style.clone()}>{ "Donnerstag" }</div>
+                <div class={calendar_weekday_style.clone()}>{ "Freitag" }</div>
+                <div class={calendar_weekday_style.clone()}>{ "Samstag" }</div>
+                <div class={calendar_weekday_style}>{ "Sonntag" }</div>
                 <CalendarData
                     date={date.clone()}
                     events={events.clone()}

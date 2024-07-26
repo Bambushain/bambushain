@@ -61,6 +61,12 @@ pub enum GroveRoute {
     AddGrove,
     #[at("/pandas/groves/:id/:name")]
     Grove { id: i32, name: String },
+    #[at("/pandas/groves/:id/:name/:invite_secret")]
+    GroveInvite {
+        id: i32,
+        name: String,
+        invite_secret: String,
+    },
 }
 
 #[derive(Clone, Routable, PartialEq)]

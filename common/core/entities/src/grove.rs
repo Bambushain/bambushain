@@ -81,3 +81,9 @@ pub struct CreateGrove {
     pub name: String,
     pub invite_on: bool,
 }
+
+#[derive(Serialize, Deserialize, Debug, Eq, Ord, PartialOrd, PartialEq, Clone, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct JoinGrove {
+    pub invite_secret: String,
+}

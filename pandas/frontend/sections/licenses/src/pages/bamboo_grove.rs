@@ -11,10 +11,13 @@ pub fn bamboo_grove() -> Html {
         <>
             <CosmoTitle title="Bambushain Lizenz" />
             <CosmoParagraph>
-                {"Bambushain ist unter der Open Source MIT Lizenz veröffentlicht, den Code kannst du dir hier anschauen: "}<CosmoAnchor href="https://github.com/Creastina/bambushain">{"Github"}</CosmoAnchor>
+                { "Bambushain ist unter der Open Source MIT Lizenz veröffentlicht, den Code kannst du dir hier anschauen: " }
+                <CosmoAnchor href="https://github.com/Creastina/bambushain">
+                    { "Github" }
+                </CosmoAnchor>
             </CosmoParagraph>
             <CosmoPre>
-                {format!("MIT License
+                { format!("MIT License
 
 Copyright (c) {year} Imanuel Ulbricht, Christina Ruebsam and Hans-Jürgen Wandschneider
 
@@ -34,7 +37,7 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.")}
+SOFTWARE.") }
             </CosmoPre>
         </>
     )

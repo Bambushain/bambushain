@@ -3,8 +3,9 @@ use actix_web::{delete, get, post, put, web};
 use bamboo_common::backend::dbal;
 use bamboo_common::backend::response::*;
 use bamboo_common::backend::services::DbConnection;
-use bamboo_common::core::entities::grove::CreateGrove;
+use bamboo_common::core::entities::grove::{CreateGrove, JoinGrove};
 use bamboo_common::core::entities::*;
+use bamboo_common::core::entities::user::JoinStatus;
 use bamboo_common::core::error::*;
 
 use crate::middleware::authenticate_user::{authenticate, Authentication};
@@ -179,4 +180,37 @@ pub async fn disable_invite(
     dbal::disable_grove_invite(path.grove_id, &db)
         .await
         .map(|_| no_content!())
+}
+
+#[put("/api/grove/{grove_id}/join", wrap = "authenticate!()")]
+pub async fn join_grove(
+    path: Option<path::GrovePath>,
+    body: Option<web::Json<JoinGrove>>,
+    authentication: Authentication,
+    db: DbConnection,
+) -> BambooApiResponseResult {
+    let body = check_missing_fields!(body, "grove")?;
+    let path = check_invalid_path!(path, "grove")?;
+
+    dbal::join_grove(
+        path.grove_id,
+        authentication.user.id,
+        body.invite_secret.clone(),
+        &db,
+    )
+    .await
+    .map(|_| no_content!())
+}
+
+#[get("/api/grove/{grove_id}/join", wrap = "authenticate!()")]
+pub async fn check_join_status(
+    path: Option<path::GrovePath>,
+    authentication: Authentication,
+    db: DbConnection,
+) -> BambooApiResult<JoinStatus> {
+    let path = check_invalid_path!(path, "grove")?;
+
+    dbal::check_grove_join_status(path.grove_id, authentication.user.id, &db)
+        .await
+        .map(|data| ok!(data))
 }

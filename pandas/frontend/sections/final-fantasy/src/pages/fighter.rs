@@ -98,23 +98,49 @@ fn modify_fighter_modal(
 
     html!(
         <>
-            <CosmoModal title={title.clone()} is_form={true} on_form_submit={on_save} buttons={html!(
+            <CosmoModal
+                title={title.clone()}
+                is_form=true
+                on_form_submit={on_save}
+                buttons={html!(
                 <>
                     <CosmoButton on_click={on_close} label="Abbrechen" />
                     <CosmoButton label={save_label.clone()} is_submit={true} />
                 </>
-            )}>
+            )}
+            >
                 if has_error {
                     if has_unknown_error {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message={error_message.clone()} actions={html!(<CosmoButton label="Fehler melden" on_click={on_error_close.clone()} />)} />
+                        <CosmoMessage
+                            message_type={CosmoMessageType::Negative}
+                            message={error_message.clone()}
+                            actions={html!(<CosmoButton label="Fehler melden" on_click={on_error_close.clone()} />)}
+                        />
                     } else {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message={error_message.clone()} />
+                        <CosmoMessage
+                            message_type={CosmoMessageType::Negative}
+                            message={error_message.clone()}
+                        />
                     }
                 }
                 <CosmoInputGroup>
-                    <CosmoModernSelect readonly={is_edit} label="Job" on_select={update_job} required={true} items={jobs} />
-                    <CosmoTextBox label="Level (optional)" on_input={update_level} value={(*level_state).clone()} />
-                    <CosmoTextBox label="Gear Score (optional)" on_input={update_gear_score} value={(*gear_score_state).clone()} />
+                    <CosmoModernSelect
+                        readonly={is_edit}
+                        label="Job"
+                        on_select={update_job}
+                        required=true
+                        items={jobs}
+                    />
+                    <CosmoTextBox
+                        label="Level (optional)"
+                        on_input={update_level}
+                        value={(*level_state).clone()}
+                    />
+                    <CosmoTextBox
+                        label="Gear Score (optional)"
+                        on_input={update_gear_score}
+                        value={(*gear_score_state).clone()}
+                    />
                 </CosmoInputGroup>
             </CosmoModal>
         </>
@@ -386,9 +412,7 @@ right: 0.75rem;
     );
 
     if fighter_state.loading {
-        html!(
-            <CosmoProgressRing />
-        )
+        html!(<CosmoProgressRing />)
     } else if let Some(data) = &fighter_state.data {
         let mut all_jobs = FighterJob::iter().collect::<Vec<FighterJob>>();
         for fighter in data.clone() {
@@ -413,15 +437,28 @@ right: 0.75rem;
                 }
                 if let Some(err) = &delete_state.error {
                     if err.code == NOT_FOUND {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Der Kämpfer konnte nicht gefunden werden" />
+                        <CosmoMessage
+                            message_type={CosmoMessageType::Negative}
+                            header="Fehler beim Löschen"
+                            message="Der Kämpfer konnte nicht gefunden werden"
+                        />
                     } else if *unreported_error_toggle {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Der Kämpfer konnte nicht gelöscht werden" actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                        <CosmoMessage
+                            message_type={CosmoMessageType::Negative}
+                            header="Fehler beim Löschen"
+                            message="Der Kämpfer konnte nicht gelöscht werden"
+                            actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)}
+                        />
                     } else {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Der Kämpfer konnte nicht gelöscht werden" />
+                        <CosmoMessage
+                            message_type={CosmoMessageType::Negative}
+                            header="Fehler beim Löschen"
+                            message="Der Kämpfer konnte nicht gelöscht werden"
+                        />
                     }
                 }
                 <BambooCardList>
-                    {for data.iter().map(|fighter| {
+                    { for data.iter().map(|fighter| {
                         let edit_fighter = fighter.clone();
                         let delete_fighter = fighter.clone();
 
@@ -456,9 +493,9 @@ right: 0.75rem;
                                 }
                             </BambooCard>
                         )
-                    })}
+                    }) }
                 </BambooCardList>
-                {match (*action_state).clone() {
+                { match (*action_state).clone() {
                     FighterActions::Create => html!(
                         <ModifyFighterModal on_error_close={report_unknown_error.clone()} has_unknown_error={*unreported_error_toggle} fighter={new_fighter.unwrap_or(Fighter::default())} character_id={character.id} jobs={all_jobs} is_edit={false} error_message={(*error_message_state).clone()} has_error={create_state.error.is_some()} on_close={on_modal_action_close} title="Kämpfer hinzufügen" save_label="Kämpfer hinzufügen" on_save={on_modal_create_save} />
                     ),
@@ -469,15 +506,24 @@ right: 0.75rem;
                         <CosmoConfirm confirm_type={CosmoModalType::Warning} on_confirm={move |_| on_modal_delete.emit(fighter.id)} on_decline={on_modal_action_close} confirm_label="Kämfper löschen" decline_label="Kämpfer behalten" title="Kämpfer löschen" message={format!("Soll der Kämpfer {} auf Level {} wirklich gelöscht werden?", fighter.job.to_string(), fighter.level.unwrap_or_default())} />
                     ),
                     FighterActions::Closed => html!(),
-                }}
+                } }
             </>
         )
     } else if fighter_state.error.is_some() {
         html!(
             if *unreported_error_toggle {
-                <CosmoMessage header="Fehler beim Laden" message="Die Kämpfer konnten nicht geladen werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                <CosmoMessage
+                    header="Fehler beim Laden"
+                    message="Die Kämpfer konnten nicht geladen werden"
+                    message_type={CosmoMessageType::Negative}
+                    actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)}
+                />
             } else {
-                <CosmoMessage header="Fehler beim Laden" message="Die Kämpfer konnten nicht geladen werden" message_type={CosmoMessageType::Negative} />
+                <CosmoMessage
+                    header="Fehler beim Laden"
+                    message="Die Kämpfer konnten nicht geladen werden"
+                    message_type={CosmoMessageType::Negative}
+                />
             }
         )
     } else {

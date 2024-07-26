@@ -1,9 +1,12 @@
+use bamboo_common_core::entities::user::JoinStatus;
 use bamboo_common_core::entities::*;
 use bamboo_common_core::error::*;
 use sea_orm::prelude::*;
 use sea_orm::sea_query::Keyword::Null;
 use sea_orm::ActiveValue::Set;
-use sea_orm::{Condition, IntoActiveModel, NotSet, QueryOrder, TransactionError, TransactionTrait};
+use sea_orm::{
+    Condition, IntoActiveModel, NotSet, QueryOrder, QuerySelect, TransactionError, TransactionTrait,
+};
 use sha2::{Digest, Sha512_224};
 
 pub async fn is_grove_mod(
@@ -252,4 +255,81 @@ pub async fn disable_grove_invite(grove_id: i32, db: &DatabaseConnection) -> Bam
         .await
         .map_err(|_| BambooError::unknown("grove", "Failed to disable invites"))
         .map(|_| ())
+}
+
+pub async fn check_grove_join_status(
+    grove_id: i32,
+    user_id: i32,
+    db: &DatabaseConnection,
+) -> BambooResult<JoinStatus> {
+    grove_user::Entity::find()
+        .select_only()
+        .column(grove_user::Column::IsBanned)
+        .filter(grove_user::Column::UserId.eq(user_id))
+        .filter(grove_user::Column::GroveId.eq(grove_id))
+        .into_tuple::<bool>()
+        .one(db)
+        .await
+        .map_err(|_| BambooError::unknown("grove", "Join status cannot be checked"))
+        .map(|res| {
+            if let Some(true) = res {
+                JoinStatus::Banned
+            } else if let Some(false) = res {
+                JoinStatus::Joined
+            } else {
+                JoinStatus::NotJoined
+            }
+        })
+}
+
+pub async fn join_grove(
+    grove_id: i32,
+    user_id: i32,
+    invite_secret: String,
+    db: &DatabaseConnection,
+) -> BambooErrorResult {
+    grove::Entity::find_by_id(grove_id)
+        .select_only()
+        .column(grove::Column::InviteSecret)
+        .into_tuple::<String>()
+        .one(db)
+        .await
+        .map_err(|_| BambooError::unknown("grove", "Failed to join grove"))
+        .map(|secret| {
+            if let Some(secret) = secret {
+                if secret != invite_secret {
+                    Err(BambooError::insufficient_rights(
+                        "grove",
+                        "The invite secret is wrong",
+                    ))
+                } else {
+                    Ok(())
+                }
+            } else {
+                Err(BambooError::not_found("grove", "The grove was not found"))
+            }
+        })??;
+
+    match check_grove_join_status(grove_id, user_id, db).await? {
+        JoinStatus::Joined => Err(BambooError::exists_already(
+            "grove",
+            "You joined this grove already",
+        )),
+        JoinStatus::NotJoined => Ok(()),
+        JoinStatus::Banned => Err(BambooError::insufficient_rights(
+            "grove",
+            "You are banned from this grove",
+        )),
+    }?;
+
+    grove_user::ActiveModel {
+        is_mod: Set(false),
+        is_banned: Set(false),
+        grove_id: Set(grove_id),
+        user_id: Set(user_id),
+    }
+    .insert(db)
+    .await
+    .map_err(|_| BambooError::unknown("grove", "Failed to join grove"))
+    .map(|_| ())
 }

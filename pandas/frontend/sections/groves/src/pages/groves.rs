@@ -1,7 +1,7 @@
 use crate::api;
 use crate::api::BannedStatus;
 use crate::state::grove::{use_groves, GrovesAtom};
-use bamboo_common::core::entities::user::GroveUser;
+use bamboo_common::core::entities::user::{GroveUser, JoinStatus};
 use bamboo_common::frontend::api::ApiError;
 use bamboo_common::frontend::ui::{BambooCard, BambooCardList};
 use bamboo_pandas_frontend_base::controls::{use_events, Calendar};
@@ -17,7 +17,7 @@ use yew::prelude::*;
 use yew::virtual_dom::Key;
 use yew_autoprops::autoprops;
 use yew_cosmo::prelude::*;
-use yew_hooks::{use_async, use_bool_toggle, use_list};
+use yew_hooks::{use_async, use_async_with_options, use_bool_toggle, use_list, UseAsyncOptions};
 use yew_router::hooks::use_navigator;
 use yew_router::prelude::Redirect;
 
@@ -48,7 +48,12 @@ height: calc(var(--page-height) - var(--title-font-size) - var(--tab-links-heigh
 
     html!(
         <div class={calendar_container_style}>
-            <Calendar grove_id={Some(id)} events={events.events_list.current().deref().clone()} date={*events.date_state} on_navigate={events.on_navigate} />
+            <Calendar
+                grove_id={Some(id)}
+                events={events.events_list.current().deref().clone()}
+                date={*events.date_state}
+                on_navigate={events.on_navigate}
+            />
         </div>
     )
 }
@@ -136,15 +141,22 @@ fn users(id: i32) -> Html {
     }
 
     if users_state.loading {
-        html!(
-            <CosmoProgressRing />
-        )
+        html!(<CosmoProgressRing />)
     } else if users_state.error.is_some() {
         html!(
             if *unreported_error_toggle {
-                <CosmoMessage header="Fehler beim Laden" message="Die Pandas konnten nicht geladen werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
+                <CosmoMessage
+                    header="Fehler beim Laden"
+                    message="Die Pandas konnten nicht geladen werden"
+                    message_type={CosmoMessageType::Negative}
+                    actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)}
+                />
             } else {
-                <CosmoMessage header="Fehler beim Laden" message="Die Pandas konnten nicht geladen werden" message_type={CosmoMessageType::Negative} />
+                <CosmoMessage
+                    header="Fehler beim Laden"
+                    message="Die Pandas konnten nicht geladen werden"
+                    message_type={CosmoMessageType::Negative}
+                />
             }
         )
     } else if let Some(data) = &users_state.data.clone() {
@@ -156,7 +168,7 @@ fn users(id: i32) -> Html {
         html!(
             <>
                 <BambooCardList>
-                    {for data.iter().cloned().map(|user|
+                    { for data.iter().cloned().map(|user|
                         {
                             let profile_picture = format!(
                                 "/api/user/{}/picture#time={}",
@@ -179,10 +191,18 @@ fn users(id: i32) -> Html {
                                 </BambooCard>
                             )
                         }
-                    )}
+                    ) }
                 </BambooCardList>
                 if let Some(user) = (*selected_user_state).clone() {
-                    <CosmoConfirm confirm_type={CosmoModalType::Negative} title={format!("{} bannen", user.display_name.clone())} message={format!("Soll der Panda {} wirklich gebannt werden?", user.display_name.clone())} confirm_label={format!("{} bannen", user.display_name.clone())} decline_label={format!("{} nicht bannen", user.display_name.clone())}  on_confirm={ban_user} on_decline={close_ban.clone()} />
+                    <CosmoConfirm
+                        confirm_type={CosmoModalType::Negative}
+                        title={format!("{} bannen", user.display_name.clone())}
+                        message={format!("Soll der Panda {} wirklich gebannt werden?", user.display_name.clone())}
+                        confirm_label={format!("{} bannen", user.display_name.clone())}
+                        decline_label={format!("{} nicht bannen", user.display_name.clone())}
+                        on_confirm={ban_user}
+                        on_decline={close_ban.clone()}
+                    />
                 }
             </>
         )
@@ -378,46 +398,69 @@ width: 50%;
 
     html!(
         <div class={management_content_style}>
-            <CosmoHeader level={CosmoHeaderLevel::H1} header={format!("Willkommen in der Verwaltung von {name}")} />
+            <CosmoHeader
+                level={CosmoHeaderLevel::H1}
+                header={format!("Willkommen in der Verwaltung von {name}")}
+            />
             <CosmoParagraph>
-                {"Hier hast du die Möglichkeit deinen Hain zu verwalten. Unten findest du den Einladungslink damit Leute deinem Hain beitreten können."}<br/>
-                {"Außerdem hast du die Möglichkeit Mods festzulegen. Mods können andere Mods ernennen oder ihnen die Rechte nehmen."}<br/>
-                {"Dazu haben Mods die Rechte Pandas aus einem Hain zu werfen."}<br/>
-                {"Daneben können Mods den Hain auch umbennen und vor allem löschen."}
+                { "Hier hast du die Möglichkeit deinen Hain zu verwalten. Unten findest du den Einladungslink damit Leute deinem Hain beitreten können." }
+                <br />
+                { "Außerdem hast du die Möglichkeit Mods festzulegen. Mods können andere Mods ernennen oder ihnen die Rechte nehmen." }
+                <br />
+                { "Dazu haben Mods die Rechte Pandas aus einem Hain zu werfen." }
+                <br />
+                { "Daneben können Mods den Hain auch umbennen und vor allem löschen." }
             </CosmoParagraph>
             <CosmoHeader level={CosmoHeaderLevel::H2} header="Pandas einladen" />
             if let Some(invite_link) = invite_link {
                 <CosmoParagraph>
-                    {"Dein Hain ist ziemlich sinnlos ohne andere Pandas, deswegen kannst du andere Pandas mit dem Link hier direkt in deinen Hain einladen."}<br/>
-                    {"Einfach kopieren und verschicken, anschließend können andere Pandas deinem Hain beitreten."}<br/>
-                    <CosmoAnchor href={invite_link.clone()}>{format!("https://bambushain.app{invite_link}")}</CosmoAnchor>
+                    { "Dein Hain ist ziemlich sinnlos ohne andere Pandas, deswegen kannst du andere Pandas mit dem Link hier direkt in deinen Hain einladen." }
+                    <br />
+                    { "Einfach kopieren und verschicken, anschließend können andere Pandas deinem Hain beitreten." }
+                    <br />
+                    <CosmoAnchor href={invite_link.clone()}>
+                        { format!("https://bambushain.app{invite_link}") }
+                    </CosmoAnchor>
                 </CosmoParagraph>
                 <CosmoParagraph>
-                    {"Wenn du nicht möchtest, dass weitere Pandas in deinen Hain kommen, kannst du mit einem Klick auf den Button Einladungen deaktivieren."}<br/>
+                    { "Wenn du nicht möchtest, dass weitere Pandas in deinen Hain kommen, kannst du mit einem Klick auf den Button Einladungen deaktivieren." }
+                    <br />
                     <CosmoButton label="Einladungen deaktivieren" on_click={disable_invite} />
                 </CosmoParagraph>
             } else {
                 <CosmoParagraph>
-                    {"So wie es aussieht hast du Einladungen deaktiviert, wenn du diese aktivieren willst, klick einfach unten auf den Button."}<br/>
+                    { "So wie es aussieht hast du Einladungen deaktiviert, wenn du diese aktivieren willst, klick einfach unten auf den Button." }
+                    <br />
                     <CosmoButton label="Einladungen aktivieren" on_click={enable_invite} />
                 </CosmoParagraph>
             }
             <CosmoHeader level={CosmoHeaderLevel::H2} header="Modverwaltung" />
             <CosmoParagraph>
-                {"Hier hast du die Möglichkeit die Mods zu verwalten, wähle einfach alle Pandas aus, die du als Mods in deinem Hain neben dir haben willst."}
+                { "Hier hast du die Möglichkeit die Mods zu verwalten, wähle einfach alle Pandas aus, die du als Mods in deinem Hain neben dir haben willst." }
             </CosmoParagraph>
-            <CosmoForm buttons={html!(<CosmoButton is_submit={true} label="Mods speichern" />)} on_submit={save_mods}>
-                <CosmoModernSelect label="Mods" items={mod_items} on_select={mod_select} on_deselect={mod_deselect} />
+            <CosmoForm
+                buttons={html!(<CosmoButton is_submit={true} label="Mods speichern" />)}
+                on_submit={save_mods}
+            >
+                <CosmoModernSelect
+                    label="Mods"
+                    items={mod_items}
+                    on_select={mod_select}
+                    on_deselect={mod_deselect}
+                />
             </CosmoForm>
             if let Some(users) = &users_state.data.clone() {
                 if users.iter().any(|user| user.is_banned) {
                     <CosmoHeader level={CosmoHeaderLevel::H3} header="Gebannte Pandas" />
                     <CosmoParagraph>
-                        {"So wie es aussieht hattest du schon einmal Probleme mit anderen Pandas in deinem Hain."}<br/>
-                        {"Das ist echt schade. Aber vielleicht hat sich die Situation schon wieder gebessert, falls ja, kannst du unten den Panda wieder entbannen."}
+                        { "So wie es aussieht hattest du schon einmal Probleme mit anderen Pandas in deinem Hain." }
+                        <br />
+                        { "Das ist echt schade. Aber vielleicht hat sich die Situation schon wieder gebessert, falls ja, kannst du unten den Panda wieder entbannen." }
                     </CosmoParagraph>
-                    <CosmoTable headers={vec![AttrValue::from("Name"), AttrValue::from("Email"), AttrValue::from("Discord"), AttrValue::from("Aktionen")]}>
-                        {for users.iter().filter_map(|user| {
+                    <CosmoTable
+                        headers={vec![AttrValue::from("Name"), AttrValue::from("Email"), AttrValue::from("Discord"), AttrValue::from("Aktionen")]}
+                    >
+                        { for users.iter().filter_map(|user| {
                             let open_unban = open_unban.clone();
 
                             let user_to_unban = user.clone();
@@ -434,22 +477,55 @@ width: 50%;
                             } else {
                                 None
                             }
-                        })}
+                        }) }
                     </CosmoTable>
                 }
             }
             <CosmoHeader level={CosmoHeaderLevel::H2} header="Gefahrenzone" />
-            <CosmoMessage message_type={CosmoMessageType::Negative} header="Achtung!" message="Achtung, hier beginnt die Gefahrenzone, wenn du unten auf Hain löschen klickst wird dein Hain gelöscht. Du wirst nochmal um eine Bestätigung gebeten, danach ist der Hain unwiderbringlich gelöscht." actions={html!(<CosmoButton label="Hain löschen" on_click={open_delete} />)} />
+            <CosmoMessage
+                message_type={CosmoMessageType::Negative}
+                header="Achtung!"
+                message="Achtung, hier beginnt die Gefahrenzone, wenn du unten auf Hain löschen klickst wird dein Hain gelöscht. Du wirst nochmal um eine Bestätigung gebeten, danach ist der Hain unwiderbringlich gelöscht."
+                actions={html!(<CosmoButton label="Hain löschen" on_click={open_delete} />)}
+            />
             if *delete_grove_open_toggle {
-                <CosmoConfirm confirm_type={CosmoModalType::Negative} title="Hain löschen" message={format!("Soll der Hain {} wirklich gelöscht werden? Dies löscht auch den Eventkalender.", name.clone())} confirm_label="Hain löschen" decline_label="Hain nicht löschen" on_confirm={delete_grove} on_decline={close_delete.clone()} />
+                <CosmoConfirm
+                    confirm_type={CosmoModalType::Negative}
+                    title="Hain löschen"
+                    message={format!("Soll der Hain {} wirklich gelöscht werden? Dies löscht auch den Eventkalender.", name.clone())}
+                    confirm_label="Hain löschen"
+                    decline_label="Hain nicht löschen"
+                    on_confirm={delete_grove}
+                    on_decline={close_delete.clone()}
+                />
             }
             if *delete_grove_open_toggle && delete_grove_state.error.is_some() {
-                <CosmoAlert alert_type={CosmoModalType::Negative} title="Fehler beim Löschen" message={format!("Der Hain {} konnte nicht gelöscht werden. Bitte wende dich an den Bambussupport.", name.clone())} close_label="Verstanden" on_close={close_delete} />
+                <CosmoAlert
+                    alert_type={CosmoModalType::Negative}
+                    title="Fehler beim Löschen"
+                    message={format!("Der Hain {} konnte nicht gelöscht werden. Bitte wende dich an den Bambussupport.", name.clone())}
+                    close_label="Verstanden"
+                    on_close={close_delete}
+                />
             }
             if let Some(user_to_unban) = (*user_to_unban_state).clone() {
-                <CosmoConfirm confirm_type={CosmoModalType::Positive} title="Ban aufheben" message={format!("Soll der Ban von {} wirklich aufgehoben werden? Anschließend kann {} wieder beitreten.", user_to_unban.display_name.clone(), user_to_unban.display_name.clone())} confirm_label="Ban aufheben" decline_label="Ban nicht aufheben" on_confirm={unban_user} on_decline={close_unban.clone()} />
+                <CosmoConfirm
+                    confirm_type={CosmoModalType::Positive}
+                    title="Ban aufheben"
+                    message={format!("Soll der Ban von {} wirklich aufgehoben werden? Anschließend kann {} wieder beitreten.", user_to_unban.display_name.clone(), user_to_unban.display_name.clone())}
+                    confirm_label="Ban aufheben"
+                    decline_label="Ban nicht aufheben"
+                    on_confirm={unban_user}
+                    on_decline={close_unban.clone()}
+                />
                 if unban_user_state.error.is_some() {
-                    <CosmoAlert alert_type={CosmoModalType::Negative} title="Fehler beim Ban aufheben" message={format!("Der Ban von {} konnte leider nicht aufgehoben werden. Bitte wende dich an den Bambussupport.", user_to_unban.display_name.clone())} close_label="Verstanden" on_close={close_unban} />
+                    <CosmoAlert
+                        alert_type={CosmoModalType::Negative}
+                        title="Fehler beim Ban aufheben"
+                        message={format!("Der Ban von {} konnte leider nicht aufgehoben werden. Bitte wende dich an den Bambussupport.", user_to_unban.display_name.clone())}
+                        close_label="Verstanden"
+                        on_close={close_unban}
+                    />
                 }
             }
         </div>
@@ -507,7 +583,14 @@ pub fn grove_details(id: i32, name: AttrValue) -> Html {
         if let Some(grove) = &grove_state.data.clone() {
             items.push(CosmoTabItem::from_label_and_children(
                 "Verwaltung".into(),
-                html!(<Management id={id} name={name.clone()} invite_link={grove.get_invite_link()} on_invite_changed={invite_changed_callback} />),
+                html!(
+                    <Management
+                        id={id}
+                        name={name.clone()}
+                        invite_link={grove.get_invite_link()}
+                        on_invite_changed={invite_changed_callback}
+                    />
+                ),
             ));
         }
     }
@@ -515,7 +598,7 @@ pub fn grove_details(id: i32, name: AttrValue) -> Html {
     html!(
         <>
             <Helmet>
-                <title>{name.clone()}</title>
+                <title>{ name.clone() }</title>
             </Helmet>
             <CosmoTitle title={name.clone()} />
             if grove_state.error.is_some() {
@@ -523,8 +606,11 @@ pub fn grove_details(id: i32, name: AttrValue) -> Html {
             } else if grove_state.loading {
                 <CosmoProgressRing />
             } else {
-                <CosmoTabControl on_select_item={select_item} selected_index={*selected_index_state}>
-                    {items.clone()}
+                <CosmoTabControl
+                    on_select_item={select_item}
+                    selected_index={*selected_index_state}
+                >
+                    { items.clone() }
                 </CosmoTabControl>
             }
         </>
@@ -587,19 +673,96 @@ width: min(50rem, 50%);
     html!(
         <div class={content_style}>
             <Helmet>
-                <title>{"Neuer Hain"}</title>
+                <title>{ "Neuer Hain" }</title>
             </Helmet>
             <CosmoTitle title="Neuer Hain" />
             <CosmoParagraph>
-                {"Cool, dass du deinen eigenen Hain erstellen möchtest. Dafür brauchen wir zwei kleine Infos von dir, einmal einen Namen und die Bestätigung, dass andere Pandas in den Hain eingeladen werden können. Füll das Formular unten einfach aus, klick auf Hain erstellen und schon bist du fertig."}
+                { "Cool, dass du deinen eigenen Hain erstellen möchtest. Dafür brauchen wir zwei kleine Infos von dir, einmal einen Namen und die Bestätigung, dass andere Pandas in den Hain eingeladen werden können. Füll das Formular unten einfach aus, klick auf Hain erstellen und schon bist du fertig." }
             </CosmoParagraph>
             if create_grove_state.error.is_some() {
-                <CosmoMessage header="Fehler beim Erstellen" message="Tut uns leid, der Hain konnte leider nicht erstellt werden. Bitte wende dich an den Bambussupport" />
+                <CosmoMessage
+                    header="Fehler beim Erstellen"
+                    message="Tut uns leid, der Hain konnte leider nicht erstellt werden. Bitte wende dich an den Bambussupport"
+                />
             }
-            <CosmoForm on_submit={create_grove} buttons={html!(<CosmoButton is_submit={true} label="Hain erstellen" />)}>
+            <CosmoForm
+                on_submit={create_grove}
+                buttons={html!(<CosmoButton is_submit={true} label="Hain erstellen" />)}
+            >
                 <CosmoTextBox label="Name" value={(*name_state).clone()} on_input={name_input} />
-                <CosmoSwitch label="Einladungen aktiv" checked={*invite_on_toggle} on_check={invite_on_check} />
+                <CosmoSwitch
+                    label="Einladungen aktiv"
+                    checked={*invite_on_toggle}
+                    on_check={invite_on_check}
+                />
             </CosmoForm>
         </div>
+    )
+}
+
+#[autoprops]
+#[function_component(GroveInvitePage)]
+pub fn grove_invite(id: i32, name: AttrValue, invite_secret: AttrValue) -> Html {
+    let navigator = use_navigator().unwrap();
+
+    let join_grove_state = {
+        let invite_secret = invite_secret.clone();
+        let name = name.clone();
+
+        let navigator = navigator.clone();
+
+        use_async(async move {
+            let res = api::join_grove(id, invite_secret.to_string()).await;
+            if res.is_ok() {
+                navigator.push(&GroveRoute::Grove {
+                    id,
+                    name: name.to_string(),
+                })
+            }
+
+            res
+        })
+    };
+
+    let check_join_status_state = use_async_with_options(
+        async move { api::check_join_status(id).await },
+        UseAsyncOptions::enable_auto(),
+    );
+
+    let join_grove = use_callback(join_grove_state.clone(), |_, join_grove_state| {
+        join_grove_state.run()
+    });
+    let dont_join_grove = use_callback(navigator.clone(), |_, navigator| {
+        navigator.push(&AppRoute::Home)
+    });
+
+    html!(
+        if check_join_status_state.loading {
+            <CosmoModal title="Lädt..." buttons={html!()}>
+                <CosmoProgressRing />
+            </CosmoModal>
+        } else if let Some(status) = &check_join_status_state.data {
+            if status == &JoinStatus::Banned {
+                <CosmoAlert
+                    title="Gebannt"
+                    message={format!("Du wurdest aus dem Hain {name} gebannt und kannst nicht beitreten.")}
+                    close_label="Zum Kalender"
+                    on_close={dont_join_grove.clone()}
+                />
+            } else if status == &JoinStatus::Joined {
+                <Redirect<GroveRoute> to={GroveRoute::Grove {id, name: name.to_string()}} />
+            } else if status == &JoinStatus::NotJoined {
+                <CosmoConfirm
+                    title={format!("{name} beitreten")}
+                    message={format!("Du wurdest eingeladen dem Hain {name} beizutreten. Wenn du das machst hast du Zugriff auf den gemeinsamen Kalender und die Pandaliste.")}
+                    on_confirm={join_grove}
+                    on_decline={dont_join_grove}
+                    confirm_label="Hain beitreten"
+                    decline_label="Hain nicht beitreten"
+                />
+            }
+        } else if check_join_status_state.error.is_some() {
+            <Redirect<AppRoute> to={AppRoute::Home} />
+        }
     )
 }

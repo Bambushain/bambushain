@@ -57,17 +57,24 @@ pub fn users_page() -> Html {
     }
 
     if users_state.loading {
-        html!(
-            <CosmoProgressRing />
-        )
+        html!(<CosmoProgressRing />)
     } else if users_state.error.is_some() {
         if *unreported_error_toggle {
             html!(
-                <CosmoMessage header="Fehler beim Laden" message="Die Pandas konnten nicht geladen werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
+                <CosmoMessage
+                    header="Fehler beim Laden"
+                    message="Die Pandas konnten nicht geladen werden"
+                    message_type={CosmoMessageType::Negative}
+                    actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)}
+                />
             )
         } else {
             html!(
-                <CosmoMessage header="Fehler beim Laden" message="Die Pandas konnten nicht geladen werden" message_type={CosmoMessageType::Negative} />
+                <CosmoMessage
+                    header="Fehler beim Laden"
+                    message="Die Pandas konnten nicht geladen werden"
+                    message_type={CosmoMessageType::Negative}
+                />
             )
         }
     } else if let Some(data) = &users_state.data {
@@ -75,7 +82,7 @@ pub fn users_page() -> Html {
             <>
                 <CosmoTitle title="Pandas" />
                 <BambooCardList>
-                    {for data.iter().map(|user|
+                    { for data.iter().map(|user|
                         {
                             let profile_picture = format!(
                                 "/api/user/{}/picture#time={}",
@@ -91,7 +98,7 @@ pub fn users_page() -> Html {
                                 </BambooCard>
                             )
                         }
-                    )}
+                    ) }
                 </BambooCardList>
             </>
         )
