@@ -1,3 +1,4 @@
+use bamboo_common::core::entities::grove::CreateGrove;
 use bamboo_common::core::entities::Grove;
 use bamboo_common::frontend::api;
 use bamboo_common::frontend::api::BambooApiResult;
@@ -30,4 +31,9 @@ pub async fn enable_invite(id: i32) -> BambooApiResult<()> {
 pub async fn disable_invite(id: i32) -> BambooApiResult<()> {
     log::debug!("Disable invite for id {id}");
     api::delete(format!("/api/grove/{id}/invite")).await
+}
+
+pub async fn create_grove(name: String, invite_on: bool) -> BambooApiResult<Grove> {
+    log::debug!("Create grove {name} with invites on {invite_on}");
+    api::post("/api/grove", &CreateGrove { name, invite_on }).await
 }

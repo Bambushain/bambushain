@@ -6,7 +6,7 @@ use bamboo_common::frontend::api::ApiError;
 use bamboo_common::frontend::ui::{BambooCard, BambooCardList};
 use bamboo_pandas_frontend_base::controls::{use_events, Calendar};
 use bamboo_pandas_frontend_base::error;
-use bamboo_pandas_frontend_base::routing::AppRoute;
+use bamboo_pandas_frontend_base::routing::{AppRoute, GroveRoute};
 use bamboo_pandas_frontend_base::storage::CurrentUser;
 use bounce::helmet::Helmet;
 use bounce::use_atom;
@@ -148,9 +148,11 @@ fn users(id: i32) -> Html {
             }
         )
     } else if let Some(data) = &users_state.data.clone() {
+        let current_user_id = current_user_atom.profile.id;
         let current_user_is_mod_in_grove = data
             .iter()
             .any(|user| user.id == current_user_atom.profile.id && user.is_mod);
+
         html!(
             <>
                 <BambooCardList>
@@ -167,7 +169,7 @@ fn users(id: i32) -> Html {
                             html!(
                                 <BambooCard title={user.display_name.clone()} prepend={html!(<img style="max-height:7rem;" src={profile_picture} />)} buttons={html!(
                                     if current_user_is_mod_in_grove {
-                                        <CosmoButton on_click={move |_| open_ban_user.emit(user_to_ban.clone())} label={format!("{} bannen", user.display_name.clone())} />
+                                        <CosmoButton on_click={move |_| open_ban_user.emit(user_to_ban.clone())} label={format!("{} bannen", user.display_name.clone())} enabled={user.id != current_user_id} />
                                     }
                                 )}>
                                     <CosmoAnchor href={format!("mailto:{}", user.email.clone())}>{user.email.clone()}</CosmoAnchor>
@@ -526,5 +528,78 @@ pub fn grove_details(id: i32, name: AttrValue) -> Html {
                 </CosmoTabControl>
             }
         </>
+    )
+}
+
+#[autoprops]
+#[function_component(AddGrovePage)]
+pub fn add_grove() -> Html {
+    let name_state = use_state_eq(|| AttrValue::from(""));
+
+    let groves_atom = use_groves();
+
+    let invite_on_toggle = use_bool_toggle(true);
+
+    let navigator = use_navigator().unwrap();
+
+    let create_grove_state = {
+        let name_state = name_state.clone();
+
+        let invite_on_toggle = invite_on_toggle.clone();
+
+        use_async(async move {
+            let res = api::create_grove((*name_state).to_string(), *invite_on_toggle).await;
+            if let Ok(res) = res.clone() {
+                name_state.set("".into());
+                invite_on_toggle.set(true);
+                let mut groves = groves_atom.groves.clone();
+                groves.push(res.clone());
+
+                groves_atom.set(GrovesAtom { groves });
+
+                navigator.push(&GroveRoute::Grove {
+                    id: res.id,
+                    name: res.name.clone(),
+                });
+            }
+
+            res
+        })
+    };
+
+    let create_grove = use_callback(create_grove_state.clone(), |_, create_grove_state| {
+        create_grove_state.run();
+    });
+    let invite_on_check = use_callback(invite_on_toggle.clone(), |value, invite_on_toggle| {
+        invite_on_toggle.set(value)
+    });
+    let name_input = use_callback(name_state.clone(), |value, name_state| {
+        name_state.set(value)
+    });
+
+    let content_style = use_style!(
+        r#"
+height: calc(var(--page-height) - var(--title-font-size) - var(--tab-links-height) - var(--tab-gap) - 2rem);
+width: min(50rem, 50%);
+        "#
+    );
+
+    html!(
+        <div class={content_style}>
+            <Helmet>
+                <title>{"Neuer Hain"}</title>
+            </Helmet>
+            <CosmoTitle title="Neuer Hain" />
+            <CosmoParagraph>
+                {"Cool, dass du deinen eigenen Hain erstellen möchtest. Dafür brauchen wir zwei kleine Infos von dir, einmal einen Namen und die Bestätigung, dass andere Pandas in den Hain eingeladen werden können. Füll das Formular unten einfach aus, klick auf Hain erstellen und schon bist du fertig."}
+            </CosmoParagraph>
+            if create_grove_state.error.is_some() {
+                <CosmoMessage header="Fehler beim Erstellen" message="Tut uns leid, der Hain konnte leider nicht erstellt werden. Bitte wende dich an den Bambussupport" />
+            }
+            <CosmoForm on_submit={create_grove} buttons={html!(<CosmoButton is_submit={true} label="Hain erstellen" />)}>
+                <CosmoTextBox label="Name" value={(*name_state).clone()} on_input={name_input} />
+                <CosmoSwitch label="Einladungen aktiv" checked={*invite_on_toggle} on_check={invite_on_check} />
+            </CosmoForm>
+        </div>
     )
 }

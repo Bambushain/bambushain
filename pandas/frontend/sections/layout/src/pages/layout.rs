@@ -21,7 +21,7 @@ use bamboo_pandas_frontend_section_bamboo::CalendarPage;
 use bamboo_pandas_frontend_section_bamboo::UsersPage;
 use bamboo_pandas_frontend_section_final_fantasy::CharacterPage;
 use bamboo_pandas_frontend_section_final_fantasy::SettingsPage;
-use bamboo_pandas_frontend_section_groves::pages::groves::GroveDetailsPage;
+use bamboo_pandas_frontend_section_groves::pages::groves::{AddGrovePage, GroveDetailsPage};
 use bamboo_pandas_frontend_section_groves::state::grove::use_groves;
 use bamboo_pandas_frontend_section_legal::{DataProtectionPage, ImprintPage};
 use bamboo_pandas_frontend_section_licenses::{
@@ -148,12 +148,7 @@ fn switch_final_fantasy(route: FinalFantasyRoute) -> Html {
 fn switch_groves(route: GroveRoute) -> Html {
     match route {
         GroveRoute::AddGrove => html!(
-            <>
-                <Helmet>
-                    <title>{"Neuer Hain"}</title>
-                </Helmet>
-                <CosmoTitle title="Neuer Hain" />
-            </>
+            <AddGrovePage />
         ),
         GroveRoute::Grove { id, name } => html!(
             <GroveDetailsPage id={id} name={name} />
