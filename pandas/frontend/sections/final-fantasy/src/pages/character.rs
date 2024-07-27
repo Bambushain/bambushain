@@ -265,25 +265,57 @@ fn modify_character_modal(
     }
 
     html!(
-        <CosmoModal title={title.clone()} is_form={true} on_form_submit={on_save} buttons={html!(
+        <CosmoModal
+            title={title.clone()}
+            is_form=true
+            on_form_submit={on_save}
+            buttons={html!(
             <>
                 <CosmoButton on_click={on_close} label="Abbrechen" />
                 <CosmoButton label={save_label.clone()} is_submit={true} />
             </>
-        )}>
+        )}
+        >
             if has_error {
                 if has_unknown_error {
-                    <CosmoMessage message_type={CosmoMessageType::Negative} message={error_message.clone()} actions={html!(<CosmoButton label="Fehler melden" on_click={on_error_close.clone()} />)} />
+                    <CosmoMessage
+                        message_type={CosmoMessageType::Negative}
+                        message={error_message.clone()}
+                        actions={html!(<CosmoButton label="Fehler melden" on_click={on_error_close.clone()} />)}
+                    />
                 } else {
-                    <CosmoMessage message_type={CosmoMessageType::Negative} message={error_message.clone()} />
+                    <CosmoMessage
+                        message_type={CosmoMessageType::Negative}
+                        message={error_message.clone()}
+                    />
                 }
             }
             <CosmoInputGroup>
-                <CosmoTextBox label="Name" on_input={update_name} value={(*name_state).clone()} required={true} />
-                <CosmoModernSelect label="Rasse" on_select={update_race} required={true} items={races} />
-                <CosmoTextBox label="Welt" on_input={update_world} value={(*world_state).clone()} required={true} />
-                <CosmoModernSelect label="Freie Gesellschaft" on_select={update_free_company} required={true} items={free_companies} />
-                {for custom_field_inputs}
+                <CosmoTextBox
+                    label="Name"
+                    on_input={update_name}
+                    value={(*name_state).clone()}
+                    required=true
+                />
+                <CosmoModernSelect
+                    label="Rasse"
+                    on_select={update_race}
+                    required=true
+                    items={races}
+                />
+                <CosmoTextBox
+                    label="Welt"
+                    on_input={update_world}
+                    value={(*world_state).clone()}
+                    required=true
+                />
+                <CosmoModernSelect
+                    label="Freie Gesellschaft"
+                    on_select={update_free_company}
+                    required=true
+                    items={free_companies}
+                />
+                { for custom_field_inputs }
             </CosmoInputGroup>
         </CosmoModal>
     )
@@ -453,27 +485,48 @@ fn character_details(
             </CosmoToolbar>
             if let Some(err) = &delete_state.error {
                 if err.code == NOT_FOUND {
-                    <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Der Charakter konnte nicht gefunden werden" />
+                    <CosmoMessage
+                        message_type={CosmoMessageType::Negative}
+                        header="Fehler beim Löschen"
+                        message="Der Charakter konnte nicht gefunden werden"
+                    />
                 } else if *unreported_error_toggle {
-                    <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Der Charakter konnte nicht gelöscht werden" actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                    <CosmoMessage
+                        message_type={CosmoMessageType::Negative}
+                        header="Fehler beim Löschen"
+                        message="Der Charakter konnte nicht gelöscht werden"
+                        actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)}
+                    />
                 } else {
-                    <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Der Charakter konnte nicht gelöscht werden" />
+                    <CosmoMessage
+                        message_type={CosmoMessageType::Negative}
+                        header="Fehler beim Löschen"
+                        message="Der Charakter konnte nicht gelöscht werden"
+                    />
                 }
             }
             <CosmoKeyValueList>
-                <CosmoKeyValueListItem title="Name">{character.name.clone()}</CosmoKeyValueListItem>
-                <CosmoKeyValueListItem title="Rasse">{character.race.to_string()}</CosmoKeyValueListItem>
-                <CosmoKeyValueListItem title="Welt">{character.world.clone()}</CosmoKeyValueListItem>
+                <CosmoKeyValueListItem title="Name">
+                    { character.name.clone() }
+                </CosmoKeyValueListItem>
+                <CosmoKeyValueListItem title="Rasse">
+                    { character.race.to_string() }
+                </CosmoKeyValueListItem>
+                <CosmoKeyValueListItem title="Welt">
+                    { character.world.clone() }
+                </CosmoKeyValueListItem>
                 if let Some(free_company) = character.free_company.clone() {
-                    <CosmoKeyValueListItem title="Freie Gesellschaft">{free_company.name.clone()}</CosmoKeyValueListItem>
+                    <CosmoKeyValueListItem title="Freie Gesellschaft">
+                        { free_company.name.clone() }
+                    </CosmoKeyValueListItem>
                 }
-                {for character.custom_fields.clone().iter().map(|field| {
+                { for character.custom_fields.clone().iter().map(|field| {
                     html!(
                         <CosmoKeyValueListItem title={field.label.clone()}>{field.values.clone().into_iter().collect::<Vec<String>>().join(", ")}</CosmoKeyValueListItem>
                     )
-                })}
+                }) }
             </CosmoKeyValueList>
-            {match (*action_state).clone() {
+            { match (*action_state).clone() {
                 CharacterActions::Edit => html!(
                     <ModifyCharacterModal has_unknown_error={*unreported_error_toggle} free_companies={free_companies.clone()} on_error_close={report_unknown_error.clone()} title={format!("Charakter {} bearbeiten", character.name.clone())} save_label="Character speichern" on_save={on_modal_save} on_close={on_modal_close} character={character.clone()} custom_fields={custom_fields.clone()} error_message={(*error_message_state).clone()} has_error={*edit_error_toggle} />
                 ),
@@ -484,7 +537,7 @@ fn character_details(
                     )
                 }
                 CharacterActions::Closed => html!(),
-            }}
+            } }
         </>
     )
 }
@@ -631,17 +684,24 @@ pub fn character_page() -> Html {
     }
 
     if characters_state.loading {
-        html!(
-            <CosmoProgressRing />
-        )
+        html!(<CosmoProgressRing />)
     } else if characters_state.error.is_some() {
         if *unreported_error_toggle {
             html!(
-                <CosmoMessage header="Fehler beim Laden" message="Deine Charaktere konnten nicht geladen werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
+                <CosmoMessage
+                    header="Fehler beim Laden"
+                    message="Deine Charaktere konnten nicht geladen werden"
+                    message_type={CosmoMessageType::Negative}
+                    actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)}
+                />
             )
         } else {
             html!(
-                <CosmoMessage header="Fehler beim Laden" message="Deine Charaktere konnten nicht geladen werden" message_type={CosmoMessageType::Negative} />
+                <CosmoMessage
+                    header="Fehler beim Laden"
+                    message="Deine Charaktere konnten nicht geladen werden"
+                    message_type={CosmoMessageType::Negative}
+                />
             )
         }
     } else if let Some(data) = &characters_state.data {
@@ -656,8 +716,14 @@ pub fn character_page() -> Html {
 
         html!(
             <>
-                <CosmoSideList on_select_item={select_character} selected_index={data.iter().position(|u| u.id == *selected_character_state).unwrap_or(0)} has_add_button={true} add_button_on_click={open_create_character_modal_click} add_button_label="Charakter hinzufügen">
-                    {for data.iter().map(|character| {
+                <CosmoSideList
+                    on_select_item={select_character}
+                    selected_index={data.iter().position(|u| u.id == *selected_character_state).unwrap_or(0)}
+                    has_add_button=true
+                    add_button_on_click={open_create_character_modal_click}
+                    add_button_label="Charakter hinzufügen"
+                >
+                    { for data.iter().map(|character| {
                         CosmoSideListItem::from_label_and_children(character.name.clone().into(), html!(
                             <>
                                 <CosmoTitle title={character.name.clone()} />
@@ -677,10 +743,21 @@ pub fn character_page() -> Html {
                                 </CosmoTabControl>
                             </>
                         ))
-                    })}
+                    }) }
                 </CosmoSideList>
                 if *open_create_character_modal_toggle {
-                    <ModifyCharacterModal has_unknown_error={*unreported_error_toggle} on_error_close={report_unknown_error.clone()} free_companies={free_companies_state.data.clone().unwrap_or(Vec::new()).clone()} error_message={(*error_message_state).clone()} has_error={create_state.error.is_some()} on_close={on_modal_close} title="Charakter hinzufügen" save_label="Charakter hinzufügen" on_save={on_modal_save} custom_fields={custom_fields_state.data.clone().unwrap_or(Vec::new()).clone()} />
+                    <ModifyCharacterModal
+                        has_unknown_error={*unreported_error_toggle}
+                        on_error_close={report_unknown_error.clone()}
+                        free_companies={free_companies_state.data.clone().unwrap_or(Vec::new()).clone()}
+                        error_message={(*error_message_state).clone()}
+                        has_error={create_state.error.is_some()}
+                        on_close={on_modal_close}
+                        title="Charakter hinzufügen"
+                        save_label="Charakter hinzufügen"
+                        on_save={on_modal_save}
+                        custom_fields={custom_fields_state.data.clone().unwrap_or(Vec::new()).clone()}
+                    />
                 }
             </>
         )

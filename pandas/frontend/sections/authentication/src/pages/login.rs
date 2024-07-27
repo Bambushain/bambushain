@@ -112,7 +112,7 @@ justify-content: center;
 align-items: center;
 height: 100vh;
 width: 100vw;
-background: url("/static/background-login.webp");
+background: url("/pandas/static/background-login.webp");
 background-size: cover;
 background-position-y: bottom;
 
@@ -158,46 +158,107 @@ align-items: center;
                 <CosmoTitle title="Anmelden" />
                 <p class={login_message_style}>
                     if *forgot_password_toggle {
-                        {"Gib deine Emailadresse oder deinen Namen ein, wenn du im Hain bist, schicken wir allen Mods eine Email mit der Bitte dein Passwort zurückzusetzen"}
+                        { "Gib deine Emailadresse oder deinen Namen ein, wenn du im Hain bist, schicken wir allen Mods eine Email mit der Bitte dein Passwort zurückzusetzen" }
                     } else if forgot_password.error.is_some() {
-                        {"Leider konnten wir die Mods nicht erreichen, bitte wende dich direkt an einen Mod wenn du kannst oder an "}<CosmoAnchor href="mailto:panda.helferlein@bambushain.app">{"panda.helferlein@bambushain.app"}</CosmoAnchor>
+                        { "Leider konnten wir die Mods nicht erreichen, bitte wende dich direkt an einen Mod wenn du kannst oder an " }
+                        <CosmoAnchor href="mailto:panda.helferlein@bambushain.app">
+                            { "panda.helferlein@bambushain.app" }
+                        </CosmoAnchor>
                     } else if forgot_password.data.is_some() {
-                        {"Wir haben den Mods geschrieben, bitte warte bis sich jemand bei dir meldet"}
+                        { "Wir haben den Mods geschrieben, bitte warte bis sich jemand bei dir meldet" }
                     } else if let Some(error) = &login.error {
-                        <Icon icon_id={IconId::LucideXOctagon} style="stroke: var(--negative-color);" /> {error}
+                        <Icon
+                            icon_id={IconId::LucideXOctagon}
+                            style="stroke: var(--negative-color);"
+                        />
+                        { error }
                     } else {
-                        <Icon icon_id={IconId::LucideLogIn} /> {"Melde dich an und betrete den Bambushain"}
+                        <Icon icon_id={IconId::LucideLogIn} />
+                        { "Melde dich an und betrete den Bambushain" }
                     }
                 </p>
                 if !*two_factor_code_required_toggle && !*forgot_password_toggle {
-                    <CosmoForm on_submit={login_submit} buttons={html!(
+                    <CosmoForm
+                        on_submit={login_submit}
+                        buttons={html!(
                         <>
                             <CosmoButton state={CosmoButtonType::Default} label="Passwort vergessen" on_click={forgot_password_click} />
                             <CosmoButton state={CosmoButtonType::Primary} label="Anmelden" is_submit={true} />
                         </>
-                    )}>
-                        <CosmoTextBox id="email" required={true} value={(*email_state).clone()} on_input={on_email_update} label="Email oder Name" />
-                        <CosmoTextBox id="password" input_type={CosmoTextBoxType::Password} required={true} value={(*password_state).clone()} on_input={on_password_update} label="Passwort" />
+                    )}
+                    >
+                        <CosmoTextBox
+                            id="email"
+                            required=true
+                            value={(*email_state).clone()}
+                            on_input={on_email_update}
+                            label="Email oder Name"
+                        />
+                        <CosmoTextBox
+                            id="password"
+                            input_type={CosmoTextBoxType::Password}
+                            required=true
+                            value={(*password_state).clone()}
+                            on_input={on_password_update}
+                            label="Passwort"
+                        />
                     </CosmoForm>
                 } else if *forgot_password_toggle {
-                    <CosmoForm on_submit={login_submit} buttons={html!(
+                    <CosmoForm
+                        on_submit={login_submit}
+                        buttons={html!(
                         <>
                             <CosmoButton state={CosmoButtonType::Default} label="Zurück" on_click={forgot_password_click} />
                             <CosmoButton state={CosmoButtonType::Primary} label="Abschicken" is_submit={true} />
                         </>
-                    )}>
-                        <CosmoTextBox id="email" required={true} value={(*email_state).clone()} on_input={on_email_update} label="Email oder Name" />
+                    )}
+                    >
+                        <CosmoTextBox
+                            id="email"
+                            required=true
+                            value={(*email_state).clone()}
+                            on_input={on_email_update}
+                            label="Email oder Name"
+                        />
                     </CosmoForm>
                 } else {
-                    <CosmoForm on_submit={login_submit} buttons={html!(<CosmoButton state={CosmoButtonType::Primary} label="Anmelden" is_submit={true} />)}>
-                        <CosmoTextBox required={true} readonly={true} id="email" value={(*email_state).clone()} on_input={on_email_update} label="Email" />
-                        <CosmoTextBox required={true} readonly={true} id="password" input_type={CosmoTextBoxType::Password} value={(*password_state).clone()} on_input={on_password_update} label="Passwort" />
-                        <CosmoTextBox required={true} id="twofactor" value={(*two_factor_code_state).clone()} on_input={on_two_factor_code_update} label="Zwei Faktor Code" />
+                    <CosmoForm
+                        on_submit={login_submit}
+                        buttons={html!(<CosmoButton state={CosmoButtonType::Primary} label="Anmelden" is_submit={true} />)}
+                    >
+                        <CosmoTextBox
+                            required=true
+                            readonly=true
+                            id="email"
+                            value={(*email_state).clone()}
+                            on_input={on_email_update}
+                            label="Email"
+                        />
+                        <CosmoTextBox
+                            required=true
+                            readonly=true
+                            id="password"
+                            input_type={CosmoTextBoxType::Password}
+                            value={(*password_state).clone()}
+                            on_input={on_password_update}
+                            label="Passwort"
+                        />
+                        <CosmoTextBox
+                            required=true
+                            id="twofactor"
+                            value={(*two_factor_code_state).clone()}
+                            on_input={on_two_factor_code_update}
+                            label="Zwei Faktor Code"
+                        />
                     </CosmoForm>
                 }
                 <div style="display: flex; gap: 1rem">
-                    <CosmoAnchorLink<AppRoute> to={AppRoute::LegalRoot}>{"Impressum"}</CosmoAnchorLink<AppRoute>>
-                    <CosmoAnchorLink<LegalRoute> to={LegalRoute::DataProtection}>{"Datenschutzerklärung"}</CosmoAnchorLink<LegalRoute>>
+                    <CosmoAnchorLink<AppRoute> to={AppRoute::LegalRoot}>
+                        { "Impressum" }
+                    </CosmoAnchorLink<AppRoute>>
+                    <CosmoAnchorLink<LegalRoute> to={LegalRoute::DataProtection}>
+                        { "Datenschutzerklärung" }
+                    </CosmoAnchorLink<LegalRoute>>
                 </div>
             </div>
         </div>
@@ -206,7 +267,5 @@ align-items: center;
 
 #[function_component(LoginPage)]
 pub fn login_page() -> Html {
-    html!(
-        <LoginContent />
-    )
+    html!(<LoginContent />)
 }

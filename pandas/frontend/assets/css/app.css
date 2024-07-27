@@ -7,7 +7,7 @@
 body {
     height: 100vh;
     width: 100vw;
-    background: url("/static/background.webp") !important;
+    background: url("/pandas/static/background.webp") !important;
     background-size: cover !important;
     background-position-y: bottom !important;
     background-position-x: left !important;
@@ -18,8 +18,9 @@ body {
     --list-items-width: 17rem;
 }
 
-body > div {
+body > div:first-child {
     background: rgba(var(--white-base) var(--white-base) var(--white-base) / 90%);
+    backdrop-filter: blur(6px);
 }
 
 .login-page ::selection {

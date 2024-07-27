@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use actix_web::{web, Responder};
-
-use bamboo_common::core::entities::{Event, User};
+use bamboo_common::core::entities::{GroveEvent, User};
+use sea_orm::DatabaseConnection;
 
 use crate::notifier::event::EventBroadcaster;
 
@@ -18,19 +18,19 @@ impl NotifierState {
         Self { event_broadcaster }
     }
 
-    pub fn notify_event_create(&self, event: Event) {
+    pub async fn notify_event_create(&self, event: GroveEvent, db: &DatabaseConnection) {
         log::info!("Event created, notify sources");
-        self.event_broadcaster.notify_create(event)
+        self.event_broadcaster.notify_create(event, db).await
     }
 
-    pub fn notify_event_update(&self, event: Event) {
+    pub async fn notify_event_update(&self, event: GroveEvent, db: &DatabaseConnection) {
         log::info!("Event updated, notify sources");
-        self.event_broadcaster.notify_update(event)
+        self.event_broadcaster.notify_update(event, db).await
     }
 
-    pub fn notify_event_delete(&self, event: Event) {
+    pub async fn notify_event_delete(&self, event: GroveEvent, db: &DatabaseConnection) {
         log::info!("Event deleted, notify sources");
-        self.event_broadcaster.notify_delete(event)
+        self.event_broadcaster.notify_delete(event, db).await
     }
 
     pub async fn new_client(&self, user: User) -> impl Responder {

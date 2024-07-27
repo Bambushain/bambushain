@@ -115,24 +115,60 @@ fn modify_housing_modal(
 
     html!(
         <>
-            <CosmoModal title={title.clone()} is_form={true} on_form_submit={on_save} buttons={html!(
+            <CosmoModal
+                title={title.clone()}
+                is_form=true
+                on_form_submit={on_save}
+                buttons={html!(
                 <>
                     <CosmoButton on_click={on_close} label="Abbrechen" />
                     <CosmoButton label={save_label.clone()} is_submit={true} />
                 </>
-            )}>
+            )}
+            >
                 if has_error {
                     if has_unknown_error {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message={error_message.clone()} actions={html!(<CosmoButton label="Fehler melden" on_click={on_error_close.clone()} />)} />
+                        <CosmoMessage
+                            message_type={CosmoMessageType::Negative}
+                            message={error_message.clone()}
+                            actions={html!(<CosmoButton label="Fehler melden" on_click={on_error_close.clone()} />)}
+                        />
                     } else {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message={error_message.clone()} />
+                        <CosmoMessage
+                            message_type={CosmoMessageType::Negative}
+                            message={error_message.clone()}
+                        />
                     }
                 }
                 <CosmoInputGroup>
-                    <CosmoModernSelect width={CosmoInputWidth::Medium} label="Gebiet" on_select={update_district} required={true} items={districts} />
-                    <CosmoModernSelect width={CosmoInputWidth::Medium} label="Bezirk" on_select={update_ward} required={true} items={wards} />
-                    <CosmoModernSelect width={CosmoInputWidth::Medium} label="Nummer" on_select={update_plot} required={true} items={plots} />
-                    <CosmoModernSelect width={CosmoInputWidth::Medium} label="Kategorie" on_select={update_housing_type} required={true} items={housing_types} />
+                    <CosmoModernSelect
+                        width={CosmoInputWidth::Medium}
+                        label="Gebiet"
+                        on_select={update_district}
+                        required=true
+                        items={districts}
+                    />
+                    <CosmoModernSelect
+                        width={CosmoInputWidth::Medium}
+                        label="Bezirk"
+                        on_select={update_ward}
+                        required=true
+                        items={wards}
+                    />
+                    <CosmoModernSelect
+                        width={CosmoInputWidth::Medium}
+                        label="Nummer"
+                        on_select={update_plot}
+                        required=true
+                        items={plots}
+                    />
+                    <CosmoModernSelect
+                        width={CosmoInputWidth::Medium}
+                        label="Kategorie"
+                        on_select={update_housing_type}
+                        required=true
+                        items={housing_types}
+                    />
                 </CosmoInputGroup>
             </CosmoModal>
         </>
@@ -406,9 +442,7 @@ font-style: normal;
     );
 
     if housing_state.loading {
-        html!(
-            <CosmoProgressRing />
-        )
+        html!(<CosmoProgressRing />)
     } else if let Some(data) = &housing_state.data {
         html!(
             <>
@@ -419,15 +453,28 @@ font-style: normal;
                 </CosmoToolbar>
                 if let Some(err) = &delete_state.error {
                     if err.code == NOT_FOUND {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Die Unterkunft konnte nicht gefunden werden" />
+                        <CosmoMessage
+                            message_type={CosmoMessageType::Negative}
+                            header="Fehler beim Löschen"
+                            message="Die Unterkunft konnte nicht gefunden werden"
+                        />
                     } else if *unreported_error_toggle {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Die Unterkunft konnte nicht gespeichert werden" actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                        <CosmoMessage
+                            message_type={CosmoMessageType::Negative}
+                            header="Fehler beim Löschen"
+                            message="Die Unterkunft konnte nicht gespeichert werden"
+                            actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)}
+                        />
                     } else {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Die Unterkunft konnte nicht gespeichert werden" />
+                        <CosmoMessage
+                            message_type={CosmoMessageType::Negative}
+                            header="Fehler beim Löschen"
+                            message="Die Unterkunft konnte nicht gespeichert werden"
+                        />
                     }
                 }
                 <BambooCardList>
-                    {for data.iter().map(|housing| {
+                    { for data.iter().map(|housing| {
                         let edit_housing = housing.clone();
                         let delete_housing = housing.clone();
 
@@ -448,9 +495,9 @@ font-style: normal;
                                 </address>
                             </BambooCard>
                         )
-                    })}
+                    }) }
                 </BambooCardList>
-                {match (*action_state).clone() {
+                { match (*action_state).clone() {
                     HousingActions::Create => html!(
                         <ModifyHousingModal has_unknown_error={*unreported_error_toggle} on_error_close={report_unknown_error.clone()} housing={CharacterHousing::new(character.id, HousingDistrict::TheLavenderBeds, HousingType::Private, 1, 1)} character_id={character.id} error_message={(*error_message_state).clone()} has_error={create_state.error.is_some()} on_close={on_modal_action_close} title="Unterkunft hinzufügen" save_label="Unterkunft hinzufügen" on_save={on_modal_create_save} />
                     ),
@@ -461,15 +508,24 @@ font-style: normal;
                         <CosmoConfirm confirm_type={CosmoModalType::Warning} on_confirm={move |_| on_modal_delete.emit(housing.id)} on_decline={on_modal_action_close} confirm_label="Unterkunft löschen" decline_label="Unterkunft behalten" title="Unterkunft löschen" message={format!("Soll die Unterkunft in {} im Bezirk {} mit der Nummer {} wirklich gelöscht werden?", housing.district.to_string(), housing.ward, housing.plot)} />
                     ),
                     HousingActions::Closed => html!(),
-                }}
+                } }
             </>
         )
     } else if housing_state.error.is_some() {
         html!(
             if *unreported_error_toggle {
-                <CosmoMessage header="Fehler beim Laden" message="Die Unterkünfte konnten nicht geladen werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                <CosmoMessage
+                    header="Fehler beim Laden"
+                    message="Die Unterkünfte konnten nicht geladen werden"
+                    message_type={CosmoMessageType::Negative}
+                    actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)}
+                />
             } else {
-                <CosmoMessage header="Fehler beim Laden" message="Die Unterkünfte konnten nicht geladen werden" message_type={CosmoMessageType::Negative} />
+                <CosmoMessage
+                    header="Fehler beim Laden"
+                    message="Die Unterkünfte konnten nicht geladen werden"
+                    message_type={CosmoMessageType::Negative}
+                />
             }
         )
     } else {

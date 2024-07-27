@@ -258,7 +258,7 @@ align-items: center;
                 <CosmoProgressRing />
             } else if let Some(data) = &free_companies_state.data {
                 <div class={list_style}>
-                    {for data.iter().map(|free_company| {
+                    { for data.iter().map(|free_company| {
                         let delete_free_company = free_company.clone();
                         let edit_free_company = free_company.clone();
 
@@ -272,66 +272,132 @@ align-items: center;
                                 <Icon style="cursor: pointer;" width="1rem" height="1rem" icon_id={IconId::LucideTrash} onclick={move |_| on_delete_open.emit((delete_free_company.id, delete_free_company.name.clone().into()))} />
                             </div>
                         )
-                    })}
+                    }) }
                 </div>
             } else if free_companies_state.error.is_some() {
                 if *unreported_error_toggle {
-                    <CosmoMessage header="Fehler beim Laden" message="Deine Freien Gesellschaften konnten nicht geladen werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                    <CosmoMessage
+                        header="Fehler beim Laden"
+                        message="Deine Freien Gesellschaften konnten nicht geladen werden"
+                        message_type={CosmoMessageType::Negative}
+                        actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)}
+                    />
                 } else {
-                    <CosmoMessage header="Fehler beim Laden" message="Deine Freien Gesellschaften konnten nicht geladen werden" message_type={CosmoMessageType::Negative} />
+                    <CosmoMessage
+                        header="Fehler beim Laden"
+                        message="Deine Freien Gesellschaften konnten nicht geladen werden"
+                        message_type={CosmoMessageType::Negative}
+                    />
                 }
             }
             if delete_state.error.is_some() {
                 if *unreported_error_toggle {
-                    <CosmoMessage header="Fehler beim Laden" message="Die Freie Gesellschaft konnte nicht gelöscht werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                    <CosmoMessage
+                        header="Fehler beim Laden"
+                        message="Die Freie Gesellschaft konnte nicht gelöscht werden"
+                        message_type={CosmoMessageType::Negative}
+                        actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)}
+                    />
                 } else {
-                    <CosmoMessage header="Fehler beim Laden" message="Die Freie Gesellschaft konnte nicht gelöscht werden" message_type={CosmoMessageType::Negative} />
+                    <CosmoMessage
+                        header="Fehler beim Laden"
+                        message="Die Freie Gesellschaft konnte nicht gelöscht werden"
+                        message_type={CosmoMessageType::Negative}
+                    />
                 }
             }
             if *edit_open_state {
-                <CosmoModal title="Freie Gesellschaft bearbeiten" is_form={true} on_form_submit={on_edit_save} buttons={html!(
+                <CosmoModal
+                    title="Freie Gesellschaft bearbeiten"
+                    is_form=true
+                    on_form_submit={on_edit_save}
+                    buttons={html!(
                     <>
                         <CosmoButton on_click={on_edit_close} label="Abbrechen" />
                         <CosmoButton label="Freie Gesellschaft speichern" is_submit={true} />
                     </>
-                )}>
+                )}
+                >
                     if let Some(err) = &edit_state.error {
                         if err.code == CONFLICT {
-                            <CosmoMessage message="Die Freie Gesellschaft existiert bereits" message_type={CosmoMessageType::Negative} />
+                            <CosmoMessage
+                                message="Die Freie Gesellschaft existiert bereits"
+                                message_type={CosmoMessageType::Negative}
+                            />
                         } else if *unreported_error_toggle {
-                            <CosmoMessage message="Die Freie Gesellschaft konnte nicht umbenannt werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                            <CosmoMessage
+                                message="Die Freie Gesellschaft konnte nicht umbenannt werden"
+                                message_type={CosmoMessageType::Negative}
+                                actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)}
+                            />
                         } else {
-                            <CosmoMessage message="Die Freie Gesellschaft konnte nicht umbenannt werden" message_type={CosmoMessageType::Negative} />
+                            <CosmoMessage
+                                message="Die Freie Gesellschaft konnte nicht umbenannt werden"
+                                message_type={CosmoMessageType::Negative}
+                            />
                         }
                     }
                     <CosmoInputGroup>
-                        <CosmoTextBox label="Name" on_input={update_name.clone()} value={(*name_state).clone()} required={true} />
+                        <CosmoTextBox
+                            label="Name"
+                            on_input={update_name.clone()}
+                            value={(*name_state).clone()}
+                            required=true
+                        />
                     </CosmoInputGroup>
                 </CosmoModal>
             }
             if *add_open_state {
-                <CosmoModal title="Freie Gesellschaft hinzufügen" is_form={true} on_form_submit={on_add_save} buttons={html!(
+                <CosmoModal
+                    title="Freie Gesellschaft hinzufügen"
+                    is_form=true
+                    on_form_submit={on_add_save}
+                    buttons={html!(
                     <>
                         <CosmoButton on_click={on_add_close} label="Abbrechen" />
                         <CosmoButton label="Freie Gesellschaft hinzufügen" is_submit={true} />
                     </>
-                )}>
+                )}
+                >
                     if let Some(err) = &create_state.error {
                         if err.code == CONFLICT {
-                            <CosmoMessage message="Die Freie Gesellschaft existiert bereits" message_type={CosmoMessageType::Negative} />
+                            <CosmoMessage
+                                message="Die Freie Gesellschaft existiert bereits"
+                                message_type={CosmoMessageType::Negative}
+                            />
                         } else if *unreported_error_toggle {
-                            <CosmoMessage message="Die Freie Gesellschaft konnte nicht hinzugefügt werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
+                            <CosmoMessage
+                                message="Die Freie Gesellschaft konnte nicht hinzugefügt werden"
+                                message_type={CosmoMessageType::Negative}
+                                actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)}
+                            />
                         } else {
-                            <CosmoMessage message="Die Freie Gesellschaft konnte nicht hinzugefügt werden" message_type={CosmoMessageType::Negative} />
+                            <CosmoMessage
+                                message="Die Freie Gesellschaft konnte nicht hinzugefügt werden"
+                                message_type={CosmoMessageType::Negative}
+                            />
                         }
                     }
                     <CosmoInputGroup>
-                        <CosmoTextBox label="Name" on_input={update_name.clone()} value={(*name_state).clone()} required={true} />
+                        <CosmoTextBox
+                            label="Name"
+                            on_input={update_name.clone()}
+                            value={(*name_state).clone()}
+                            required=true
+                        />
                     </CosmoInputGroup>
                 </CosmoModal>
             }
             if *delete_open_state {
-                <CosmoConfirm confirm_type={CosmoModalType::Warning} title="Freie Gesellschaft löschen" message={format!("Soll die Freie Gesellschaft {} wirklich gelöscht werden?", (*selected_name_state).clone())} confirm_label="Freie Gesellschaft Löschen" decline_label="Nicht löschen" on_decline={on_delete_close} on_confirm={on_delete} />
+                <CosmoConfirm
+                    confirm_type={CosmoModalType::Warning}
+                    title="Freie Gesellschaft löschen"
+                    message={format!("Soll die Freie Gesellschaft {} wirklich gelöscht werden?", (*selected_name_state).clone())}
+                    confirm_label="Freie Gesellschaft Löschen"
+                    decline_label="Nicht löschen"
+                    on_decline={on_delete_close}
+                    on_confirm={on_delete}
+                />
             }
         </>
     )

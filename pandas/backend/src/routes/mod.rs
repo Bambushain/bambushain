@@ -1,5 +1,4 @@
 use actix_web::{web, HttpResponse};
-
 use bamboo_common::backend::services::{EnvService, EnvironmentService};
 
 use crate::middleware::authenticate_user::authenticate;
@@ -35,15 +34,19 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
                 .to(HttpResponse::NoContent)
                 .wrap(authenticate!()),
         )
+        .service(grove::get_groves)
+        .service(grove::create_grove)
+        .service(grove::get_grove)
+        .service(grove::update_grove)
+        .service(grove::update_grove_mods)
+        .service(grove::delete_grove)
+        .service(grove::ban_user)
+        .service(grove::unban_user)
+        .service(grove::enable_invite)
+        .service(grove::disable_invite)
+        .service(grove::join_grove)
+        .service(grove::check_join_status)
         .service(user::get_users)
-        .service(user::create_user)
-        .service(user::get_user)
-        .service(user::delete_user)
-        .service(user::update_user_profile)
-        .service(user::add_mod_user)
-        .service(user::remove_mod_user)
-        .service(user::change_password)
-        .service(user::disable_totp)
         .service(user::get_profile_picture)
         .service(event::get_events)
         .service(event::create_event)
@@ -93,18 +96,13 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
         .service(character_housing::update_character_housing)
         .service(character_housing::delete_character_housing)
         .service(support::send_support_request)
-        .service(support::report_glitchtip_error)
         .service(licenses::get_licenses)
-        .service(grove::get_grove)
-        .service(grove::disable_grove)
-        .service(grove::enable_grove)
-        .service(grove::delete_grove)
         .service(sse::event_sse_client)
         .service(
             actix_web_lab::web::spa()
                 .index_file(format!("{frontend_base_path}/dist/index.html"))
                 .static_resources_location(format!("{frontend_base_path}/dist"))
-                .static_resources_mount("/static")
+                .static_resources_mount("/pandas/static")
                 .finish(),
         );
 }

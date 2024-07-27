@@ -6,6 +6,7 @@ license.workspace = true
 
 [dependencies]
 bamboo-common = { path = "../../../common" }
+bamboo-pandas-frontend-base-controls = { path = "controls" }
 bamboo-pandas-frontend-base-error = { path = "error" }
 bamboo-pandas-frontend-base-routing = { path = "routing" }
 bamboo-pandas-frontend-base-storage = { path = "storage" }

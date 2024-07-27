@@ -1,7 +1,6 @@
+use bamboo_common::core::entities::User;
 use bounce::Atom;
 use gloo_storage::{LocalStorage, Storage};
-
-use bamboo_common::core::entities::WebUser;
 
 pub fn get_token() -> Option<String> {
     LocalStorage::get("/bamboo/token").ok()
@@ -21,11 +20,11 @@ pub fn get_log_level() -> Option<String> {
 
 #[derive(Atom, PartialEq, Clone, Default)]
 pub struct CurrentUser {
-    pub profile: WebUser,
+    pub profile: User,
 }
 
-impl From<WebUser> for CurrentUser {
-    fn from(value: WebUser) -> Self {
+impl From<User> for CurrentUser {
+    fn from(value: User) -> Self {
         Self { profile: value }
     }
 }

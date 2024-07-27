@@ -1,10 +1,8 @@
 use actix_web::{body, dev, web, Error, HttpMessage};
 use actix_web_lab::middleware::Next;
 
-use bamboo_common::backend::dbal;
 use bamboo_common::backend::services::DbConnection;
 use bamboo_common::core::entities::*;
-use bamboo_common::core::error::BambooError;
 
 use crate::cookie;
 use crate::header;
@@ -30,11 +28,6 @@ pub(crate) async fn authenticate_user(
     } else {
         helpers::get_user_and_token_by_cookie(&db, auth_cookie).await?
     };
-
-    let grove = dbal::get_grove_by_user_id(user.id, &db).await?;
-    if (!grove.is_enabled && !user.is_mod) || grove.is_suspended {
-        return Err(BambooError::unauthorized("user", "Authorization failed").into());
-    }
 
     req.extensions_mut()
         .insert(AuthenticationState { token, user });

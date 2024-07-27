@@ -266,21 +266,32 @@ justify-content: space-between;
     );
 
     html!(
-        <CosmoModal title="Optionen ändern" is_form={false} buttons={html!(
+        <CosmoModal
+            title="Optionen ändern"
+            is_form=false
+            buttons={html!(
             <>
                 <CosmoButton label="Abbrechen" on_click={close} />
                 <CosmoButton label="Optionen speichern" on_click={on_save} />
             </>
-        )}>
+        )}
+        >
             if save_state.error.is_some() {
                 if *unreported_error_toggle {
-                    <CosmoMessage message_type={CosmoMessageType::Negative} message="Die Optionen konnten nur teilweise gespeichert werden" actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                    <CosmoMessage
+                        message_type={CosmoMessageType::Negative}
+                        message="Die Optionen konnten nur teilweise gespeichert werden"
+                        actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)}
+                    />
                 } else {
-                    <CosmoMessage message_type={CosmoMessageType::Negative} message="Die Optionen konnten nur teilweise gespeichert werden" />
+                    <CosmoMessage
+                        message_type={CosmoMessageType::Negative}
+                        message="Die Optionen konnten nur teilweise gespeichert werden"
+                    />
                 }
             }
             <div class={option_list_style}>
-                {for options_list.current().iter().map(|item| {
+                { for options_list.current().iter().map(|item| {
                     if *option_in_edit_mode == item.clone() {
                         html!(
                             <CosmoForm on_submit={update_option.clone()} buttons={html!(
@@ -310,12 +321,21 @@ justify-content: space-between;
                             </div>
                         )
                     }
-                })}
+                }) }
             </div>
             if (*option_in_edit_mode).eq(&AttrValue::from("")) {
-                <CosmoForm on_submit={add_option} buttons={html!(<CosmoButton label="Option hinzufügen" is_submit={true} />)}>
+                <CosmoForm
+                    on_submit={add_option}
+                    buttons={html!(<CosmoButton label="Option hinzufügen" is_submit={true} />)}
+                >
                     <CosmoFieldset title="Neue Option">
-                        <CosmoTextBox width={CosmoInputWidth::Small} label="Name" on_input={update_label.clone()} value={(*label_state).clone()} required={true} />
+                        <CosmoTextBox
+                            width={CosmoInputWidth::Small}
+                            label="Name"
+                            on_input={update_label.clone()}
+                            value={(*label_state).clone()}
+                            required=true
+                        />
                     </CosmoFieldset>
                 </CosmoForm>
             }
@@ -377,23 +397,43 @@ fn add_custom_field_dialog(position: usize, close: &Callback<()>, save: &Callbac
     );
 
     html!(
-        <CosmoModal title="Feld hinzufügen" is_form={true} on_form_submit={on_save} buttons={html!(
+        <CosmoModal
+            title="Feld hinzufügen"
+            is_form=true
+            on_form_submit={on_save}
+            buttons={html!(
             <>
                 <CosmoButton on_click={close} label="Abbrechen" />
                 <CosmoButton label="Feld hinzufügen" is_submit={true} />
             </>
-        )}>
+        )}
+        >
             if let Some(err) = &save_state.error {
                 if err.code == CONFLICT {
-                    <CosmoMessage message_type={CosmoMessageType::Negative} message="Ein Feld mit dem Namen existiert bereits" />
+                    <CosmoMessage
+                        message_type={CosmoMessageType::Negative}
+                        message="Ein Feld mit dem Namen existiert bereits"
+                    />
                 } else if *unreported_error_toggle {
-                    <CosmoMessage message_type={CosmoMessageType::Negative} message="Das Feld konnte leider nicht hinzugefügt werden" actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                    <CosmoMessage
+                        message_type={CosmoMessageType::Negative}
+                        message="Das Feld konnte leider nicht hinzugefügt werden"
+                        actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)}
+                    />
                 } else {
-                    <CosmoMessage message_type={CosmoMessageType::Negative} message="Das Feld konnte leider nicht hinzugefügt werden" />
+                    <CosmoMessage
+                        message_type={CosmoMessageType::Negative}
+                        message="Das Feld konnte leider nicht hinzugefügt werden"
+                    />
                 }
             }
             <CosmoInputGroup>
-                <CosmoTextBox label="Name" on_input={update_label.clone()} value={(*label_state).clone()} required={true} />
+                <CosmoTextBox
+                    label="Name"
+                    on_input={update_label.clone()}
+                    value={(*label_state).clone()}
+                    required=true
+                />
             </CosmoInputGroup>
         </CosmoModal>
     )
@@ -459,23 +499,43 @@ fn edit_custom_field_dialog(
     );
 
     html!(
-        <CosmoModal title="Feld bearbeiten" is_form={true} on_form_submit={on_save} buttons={html!(
+        <CosmoModal
+            title="Feld bearbeiten"
+            is_form=true
+            on_form_submit={on_save}
+            buttons={html!(
             <>
                 <CosmoButton on_click={close} label="Abbrechen" />
                 <CosmoButton label="Feld speichern" is_submit={true} />
             </>
-        )}>
+        )}
+        >
             if let Some(err) = &save_state.error {
                 if err.code == CONFLICT {
-                    <CosmoMessage message_type={CosmoMessageType::Negative} message="Ein Feld mit dem Namen existiert bereits" />
+                    <CosmoMessage
+                        message_type={CosmoMessageType::Negative}
+                        message="Ein Feld mit dem Namen existiert bereits"
+                    />
                 } else if *unreported_error_toggle {
-                    <CosmoMessage message_type={CosmoMessageType::Negative} message="Das Feld konnte leider nicht gespeichert werden" actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                    <CosmoMessage
+                        message_type={CosmoMessageType::Negative}
+                        message="Das Feld konnte leider nicht gespeichert werden"
+                        actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)}
+                    />
                 } else {
-                    <CosmoMessage message_type={CosmoMessageType::Negative} message="Das Feld konnte leider nicht gespeichert werden" />
+                    <CosmoMessage
+                        message_type={CosmoMessageType::Negative}
+                        message="Das Feld konnte leider nicht gespeichert werden"
+                    />
                 }
             }
             <CosmoInputGroup>
-                <CosmoTextBox label="Name" on_input={update_label.clone()} value={(*label_state).clone()} required={true} />
+                <CosmoTextBox
+                    label="Name"
+                    on_input={update_label.clone()}
+                    value={(*label_state).clone()}
+                    required=true
+                />
             </CosmoInputGroup>
         </CosmoModal>
     )
@@ -643,30 +703,59 @@ cursor: pointer;
     html!(
         <>
             <div ref={node} class={draggable_item.clone()}>
-                <div ref={handle_node} class={drag_handle_style.clone()}>{drag_handle.clone()}</div>
+                <div ref={handle_node} class={drag_handle_style.clone()}>
+                    { drag_handle.clone() }
+                </div>
                 <fieldset class={fieldset_style.clone()}>
                     <legend class={legend_style.clone()}>
-                        {custom_field.label.clone()}
+                        { custom_field.label.clone() }
                         <div class={edit_buttons.clone()}>
-                            <Icon class={button_style.clone()} width="1rem" height="1rem" icon_id={IconId::LucidePencil} onclick={open_edit_dialog} />
-                            <Icon class={button_style.clone()} width="1rem" height="1rem" icon_id={IconId::LucideList} onclick={open_options_dialog} />
-                            <Icon class={button_style} width="1rem" height="1rem" icon_id={IconId::LucideTrash} onclick={open_delete_dialog} />
+                            <Icon
+                                class={button_style.clone()}
+                                width="1rem"
+                                height="1rem"
+                                icon_id={IconId::LucidePencil}
+                                onclick={open_edit_dialog}
+                            />
+                            <Icon
+                                class={button_style.clone()}
+                                width="1rem"
+                                height="1rem"
+                                icon_id={IconId::LucideList}
+                                onclick={open_options_dialog}
+                            />
+                            <Icon
+                                class={button_style}
+                                width="1rem"
+                                height="1rem"
+                                icon_id={IconId::LucideTrash}
+                                onclick={open_delete_dialog}
+                            />
                         </div>
                     </legend>
                     <ul class={list_style.clone()}>
-                        {for custom_field.options.iter().map(|option| {
+                        { for custom_field.options.iter().map(|option| {
                             html!(
                                 <li class={item_style.clone()}>{option.label.clone()}</li>
                             )
-                        })}
+                        }) }
                     </ul>
                 </fieldset>
             </div>
             if *edit_open_toggle {
-                <EditCustomFieldDialog close={close_edit_dialog} save={save_edit_dialog} field={custom_field.clone()} />
+                <EditCustomFieldDialog
+                    close={close_edit_dialog}
+                    save={save_edit_dialog}
+                    field={custom_field.clone()}
+                />
             }
             if *options_open_toggle {
-                <CustomFieldOptionDialog id={custom_field.id} options={custom_field.options.clone()} close={close_options_dialog} save={save_options_dialog} />
+                <CustomFieldOptionDialog
+                    id={custom_field.id}
+                    options={custom_field.options.clone()}
+                    close={close_options_dialog}
+                    save={save_options_dialog}
+                />
             }
         </>
     )
@@ -753,9 +842,7 @@ border-left-color: var(--primary-color);
         classes!(drop_zone_style)
     };
 
-    html!(
-        <div ref={node} class={classes}></div>
-    )
+    html!(<div ref={node} class={classes} />)
 }
 
 #[allow(clippy::await_holding_refcell_ref)]
@@ -934,34 +1021,64 @@ display: grid;
                 <CosmoProgressRing />
             } else if fields_state.error.is_some() {
                 if *unreported_error_toggle {
-                    <CosmoMessage header="Fehler beim Laden" message="Deine eigenen Felder konnten nicht geladen werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
+                    <CosmoMessage
+                        header="Fehler beim Laden"
+                        message="Deine eigenen Felder konnten nicht geladen werden"
+                        message_type={CosmoMessageType::Negative}
+                        actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)}
+                    />
                 } else {
-                    <CosmoMessage header="Fehler beim Laden" message="Deine eigenen Felder konnten nicht geladen werden" message_type={CosmoMessageType::Negative} />
+                    <CosmoMessage
+                        header="Fehler beim Laden"
+                        message="Deine eigenen Felder konnten nicht geladen werden"
+                        message_type={CosmoMessageType::Negative}
+                    />
                 }
             } else if let Some(data) = &fields_state.data {
                 if delete_state.error.is_some() {
                     if *unreported_error_toggle {
-                        <CosmoMessage header="Fehler beim Laden" message="Das Feld konnte leider nicht gelöscht werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)} />
+                        <CosmoMessage
+                            header="Fehler beim Laden"
+                            message="Das Feld konnte leider nicht gelöscht werden"
+                            message_type={CosmoMessageType::Negative}
+                            actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)}
+                        />
                     } else {
-                        <CosmoMessage header="Fehler beim Laden" message="Das Feld konnte leider nicht gelöscht werden" message_type={CosmoMessageType::Negative} />
+                        <CosmoMessage
+                            header="Fehler beim Laden"
+                            message="Das Feld konnte leider nicht gelöscht werden"
+                            message_type={CosmoMessageType::Negative}
+                        />
                     }
                 }
                 <div class={container_style}>
-                    <DropZone drop={drop.clone()} new_position={0} />
-                    {for data.iter().map(|field| {
+                    <DropZone drop={drop.clone()} new_position=0 />
+                    { for data.iter().map(|field| {
                         html!(
                             <>
                                 <DraggableItem drag_start={drag_start.clone()} custom_field={field.clone()} edit={edit.clone()} delete={open_delete_dialog.clone()} />
                                 <DropZone drop={drop.clone()} new_position={field.position + 1} />
                             </>
                         )
-                    })}
+                    }) }
                 </div>
                 if *add_open_toggle {
-                    <AddCustomFieldDialog close={close_add_dialog} save={save_add_dialog} position={data.len()} />
+                    <AddCustomFieldDialog
+                        close={close_add_dialog}
+                        save={save_add_dialog}
+                        position={data.len()}
+                    />
                 }
                 if *delete_open_toggle {
-                    <CosmoConfirm confirm_type={CosmoModalType::Warning} title="Feld löschen" message={format!("Soll das Feld {} wirklich gelöscht werden?", (*selected_label_state).clone())} confirm_label="Feld Löschen" decline_label="Nicht löschen" on_decline={close_delete_dialog} on_confirm={confirm_delete_dialog} />
+                    <CosmoConfirm
+                        confirm_type={CosmoModalType::Warning}
+                        title="Feld löschen"
+                        message={format!("Soll das Feld {} wirklich gelöscht werden?", (*selected_label_state).clone())}
+                        confirm_label="Feld Löschen"
+                        decline_label="Nicht löschen"
+                        on_decline={close_delete_dialog}
+                        on_confirm={confirm_delete_dialog}
+                    />
                 }
             }
         </>

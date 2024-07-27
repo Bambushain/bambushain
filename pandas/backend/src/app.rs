@@ -1,5 +1,4 @@
 use actix_web::{middleware, App, HttpServer};
-
 use bamboo_common::backend::dbal;
 use bamboo_common::backend::migration::{Migrator, MigratorTrait};
 use bamboo_common::backend::services::minio_service::MinioClient;
@@ -9,14 +8,19 @@ use crate::notifier;
 use crate::routes;
 
 async fn setup_google_playstore_grove(
+    user_id: i32,
     db: &sea_orm::DatabaseConnection,
-) -> std::io::Result<bamboo_common::core::entities::Grove> {
-    if let Ok(grove) = dbal::get_grove_by_name("Google".to_string(), db).await {
-        Ok(grove)
-    } else {
-        dbal::create_grove("Google".to_string(), db)
+) -> std::io::Result<()> {
+    if !(dbal::grove_exists_by_name("Google".to_string(), db)
+        .await
+        .map_err(std::io::Error::other)?)
+    {
+        dbal::create_grove("Google".to_string(), false, user_id, db)
             .await
             .map_err(std::io::Error::other)
+            .map(|_| ())
+    } else {
+        Ok(())
     }
 }
 
@@ -25,26 +29,23 @@ async fn setup_google_playstore_user(db: &sea_orm::DatabaseConnection) -> std::i
     let password = "NkWHoLDmzg4aVEx".to_string();
 
     if let Ok(user) = dbal::get_user_by_email_or_username(email.clone(), db).await {
-        dbal::change_password(user.grove_id, user.id, password, db)
+        dbal::set_password(user.id, password, db)
             .await
             .map_err(std::io::Error::other)
             .map(|_| ())
     } else {
-        let grove = setup_google_playstore_grove(db).await?;
-        dbal::create_user(
-            grove.id,
+        let user = dbal::create_user(
             bamboo_common::core::entities::User::new(
                 email,
                 "Google Playstore".to_string(),
                 "google".to_string(),
-                true,
             ),
             password,
             db,
         )
         .await
-        .map_err(std::io::Error::other)
-        .map(|_| ())
+        .map_err(std::io::Error::other)?;
+        setup_google_playstore_grove(user.id, db).await
     }
 }
 
@@ -66,7 +67,6 @@ pub fn start_server() -> std::io::Result<()> {
             .await
             .map_err(std::io::Error::other)?;
         log::info!("Successfully migrated database");
-        let groves = dbal::get_groves(&db).await.map_err(std::io::Error::other)?;
         let minio_client = MinioClient::new(
             std::env::var("S3_BUCKET").map_err(std::io::Error::other)?,
             std::env::var("S3_ACCESS_KEY").map_err(std::io::Error::other)?,
@@ -78,27 +78,6 @@ pub fn start_server() -> std::io::Result<()> {
                 .map_or(false, |val| val.to_lowercase() == "true"),
         )
         .map_err(std::io::Error::other)?;
-
-        if groves.is_empty()
-            || groves
-                .iter()
-                .filter(|grove| grove.name == *"Google")
-                .count()
-                == groves.len()
-        {
-            log::info!("Create initial grove as it doesn't exist");
-            let initial_grove = dbal::create_grove(
-                std::env::var("INITIAL_GROVE").expect("Needs INITIAL_GROVE"),
-                &db,
-            )
-            .await
-            .map_err(std::io::Error::other)?;
-
-            log::info!("Migrate existing users and events to the new grove");
-            dbal::migrate_between_groves(None, initial_grove.id, &db)
-                .await
-                .map_err(std::io::Error::other)?;
-        }
 
         setup_google_playstore_user(&db).await?;
 

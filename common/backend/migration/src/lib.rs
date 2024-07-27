@@ -27,6 +27,10 @@ mod m20240117_125532_fix_foreign_key_custom_character_field;
 mod m20240628_235106_dawntrail_jobs;
 mod m20240629_094035_character_world_name_unique_fix;
 mod m20240719_211717_remove_email_two_factor;
+mod m20240719_224810_assign_groves_to_users_not_users_to_groves;
+mod m20240723_200654_add_grove_invite_secret;
+mod m20240723_201052_grove_name_none_unique;
+mod m20240724_222658_grove_user_add_ban_column;
 
 pub struct Migrator;
 
@@ -61,6 +65,10 @@ impl MigratorTrait for Migrator {
             Box::new(m20240628_235106_dawntrail_jobs::Migration),
             Box::new(m20240629_094035_character_world_name_unique_fix::Migration),
             Box::new(m20240719_211717_remove_email_two_factor::Migration),
+            Box::new(m20240719_224810_assign_groves_to_users_not_users_to_groves::Migration),
+            Box::new(m20240723_200654_add_grove_invite_secret::Migration),
+            Box::new(m20240723_201052_grove_name_none_unique::Migration),
+            Box::new(m20240724_222658_grove_user_add_ban_column::Migration),
         ]
     }
 }

@@ -5,10 +5,12 @@ use actix_web::rt::time::interval;
 use actix_web::Responder;
 use actix_web_lab::sse;
 use parking_lot::Mutex;
+use sea_orm::DatabaseConnection;
 use tokio::sync::mpsc::error::SendError;
 use tokio::sync::mpsc::Sender;
 
-use bamboo_common::core::entities::{Event, User};
+use bamboo_common::backend::dbal;
+use bamboo_common::core::entities::{Grove, GroveEvent, User};
 
 use crate::sse::event;
 
@@ -69,18 +71,23 @@ impl EventBroadcaster {
         sse::Sse::from_infallible_receiver(rx).with_keep_alive(Duration::from_secs(60))
     }
 
-    fn send_event(&self, evt: event::Event) {
+    async fn send_event(&self, evt: event::Event, db: &DatabaseConnection) {
         let clients = self.inner.lock().clients.clone();
         log::debug!("Has {} clients registered", clients.len());
         for (client, user) in clients {
-            Self::send_message(client, user, evt.clone())
+            if let Ok(groves) = dbal::get_groves(user.id, db).await {
+                Self::send_message(client, groves, user, evt.clone())
+            }
         }
     }
 
-    fn send_message(client: Sender<sse::Event>, user: User, evt: event::Event) {
+    fn send_message(client: Sender<sse::Event>, groves: Vec<Grove>, user: User, evt: event::Event) {
         let is_private_event_of_current_user =
-            evt.event.is_private && Some(user.id) == evt.event.user_id;
-        let is_in_same_grove = !evt.event.is_private && evt.event.grove_id == user.grove_id;
+            evt.event.is_private && Some(user.id) == evt.clone().event.user.map(|u| u.id);
+        let is_in_same_grove = !evt.clone().event.is_private
+            && groves
+                .iter()
+                .any(|g| g.id == evt.clone().event.grove.map(|g| g.id).unwrap_or(-1));
         if is_private_event_of_current_user || is_in_same_grove {
             actix_web::rt::spawn(async move {
                 log::debug!("Send event data");
@@ -103,15 +110,15 @@ impl EventBroadcaster {
             .await
     }
 
-    pub fn notify_create(&self, evt: Event) {
-        self.send_event(event::Event::created(evt))
+    pub async fn notify_create(&self, evt: GroveEvent, db: &DatabaseConnection) {
+        self.send_event(event::Event::created(evt), db).await
     }
 
-    pub fn notify_update(&self, evt: Event) {
-        self.send_event(event::Event::updated(evt))
+    pub async fn notify_update(&self, evt: GroveEvent, db: &DatabaseConnection) {
+        self.send_event(event::Event::updated(evt), db).await
     }
 
-    pub fn notify_delete(&self, evt: Event) {
-        self.send_event(event::Event::deleted(evt))
+    pub async fn notify_delete(&self, evt: GroveEvent, db: &DatabaseConnection) {
+        self.send_event(event::Event::deleted(evt), db).await
     }
 }

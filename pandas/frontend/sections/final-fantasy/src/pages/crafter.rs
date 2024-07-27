@@ -90,22 +90,44 @@ fn modify_crafter_modal(
 
     html!(
         <>
-            <CosmoModal title={title.clone()} is_form={true} on_form_submit={on_save} buttons={html!(
+            <CosmoModal
+                title={title.clone()}
+                is_form=true
+                on_form_submit={on_save}
+                buttons={html!(
                 <>
                     <CosmoButton on_click={on_close} label="Abbrechen" />
                     <CosmoButton label={save_label.clone()} is_submit={true} />
                 </>
-            )}>
+            )}
+            >
                 if has_error {
                     if has_unknown_error {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message={error_message.clone()} actions={html!(<CosmoButton label="Fehler melden" on_click={on_error_close.clone()} />)} />
+                        <CosmoMessage
+                            message_type={CosmoMessageType::Negative}
+                            message={error_message.clone()}
+                            actions={html!(<CosmoButton label="Fehler melden" on_click={on_error_close.clone()} />)}
+                        />
                     } else {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} message={error_message.clone()} />
+                        <CosmoMessage
+                            message_type={CosmoMessageType::Negative}
+                            message={error_message.clone()}
+                        />
                     }
                 }
                 <CosmoInputGroup>
-                    <CosmoModernSelect readonly={is_edit} label="Job" on_select={update_job} required={true} items={jobs} />
-                    <CosmoTextBox label="Level (optional)" on_input={update_level} value={(*level_state).clone()} />
+                    <CosmoModernSelect
+                        readonly={is_edit}
+                        label="Job"
+                        on_select={update_job}
+                        required=true
+                        items={jobs}
+                    />
+                    <CosmoTextBox
+                        label="Level (optional)"
+                        on_input={update_level}
+                        value={(*level_state).clone()}
+                    />
                 </CosmoInputGroup>
             </CosmoModal>
         </>
@@ -376,9 +398,7 @@ right: 0.75rem;
     );
 
     if crafter_state.loading {
-        html!(
-            <CosmoProgressRing />
-        )
+        html!(<CosmoProgressRing />)
     } else if let Some(data) = &crafter_state.data {
         let mut all_jobs = CrafterJob::iter().collect::<Vec<CrafterJob>>();
         for crafter in data.clone() {
@@ -403,15 +423,28 @@ right: 0.75rem;
                 }
                 if let Some(err) = &delete_state.error {
                     if err.code == NOT_FOUND {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Der Handwerker konnte nicht gefunden werden" />
+                        <CosmoMessage
+                            message_type={CosmoMessageType::Negative}
+                            header="Fehler beim Löschen"
+                            message="Der Handwerker konnte nicht gefunden werden"
+                        />
                     } else if *unreported_error_toggle {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Der Handwerker konnte nicht gelöscht werden" actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                        <CosmoMessage
+                            message_type={CosmoMessageType::Negative}
+                            header="Fehler beim Löschen"
+                            message="Der Handwerker konnte nicht gelöscht werden"
+                            actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)}
+                        />
                     } else {
-                        <CosmoMessage message_type={CosmoMessageType::Negative} header="Fehler beim Löschen" message="Der Handwerker konnte nicht gelöscht werden" />
+                        <CosmoMessage
+                            message_type={CosmoMessageType::Negative}
+                            header="Fehler beim Löschen"
+                            message="Der Handwerker konnte nicht gelöscht werden"
+                        />
                     }
                 }
                 <BambooCardList>
-                    {for data.iter().map(|crafter| {
+                    { for data.iter().map(|crafter| {
                         let edit_crafter = crafter.clone();
                         let delete_crafter = crafter.clone();
 
@@ -437,9 +470,9 @@ right: 0.75rem;
                                 }
                             </BambooCard>
                         )
-                    })}
+                    }) }
                 </BambooCardList>
-                {match (*action_state).clone() {
+                { match (*action_state).clone() {
                     CrafterActions::Create => html!(
                         <ModifyCrafterModal on_error_close={report_unknown_error.clone()} has_unknown_error={*unreported_error_toggle} crafter={new_crafter.unwrap_or(Crafter::default())} character_id={character.id} jobs={all_jobs} is_edit={false} error_message={(*error_message_state).clone()} has_error={create_state.error.is_some()} on_close={on_modal_action_close} title="Handwerker hinzufügen" save_label="Handwerker hinzufügen" on_save={on_modal_create_save} />
                     ),
@@ -450,15 +483,24 @@ right: 0.75rem;
                         <CosmoConfirm confirm_type={CosmoModalType::Warning} on_confirm={move |_| on_modal_delete.emit(crafter.id)} on_decline={on_modal_action_close} confirm_label="Handwerker löschen" decline_label="Handwerker behalten" title="Handwerker löschen" message={format!("Soll der Handwerker {} auf Level {} wirklich gelöscht werden?", crafter.job.to_string(), crafter.level.unwrap_or_default())} />
                     ),
                     CrafterActions::Closed => html!(),
-                }}
+                } }
             </>
         )
     } else if crafter_state.error.is_some() {
         html!(
             if *unreported_error_toggle {
-                <CosmoMessage header="Fehler beim Laden" message="Die Handwerker konnten nicht geladen werden" message_type={CosmoMessageType::Negative} actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)} />
+                <CosmoMessage
+                    header="Fehler beim Laden"
+                    message="Die Handwerker konnten nicht geladen werden"
+                    message_type={CosmoMessageType::Negative}
+                    actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)}
+                />
             } else {
-                <CosmoMessage header="Fehler beim Laden" message="Die Handwerker konnten nicht geladen werden" message_type={CosmoMessageType::Negative} />
+                <CosmoMessage
+                    header="Fehler beim Laden"
+                    message="Die Handwerker konnten nicht geladen werden"
+                    message_type={CosmoMessageType::Negative}
+                />
             }
         )
     } else {

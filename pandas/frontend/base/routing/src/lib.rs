@@ -2,83 +2,89 @@ use yew_router::Routable;
 
 #[derive(Clone, Routable, PartialEq)]
 pub enum AppRoute {
-    #[at("/")]
+    #[at("/pandas")]
     #[not_found]
     Home,
-    #[at("/bamboo")]
+    #[at("/pandas/bamboo")]
     BambooGroveRoot,
-    #[at("/bamboo/*")]
+    #[at("/pandas/bamboo/*")]
     BambooGrove,
-    #[at("/final-fantasy")]
+    #[at("/pandas/groves")]
+    GrovesRoot,
+    #[at("/pandas/groves/*")]
+    Groves,
+    #[at("/pandas/final-fantasy")]
     FinalFantasyRoot,
-    #[at("/final-fantasy/*")]
+    #[at("/pandas/final-fantasy/*")]
     FinalFantasy,
-    #[at("/support")]
+    #[at("/pandas/support")]
     SupportRoot,
-    #[at("/support/*")]
+    #[at("/pandas/support/*")]
     Support,
-    #[at("/mod-area")]
-    ModAreaRoot,
-    #[at("/mod-area/*")]
-    ModArea,
-    #[at("/legal")]
+    #[at("/pandas/legal")]
     LegalRoot,
-    #[at("/legal/*")]
+    #[at("/pandas/legal/*")]
     Legal,
-    #[at("/licenses")]
+    #[at("/pandas/licenses")]
     LicensesRoot,
-    #[at("/licenses/*")]
+    #[at("/pandas/licenses/*")]
     Licenses,
-    #[at("/login")]
+    #[at("/pandas/login")]
     Login,
 }
 
 #[derive(Clone, Routable, PartialEq)]
 pub enum FinalFantasyRoute {
-    #[at("/final-fantasy")]
+    #[at("/pandas/final-fantasy")]
     Characters,
-    #[at("/final-fantasy/settings")]
+    #[at("/pandas/final-fantasy/settings")]
     Settings,
 }
 
 #[derive(Clone, Routable, PartialEq)]
 pub enum SupportRoute {
-    #[at("/support")]
+    #[at("/pandas/support")]
     Contact,
 }
 
 #[derive(Clone, Routable, PartialEq)]
-pub enum ModAreaRoute {
-    #[at("/mod-area")]
-    UserManagement,
-    #[at("/mod-area/grove")]
-    GroveManagement,
-}
-
-#[derive(Clone, Routable, PartialEq)]
 pub enum BambooGroveRoute {
-    #[at("/bamboo")]
+    #[at("/pandas/bamboo")]
     Calendar,
-    #[at("/bamboo/user")]
+    #[at("/pandas/bamboo/user")]
     User,
 }
 
 #[derive(Clone, Routable, PartialEq)]
+pub enum GroveRoute {
+    #[at("/pandas/groves/add")]
+    AddGrove,
+    #[at("/pandas/groves/:id/:name")]
+    Grove { id: i32, name: String },
+    #[at("/pandas/groves/:id/:name/:invite_secret")]
+    GroveInvite {
+        id: i32,
+        name: String,
+        invite_secret: String,
+    },
+}
+
+#[derive(Clone, Routable, PartialEq)]
 pub enum LegalRoute {
-    #[at("/legal")]
+    #[at("/pandas/legal")]
     Imprint,
-    #[at("/legal/data-protection")]
+    #[at("/pandas/legal/data-protection")]
     DataProtection,
 }
 
 #[derive(Clone, Routable, PartialEq)]
 pub enum LicensesRoute {
-    #[at("/licenses")]
+    #[at("/pandas/licenses")]
     BambooGrove,
-    #[at("/licenses/images")]
+    #[at("/pandas/licenses/images")]
     Images,
-    #[at("/licenses/fonts")]
+    #[at("/pandas/licenses/fonts")]
     Fonts,
-    #[at("/licenses/software")]
+    #[at("/pandas/licenses/software")]
     Software,
 }

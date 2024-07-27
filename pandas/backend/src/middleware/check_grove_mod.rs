@@ -1,14 +1,15 @@
+use crate::header;
+use crate::middleware::helpers;
+use crate::{cookie, path};
 use actix_web::{body, dev, web, Error};
 use actix_web_lab::middleware::Next;
-
+use bamboo_common::backend::dbal;
 use bamboo_common::backend::services::DbConnection;
 use bamboo_common::core::error::BambooError;
 
-use crate::middleware::helpers;
-use crate::{cookie, header};
-
-pub(crate) async fn check_mod(
+pub(crate) async fn check_grove_mod(
     db: DbConnection,
+    path: Option<path::GrovePath>,
     authorization: Option<web::Header<header::AuthorizationHeader>>,
     auth_cookie: Option<cookie::BambooAuthCookie>,
     req: dev::ServiceRequest,
@@ -20,17 +21,23 @@ pub(crate) async fn check_mod(
         helpers::get_user_and_token_by_cookie(&db, auth_cookie).await?
     };
 
-    if user.is_mod {
-        next.call(req).await
-    } else {
-        Err(BambooError::insufficient_rights("user", "You need to be a mod").into())
+    if let Some(path) = path {
+        if !dbal::is_grove_mod(path.grove_id, user.id, &db).await? {
+            return Err(BambooError::insufficient_rights(
+                "grove",
+                "You don't have the right to manage this grove",
+            )
+            .into());
+        }
     }
+
+    next.call(req).await
 }
 
-macro_rules! is_mod {
+macro_rules! grove_mod {
     () => {
-        actix_web_lab::middleware::from_fn(crate::middleware::check_mod::check_mod)
+        actix_web_lab::middleware::from_fn(crate::middleware::check_grove_mod::check_grove_mod)
     };
 }
 
-pub(crate) use is_mod;
+pub(crate) use grove_mod;

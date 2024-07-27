@@ -1,58 +1,184 @@
-use date_range::DateRange;
-use sea_orm::prelude::*;
-use sea_orm::{Condition, IntoActiveModel, NotSet, QueryOrder, Set};
-
 use bamboo_common_core::entities::event;
+use bamboo_common_core::entities::event::GroveEvent;
+use bamboo_common_core::entities::user::WebUser;
 use bamboo_common_core::entities::*;
 use bamboo_common_core::error::*;
+use chrono::NaiveDate;
+use date_range::DateRange;
+use sea_orm::prelude::*;
+use sea_orm::sea_query::IntoCondition;
+use sea_orm::{
+    Condition, FromQueryResult, IntoActiveModel, JoinType, NotSet, QueryOrder, QuerySelect,
+    SelectModel, Selector, Set,
+};
+use serde::{Deserialize, Serialize};
 
-pub async fn get_events(
-    grove_id: i32,
-    range: DateRange,
+#[derive(
+    Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default, FromQueryResult,
+)]
+#[serde(rename_all = "camelCase")]
+struct LoadEvent {
+    pub event_id: i32,
+    pub title: String,
+    pub description: String,
+    pub start_date: NaiveDate,
+    pub end_date: NaiveDate,
+    pub color: String,
+    pub is_private: bool,
+    pub user_id: Option<i32>,
+    pub display_name: Option<String>,
+    pub discord_name: Option<String>,
+    pub email: Option<String>,
+    pub grove_id: Option<i32>,
+    pub grove_name: Option<String>,
+}
+
+impl From<LoadEvent> for GroveEvent {
+    fn from(value: LoadEvent) -> Self {
+        let user = if let Some(id) = value.user_id {
+            Some(WebUser {
+                id,
+                email: value.email.unwrap(),
+                display_name: value.display_name.unwrap(),
+                discord_name: value.discord_name.unwrap_or("".to_string()),
+            })
+        } else {
+            None
+        };
+        let grove = if let Some(id) = value.grove_id {
+            Some(Grove {
+                id,
+                name: value.grove_name.unwrap(),
+                invite_secret: None,
+            })
+        } else {
+            None
+        };
+
+        GroveEvent {
+            id: value.event_id,
+            title: value.title,
+            description: value.description,
+            start_date: value.start_date,
+            end_date: value.end_date,
+            color: value.color,
+            is_private: value.is_private,
+            user,
+            grove,
+        }
+    }
+}
+
+fn get_event_query(
     user_id: i32,
-    db: &DatabaseConnection,
-) -> BambooResult<Vec<Event>> {
+    additional_filter: impl IntoCondition,
+) -> Selector<SelectModel<LoadEvent>> {
     event::Entity::find()
-        .filter(event::Column::GroveId.eq(grove_id))
-        .filter(
-            Condition::any()
-                .add(
+        .select_only()
+        .column_as(event::Column::Id, "event_id")
+        .column_as(event::Column::Title, "title")
+        .column_as(event::Column::Description, "description")
+        .column_as(event::Column::StartDate, "start_date")
+        .column_as(event::Column::EndDate, "end_date")
+        .column_as(event::Column::Color, "color")
+        .column_as(event::Column::IsPrivate, "is_private")
+        .column_as(user::Column::Id, "user_id")
+        .column_as(user::Column::DisplayName, "display_name")
+        .column_as(user::Column::DiscordName, "discord_name")
+        .column_as(user::Column::Email, "email")
+        .column_as(grove::Column::Id, "grove_id")
+        .column_as(grove::Column::Name, "grove_name")
+        .join_rev(
+            JoinType::LeftJoin,
+            grove_user::Entity::belongs_to(event::Entity)
+                .from(grove_user::Column::GroveId)
+                .to(event::Column::GroveId)
+                .on_condition(|gu, e| {
                     Condition::all()
-                        .add(event::Column::StartDate.gte(range.since()))
-                        .add(event::Column::StartDate.lte(range.until())),
-                )
-                .add(
-                    Condition::all()
-                        .add(event::Column::EndDate.gte(range.since()))
-                        .add(event::Column::EndDate.lte(range.until())),
-                ),
+                        .add(
+                            Expr::col((gu.clone(), grove_user::Column::GroveId))
+                                .eq(Expr::col((e.clone(), event::Column::GroveId))),
+                        )
+                        .add(
+                            Condition::any()
+                                .add(
+                                    Expr::col((gu, grove_user::Column::UserId))
+                                        .eq(Expr::col((e.clone(), event::Column::UserId))),
+                                )
+                                .add(Expr::col((e, event::Column::UserId)).is_null()),
+                        )
+                })
+                .into(),
+        )
+        .join_rev(
+            JoinType::LeftJoin,
+            grove::Entity::belongs_to(grove_user::Entity)
+                .from(grove::Column::Id)
+                .to(grove_user::Column::GroveId)
+                .into(),
+        )
+        .join_rev(
+            JoinType::LeftJoin,
+            user::Entity::belongs_to(grove_user::Entity)
+                .from(user::Column::Id)
+                .to(grove_user::Column::UserId)
+                .into(),
         )
         .filter(
             Condition::any()
-                .add(event::Column::IsPrivate.eq(false))
                 .add(
                     Condition::all()
                         .add(event::Column::IsPrivate.eq(true))
                         .add(event::Column::UserId.eq(user_id)),
+                )
+                .add(
+                    Condition::all()
+                        .add(event::Column::IsPrivate.eq(false))
+                        .add(grove_user::Column::UserId.eq(user_id)),
                 ),
         )
+        .filter(additional_filter)
         .order_by_asc(event::Column::Id)
-        .all(db)
-        .await
-        .map_err(|err| {
-            log::error!("Failed to load events {err}");
-            BambooError::database("event", "Failed to load events")
-        })
+        .into_model::<LoadEvent>()
 }
 
-pub async fn get_event(
-    id: i32,
-    grove_id: i32,
+pub async fn get_events(
+    range: DateRange,
     user_id: i32,
+    grove_id: Option<i32>,
     db: &DatabaseConnection,
-) -> BambooResult<Event> {
-    event::Entity::find_by_id(id)
-        .filter(event::Column::GroveId.eq(grove_id))
+) -> BambooResult<Vec<GroveEvent>> {
+    let additional_filter = Condition::any()
+        .add(event::Column::StartDate.between(range.since(), range.until()))
+        .add(event::Column::EndDate.between(range.since(), range.until()));
+
+    get_event_query(
+        user_id,
+        if let Some(grove_id) = grove_id {
+            Condition::all()
+                .add(additional_filter)
+                .add(event::Column::GroveId.eq(grove_id))
+        } else {
+            additional_filter
+        },
+    )
+    .all(db)
+    .await
+    .map_err(|err| {
+        log::error!("Failed to load events {err}");
+        BambooError::database("event", "Failed to load events")
+    })
+    .map(|events| {
+        events
+            .iter()
+            .cloned()
+            .map(|event| event.into())
+            .collect::<Vec<GroveEvent>>()
+    })
+}
+
+pub async fn get_event(id: i32, user_id: i32, db: &DatabaseConnection) -> BambooResult<GroveEvent> {
+    get_event_query(user_id, Condition::all().add(event::Column::Id.eq(id)))
         .one(db)
         .await
         .map_err(|err| {
@@ -61,11 +187,7 @@ pub async fn get_event(
         })
         .map(|data| {
             if let Some(data) = data {
-                if data.is_private && data.user_id != Some(user_id) {
-                    Err(BambooError::not_found("event", "The event was not found"))
-                } else {
-                    Ok(data)
-                }
+                Ok(data.into())
             } else {
                 Err(BambooError::not_found("event", "The event was not found"))
             }
@@ -73,33 +195,34 @@ pub async fn get_event(
 }
 
 pub async fn create_event(
-    event: Event,
-    grove_id: i32,
+    event: GroveEvent,
     user_id: i32,
     db: &DatabaseConnection,
-) -> BambooResult<Event> {
-    let mut model = event.clone().into_active_model();
+) -> BambooResult<GroveEvent> {
+    let mut model = event.to_event().into_active_model();
     model.id = NotSet;
-    model.grove_id = Set(grove_id);
-    if event.is_private {
-        model.user_id = Set(Some(user_id));
-    }
+    model.user_id = Set(Some(user_id));
 
-    model.insert(db).await.map_err(|err| {
+    let created = model.insert(db).await.map_err(|err| {
         log::error!("Failed to create event {err}");
         BambooError::database("event", "Failed to create event")
-    })
+    })?;
+
+    let event_id = created.id;
+    let event = get_event(event_id, user_id, db).await?;
+
+    Ok(event)
 }
 
 pub async fn update_event(
-    grove_id: i32,
+    user_id: i32,
     id: i32,
-    event: Event,
+    event: GroveEvent,
     db: &DatabaseConnection,
 ) -> BambooErrorResult {
     event::Entity::update_many()
         .filter(event::Column::Id.eq(id))
-        .filter(event::Column::GroveId.eq(grove_id))
+        .filter(event::Column::UserId.eq(user_id))
         .col_expr(event::Column::StartDate, Expr::value(event.start_date))
         .col_expr(event::Column::EndDate, Expr::value(event.end_date))
         .col_expr(event::Column::Description, Expr::value(event.description))
@@ -114,10 +237,10 @@ pub async fn update_event(
         .map(|_| ())
 }
 
-pub async fn delete_event(grove_id: i32, id: i32, db: &DatabaseConnection) -> BambooErrorResult {
+pub async fn delete_event(user_id: i32, id: i32, db: &DatabaseConnection) -> BambooErrorResult {
     event::Entity::delete_many()
         .filter(event::Column::Id.eq(id))
-        .filter(event::Column::GroveId.eq(grove_id))
+        .filter(event::Column::UserId.eq(user_id))
         .exec(db)
         .await
         .map_err(|err| {
