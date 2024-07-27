@@ -47,12 +47,7 @@ Alles Gute vom 🐼"#
         html_body,
     )
     .await
-    .map_err(|err| {
-        log::error!("Failed to send email {err}");
-        log::error!("{err:#?}");
-
-        BambooError::mailing("Failed to send welcome email")
-    })
+    .map_err(|_| BambooError::mailing("Failed to send welcome email"))
 }
 
 pub async fn send_password_changed(
@@ -100,10 +95,5 @@ Alles Gute vom 🐼"#
         html_body,
     )
     .await
-    .map_err(|err| {
-        log::error!("Failed to send email {err}");
-        log::error!("{err:#?}");
-
-        BambooError::mailing("Failed to send change password email")
-    })
+    .map_err(|_| BambooError::mailing("Failed to send change password email"))
 }

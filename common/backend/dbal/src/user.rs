@@ -5,6 +5,7 @@ use sea_orm::{
     IntoActiveModel, JoinType, NotSet, QueryFilter, QueryOrder, QuerySelect, RelationTrait,
 };
 
+use crate::error_tag;
 use bamboo_common_core::entities::user::WebUser;
 use bamboo_common_core::entities::*;
 use bamboo_common_core::error::*;
@@ -13,17 +14,11 @@ pub async fn get_user(id: i32, db: &DatabaseConnection) -> BambooResult<User> {
     user::Entity::find_by_id(id)
         .one(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("user", "Failed to execute database query")
-        })
-        .map(|data| {
-            if let Some(data) = data {
-                Ok(data)
-            } else {
-                Err(BambooError::not_found("user", "The user was not found"))
-            }
-        })?
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to execute database query"))?
+        .ok_or(BambooError::not_found(
+            error_tag!(),
+            "The user was not found",
+        ))
 }
 
 pub async fn get_user_by_token(token: String, db: &DatabaseConnection) -> BambooResult<User> {
@@ -32,20 +27,11 @@ pub async fn get_user_by_token(token: String, db: &DatabaseConnection) -> Bamboo
         .join(JoinType::InnerJoin, user::Relation::Token.def())
         .one(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::unauthorized("authentication", "Token or user not found")
-        })
-        .map(|data| {
-            if let Some(data) = data {
-                Ok(data)
-            } else {
-                Err(BambooError::unauthorized(
-                    "authentication",
-                    "Token or user not found",
-                ))
-            }
-        })?
+        .map_err(|_| BambooError::unauthorized(error_tag!(), "Token or user not found"))?
+        .ok_or(BambooError::unauthorized(
+            error_tag!(),
+            "Token or user not found",
+        ))
 }
 
 pub async fn get_user_by_email_or_username(
@@ -60,17 +46,11 @@ pub async fn get_user_by_email_or_username(
         )
         .one(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("user", "Failed to execute database query")
-        })
-        .map(|data| {
-            if let Some(data) = data {
-                Ok(data)
-            } else {
-                Err(BambooError::not_found("user", "The user was not found"))
-            }
-        })?
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to execute database query"))?
+        .ok_or(BambooError::not_found(
+            error_tag!(),
+            "The user was not found",
+        ))
 }
 
 pub enum BannedStatus {
@@ -107,18 +87,18 @@ where
 
     user::Entity::find()
         .select_only()
-        .distinct_on(vec![Alias::new("id")])
+        .distinct_on(vec![Alias::new("display_name")])
         .column_as(user::Column::Id, "id")
         .column_as(user::Column::Email, "email")
         .column_as(user::Column::DiscordName, "discord_name")
         .column_as(user::Column::DisplayName, "display_name")
         .column_as(grove_user::Column::IsMod, "is_mod")
         .column_as(grove_user::Column::IsBanned, "is_banned")
-        .join(
+        .join_rev(
             JoinType::LeftJoin,
-            user::Entity::belongs_to(grove_user::Entity)
-                .from(user::Column::Id)
-                .to(grove_user::Column::UserId)
+            grove_user::Entity::belongs_to(user::Entity)
+                .from(grove_user::Column::UserId)
+                .to(user::Column::Id)
                 .into(),
         )
         .filter(filter)
@@ -126,10 +106,7 @@ where
         .into_model::<U>()
         .all(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("user", "Failed to load users")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to load users"))
 }
 
 pub async fn get_users(user_id: i32, db: &DatabaseConnection) -> BambooResult<Vec<WebUser>> {
@@ -167,10 +144,7 @@ pub(crate) async fn user_exists_by_id(
         .count(db)
         .await
         .map(|count| count > 0)
-        .map_err(|err| {
-            log::error!("Failed to load users {err}");
-            BambooError::database("user", "Failed to load users")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to load users"))
 }
 
 async fn user_exists_by_email_and_name(
@@ -187,10 +161,7 @@ async fn user_exists_by_email_and_name(
         .count(db)
         .await
         .map(|count| count > 0)
-        .map_err(|err| {
-            log::error!("Failed to load users {err}");
-            BambooError::database("user", "Failed to load users")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to load users"))
 }
 
 pub async fn create_user(
@@ -200,49 +171,40 @@ pub async fn create_user(
 ) -> BambooResult<User> {
     if user_exists_by_email_and_name(user.email.clone(), user.display_name.clone(), db).await? {
         return Err(BambooError::exists_already(
-            "user",
+            error_tag!(),
             "A user with that email or name exists already",
         ));
     }
 
     let mut model = user.into_active_model();
     model.id = NotSet;
-    model.set_password(&password).map_err(|err| {
-        log::error!("{err}");
-        BambooError::database("user", "Failed to hash password user")
-    })?;
+    model
+        .set_password(&password)
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to hash password user"))?;
 
-    model.insert(db).await.map_err(|err| {
-        log::error!("{err}");
-        BambooError::database("user", "Failed to create user")
-    })
+    model
+        .insert(db)
+        .await
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to create user"))
 }
 
 pub async fn delete_user(id: i32, db: &DatabaseConnection) -> BambooErrorResult {
     user::Entity::delete_by_id(id)
         .exec(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("user", "Failed to delete user")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to delete user"))
         .map(|_| ())
 }
 
 pub async fn set_password(id: i32, password: String, db: &DatabaseConnection) -> BambooErrorResult {
-    let hashed_password = bcrypt::hash(password, 12).map_err(|err| {
-        log::error!("{err}");
-        BambooError::unknown("user", "Failed to hash the password")
-    })?;
+    let hashed_password = bcrypt::hash(password, 12)
+        .map_err(|_| BambooError::unknown(error_tag!(), "Failed to hash the password"))?;
 
     token::Entity::delete_many()
         .filter(token::Column::UserId.eq(id))
         .exec(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("user", "Failed to update user")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to update user"))
         .map(|_| ())?;
 
     user::Entity::update_many()
@@ -256,9 +218,6 @@ pub async fn set_password(id: i32, password: String, db: &DatabaseConnection) ->
         .filter(user::Column::Id.eq(id))
         .exec(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("user", "Failed to update user")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to update user"))
         .map(|_| ())
 }

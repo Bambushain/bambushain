@@ -2,6 +2,7 @@ use sea_orm::prelude::*;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{IntoActiveModel, NotSet, QueryOrder};
 
+use crate::error_tag;
 use bamboo_common_core::entities::*;
 use bamboo_common_core::entities::{character, fighter};
 use bamboo_common_core::error::*;
@@ -18,10 +19,7 @@ pub async fn get_fighters(
         .order_by_asc(fighter::Column::Job)
         .all(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("fighter", "Failed to load fighters")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to load fighters"))
 }
 
 pub async fn get_fighter(
@@ -36,20 +34,11 @@ pub async fn get_fighter(
         .inner_join(character::Entity)
         .one(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("fighter", "Failed to load fighter")
-        })
-        .map(|res| {
-            if let Some(res) = res {
-                Ok(res)
-            } else {
-                Err(BambooError::not_found(
-                    "fighter",
-                    "The fighter was not found",
-                ))
-            }
-        })?
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to load fighter"))?
+        .ok_or(BambooError::not_found(
+            error_tag!(),
+            "The fighter was not found",
+        ))
 }
 
 async fn fighter_exists_by_id(
@@ -68,10 +57,7 @@ async fn fighter_exists_by_id(
         .count(db)
         .await
         .map(|count| count > 0)
-        .map_err(|err| {
-            log::error!("Failed to load fighter {err}");
-            BambooError::database("fighter", "Failed to load the fighters")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to load the fighters"))
 }
 
 async fn fighter_exists_by_job(
@@ -88,10 +74,7 @@ async fn fighter_exists_by_job(
         .count(db)
         .await
         .map(|count| count > 0)
-        .map_err(|err| {
-            log::error!("Failed to load fighter {err}");
-            BambooError::database("fighter", "Failed to load the fighters")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to load the fighters"))
 }
 
 pub async fn create_fighter(
@@ -102,7 +85,7 @@ pub async fn create_fighter(
 ) -> BambooResult<Fighter> {
     if fighter_exists_by_job(user_id, character_id, fighter.job, db).await? {
         return Err(BambooError::exists_already(
-            "fighter",
+            error_tag!(),
             "A fighter with that job exists already",
         ));
     }
@@ -111,10 +94,10 @@ pub async fn create_fighter(
     model.character_id = Set(character_id);
     model.id = NotSet;
 
-    model.insert(db).await.map_err(|err| {
-        log::error!("{err}");
-        BambooError::database("fighter", "Failed to create fighter")
-    })
+    model
+        .insert(db)
+        .await
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to create fighter"))
 }
 
 pub async fn update_fighter(
@@ -126,7 +109,7 @@ pub async fn update_fighter(
 ) -> BambooErrorResult {
     if fighter_exists_by_id(id, user_id, character_id, fighter.job, db).await? {
         return Err(BambooError::exists_already(
-            "fighter",
+            error_tag!(),
             "A fighter with that job exists already",
         ));
     }
@@ -140,10 +123,7 @@ pub async fn update_fighter(
     active_fighter
         .update(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("fighter", "Failed to update fighter")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to update fighter"))
         .map(|_| ())
 }
 
@@ -157,9 +137,6 @@ pub async fn delete_fighter(
         .await?
         .delete(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("fighter", "Failed to delete fighter")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to delete fighter"))
         .map(|_| ())
 }

@@ -5,7 +5,7 @@ use bamboo_common_core::entities::*;
 use bamboo_common_core::error::*;
 
 use crate as dbal;
-use crate::{decrypt_string, encrypt_string};
+use crate::{decrypt_string, encrypt_string, error_tag};
 
 pub async fn change_my_password(
     id: i32,
@@ -13,10 +13,8 @@ pub async fn change_my_password(
     new_password: String,
     db: &DatabaseConnection,
 ) -> Result<(), PasswordError> {
-    let hashed_password = bcrypt::hash(new_password.clone(), 12).map_err(|err| {
-        log::error!("{err}");
-        PasswordError::Unknown
-    })?;
+    let hashed_password =
+        bcrypt::hash(new_password.clone(), 12).map_err(|_| PasswordError::Unknown)?;
 
     let user = dbal::get_user(id, db)
         .await
@@ -53,10 +51,7 @@ pub async fn change_my_password(
         .filter(user::Column::Id.eq(id))
         .exec(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            PasswordError::Unknown
-        })
+        .map_err(|_| PasswordError::Unknown)
         .map(|_| ())
 }
 
@@ -72,7 +67,7 @@ pub async fn enable_my_totp(
         .filter(user::Column::Id.eq(id))
         .exec(db)
         .await
-        .map_err(|_| BambooError::database("user", "The secret could not be saved"))
+        .map_err(|_| BambooError::database(error_tag!(), "The secret could not be saved"))
         .map(|_| ())
 }
 
@@ -87,7 +82,7 @@ pub async fn disable_my_totp(id: i32, db: &DatabaseConnection) -> BambooErrorRes
         .filter(user::Column::Id.eq(id))
         .exec(db)
         .await
-        .map_err(|_| BambooError::database("user", "Failed to disable totp"))
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to disable totp"))
         .map(|_| ())
 }
 
@@ -110,7 +105,7 @@ pub async fn validate_my_totp(
         .filter(user::Column::Id.eq(id))
         .exec(db)
         .await
-        .map_err(|_| BambooError::database("user", "Totp could not be validated"))
+        .map_err(|_| BambooError::database(error_tag!(), "Totp could not be validated"))
         .map(|_| valid)
 }
 
@@ -123,7 +118,7 @@ pub async fn update_my_profile(
 ) -> BambooErrorResult {
     if dbal::user_exists_by_id(id, email.clone(), display_name.clone(), db).await? {
         return Err(BambooError::exists_already(
-            "user",
+            error_tag!(),
             "A user with that email or name exists already",
         ));
     }
@@ -135,9 +130,6 @@ pub async fn update_my_profile(
         .filter(user::Column::Id.eq(id))
         .exec(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("user", "Failed to update user")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to update user"))
         .map(|_| ())
 }

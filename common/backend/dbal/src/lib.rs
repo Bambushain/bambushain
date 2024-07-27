@@ -29,6 +29,17 @@ mod grove;
 mod my;
 mod user;
 
+macro_rules! error_tag {
+    () => {
+        std::path::Path::new(file!())
+            .file_name()
+            .and_then(|s| s.to_str())
+            .unwrap()
+    };
+}
+
+pub(crate) use error_tag;
+
 fn get_passphrase(passphrase: &[u8]) -> BambooResult<Key> {
     let mut key = [0_u8; 32];
     pbkdf2::pbkdf2::<Hmac<Sha512>>(
@@ -39,20 +50,17 @@ fn get_passphrase(passphrase: &[u8]) -> BambooResult<Key> {
         12,
         &mut key,
     )
-    .map_err(|_| BambooError::crypto("encryption", "Failed to create pbkdf2 key"))?;
-
-    Ok(Key::from(key))
+    .map_err(|_| BambooError::crypto("encryption", "Failed to create pbkdf2 key"))
+    .map(|_| Key::from(key))
 }
 
 pub(crate) fn decrypt_string(encrypted: Vec<u8>, passphrase: String) -> BambooResult<Vec<u8>> {
     let cipher = ChaCha20Poly1305::new(&get_passphrase(passphrase.as_bytes())?);
     let nonce = Nonce::from_slice(&encrypted[..12]);
 
-    let decrypted = cipher
+    cipher
         .decrypt(nonce, encrypted[12..].as_ref())
-        .map_err(|_| BambooError::crypto("encryption", "Failed to decrypt"))?;
-
-    Ok(decrypted)
+        .map_err(|_| BambooError::crypto("encryption", "Failed to decrypt"))
 }
 
 pub(crate) fn encrypt_string(plain: Vec<u8>, passphrase: String) -> BambooResult<Vec<u8>> {

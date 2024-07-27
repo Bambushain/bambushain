@@ -65,11 +65,10 @@ img {
     "#
     );
 
-    let card_content_classes = if buttons.is_some() {
-        classes!(card_content_style, card_content_with_buttons_style)
-    } else {
-        classes!(card_content_style)
-    };
+    let card_content_classes = buttons.clone().map_or_else(
+        || classes!(card_content_style.clone()),
+        |_| classes!(card_content_style, card_content_with_buttons_style),
+    );
 
     html!(
         <div class={card_style}>

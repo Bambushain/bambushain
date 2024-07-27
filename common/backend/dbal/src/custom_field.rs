@@ -1,10 +1,14 @@
-use std::cmp::Ordering;
-
+use itertools::Itertools;
 use sea_orm::prelude::*;
 use sea_orm::sea_query::Expr;
 use sea_orm::ActiveValue::Set;
-use sea_orm::{IntoActiveModel, IntoSimpleExpr, NotSet, QueryOrder, QuerySelect};
+use sea_orm::{
+    IntoActiveModel, IntoSimpleExpr, NotSet, QueryOrder, QuerySelect, TransactionError,
+    TransactionTrait,
+};
+use std::cmp::Ordering;
 
+use crate::error_tag;
 use bamboo_common_core::entities::*;
 use bamboo_common_core::entities::{custom_character_field, custom_character_field_option};
 use bamboo_common_core::error::*;
@@ -13,26 +17,26 @@ pub async fn get_custom_fields(
     user_id: i32,
     db: &DatabaseConnection,
 ) -> BambooResult<Vec<CustomCharacterField>> {
-    Ok(custom_character_field::Entity::find()
+    custom_character_field::Entity::find()
         .find_with_related(custom_character_field_option::Entity)
         .filter(custom_character_field::Column::UserId.eq(user_id))
         .order_by_asc(custom_character_field::Column::Position)
         .order_by_asc(custom_character_field::Column::Label)
         .all(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("character", "Failed to load character custom fields")
-        })?
-        .iter()
-        .map(|(field, options)| CustomCharacterField {
-            options: options.clone(),
-            label: field.label.clone(),
-            id: field.id,
-            user_id: field.user_id,
-            position: field.position,
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to load character custom fields"))
+        .map(|fields| {
+            fields
+                .iter()
+                .map(|(field, options)| CustomCharacterField {
+                    options: options.clone(),
+                    label: field.label.clone(),
+                    id: field.id,
+                    user_id: field.user_id,
+                    position: field.position,
+                })
+                .collect_vec()
         })
-        .collect::<Vec<CustomCharacterField>>())
 }
 
 pub async fn get_custom_field(
@@ -45,21 +49,21 @@ pub async fn get_custom_field(
         .filter(custom_character_field::Column::UserId.eq(user_id))
         .all(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("character", "Failed to load character custom fields")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to load character custom fields"))
         .map(|data| {
-            if let Some((field, options)) = data.into_iter().next() {
-                let mut f = field;
-                f.options = options;
-                Ok(f)
-            } else {
-                Err(BambooError::not_found(
-                    "character",
-                    "Custom field not found",
-                ))
-            }
+            data.first().cloned().map_or_else(
+                || {
+                    Err(BambooError::not_found(
+                        error_tag!(),
+                        "Custom field not found",
+                    ))
+                },
+                |(field, options)| {
+                    let mut f = field;
+                    f.options = options;
+                    Ok(f)
+                },
+            )
         })?
 }
 
@@ -76,10 +80,7 @@ async fn custom_field_exists_by_id(
         .count(db)
         .await
         .map(|count| count > 0)
-        .map_err(|err| {
-            log::error!("Failed to load custom fields {err}");
-            BambooError::database("character", "Failed to load the custom fields")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to load the custom fields"))
 }
 
 async fn custom_field_exists_by_label(
@@ -93,10 +94,7 @@ async fn custom_field_exists_by_label(
         .count(db)
         .await
         .map(|count| count > 0)
-        .map_err(|err| {
-            log::error!("Failed to load custom fields {err}");
-            BambooError::database("character", "Failed to load the custom fields")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to load the custom fields"))
 }
 
 pub async fn create_custom_field(
@@ -106,7 +104,7 @@ pub async fn create_custom_field(
 ) -> BambooResult<CustomCharacterField> {
     if custom_field_exists_by_label(user_id, custom_field.label.clone(), db).await? {
         return Err(BambooError::exists_already(
-            "character",
+            error_tag!(),
             "The custom field exists already",
         ));
     }
@@ -119,10 +117,7 @@ pub async fn create_custom_field(
         )
         .exec(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("character", "Failed to move custom field")
-        })?;
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to move custom field"))?;
 
     let result = custom_character_field::ActiveModel {
         id: NotSet,
@@ -132,10 +127,7 @@ pub async fn create_custom_field(
     }
     .insert(db)
     .await
-    .map_err(|err| {
-        log::error!("{err}");
-        BambooError::database("character", "Failed to create custom field")
-    })?;
+    .map_err(|_| BambooError::database(error_tag!(), "Failed to create custom field"))?;
 
     let models = custom_field
         .values
@@ -145,15 +137,14 @@ pub async fn create_custom_field(
             custom_character_field_id: Set(result.id),
             label: Set(value.clone()),
         })
-        .collect::<Vec<custom_character_field_option::ActiveModel>>();
+        .collect_vec();
 
     if !models.is_empty() {
         custom_character_field_option::Entity::insert_many(models)
             .exec(db)
             .await
-            .map_err(|err| {
-                log::error!("{err}");
-                BambooError::database("character", "Failed to create custom field option")
+            .map_err(|_| {
+                BambooError::database(error_tag!(), "Failed to create custom field option")
             })?;
     }
 
@@ -168,7 +159,7 @@ pub async fn update_custom_field(
 ) -> BambooErrorResult {
     if custom_field_exists_by_id(user_id, id, custom_field.label.clone(), db).await? {
         return Err(BambooError::exists_already(
-            "character",
+            error_tag!(),
             "The custom field exists already",
         ));
     }
@@ -182,10 +173,7 @@ pub async fn update_custom_field(
         )
         .exec(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("character", "Failed to update custom field")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to update custom field"))
         .map(|_| ())
 }
 
@@ -199,10 +187,7 @@ pub async fn delete_custom_field(
         .filter(custom_character_field::Column::UserId.eq(user_id))
         .exec(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("character", "Failed to delete custom field")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to delete custom field"))
         .map(|_| ())
 }
 
@@ -216,10 +201,7 @@ pub async fn get_custom_field_options(
         .filter(custom_character_field::Column::UserId.eq(user_id))
         .all(db)
         .await
-        .map_err(|err| {
-            log::error!("Failed to load custom field options: {err}");
-            BambooError::database("character", "Failed to load custom field options")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to load custom field options"))
 }
 
 pub async fn custom_field_option_exists_by_id(
@@ -238,10 +220,7 @@ pub async fn custom_field_option_exists_by_id(
         .count(db)
         .await
         .map(|count| count > 0)
-        .map_err(|err| {
-            log::error!("Failed to load custom field options {err}");
-            BambooError::database("character", "Failed to load the custom field options")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to load the custom field options"))
 }
 
 pub async fn custom_field_option_exists_by_label(
@@ -258,10 +237,7 @@ pub async fn custom_field_option_exists_by_label(
         .count(db)
         .await
         .map(|count| count > 0)
-        .map_err(|err| {
-            log::error!("Failed to load custom field options {err}");
-            BambooError::database("character", "Failed to load the custom field options")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to load the custom field options"))
 }
 
 pub async fn create_custom_field_option(
@@ -272,7 +248,7 @@ pub async fn create_custom_field_option(
 ) -> BambooResult<CustomCharacterFieldOption> {
     if custom_field_option_exists_by_label(user_id, custom_field_id, label.clone(), db).await? {
         return Err(BambooError::exists_already(
-            "character",
+            error_tag!(),
             "A custom field option with that label exists already",
         ));
     }
@@ -284,10 +260,7 @@ pub async fn create_custom_field_option(
     }
     .insert(db)
     .await
-    .map_err(|err| {
-        log::error!("{err}");
-        BambooError::database("character", "Failed to create custom field option")
-    })
+    .map_err(|_| BambooError::database(error_tag!(), "Failed to create custom field option"))
 }
 
 pub async fn update_custom_field_option(
@@ -299,7 +272,7 @@ pub async fn update_custom_field_option(
 ) -> BambooErrorResult {
     if custom_field_option_exists_by_id(id, user_id, custom_field_id, option.clone(), db).await? {
         return Err(BambooError::exists_already(
-            "character",
+            error_tag!(),
             "A custom field option with that label exists already",
         ));
     }
@@ -310,10 +283,7 @@ pub async fn update_custom_field_option(
         .inner_join(custom_character_field::Entity)
         .all(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("character", "Failed to update custom field")
-        })?;
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to update custom field"))?;
 
     if let Some(model) = options.first() {
         let mut active_option = model.clone().into_active_model();
@@ -322,14 +292,11 @@ pub async fn update_custom_field_option(
         active_option
             .update(db)
             .await
-            .map_err(|err| {
-                log::error!("{err}");
-                BambooError::database("character", "Failed to update custom field")
-            })
+            .map_err(|_| BambooError::database(error_tag!(), "Failed to update custom field"))
             .map(|_| ())
     } else {
         Err(BambooError::database(
-            "character",
+            error_tag!(),
             "Failed to get custom field",
         ))
     }
@@ -345,10 +312,7 @@ pub async fn delete_custom_field_option(
         .filter(custom_character_field_option::Column::CustomCharacterFieldId.eq(custom_field_id))
         .exec(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("character", "Failed to delete custom field")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to delete custom field"))
         .map(|_| ())
 }
 
@@ -358,99 +322,92 @@ pub async fn move_custom_field(
     position: i32,
     db: &DatabaseConnection,
 ) -> BambooErrorResult {
-    let old_position = if let Some(old_position) = custom_character_field::Entity::find()
-        .select_only()
-        .column(custom_character_field::Column::Position)
-        .filter(custom_character_field::Column::Id.eq(field_id))
-        .into_tuple::<i32>()
-        .one(db)
-        .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("character", "Failed to move custom field")
-        })? {
-        Ok(old_position)
-    } else {
-        Err(BambooError::database(
-            "character",
-            "Failed to move custom field",
-        ))
-    }?;
+    db.transaction(move |tx| {
+        Box::pin(async move {
+            let old_position = custom_character_field::Entity::find()
+                .select_only()
+                .column(custom_character_field::Column::Position)
+                .filter(custom_character_field::Column::Id.eq(field_id))
+                .into_tuple::<i32>()
+                .one(tx)
+                .await
+                .map_err(|_| BambooError::database(error_tag!(), "Failed to move custom field"))?
+                .ok_or(BambooError::database(
+                    error_tag!(),
+                    "Failed to move custom field",
+                ))?;
 
-    let (position_expr, filter_expr, new_position) = match old_position.cmp(&position) {
-        Ordering::Less => (
-            Expr::col(custom_character_field::Column::Position).sub(1),
-            custom_character_field::Column::UserId
-                .eq(user_id)
-                .and(custom_character_field::Column::Position.lte(position)),
-            position,
-        ),
-        Ordering::Greater => (
-            Expr::col(custom_character_field::Column::Position).add(1),
-            custom_character_field::Column::UserId
-                .eq(user_id)
-                .and(custom_character_field::Column::Position.lt(old_position))
-                .and(custom_character_field::Column::Position.gte(position)),
-            position,
-        ),
-        _ => (
-            Expr::col(custom_character_field::Column::Position).into_simple_expr(),
-            custom_character_field::Column::Id.eq(field_id),
-            position,
-        ),
-    };
+            let (position_expr, filter_expr, new_position) = match old_position.cmp(&position) {
+                Ordering::Less => (
+                    Expr::col(custom_character_field::Column::Position).sub(1),
+                    custom_character_field::Column::UserId
+                        .eq(user_id)
+                        .and(custom_character_field::Column::Position.lte(position)),
+                    position,
+                ),
+                Ordering::Greater => (
+                    Expr::col(custom_character_field::Column::Position).add(1),
+                    custom_character_field::Column::UserId
+                        .eq(user_id)
+                        .and(custom_character_field::Column::Position.lt(old_position))
+                        .and(custom_character_field::Column::Position.gte(position)),
+                    position,
+                ),
+                _ => (
+                    Expr::col(custom_character_field::Column::Position).into_simple_expr(),
+                    custom_character_field::Column::Id.eq(field_id),
+                    position,
+                ),
+            };
 
-    custom_character_field::Entity::update_many()
-        .filter(filter_expr)
-        .col_expr(custom_character_field::Column::Position, position_expr)
-        .exec(db)
-        .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("character", "Failed to move custom field")
-        })?;
+            custom_character_field::Entity::update_many()
+                .filter(filter_expr)
+                .col_expr(custom_character_field::Column::Position, position_expr)
+                .exec(tx)
+                .await
+                .map_err(|_| BambooError::database(error_tag!(), "Failed to move custom field"))?;
 
-    custom_character_field::Entity::update_many()
-        .filter(custom_character_field::Column::UserId.eq(user_id))
-        .filter(custom_character_field::Column::Id.eq(field_id))
-        .col_expr(
-            custom_character_field::Column::Position,
-            Expr::value(new_position),
-        )
-        .exec(db)
-        .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("character", "Failed to move custom field")
-        })?;
+            custom_character_field::Entity::update_many()
+                .filter(custom_character_field::Column::UserId.eq(user_id))
+                .filter(custom_character_field::Column::Id.eq(field_id))
+                .col_expr(
+                    custom_character_field::Column::Position,
+                    Expr::value(new_position),
+                )
+                .exec(tx)
+                .await
+                .map_err(|_| BambooError::database(error_tag!(), "Failed to move custom field"))?;
 
-    let fields = custom_character_field::Entity::find()
-        .select_only()
-        .column(custom_character_field::Column::Id)
-        .filter(custom_character_field::Column::UserId.eq(user_id))
-        .order_by_asc(custom_character_field::Column::Position)
-        .into_tuple::<i32>()
-        .all(db)
-        .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("character", "Failed to move custom field")
-        })?;
+            let fields = custom_character_field::Entity::find()
+                .select_only()
+                .column(custom_character_field::Column::Id)
+                .filter(custom_character_field::Column::UserId.eq(user_id))
+                .order_by_asc(custom_character_field::Column::Position)
+                .into_tuple::<i32>()
+                .all(tx)
+                .await
+                .map_err(|_| BambooError::database(error_tag!(), "Failed to move custom field"))?;
 
-    for (idx, id) in fields.iter().enumerate() {
-        custom_character_field::Entity::update_many()
-            .col_expr(
-                custom_character_field::Column::Position,
-                Expr::value(idx as i32),
-            )
-            .filter(custom_character_field::Column::Id.eq(*id))
-            .exec(db)
-            .await
-            .map_err(|err| {
-                log::error!("{err}");
-                BambooError::database("character", "Failed to move custom field")
-            })?;
-    }
+            for (idx, id) in fields.iter().enumerate() {
+                custom_character_field::Entity::update_many()
+                    .col_expr(
+                        custom_character_field::Column::Position,
+                        Expr::value(idx as i32),
+                    )
+                    .filter(custom_character_field::Column::Id.eq(*id))
+                    .exec(tx)
+                    .await
+                    .map_err(|_| {
+                        BambooError::database(error_tag!(), "Failed to move custom field")
+                    })?;
+            }
 
-    Ok(())
+            Ok(())
+        })
+    })
+    .await
+    .map_err(|_: TransactionError<BambooError>| {
+        BambooError::database(error_tag!(), "Failed to update grove mods")
+    })
+    .map(|_| ())
 }

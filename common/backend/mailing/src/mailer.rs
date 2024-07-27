@@ -6,9 +6,7 @@ use lettre::{AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor};
 
 use bamboo_common_core::error::{BambooError, BambooErrorResult, BambooResult};
 
-fn get_transport(
-    env_service: EnvService,
-) -> BambooResult<smtp::AsyncSmtpTransport<Tokio1Executor>> {
+fn get_transport(env_service: EnvService) -> BambooResult<AsyncSmtpTransport<Tokio1Executor>> {
     let mail_server = env_service.get_env("MAILER_SERVER", "localhost");
     let builder = if env_service
         .get_env("MAILER_STARTTLS", "false")
@@ -19,17 +17,13 @@ fn get_transport(
     } else {
         AsyncSmtpTransport::<Tokio1Executor>::relay(mail_server.as_str())
     }
-    .map_err(|err| {
-        log::error!("Failed to create the email builder {err}");
-
-        BambooError::mailing("Failed to create the email builder")
-    })?;
+    .map_err(|_| BambooError::mailing("Failed to create the email builder"))?;
 
     let port = env_service
         .get_env("MAILER_PORT", "25")
         .parse::<u16>()
         .unwrap_or(25u16);
-    let builder = if env_service.get_env("MAILER_ENCRYPTION", "false") == "false" {
+    let transport = if env_service.get_env("MAILER_ENCRYPTION", "false") == "false" {
         builder.tls(smtp::client::Tls::None)
     } else {
         builder.tls(smtp::client::Tls::Required(
@@ -39,15 +33,15 @@ fn get_transport(
                 BambooError::mailing("Failed to parse the server domain")
             })?,
         ))
-    };
+    }
+    .credentials(smtp::authentication::Credentials::new(
+        env_service.get_env("MAILER_USERNAME", ""),
+        env_service.get_env("MAILER_PASSWORD", ""),
+    ))
+    .port(port)
+    .build();
 
-    Ok(builder
-        .credentials(smtp::authentication::Credentials::new(
-            env_service.get_env("MAILER_USERNAME", ""),
-            env_service.get_env("MAILER_PASSWORD", ""),
-        ))
-        .port(port)
-        .build())
+    Ok(transport)
 }
 
 fn build_message(
@@ -78,21 +72,12 @@ pub async fn send_mail(
             plain_body.into(),
             html_body.into(),
         ))
-        .map_err(|err| {
-            log::error!("Failed to construct the email message {err}");
-
-            BambooError::mailing("Failed to construct the email message")
-        })?;
+        .map_err(|_| BambooError::mailing("Failed to construct the email message"))?;
 
     get_transport(env_service)?
         .send(email)
         .await
-        .map_err(|err| {
-            log::error!("Failed to send email {err}");
-            log::error!("{err:#?}");
-
-            BambooError::mailing("Failed to send email")
-        })
+        .map_err(|_| BambooError::mailing("Failed to send email"))
         .map(|_| ())
 }
 
@@ -110,20 +95,11 @@ pub async fn send_mail_with_reply_to(
             plain_body.into(),
             html_body.into(),
         ))
-        .map_err(|err| {
-            log::error!("Failed to construct the email message {err}");
-
-            BambooError::mailing("Failed to construct the email message")
-        })?;
+        .map_err(|_| BambooError::mailing("Failed to construct the email message"))?;
 
     get_transport(env_service)?
         .send(email)
         .await
-        .map_err(|err| {
-            log::error!("Failed to send email {err}");
-            log::error!("{err:#?}");
-
-            BambooError::mailing("Failed to send email")
-        })
+        .map_err(|_| BambooError::mailing("Failed to send email"))
         .map(|_| ())
 }

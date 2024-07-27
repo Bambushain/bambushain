@@ -1,3 +1,4 @@
+use crate::error_tag;
 use bamboo_common_core::entities::user::JoinStatus;
 use bamboo_common_core::entities::*;
 use bamboo_common_core::error::*;
@@ -24,7 +25,7 @@ pub async fn is_grove_mod(
         )
         .count(db)
         .await
-        .map_err(|_| BambooError::unknown("grove", "Failed to find mod"))
+        .map_err(|_| BambooError::unknown(error_tag!(), "Failed to find mod"))
         .map(|count| count > 0)
 }
 
@@ -34,11 +35,11 @@ pub async fn get_grove(id: i32, user_id: i32, db: &DatabaseConnection) -> Bamboo
         .filter(grove_user::Column::UserId.eq(user_id))
         .one(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("grove", "Failed to execute database query")
-        })?
-        .ok_or(BambooError::not_found("grove", "The grove was not found"))
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to execute database query"))?
+        .ok_or(BambooError::not_found(
+            error_tag!(),
+            "The grove was not found",
+        ))
 }
 
 pub async fn grove_exists_by_name(name: String, db: &DatabaseConnection) -> BambooResult<bool> {
@@ -47,10 +48,7 @@ pub async fn grove_exists_by_name(name: String, db: &DatabaseConnection) -> Bamb
         .count(db)
         .await
         .map(|count| count > 0)
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("grove", "Failed to execute database query")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to execute database query"))
 }
 
 pub async fn grove_exists_by_id(
@@ -64,10 +62,7 @@ pub async fn grove_exists_by_id(
         .count(db)
         .await
         .map(|count| count > 0)
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("grove", "Failed to execute database query")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to execute database query"))
 }
 
 pub async fn get_groves(user_id: i32, db: &DatabaseConnection) -> BambooResult<Vec<Grove>> {
@@ -77,10 +72,7 @@ pub async fn get_groves(user_id: i32, db: &DatabaseConnection) -> BambooResult<V
         .order_by_asc(grove::Column::Id)
         .all(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("user", "Failed to execute database query")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to execute database query"))
 }
 
 pub async fn get_all_groves(db: &DatabaseConnection) -> BambooResult<Vec<Grove>> {
@@ -88,10 +80,7 @@ pub async fn get_all_groves(db: &DatabaseConnection) -> BambooResult<Vec<Grove>>
         .order_by_asc(grove::Column::Id)
         .all(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("user", "Failed to execute database query")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to execute database query"))
 }
 
 pub async fn create_grove(
@@ -103,20 +92,19 @@ pub async fn create_grove(
     let mut active_model = Grove::new(name, invite_active).into_active_model();
     active_model.id = NotSet;
 
-    let grove = active_model.insert(db).await.map_err(|err| {
-        log::error!("Failed to create grove {err}");
-        BambooError::database("grove", "Failed to create grove")
-    })?;
+    let grove = active_model
+        .insert(db)
+        .await
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to create grove"))?;
 
     let mut user = GroveUser::default().into_active_model();
     user.user_id = Set(user_id);
     user.grove_id = Set(grove.id);
     user.is_mod = Set(true);
 
-    user.insert(db).await.map_err(|err| {
-        log::error!("Failed to create grove user {err}");
-        BambooError::database("grove", "Failed to create grove user")
-    })?;
+    user.insert(db)
+        .await
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to create grove user"))?;
 
     Ok(grove)
 }
@@ -132,10 +120,7 @@ pub async fn update_grove(
     grove
         .update(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("grove", "Failed to update grove")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to update grove"))
         .map(|_| ())
 }
 
@@ -153,10 +138,7 @@ pub async fn update_grove_mods(
                 .col_expr(grove_user::Column::IsMod, Expr::value(false))
                 .exec(tx)
                 .await
-                .map_err(|err| {
-                    log::error!("{err}");
-                    BambooError::database("grove", "Failed to update grove mods")
-                })?;
+                .map_err(|_| BambooError::database(error_tag!(), "Failed to update grove mods"))?;
 
             grove_user::Entity::update_many()
                 .filter(grove_user::Column::GroveId.eq(id))
@@ -164,18 +146,14 @@ pub async fn update_grove_mods(
                 .col_expr(grove_user::Column::IsMod, Expr::value(true))
                 .exec(tx)
                 .await
-                .map_err(|err| {
-                    log::error!("{err}");
-                    BambooError::database("grove", "Failed to update grove mods")
-                })?;
+                .map_err(|_| BambooError::database(error_tag!(), "Failed to update grove mods"))?;
 
             Ok(())
         })
     })
     .await
-    .map_err(|err: TransactionError<BambooError>| {
-        log::error!("{err}");
-        BambooError::database("grove", "Failed to update grove mods")
+    .map_err(|_: TransactionError<BambooError>| {
+        BambooError::database(error_tag!(), "Failed to update grove mods")
     })
     .map(|_| ())
 }
@@ -185,10 +163,7 @@ pub async fn delete_grove(id: i32, user_id: i32, db: &DatabaseConnection) -> Bam
         .await?
         .delete(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("grove", "Failed to delete grove")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to delete grove"))
         .map(|_| ())
 }
 
@@ -208,7 +183,7 @@ pub async fn ban_user_from_grove(
         .col_expr(grove_user::Column::IsMod, Expr::value(false))
         .exec(db)
         .await
-        .map_err(|_| BambooError::unknown("grove", "Failed to ban user"))
+        .map_err(|_| BambooError::unknown(error_tag!(), "Failed to ban user"))
         .map(|_| ())
 }
 
@@ -226,13 +201,13 @@ pub async fn unban_user_from_grove(
         )
         .exec(db)
         .await
-        .map_err(|_| BambooError::unknown("grove", "Failed to unban user"))
+        .map_err(|_| BambooError::unknown(error_tag!(), "Failed to unban user"))
         .map(|_| ())
 }
 
 pub async fn enable_grove_invite(grove_id: i32, db: &DatabaseConnection) -> BambooErrorResult {
     let mut hasher = Sha512_224::new();
-    hasher.update(uuid::Uuid::new_v4());
+    hasher.update(Uuid::new_v4());
     let res = hasher.finalize();
 
     grove::Entity::update_many()
@@ -243,7 +218,7 @@ pub async fn enable_grove_invite(grove_id: i32, db: &DatabaseConnection) -> Bamb
         )
         .exec(db)
         .await
-        .map_err(|_| BambooError::unknown("grove", "Failed to enable invites"))
+        .map_err(|_| BambooError::unknown(error_tag!(), "Failed to enable invites"))
         .map(|_| ())
 }
 
@@ -253,7 +228,7 @@ pub async fn disable_grove_invite(grove_id: i32, db: &DatabaseConnection) -> Bam
         .col_expr(grove::Column::InviteSecret, Expr::value(Null))
         .exec(db)
         .await
-        .map_err(|_| BambooError::unknown("grove", "Failed to disable invites"))
+        .map_err(|_| BambooError::unknown(error_tag!(), "Failed to disable invites"))
         .map(|_| ())
 }
 
@@ -270,7 +245,7 @@ pub async fn check_grove_join_status(
         .into_tuple::<bool>()
         .one(db)
         .await
-        .map_err(|_| BambooError::unknown("grove", "Join status cannot be checked"))
+        .map_err(|_| BambooError::unknown(error_tag!(), "Join status cannot be checked"))
         .map(|res| {
             if let Some(true) = res {
                 JoinStatus::Banned
@@ -294,7 +269,7 @@ pub async fn join_grove(
         .into_tuple::<String>()
         .one(db)
         .await
-        .map_err(|_| BambooError::unknown("grove", "Failed to join grove"))
+        .map_err(|_| BambooError::unknown(error_tag!(), "Failed to join grove"))
         .map(|secret| {
             if let Some(secret) = secret {
                 if secret != invite_secret {
@@ -306,18 +281,21 @@ pub async fn join_grove(
                     Ok(())
                 }
             } else {
-                Err(BambooError::not_found("grove", "The grove was not found"))
+                Err(BambooError::not_found(
+                    error_tag!(),
+                    "The grove was not found",
+                ))
             }
         })??;
 
     match check_grove_join_status(grove_id, user_id, db).await? {
         JoinStatus::Joined => Err(BambooError::exists_already(
-            "grove",
+            error_tag!(),
             "You joined this grove already",
         )),
         JoinStatus::NotJoined => Ok(()),
         JoinStatus::Banned => Err(BambooError::insufficient_rights(
-            "grove",
+            error_tag!(),
             "You are banned from this grove",
         )),
     }?;
@@ -330,6 +308,6 @@ pub async fn join_grove(
     }
     .insert(db)
     .await
-    .map_err(|_| BambooError::unknown("grove", "Failed to join grove"))
+    .map_err(|_| BambooError::unknown(error_tag!(), "Failed to join grove"))
     .map(|_| ())
 }

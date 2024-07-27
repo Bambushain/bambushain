@@ -1,52 +1,134 @@
-use std::collections::{BTreeMap, BTreeSet};
-
-use sea_orm::prelude::*;
-use sea_orm::sea_query::Expr;
-use sea_orm::ActiveValue::Set;
-use sea_orm::{Condition, IntoActiveModel, NotSet, QueryOrder, QuerySelect};
-
+use crate::error_tag;
 use bamboo_common_core::entities::*;
 use bamboo_common_core::entities::{
     character, custom_character_field, custom_character_field_option, custom_character_field_value,
 };
 use bamboo_common_core::error::*;
+use character::CharacterRaceEnum;
+use itertools::Itertools;
+use sea_orm::prelude::*;
+use sea_orm::sea_query::{Expr, IntoCondition};
+use sea_orm::ActiveValue::Set;
+use sea_orm::{
+    Condition, FromQueryResult, IntoActiveModel, JoinType, NotSet, QueryOrder, QuerySelect,
+    SelectColumns, TransactionError, TransactionTrait,
+};
+use std::collections::BTreeSet;
 
-use crate::free_company::get_free_company;
-
-async fn map_character(
-    character: Character,
+fn map_character(
+    character: CharacterWithFreeCompany,
     user_id: i32,
-    db: &DatabaseConnection,
-) -> BambooResult<Character> {
-    Ok(Character {
+    custom_fields: Vec<FillCustomField>,
+) -> Character {
+    Character {
         id: character.id,
-        race: character.race,
+        race: CharacterRace::from(character.race),
         name: character.name.clone(),
         world: character.world.clone(),
         user_id,
-        custom_fields: fill_custom_fields(user_id, character.id, db).await?,
+        custom_fields: fill_custom_fields(user_id, custom_fields),
         free_company_id: character.free_company_id,
-        free_company: get_free_company(character.free_company_id, user_id, db).await?,
-    })
+        free_company: character.free_company_name.map(|name| FreeCompany {
+            id: character.free_company_id.unwrap(),
+            name,
+            user_id,
+        }),
+    }
+}
+
+#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default, FromQueryResult)]
+struct CharacterWithFreeCompany {
+    pub id: i32,
+    pub user_id: i32,
+    pub world: String,
+    pub name: String,
+    pub race: String,
+    pub free_company_id: Option<i32>,
+    pub free_company_name: Option<String>,
+}
+
+#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default, FromQueryResult)]
+struct FillCustomField {
+    pub character_id: i32,
+    pub position: i32,
+    pub option_label: String,
+    pub field_label: String,
+}
+
+async fn get_custom_fields(
+    additional_filter: impl IntoCondition,
+    db: &DatabaseConnection,
+) -> BambooResult<Vec<FillCustomField>> {
+    custom_character_field_value::Entity::find()
+        .select_only()
+        .column_as(custom_character_field::Column::Label, "field_label")
+        .column_as(custom_character_field::Column::Position, "position")
+        .column_as(
+            custom_character_field_value::Column::CharacterId,
+            "character_id",
+        )
+        .column_as(custom_character_field_option::Column::Label, "option_label")
+        .join_rev(
+            JoinType::LeftJoin,
+            custom_character_field::Entity::belongs_to(custom_character_field_value::Entity)
+                .from(custom_character_field::Column::Id)
+                .to(custom_character_field_value::Column::CustomCharacterFieldId)
+                .into(),
+        )
+        .join_rev(
+            JoinType::LeftJoin,
+            custom_character_field_option::Entity::belongs_to(custom_character_field_value::Entity)
+                .from(custom_character_field_option::Column::Id)
+                .to(custom_character_field_value::Column::CustomCharacterFieldOptionId)
+                .into(),
+        )
+        .join_rev(
+            JoinType::LeftJoin,
+            character::Entity::belongs_to(custom_character_field_value::Entity)
+                .from(character::Column::Id)
+                .to(custom_character_field_value::Column::CharacterId)
+                .into(),
+        )
+        .filter(additional_filter)
+        .order_by_asc(custom_character_field_value::Column::CharacterId)
+        .order_by_asc(custom_character_field::Column::Position)
+        .into_model::<FillCustomField>()
+        .all(db)
+        .await
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to load custom fields"))
 }
 
 pub async fn get_characters(user_id: i32, db: &DatabaseConnection) -> BambooResult<Vec<Character>> {
-    let characters = character::Entity::find()
+    let custom_fields = get_custom_fields(character::Column::UserId.eq(user_id), db).await?;
+
+    character::Entity::find()
+        .select_only()
+        .column(character::Column::Id)
+        .column(character::Column::UserId)
+        .column(character::Column::World)
+        .column(character::Column::Name)
+        .column(character::Column::Race)
+        .column_as(free_company::Column::Id, "free_company_id")
+        .column_as(free_company::Column::Name, "free_company_name")
+        .join_rev(
+            JoinType::LeftJoin,
+            free_company::Entity::belongs_to(character::Entity)
+                .from(free_company::Column::Id)
+                .to(character::Column::FreeCompanyId)
+                .into(),
+        )
         .filter(character::Column::UserId.eq(user_id))
-        .order_by_asc(character::Column::Name)
+        .into_model::<CharacterWithFreeCompany>()
         .all(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("character", "Failed to load characters")
-        })?;
-
-    let mut result = vec![];
-    for character in characters {
-        result.push(map_character(character.clone(), user_id, db).await?);
-    }
-
-    Ok(result)
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to load characters"))
+        .map(|characters| {
+            characters
+                .iter()
+                .cloned()
+                .map(|character| map_character(character, user_id, custom_fields.clone()))
+                .collect_vec()
+        })
 }
 
 pub async fn get_character(
@@ -54,96 +136,54 @@ pub async fn get_character(
     user_id: i32,
     db: &DatabaseConnection,
 ) -> BambooResult<Character> {
-    let character = character::Entity::find_by_id(id)
+    let custom_fields = get_custom_fields(
+        Condition::all()
+            .add(character::Column::UserId.eq(user_id))
+            .add(character::Column::Id.eq(id)),
+        db,
+    )
+    .await?;
+
+    character::Entity::find_by_id(id)
+        .select_only()
+        .column(character::Column::Id)
+        .column(character::Column::UserId)
+        .column(character::Column::World)
+        .column(character::Column::Name)
+        .column(character::Column::Race)
+        .column_as(free_company::Column::Id, "free_company_id")
+        .column_as(free_company::Column::Name, "free_company_name")
+        .join_rev(
+            JoinType::LeftJoin,
+            free_company::Entity::belongs_to(character::Entity)
+                .from(free_company::Column::Id)
+                .to(character::Column::FreeCompanyId)
+                .into(),
+        )
         .filter(character::Column::UserId.eq(user_id))
+        .order_by_asc(character::Column::Name)
+        .into_model::<CharacterWithFreeCompany>()
         .one(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("character", "Error contacting the database")
-        })?;
-
-    if let Some(character) = character {
-        map_character(character, user_id, db).await
-    } else {
-        Err(BambooError::not_found(
-            "character",
-            "The character was not found",
-        ))
-    }
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to load character"))?
+        .map(|character| map_character(character, user_id, custom_fields))
+        .ok_or(BambooError::not_found(error_tag!(), "Character not found"))
 }
 
-async fn fill_custom_fields(
-    user_id: i32,
-    character_id: i32,
-    db: &DatabaseConnection,
-) -> BambooResult<Vec<CustomField>> {
-    let data = custom_character_field_value::Entity::find()
-        .select_only()
-        .inner_join(custom_character_field_option::Entity)
-        .inner_join(custom_character_field::Entity)
-        .column_as(custom_character_field::Column::Label, "label")
-        .column_as(custom_character_field_option::Column::Label, "value")
-        .filter(custom_character_field::Column::UserId.eq(user_id))
-        .filter(custom_character_field_value::Column::CharacterId.eq(character_id))
-        .order_by_asc(custom_character_field::Column::Position)
-        .order_by_asc(custom_character_field::Column::Label)
-        .into_tuple::<(String, String)>()
-        .all(db)
-        .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("character", "Failed to load custom fields")
-        })?;
-
-    let positions_from_db = custom_character_field_value::Entity::find()
-        .select_only()
-        .inner_join(custom_character_field::Entity)
-        .column_as(custom_character_field::Column::Label, "label")
-        .filter(custom_character_field::Column::UserId.eq(user_id))
-        .filter(custom_character_field_value::Column::CharacterId.eq(character_id))
-        .order_by_asc(custom_character_field::Column::Position)
-        .order_by_asc(custom_character_field::Column::Label)
-        .distinct_on(vec![
-            custom_character_field::Column::Label,
-            custom_character_field::Column::Position,
-        ])
-        .into_tuple::<String>()
-        .all(db)
-        .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("character", "Failed to load custom fields")
-        })?;
-
-    let mut positions = BTreeMap::new();
-    for (idx, label) in positions_from_db.iter().enumerate() {
-        positions.insert(label.clone(), idx);
-    }
-
-    let mut custom_fields: BTreeMap<usize, (String, BTreeSet<String>)> = BTreeMap::new();
-    for (label, value) in data {
-        let position = positions[&label];
-        let values = if custom_fields.contains_key(&position) {
-            let (_, mut values) = custom_fields[&position].clone();
-            values.insert(value.clone());
-            values
-        } else {
-            vec![value.clone()]
-                .into_iter()
-                .collect::<BTreeSet<String>>()
-        };
-        custom_fields.insert(position, (label.clone(), values.clone()));
-    }
-
-    Ok(custom_fields
+fn fill_custom_fields(character_id: i32, custom_fields: Vec<FillCustomField>) -> Vec<CustomField> {
+    custom_fields
+        .iter()
+        .filter(|field| field.character_id == character_id)
+        .chunk_by(|field| (field.field_label.clone(), field.position))
         .into_iter()
-        .map(|(position, (label, values))| CustomField {
+        .map(|((label, position), group)| CustomField {
+            values: group
+                .map(|item| item.option_label.clone())
+                .collect::<BTreeSet<String>>(),
             label,
-            values,
-            position,
+            position: position as usize,
         })
-        .collect::<Vec<CustomField>>())
+        .collect_vec()
 }
 
 async fn character_exists_by_id(
@@ -161,10 +201,7 @@ async fn character_exists_by_id(
         .count(db)
         .await
         .map(|count| count > 0)
-        .map_err(|err| {
-            log::error!("Failed to load characters {err}");
-            BambooError::database("character", "Failed to load the characters")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to load the characters"))
 }
 
 async fn character_exists_by_name(
@@ -180,10 +217,7 @@ async fn character_exists_by_name(
         .count(db)
         .await
         .map(|count| count > 0)
-        .map_err(|err| {
-            log::error!("Failed to load characters {err}");
-            BambooError::database("character", "Failed to load the characters")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to load the characters"))
 }
 
 pub async fn create_character(
@@ -195,7 +229,7 @@ pub async fn create_character(
         .await?
     {
         return Err(BambooError::exists_already(
-            "character",
+            error_tag!(),
             "A character with that name already exists",
         ));
     }
@@ -205,10 +239,10 @@ pub async fn create_character(
     model.user_id = Set(user_id);
     model.id = NotSet;
 
-    let model = model.insert(db).await.map_err(|err| {
-        log::error!("{err}");
-        BambooError::database("character", "Failed to create character")
-    })?;
+    let model = model
+        .insert(db)
+        .await
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to create character"))?;
 
     create_custom_field_values(user_id, model.id, character.custom_fields, db).await?;
 
@@ -231,10 +265,11 @@ pub async fn update_character(
     .await?
     {
         return Err(BambooError::exists_already(
-            "character",
+            error_tag!(),
             "A character with that name already exists",
         ));
     }
+
     character::Entity::update_many()
         .filter(character::Column::Id.eq(id))
         .filter(character::Column::UserId.eq(user_id))
@@ -249,17 +284,20 @@ pub async fn update_character(
         )
         .col_expr(
             character::Column::Race,
-            Expr::val(character.race)
-                .as_enum(bamboo_common_core::entities::character::CharacterRaceEnum),
+            Expr::val(character.race).as_enum(CharacterRaceEnum),
         )
         .exec(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("character", "Failed to update character")
-        })?;
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to update character"))?;
 
     create_custom_field_values(user_id, id, character.custom_fields, db).await
+}
+
+#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default, FromQueryResult)]
+struct CustomCharacterFieldCreated {
+    pub character_id: i32,
+    pub custom_character_field_id: i32,
+    pub custom_character_field_option_id: i32,
 }
 
 async fn create_custom_field_values(
@@ -272,57 +310,64 @@ async fn create_custom_field_values(
         return Ok(());
     }
 
-    let mut condition = Condition::any();
-    for custom_field in custom_fields {
-        for option in custom_field.values.clone() {
-            condition = condition.add(
-                Condition::all()
-                    .add(custom_character_field_option::Column::Label.eq(option))
-                    .add(custom_character_field::Column::Label.eq(custom_field.label.clone())),
-            );
-        }
-    }
+    db.transaction(move |tx| {
+        Box::pin(async move {
+            custom_character_field_value::Entity::delete_many()
+                .filter(custom_character_field_value::Column::CharacterId.eq(character_id))
+                .exec(tx)
+                .await
+                .map_err(|_| BambooError::database(error_tag!(), "Failed to set custom fields"))?;
 
-    custom_character_field_value::Entity::delete_many()
-        .filter(custom_character_field_value::Column::CharacterId.eq(character_id))
-        .exec(db)
-        .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("character", "Failed to set custom fields")
-        })?;
+            let field_labels = custom_fields
+                .iter()
+                .cloned()
+                .map(|field| field.label)
+                .collect_vec();
+            let option_labels = custom_fields
+                .iter()
+                .map(|field| field.values.iter().cloned().collect_vec())
+                .reduce(|acc, e| acc.iter().cloned().chain(e.iter().cloned()).collect_vec())
+                .unwrap_or(Vec::new());
 
-    let custom_fields = custom_character_field::Entity::find()
-        .find_with_related(custom_character_field_option::Entity)
-        .filter(custom_character_field::Column::UserId.eq(user_id))
-        .filter(condition)
-        .all(db)
-        .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("character", "Failed to set custom fields")
-        })?;
+            let fields = custom_character_field::Entity::find()
+                .select_only()
+                .column_as(
+                    custom_character_field::Column::Id,
+                    custom_character_field_value::Column::CustomCharacterFieldId,
+                )
+                .column_as(
+                    custom_character_field_option::Column::Id,
+                    custom_character_field_value::Column::CustomCharacterFieldOptionId,
+                )
+                .select_column_as(
+                    Expr::value(character_id),
+                    custom_character_field_value::Column::CharacterId,
+                )
+                .left_join(custom_character_field_option::Entity)
+                .filter(custom_character_field::Column::UserId.eq(user_id))
+                .filter(custom_character_field::Column::Label.is_in(field_labels))
+                .filter(custom_character_field_option::Column::Label.is_in(option_labels))
+                .into_model::<CustomCharacterFieldValue>()
+                .all(tx)
+                .await
+                .map_err(|_| BambooError::database(error_tag!(), "Failed to set custom fields"))?
+                .iter()
+                .cloned()
+                .map(|field| field.into_active_model())
+                .collect_vec();
 
-    let mut values = vec![];
-    for (field, options) in custom_fields {
-        for option in options {
-            values.push(custom_character_field_value::ActiveModel {
-                id: NotSet,
-                character_id: Set(character_id),
-                custom_character_field_id: Set(field.id),
-                custom_character_field_option_id: Set(option.id),
-            })
-        }
-    }
-
-    custom_character_field_value::Entity::insert_many(values)
-        .exec(db)
-        .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("character", "Failed to set custom fields")
+            custom_character_field_value::Entity::insert_many(fields)
+                .exec(tx)
+                .await
+                .map_err(|_| BambooError::database(error_tag!(), "Failed to set custom fields"))
+                .map(|_| ())
         })
-        .map(|_| ())
+    })
+    .await
+    .map_err(|_: TransactionError<BambooError>| {
+        BambooError::database(error_tag!(), "Failed to update grove mods")
+    })
+    .map(|_| ())
 }
 
 pub async fn delete_character(id: i32, user_id: i32, db: &DatabaseConnection) -> BambooErrorResult {
@@ -331,9 +376,6 @@ pub async fn delete_character(id: i32, user_id: i32, db: &DatabaseConnection) ->
         .filter(character::Column::UserId.eq(user_id))
         .exec(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("character", "Failed to delete character")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to delete character"))
         .map(|_| ())
 }

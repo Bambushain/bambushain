@@ -50,10 +50,7 @@ impl MinioClient {
             .bucket
             .put_object(self.get_profile_picture_path(user_id), data)
             .await
-            .map_err(|err| {
-                log::error!("Failed to save profile picture {err}");
-                BambooError::io("user", "Failed to save profile picture")
-            })?;
+            .map_err(|_| BambooError::io("user", "Failed to save profile picture"))?;
         if response.status_code() != 200 {
             Err(BambooError::io("user", "Failed to save profile picture"))
         } else {
@@ -66,10 +63,7 @@ impl MinioClient {
             .bucket
             .get_object(self.get_profile_picture_path(user_id))
             .await
-            .map_err(|err| {
-                log::error!("Failed to get profile picture {err}");
-                BambooError::io("user", "Failed to get profile picture")
-            })?;
+            .map_err(|_| BambooError::io("user", "Failed to get profile picture"))?;
         if response.status_code() != 200 {
             Err(BambooError::io("user", "Failed to get profile picture"))
         } else {

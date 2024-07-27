@@ -4,6 +4,7 @@ use bamboo_common_backend_macros::*;
 use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha512_224};
+use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Debug, Eq, Ord, PartialOrd, PartialEq, Clone, Default)]
 #[cfg_attr(
@@ -49,7 +50,7 @@ impl ActiveModelBehavior for ActiveModel {}
 impl Model {
     pub fn new(name: String, invite_on: bool) -> Self {
         let mut hasher = Sha512_224::new();
-        hasher.update(uuid::Uuid::new_v4());
+        hasher.update(Uuid::new_v4());
         let res = hasher.finalize();
 
         Self {
@@ -64,14 +65,9 @@ impl Model {
     }
 
     pub fn get_invite_link(&self) -> Option<String> {
-        if let Some(invite_secret) = self.invite_secret.clone() {
-            Some(format!(
-                "/pandas/groves/{}/{}/{}",
-                self.id, self.name, invite_secret
-            ))
-        } else {
-            None
-        }
+        self.invite_secret.clone().map(|invite_secret| {
+            format!("/pandas/groves/{}/{}/{}", self.id, self.name, invite_secret)
+        })
     }
 }
 

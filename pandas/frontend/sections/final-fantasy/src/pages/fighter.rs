@@ -472,7 +472,7 @@ right: 0.75rem;
                                     <CosmoButton label="Löschen" on_click={move |_| on_delete_open.emit(delete_fighter.clone())} />
                                 </>
                             )}>
-                                <img class={logo_style.clone()} src={format!("/static/fighter_jobs/{}", fighter.job.get_file_name())} />
+                                <img class={logo_style.clone()} src={format!("/pandas/static/fighter_jobs/{}", fighter.job.get_file_name())} />
                                 if let Some(level) = fighter.level.clone() {
                                     if level.is_empty() {
                                         <span>{"Kein Level angegeben"}</span><br/>

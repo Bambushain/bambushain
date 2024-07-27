@@ -1,6 +1,7 @@
 use sea_orm::prelude::*;
 use sea_orm::{NotSet, QueryOrder, Set};
 
+use crate::error_tag;
 use bamboo_common_core::entities::*;
 use bamboo_common_core::error::*;
 
@@ -13,10 +14,7 @@ pub async fn get_free_companies(
         .order_by_asc(free_company::Column::Name)
         .all(db)
         .await
-        .map_err(|err| {
-            log::error!("Failed to load free companies: {err}");
-            BambooError::not_found("free_company", "Free companies not found")
-        })
+        .map_err(|_| BambooError::not_found(error_tag!(), "Free companies not found"))
 }
 
 pub async fn get_free_company(
@@ -29,10 +27,7 @@ pub async fn get_free_company(
             .filter(free_company::Column::UserId.eq(user_id))
             .one(db)
             .await
-            .map_err(|err| {
-                log::error!("Failed to load free company: {err}");
-                BambooError::not_found("free_company", "Free company not found")
-            })
+            .map_err(|_| BambooError::not_found(error_tag!(), "Free company not found"))
     } else {
         Ok(None)
     }
@@ -45,7 +40,7 @@ pub async fn create_free_company(
 ) -> BambooResult<FreeCompany> {
     if free_company_exists_by_name(name.clone(), user_id, db).await? {
         return Err(BambooError::exists_already(
-            "free company",
+            error_tag!(),
             "A free company with that name exists",
         ));
     }
@@ -55,10 +50,10 @@ pub async fn create_free_company(
     active_model.name = Set(name);
     active_model.id = NotSet;
 
-    active_model.insert(db).await.map_err(|err| {
-        log::error!("Failed to create free company: {err}");
-        BambooError::not_found("free_company", "Could not create free company")
-    })
+    active_model
+        .insert(db)
+        .await
+        .map_err(|_| BambooError::not_found(error_tag!(), "Could not create free company"))
 }
 
 pub async fn update_free_company(
@@ -69,7 +64,7 @@ pub async fn update_free_company(
 ) -> BambooErrorResult {
     if free_company_exists_by_id(name.clone(), user_id, id, db).await? {
         return Err(BambooError::exists_already(
-            "free company",
+            error_tag!(),
             "A free company with that name exists",
         ));
     }
@@ -80,10 +75,7 @@ pub async fn update_free_company(
         .col_expr(free_company::Column::Name, Expr::value(name))
         .exec(db)
         .await
-        .map_err(|err| {
-            log::error!("Failed to update free company: {err}");
-            BambooError::not_found("free_company", "Could not update free company")
-        })
+        .map_err(|_| BambooError::not_found(error_tag!(), "Could not update free company"))
         .map(|_| ())
 }
 
@@ -96,10 +88,7 @@ pub async fn delete_free_company(
         .filter(free_company::Column::UserId.eq(user_id))
         .exec(db)
         .await
-        .map_err(|err| {
-            log::error!("Failed to delete free company: {err}");
-            BambooError::not_found("free_company", "Could not delete free company")
-        })
+        .map_err(|_| BambooError::not_found(error_tag!(), "Could not delete free company"))
         .map(|_| ())
 }
 
@@ -116,10 +105,7 @@ async fn free_company_exists_by_id(
         .count(db)
         .await
         .map(|count| count > 0)
-        .map_err(|err| {
-            log::error!("Failed to load free companies {err}");
-            BambooError::database("free company", "Failed to load free companies")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to load free companies"))
 }
 
 async fn free_company_exists_by_name(
@@ -133,8 +119,5 @@ async fn free_company_exists_by_name(
         .count(db)
         .await
         .map(|count| count > 0)
-        .map_err(|err| {
-            log::error!("Failed to load free companies {err}");
-            BambooError::database("free company", "Failed to load free companies")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to load free companies"))
 }

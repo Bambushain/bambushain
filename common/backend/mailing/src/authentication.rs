@@ -41,9 +41,9 @@ Alles Gute vom 🐼"#
         html_body,
     )
     .await
-    .map(|_| ())
     .map_err(|err| {
         log::error!("Failed to send email {err}");
         log::error!("{err:#?}");
-    });
+    })
+    .map(|_| ());
 }

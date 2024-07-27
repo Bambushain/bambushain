@@ -4,5 +4,4 @@ pub use bamboo_common_backend_mailing as mailing;
 pub use bamboo_common_backend_migration as migration;
 pub use bamboo_common_backend_response as response;
 pub use bamboo_common_backend_services as services;
-pub use bamboo_common_backend_utils as utils;
 pub use bamboo_common_core as core;

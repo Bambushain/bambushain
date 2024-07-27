@@ -83,14 +83,11 @@ impl ActiveModelBehavior for ActiveModel {}
 #[cfg(feature = "backend")]
 impl ActiveModel {
     pub fn set_password(&mut self, plain_password: &String) -> Result<(), bcrypt::BcryptError> {
-        let hashed = bcrypt::hash(plain_password.as_bytes(), 12);
-        match hashed {
-            Ok(hashed_password) => {
-                self.password = Set(hashed_password);
-                Ok(())
-            }
-            Err(err) => Err(err),
-        }
+        bcrypt::hash(plain_password.as_bytes(), 12).map(|hashed_password| {
+            self.password = Set(hashed_password);
+
+            ()
+        })
     }
 }
 
@@ -114,10 +111,7 @@ impl Model {
     #[cfg(feature = "backend")]
     pub fn validate_password(&self, password: String) -> bool {
         let result = bcrypt::verify(password, self.password.as_str());
-        result.unwrap_or_else(|err| {
-            log::error!("Failed to validate password {err}");
-            false
-        })
+        result.unwrap_or(false)
     }
 }
 

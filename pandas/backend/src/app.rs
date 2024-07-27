@@ -11,9 +11,9 @@ async fn setup_google_playstore_grove(
     user_id: i32,
     db: &sea_orm::DatabaseConnection,
 ) -> std::io::Result<()> {
-    if !(dbal::grove_exists_by_name("Google".to_string(), db)
+    if !dbal::grove_exists_by_name("Google".to_string(), db)
         .await
-        .map_err(std::io::Error::other)?)
+        .map_err(std::io::Error::other)?
     {
         dbal::create_grove("Google".to_string(), false, user_id, db)
             .await

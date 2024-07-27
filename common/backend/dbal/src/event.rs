@@ -1,3 +1,4 @@
+use crate::error_tag;
 use bamboo_common_core::entities::event;
 use bamboo_common_core::entities::event::GroveEvent;
 use bamboo_common_core::entities::user::WebUser;
@@ -11,12 +12,8 @@ use sea_orm::{
     Condition, FromQueryResult, IntoActiveModel, JoinType, NotSet, QueryOrder, QuerySelect,
     SelectModel, Selector, Set,
 };
-use serde::{Deserialize, Serialize};
 
-#[derive(
-    Serialize, Deserialize, Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default, FromQueryResult,
-)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Clone, Default, FromQueryResult)]
 struct LoadEvent {
     pub event_id: i32,
     pub title: String,
@@ -35,25 +32,17 @@ struct LoadEvent {
 
 impl From<LoadEvent> for GroveEvent {
     fn from(value: LoadEvent) -> Self {
-        let user = if let Some(id) = value.user_id {
-            Some(WebUser {
-                id,
-                email: value.email.unwrap(),
-                display_name: value.display_name.unwrap(),
-                discord_name: value.discord_name.unwrap_or("".to_string()),
-            })
-        } else {
-            None
-        };
-        let grove = if let Some(id) = value.grove_id {
-            Some(Grove {
-                id,
-                name: value.grove_name.unwrap(),
-                invite_secret: None,
-            })
-        } else {
-            None
-        };
+        let user = value.user_id.map(|id| WebUser {
+            id,
+            email: value.email.unwrap(),
+            display_name: value.display_name.unwrap(),
+            discord_name: value.discord_name.unwrap_or("".to_string()),
+        });
+        let grove = value.grove_id.map(|id| Grove {
+            id,
+            name: value.grove_name.unwrap(),
+            invite_secret: None,
+        });
 
         GroveEvent {
             id: value.event_id,
@@ -164,10 +153,7 @@ pub async fn get_events(
     )
     .all(db)
     .await
-    .map_err(|err| {
-        log::error!("Failed to load events {err}");
-        BambooError::database("event", "Failed to load events")
-    })
+    .map_err(|_| BambooError::database(error_tag!(), "Failed to load events"))
     .map(|events| {
         events
             .iter()
@@ -181,16 +167,17 @@ pub async fn get_event(id: i32, user_id: i32, db: &DatabaseConnection) -> Bamboo
     get_event_query(user_id, Condition::all().add(event::Column::Id.eq(id)))
         .one(db)
         .await
-        .map_err(|err| {
-            log::error!("Failed to load events {err}");
-            BambooError::database("event", "Failed to load events")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to load events"))
         .map(|data| {
-            if let Some(data) = data {
-                Ok(data.into())
-            } else {
-                Err(BambooError::not_found("event", "The event was not found"))
-            }
+            data.map_or_else(
+                || {
+                    Err(BambooError::not_found(
+                        error_tag!(),
+                        "The event was not found",
+                    ))
+                },
+                |data| Ok(data.into()),
+            )
         })?
 }
 
@@ -203,15 +190,12 @@ pub async fn create_event(
     model.id = NotSet;
     model.user_id = Set(Some(user_id));
 
-    let created = model.insert(db).await.map_err(|err| {
-        log::error!("Failed to create event {err}");
-        BambooError::database("event", "Failed to create event")
-    })?;
+    let created = model
+        .insert(db)
+        .await
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to create event"))?;
 
-    let event_id = created.id;
-    let event = get_event(event_id, user_id, db).await?;
-
-    Ok(event)
+    get_event(created.id, user_id, db).await
 }
 
 pub async fn update_event(
@@ -230,10 +214,7 @@ pub async fn update_event(
         .col_expr(event::Column::Color, Expr::value(event.color))
         .exec(db)
         .await
-        .map_err(|err| {
-            log::error!("Failed to update event {err}");
-            BambooError::database("event", "Failed to update event")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to update event"))
         .map(|_| ())
 }
 
@@ -243,9 +224,6 @@ pub async fn delete_event(user_id: i32, id: i32, db: &DatabaseConnection) -> Bam
         .filter(event::Column::UserId.eq(user_id))
         .exec(db)
         .await
-        .map_err(|err| {
-            log::error!("Failed to delete event {err}");
-            BambooError::database("event", "Failed to delete event")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to delete event"))
         .map(|_| ())
 }

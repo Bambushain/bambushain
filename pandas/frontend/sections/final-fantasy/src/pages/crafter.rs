@@ -458,7 +458,7 @@ right: 0.75rem;
                                     <CosmoButton label="Löschen" on_click={move |_| on_delete_open.emit(delete_crafter.clone())} />
                                 </>
                             )}>
-                                <img class={logo_style.clone()} src={format!("/static/crafter_jobs/{}", crafter.job.get_file_name())} />
+                                <img class={logo_style.clone()} src={format!("/pandas/static/crafter_jobs/{}", crafter.job.get_file_name())} />
                                 if let Some(level) = crafter.level.clone() {
                                     if level.is_empty() {
                                         <span>{"Kein Level angegeben"}</span><br/>

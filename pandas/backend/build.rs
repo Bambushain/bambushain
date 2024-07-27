@@ -1,6 +1,5 @@
 use std::collections::btree_map::Entry;
 use std::collections::BTreeMap;
-use std::env;
 use std::fs;
 use std::path::Path;
 
@@ -73,7 +72,7 @@ fn main() {
         ))
     }
 
-    let out_dir = env::var_os("OUT_DIR").unwrap();
+    let out_dir = std::env::var_os("OUT_DIR").unwrap();
     let dest_path = Path::new(&out_dir).join("dependencies.json");
     fs::write(
         dest_path,

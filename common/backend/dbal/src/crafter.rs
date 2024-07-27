@@ -2,6 +2,7 @@ use sea_orm::prelude::*;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{IntoActiveModel, NotSet, QueryOrder};
 
+use crate::error_tag;
 use bamboo_common_core::entities::*;
 use bamboo_common_core::entities::{character, crafter};
 use bamboo_common_core::error::*;
@@ -18,10 +19,7 @@ pub async fn get_crafters(
         .order_by_asc(crafter::Column::Job)
         .all(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("crafter", "Failed to load crafters")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to load crafters"))
 }
 
 pub async fn get_crafter(
@@ -36,20 +34,11 @@ pub async fn get_crafter(
         .inner_join(character::Entity)
         .one(db)
         .await
-        .map_err(|err| {
-            log::error!("{err}");
-            BambooError::database("crafter", "Failed to load crafter")
-        })
-        .map(|res| {
-            if let Some(res) = res {
-                Ok(res)
-            } else {
-                Err(BambooError::not_found(
-                    "crafter",
-                    "The crafter was not found",
-                ))
-            }
-        })?
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to load crafter"))?
+        .ok_or(BambooError::not_found(
+            error_tag!(),
+            "The crafter was not found",
+        ))
 }
 
 async fn crafter_exists_by_id(
@@ -68,10 +57,7 @@ async fn crafter_exists_by_id(
         .count(db)
         .await
         .map(|count| count > 0)
-        .map_err(|err| {
-            log::error!("Failed to load crafter {err}");
-            BambooError::database("crafter", "Failed to load the crafters")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to load the crafters"))
 }
 
 async fn crafter_exists_by_job(
@@ -88,10 +74,7 @@ async fn crafter_exists_by_job(
         .count(db)
         .await
         .map(|count| count > 0)
-        .map_err(|err| {
-            log::error!("Failed to load crafter {err}");
-            BambooError::database("crafter", "Failed to load the crafters")
-        })
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to load the crafters"))
 }
 
 pub async fn create_crafter(
@@ -102,7 +85,7 @@ pub async fn create_crafter(
 ) -> BambooResult<Crafter> {
     if crafter_exists_by_job(user_id, character_id, crafter.job, db).await? {
         return Err(BambooError::exists_already(
-            "crafter",
+            error_tag!(),
             "A crafter with that job exists already",
         ));
     }
@@ -111,10 +94,10 @@ pub async fn create_crafter(
     model.character_id = Set(character_id);
     model.id = NotSet;
 
-    model.insert(db).await.map_err(|err| {
-        log::error!("{err}");
-        BambooError::database("crafter", "Failed to create crafter")
-    })
+    model
+        .insert(db)
+        .await
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to create crafter"))
 }
 
 pub async fn update_crafter(
