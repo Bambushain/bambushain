@@ -18,14 +18,13 @@ impl header::Header for AuthorizationHeader {
     }
 
     fn parse<M: HttpMessage>(msg: &M) -> Result<Self, error::ParseError> {
-        let authorization = if let Some(header) = msg.headers().get(header::AUTHORIZATION) {
-            Ok(header)
-        } else {
-            Err(error::ParseError::Header)
-        }?
-        .to_str()
-        .map_err(|_| error::ParseError::Header)
-        .map(|header| header.strip_prefix("Panda ").map(|res| res.to_string()))?;
+        let authorization = msg
+            .headers()
+            .get(header::AUTHORIZATION)
+            .ok_or(error::ParseError::Header)?
+            .to_str()
+            .map_err(|_| error::ParseError::Header)
+            .map(|header| header.strip_prefix("Panda ").map(|res| res.to_string()))?;
 
         Ok(AuthorizationHeader { authorization })
     }
