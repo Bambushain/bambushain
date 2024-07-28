@@ -1,10 +1,9 @@
 use std::fmt::{Display, Formatter};
-use std::ops::Deref;
 
 use crate::api;
+use crate::ui::error::BambooErrorMessage;
 use bamboo_common::core::entities::{Grove, GroveEvent};
 use bamboo_common::frontend::api::ApiError;
-use bamboo_pandas_frontend_base_error as error;
 use chrono::prelude::*;
 use chrono::{Days, Months};
 use date_range::DateRange;
@@ -150,17 +149,6 @@ fn add_event_dialog(
     let grove_select = use_callback(grove_id_state.clone(), |value: AttrValue, state| {
         state.set(value.to_string().parse::<i32>().ok())
     });
-    let report_unknown_error = use_callback(
-        (bamboo_error_state.clone(), unreported_error_toggle.clone()),
-        |_, (bamboo_error_state, unreported_error_toggle)| {
-            error::report_unknown_error(
-                "bamboo_calendar",
-                "add_event_dialog",
-                bamboo_error_state.deref().clone(),
-            );
-            unreported_error_toggle.set(false);
-        },
-    );
 
     let form_submit = use_callback(save_state.clone(), |_, state| state.run());
 
@@ -192,18 +180,13 @@ fn add_event_dialog(
                 </>
             )}
             >
-                if save_state.error.is_some() && *unreported_error_toggle {
-                    <CosmoMessage
-                        message_type={CosmoMessageType::Negative}
+                if let Some(error) = save_state.error.clone() {
+                    <BambooErrorMessage
                         message="Das Event konnte leider nicht erstellt werden"
                         header="Fehler beim Speichern"
-                        actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)}
-                    />
-                } else if save_state.error.is_some() {
-                    <CosmoMessage
-                        message_type={CosmoMessageType::Negative}
-                        message="Das Event konnte leider nicht erstellt werden"
-                        header="Fehler beim Speichern"
+                        page="bamboo_calendar"
+                        form="add_event_dialog"
+                        error={error}
                     />
                 }
                 if grove_id.is_some() {
@@ -457,17 +440,6 @@ fn edit_event_dialog(
     let grove_select = use_callback(grove_id_state.clone(), |value: AttrValue, state| {
         state.set(Some(value.to_string().parse::<i32>().unwrap()))
     });
-    let report_unknown_error = use_callback(
-        (bamboo_error_state.clone(), unreported_error_toggle.clone()),
-        |_, (bamboo_error_state, unreported_error_toggle)| {
-            error::report_unknown_error(
-                "bamboo_calendar",
-                "edit_event_dialog",
-                bamboo_error_state.deref().clone(),
-            );
-            unreported_error_toggle.set(false);
-        },
-    );
     let form_submit = use_callback(save_state.clone(), |_, state| state.run());
     let delete_confirm = use_callback(delete_state.clone(), |_, state| state.run());
     let open_delete = use_callback(delete_event_open_state.clone(), |_, state| state.set(true));
@@ -500,32 +472,22 @@ fn edit_event_dialog(
                 </>
             )}
             >
-                if save_state.error.is_some() && *unreported_error_toggle {
-                    <CosmoMessage
-                        message_type={CosmoMessageType::Negative}
-                        message="Das Event konnte leider nicht geändert werden"
+                if let Some(error) = save_state.error.clone() {
+                    <BambooErrorMessage
+                        message="Das Event konnte leider nicht gespeichert werden"
                         header="Fehler beim Speichern"
-                        actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)}
-                    />
-                } else if save_state.error.is_some() {
-                    <CosmoMessage
-                        message_type={CosmoMessageType::Negative}
-                        message="Das Event konnte leider nicht geändert werden"
-                        header="Fehler beim Speichern"
+                        page="bamboo_calendar"
+                        form="edit_event_dialog"
+                        error={error}
                     />
                 }
-                if delete_state.error.is_some() && *unreported_error_toggle {
-                    <CosmoMessage
-                        message_type={CosmoMessageType::Negative}
+                if let Some(error) = save_state.error.clone() {
+                    <BambooErrorMessage
                         message="Das Event konnte leider nicht gelöscht werden"
                         header="Fehler beim Löschen"
-                        actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)}
-                    />
-                } else if delete_state.error.is_some() {
-                    <CosmoMessage
-                        message_type={CosmoMessageType::Negative}
-                        message="Das Event konnte leider nicht gelöscht werden"
-                        header="Fehler beim Löschen"
+                        page="bamboo_calendar"
+                        form="delete_event_dialog"
+                        error={error}
                     />
                 }
                 if event.grove.is_some() && !*is_private_state {

@@ -2,10 +2,8 @@ use crate::api;
 use crate::api::BannedStatus;
 use crate::state::grove::{use_groves, GrovesAtom};
 use bamboo_common::core::entities::user::{GroveUser, JoinStatus};
-use bamboo_common::frontend::api::ApiError;
 use bamboo_common::frontend::ui::{BambooCard, BambooCardList};
-use bamboo_pandas_frontend_base::controls::{use_events, Calendar};
-use bamboo_pandas_frontend_base::error;
+use bamboo_pandas_frontend_base::controls::{use_events, BambooErrorMessage, Calendar};
 use bamboo_pandas_frontend_base::routing::{AppRoute, GroveRoute};
 use bamboo_pandas_frontend_base::storage::CurrentUser;
 use bounce::helmet::Helmet;
@@ -63,31 +61,11 @@ height: calc(var(--page-height) - var(--title-font-size) - var(--tab-links-heigh
 fn users(id: i32) -> Html {
     log::debug!("Render users page");
     log::debug!("Initialize state and callbacks");
-    let bamboo_error_state = use_state_eq(ApiError::default);
-
-    let unreported_error_toggle = use_bool_toggle(false);
     let selected_user_state = use_state_eq(|| None as Option<GroveUser>);
 
     let current_user_atom = use_atom::<CurrentUser>();
 
-    let users_state = {
-        let bamboo_error_state = bamboo_error_state.clone();
-
-        let unreported_error_toggle = unreported_error_toggle.clone();
-
-        use_async(async move {
-            unreported_error_toggle.set(false);
-
-            api::get_users(id, BannedStatus::Unbanned)
-                .await
-                .map_err(|err| {
-                    bamboo_error_state.set(err.clone());
-                    unreported_error_toggle.set(true);
-
-                    err
-                })
-        })
-    };
+    let users_state = use_async(async move { api::get_users(id, BannedStatus::Unbanned).await });
 
     let ban_user_state = {
         let selected_user_state = selected_user_state.clone();
@@ -106,17 +84,6 @@ fn users(id: i32) -> Html {
         })
     };
 
-    let report_unknown_error = use_callback(
-        (bamboo_error_state.clone(), unreported_error_toggle.clone()),
-        |_, (bamboo_error_state, unreported_error_toggle)| {
-            error::report_unknown_error(
-                "bamboo_user",
-                "users_page",
-                bamboo_error_state.deref().clone(),
-            );
-            unreported_error_toggle.set(false);
-        },
-    );
     let open_ban_user = use_callback(
         selected_user_state.clone(),
         |user: GroveUser, selected_user_state| {
@@ -142,22 +109,15 @@ fn users(id: i32) -> Html {
 
     if users_state.loading {
         html!(<CosmoProgressRing />)
-    } else if users_state.error.is_some() {
+    } else if let Some(error) = users_state.error.clone() {
         html!(
-            if *unreported_error_toggle {
-                <CosmoMessage
-                    header="Fehler beim Laden"
-                    message="Die Pandas konnten nicht geladen werden"
-                    message_type={CosmoMessageType::Negative}
-                    actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)}
-                />
-            } else {
-                <CosmoMessage
-                    header="Fehler beim Laden"
-                    message="Die Pandas konnten nicht geladen werden"
-                    message_type={CosmoMessageType::Negative}
-                />
-            }
+            <BambooErrorMessage
+                message="Die Pandas konnten leider nicht geladen werden"
+                header="Fehler beim Laden"
+                page="users"
+                form="users_page"
+                error={error}
+            />
         )
     } else if let Some(data) = &users_state.data.clone() {
         let current_user_id = current_user_atom.profile.id;
