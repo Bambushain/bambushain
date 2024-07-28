@@ -645,7 +645,7 @@ cursor: pointer;
             },
         )
     };
-    let _ = {
+    {
         let allow_drag_toggle = allow_drag_toggle.clone();
 
         let drag_start = drag_start.clone();
@@ -664,7 +664,7 @@ cursor: pointer;
                 })),
                 ondragend: Some(Box::new(move |_| {})),
             },
-        )
+        );
     };
 
     let open_delete_dialog = use_callback(
@@ -920,17 +920,12 @@ pub fn custom_fields_page() -> Html {
         let fields_state = fields_state.clone();
 
         use_async(async move {
-            if let Err(err) = api::move_custom_field(
+            api::move_custom_field(
                 *dragged_item_id_ref.borrow(),
                 *drop_new_position_ref.borrow(),
             )
             .await
-            {
-                Err(err)
-            } else {
-                fields_state.run();
-                Ok(())
-            }
+            .map(|_| fields_state.run())
         })
     };
 

@@ -261,7 +261,7 @@ fn management(
                     .iter()
                     .cloned()
                     .filter(|user_id| *user_id != current_user_atom.profile.id)
-                    .collect::<Vec<i32>>(),
+                    .collect::<Vec<_>>(),
             )
             .await
         })
@@ -391,7 +391,7 @@ width: 50%;
                     None
                 }
             })
-            .collect::<Vec<CosmoModernSelectItem>>()
+            .collect::<Vec<_>>()
     } else {
         vec![]
     };

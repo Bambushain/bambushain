@@ -52,11 +52,11 @@ flex-flow: column;
             api::send_support_request(request)
                 .await
                 .map(|_| {
-                    send_state.set(true);
                     subject_state.set("".into());
-                    message_state.set("".into())
+                    message_state.set("".into());
+                    send_state.set(true)
                 })
-                .map_err(|_| send_state.set(true))
+                .map(|_| send_state.set(true))
         })
     };
 

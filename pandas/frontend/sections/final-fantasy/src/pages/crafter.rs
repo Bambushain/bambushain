@@ -39,11 +39,14 @@ fn modify_crafter_modal(
     jobs: &Vec<CrafterJob>,
 ) -> Html {
     let job_state = use_state_eq(|| {
-        AttrValue::from(if is_edit {
-            crafter.job.get_job_name()
-        } else {
-            jobs.first().unwrap().get_job_name()
-        })
+        AttrValue::from(
+            if is_edit {
+                crafter.job
+            } else {
+                jobs.first().unwrap().clone()
+            }
+            .get_job_name(),
+        )
     });
     let level_state = use_state_eq(|| AttrValue::from(crafter.level.clone().unwrap_or_default()));
 
@@ -85,7 +88,7 @@ fn modify_crafter_modal(
                     (*job_state).clone().eq(&job.get_job_name()),
                 )
             })
-            .collect::<Vec<CosmoModernSelectItem>>()
+            .collect::<Vec<_>>()
     };
 
     html!(
@@ -400,7 +403,7 @@ right: 0.75rem;
     if crafter_state.loading {
         html!(<CosmoProgressRing />)
     } else if let Some(data) = &crafter_state.data {
-        let mut all_jobs = CrafterJob::iter().collect::<Vec<CrafterJob>>();
+        let mut all_jobs = CrafterJob::iter().collect::<Vec<_>>();
         for crafter in data.clone() {
             let _ = all_jobs
                 .iter()
@@ -477,7 +480,7 @@ right: 0.75rem;
                         <ModifyCrafterModal on_error_close={report_unknown_error.clone()} has_unknown_error={*unreported_error_toggle} crafter={new_crafter.unwrap_or(Crafter::default())} character_id={character.id} jobs={all_jobs} is_edit={false} error_message={(*error_message_state).clone()} has_error={create_state.error.is_some()} on_close={on_modal_action_close} title="Handwerker hinzufügen" save_label="Handwerker hinzufügen" on_save={on_modal_create_save} />
                     ),
                     CrafterActions::Edit(crafter) => html!(
-                        <ModifyCrafterModal on_error_close={report_unknown_error.clone()} has_unknown_error={*unreported_error_toggle} character_id={character.id} is_edit={true} jobs={CrafterJob::iter().collect::<Vec<CrafterJob>>()} title={format!("Handwerker {} bearbeiten", crafter.job.to_string())} save_label="Handwerker speichern" on_save={on_modal_update_save} on_close={on_modal_action_close} crafter={crafter} error_message={(*error_message_state).clone()} has_error={update_state.error.is_some()} />
+                        <ModifyCrafterModal on_error_close={report_unknown_error.clone()} has_unknown_error={*unreported_error_toggle} character_id={character.id} is_edit={true} jobs={CrafterJob::iter().collect::<Vec<_>>()} title={format!("Handwerker {} bearbeiten", crafter.job.to_string())} save_label="Handwerker speichern" on_save={on_modal_update_save} on_close={on_modal_action_close} crafter={crafter} error_message={(*error_message_state).clone()} has_error={update_state.error.is_some()} />
                     ),
                     CrafterActions::Delete(crafter) => html!(
                         <CosmoConfirm confirm_type={CosmoModalType::Warning} on_confirm={move |_| on_modal_delete.emit(crafter.id)} on_decline={on_modal_action_close} confirm_label="Handwerker löschen" decline_label="Handwerker behalten" title="Handwerker löschen" message={format!("Soll der Handwerker {} auf Level {} wirklich gelöscht werden?", crafter.job.to_string(), crafter.level.unwrap_or_default())} />

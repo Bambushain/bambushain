@@ -2,10 +2,6 @@ use bamboo_common::core::entities::User;
 use bounce::Atom;
 use gloo_storage::{LocalStorage, Storage};
 
-pub fn get_token() -> Option<String> {
-    LocalStorage::get("/bamboo/token").ok()
-}
-
 pub fn set_token(token: String) {
     _ = LocalStorage::set("/bamboo/token", token);
 }

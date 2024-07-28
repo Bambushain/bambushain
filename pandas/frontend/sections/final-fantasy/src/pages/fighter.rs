@@ -39,11 +39,14 @@ fn modify_fighter_modal(
     jobs: &Vec<FighterJob>,
 ) -> Html {
     let job_state = use_state_eq(|| {
-        AttrValue::from(if is_edit {
-            fighter.job.get_job_name()
-        } else {
-            jobs.first().unwrap().get_job_name()
-        })
+        AttrValue::from(
+            if is_edit {
+                fighter.job
+            } else {
+                jobs.first().unwrap().clone()
+            }
+            .get_job_name(),
+        )
     });
     let level_state = use_state_eq(|| AttrValue::from(fighter.level.clone().unwrap_or_default()));
     let gear_score_state =
@@ -93,7 +96,7 @@ fn modify_fighter_modal(
                     (*job_state).clone().eq(&job.get_job_name()),
                 )
             })
-            .collect::<Vec<CosmoModernSelectItem>>()
+            .collect::<Vec<_>>()
     };
 
     html!(
@@ -414,7 +417,7 @@ right: 0.75rem;
     if fighter_state.loading {
         html!(<CosmoProgressRing />)
     } else if let Some(data) = &fighter_state.data {
-        let mut all_jobs = FighterJob::iter().collect::<Vec<FighterJob>>();
+        let mut all_jobs = FighterJob::iter().collect::<Vec<_>>();
         for fighter in data.clone() {
             let _ = all_jobs
                 .iter()
@@ -500,7 +503,7 @@ right: 0.75rem;
                         <ModifyFighterModal on_error_close={report_unknown_error.clone()} has_unknown_error={*unreported_error_toggle} fighter={new_fighter.unwrap_or(Fighter::default())} character_id={character.id} jobs={all_jobs} is_edit={false} error_message={(*error_message_state).clone()} has_error={create_state.error.is_some()} on_close={on_modal_action_close} title="Kämpfer hinzufügen" save_label="Kämpfer hinzufügen" on_save={on_modal_create_save} />
                     ),
                     FighterActions::Edit(fighter) => html!(
-                        <ModifyFighterModal on_error_close={report_unknown_error.clone()} has_unknown_error={*unreported_error_toggle} character_id={character.id} is_edit={true} jobs={FighterJob::iter().collect::<Vec<FighterJob>>()} title={format!("Kämpfer {} bearbeiten", fighter.job.to_string())} save_label="Kämpfer speichern" on_save={on_modal_update_save} on_close={on_modal_action_close} fighter={fighter} error_message={(*error_message_state).clone()} has_error={update_state.error.is_some()} />
+                        <ModifyFighterModal on_error_close={report_unknown_error.clone()} has_unknown_error={*unreported_error_toggle} character_id={character.id} is_edit={true} jobs={FighterJob::iter().collect::<Vec<_>>()} title={format!("Kämpfer {} bearbeiten", fighter.job.to_string())} save_label="Kämpfer speichern" on_save={on_modal_update_save} on_close={on_modal_action_close} fighter={fighter} error_message={(*error_message_state).clone()} has_error={update_state.error.is_some()} />
                     ),
                     FighterActions::Delete(fighter) => html!(
                         <CosmoConfirm confirm_type={CosmoModalType::Warning} on_confirm={move |_| on_modal_delete.emit(fighter.id)} on_decline={on_modal_action_close} confirm_label="Kämfper löschen" decline_label="Kämpfer behalten" title="Kämpfer löschen" message={format!("Soll der Kämpfer {} auf Level {} wirklich gelöscht werden?", fighter.job.to_string(), fighter.level.unwrap_or_default())} />

@@ -106,14 +106,11 @@ fn add_event_dialog(
 
         use_async(async move {
             let grove = if !*is_private_state {
-                if let Some(id) = *grove_id_state {
-                    groves.iter().cloned().find(|grove| grove.id == id)
-                } else {
-                    None
-                }
+                (*grove_id_state).map(|id| groves.iter().cloned().find(|grove| grove.id == id))
             } else {
-                None
-            };
+                Some(None)
+            }
+            .unwrap();
 
             api::create_event(GroveEvent::new(
                 (*title_state).to_string(),
@@ -286,7 +283,7 @@ fn add_event_dialog(
                         <CosmoModernSelect
                             label="Hain"
                             required=true
-                            items={groves.iter().map(|grove| CosmoModernSelectItem::new(grove.name.clone(), grove.id.to_string(), grove.id == (*grove_id_state).unwrap_or(-1))).collect::<Vec<CosmoModernSelectItem>>()}
+                            items={groves.iter().map(|grove| CosmoModernSelectItem::new(grove.name.clone(), grove.id.to_string(), grove.id == (*grove_id_state).unwrap_or(-1))).collect::<Vec<_>>()}
                             on_select={grove_select}
                         />
                     </CosmoInputGroup>
@@ -487,7 +484,7 @@ fn edit_event_dialog(
                 grove.id == (*grove_id_state).unwrap_or(-1),
             )
         })
-        .collect::<Vec<CosmoModernSelectItem>>();
+        .collect::<Vec<_>>();
 
     html!(
         <>
@@ -968,16 +965,13 @@ fn calendar_data(
                 .iter()
                 .filter(move |event| event.start_date <= day && event.end_date >= day)
                 .cloned()
-                .collect::<Vec<GroveEvent>>()
+                .collect::<Vec<_>>()
         }
     };
 
     let render_day = move |day: NaiveDate| {
         let events = events_for_day(day);
         let groves = groves.clone();
-
-        log::debug!("{grove_id:#?}");
-
         html!(
             <Day
                 grove_id={grove_id}

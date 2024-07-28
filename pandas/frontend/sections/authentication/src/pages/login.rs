@@ -52,13 +52,11 @@ fn login_content() -> Html {
                     two_factor_code_required_toggle.set(true);
                     Ok(())
                 }
-                Err(_) => {
-                    if *two_factor_code_required_toggle {
-                        Err("Der Zwei Faktor Code ist ungültig")
-                    } else {
-                        Err("Die Email und das Passwort passen nicht zusammen")
-                    }
-                }
+                Err(_) => Err(if *two_factor_code_required_toggle {
+                    "Der Zwei Faktor Code ist ungültig"
+                } else {
+                    "Die Email und das Passwort passen nicht zusammen"
+                }),
             }
         })
     };

@@ -49,7 +49,7 @@ fn modify_housing_modal(
                 (*district_state).clone().eq(&district),
             )
         })
-        .collect::<Vec<CosmoModernSelectItem>>();
+        .collect::<Vec<_>>();
     let housing_types = HousingType::iter()
         .map(|housing_type| {
             CosmoModernSelectItem::new(
@@ -58,7 +58,7 @@ fn modify_housing_modal(
                 (*housing_type_state).clone().eq(&housing_type),
             )
         })
-        .collect::<Vec<CosmoModernSelectItem>>();
+        .collect::<Vec<_>>();
     let wards = (1..31i16)
         .map(|ward| {
             CosmoModernSelectItem::new(
@@ -67,7 +67,7 @@ fn modify_housing_modal(
                 (*ward_state).clone().eq(&ward),
             )
         })
-        .collect::<Vec<CosmoModernSelectItem>>();
+        .collect::<Vec<_>>();
     let plots = (1..61i16)
         .map(|plot| {
             CosmoModernSelectItem::new(
@@ -76,7 +76,7 @@ fn modify_housing_modal(
                 (*plot_state).clone().eq(&plot),
             )
         })
-        .collect::<Vec<CosmoModernSelectItem>>();
+        .collect::<Vec<_>>();
 
     let on_close = on_close.clone();
     let on_save = use_callback(
@@ -440,11 +440,10 @@ margin-bottom: calc(var(--input-border-width) * -1 * 2);
 font-style: normal;
     "#
     );
-
-    if housing_state.loading {
-        html!(<CosmoProgressRing />)
-    } else if let Some(data) = &housing_state.data {
-        html!(
+    html!(
+        if housing_state.loading {
+            <CosmoProgressRing />
+        } else if let Some(data) = &housing_state.data {
             <>
                 <CosmoToolbar>
                     <CosmoToolbarGroup>
@@ -510,9 +509,7 @@ font-style: normal;
                     HousingActions::Closed => html!(),
                 } }
             </>
-        )
-    } else if housing_state.error.is_some() {
-        html!(
+        } else if housing_state.error.is_some() {
             if *unreported_error_toggle {
                 <CosmoMessage
                     header="Fehler beim Laden"
@@ -527,8 +524,6 @@ font-style: normal;
                     message_type={CosmoMessageType::Negative}
                 />
             }
-        )
-    } else {
-        html!()
-    }
+        }
+    )
 }

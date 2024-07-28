@@ -13,14 +13,14 @@ pub async fn get_my_profile() -> BambooApiResult<User> {
 pub async fn login(login_data: Login) -> BambooApiResult<either::Either<LoginResult, ()>> {
     log::debug!("Execute login");
     let response = api::post_response("/api/login", &login_data).await?;
-    if response.status() == 204 {
-        Ok(either::Right(()))
+    Ok(if response.status() == 204 {
+        either::Right(())
     } else {
-        Ok(either::Left(
+        either::Left(
             serde_json::from_str(response.text().await.unwrap().as_str())
                 .map_err(|_| ApiError::json_deserialize_error())?,
-        ))
-    }
+        )
+    })
 }
 
 pub async fn forgot_password(data: ForgotPassword) -> BambooApiResult<()> {

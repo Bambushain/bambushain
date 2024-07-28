@@ -65,28 +65,25 @@ img {
     "#
     );
 
-    let card_content_classes = buttons.clone().map_or_else(
-        || classes!(card_content_style.clone()),
-        |_| classes!(card_content_style, card_content_with_buttons_style),
-    );
+    let card_content_classes = if buttons.is_some() {
+        classes!(card_content_style, card_content_with_buttons_style)
+    } else {
+        classes!(card_content_style)
+    };
 
     html!(
         <div class={card_style}>
             <div class={card_content_classes}>
                 if let Some(prepend) = prepend {
-                    <div class={card_content_prepend}>
-                        {prepend.clone()}
-                    </div>
+                    <div class={card_content_prepend}>{ prepend.clone() }</div>
                 }
                 <div class={card_content_text_style}>
                     <CosmoHeader level={CosmoHeaderLevel::H5} header={title} />
-                    {for children.iter()}
+                    { for children.iter() }
                 </div>
             </div>
             if let Some(buttons) = buttons {
-                <CosmoToolbarGroup>
-                    {buttons.clone()}
-                </CosmoToolbarGroup>
+                <CosmoToolbarGroup>{ buttons.clone() }</CosmoToolbarGroup>
             }
         </div>
     )
@@ -105,9 +102,5 @@ justify-content: flex-start;
 "#
     );
 
-    html!(
-        <div class={class_list_style}>
-            {for children.iter()}
-        </div>
-    )
+    html!(<div class={class_list_style}>{ for children.iter() }</div>)
 }

@@ -45,11 +45,10 @@ fn modify_character_modal(
     let name_state = use_state_eq(|| AttrValue::from(character.name.clone()));
 
     let free_company_state = use_state_eq(|| {
-        if let Some(free_company) = character.free_company.clone() {
-            Some(AttrValue::from(free_company.id.to_string()))
-        } else {
-            None
-        }
+        character
+            .free_company
+            .clone()
+            .map(|free_company| AttrValue::from(free_company.id.to_string()))
     });
 
     let mut custom_fields_map = HashMap::new();
@@ -169,7 +168,7 @@ fn modify_character_modal(
             state.set(if !value.is_empty() { Some(value) } else { None })
         });
 
-    let mut all_races = CharacterRace::iter().collect::<Vec<CharacterRace>>();
+    let mut all_races = CharacterRace::iter().collect::<Vec<_>>();
     all_races.sort();
 
     let races = all_races
@@ -181,7 +180,7 @@ fn modify_character_modal(
                 (*race_state).clone().eq(&race.get_race_name()),
             )
         })
-        .collect::<Vec<CosmoModernSelectItem>>();
+        .collect::<Vec<_>>();
 
     let mut all_free_companies = free_companies.clone();
     all_free_companies.sort();
@@ -211,7 +210,7 @@ fn modify_character_modal(
                     selected,
                 )
             })
-            .collect::<Vec<CosmoModernSelectItem>>()
+            .collect::<Vec<_>>()
             .as_mut(),
     );
 
@@ -242,7 +241,7 @@ fn modify_character_modal(
                     selected: values.map(|set| set.contains(&item)).unwrap_or(false),
                 }
             })
-            .collect::<Vec<CosmoModernSelectItem>>();
+            .collect::<Vec<_>>();
         let custom_field = VChild::<CosmoModernSelect>::new(
             CosmoModernSelectProps {
                 label: field.label.clone().into(),
@@ -522,7 +521,7 @@ fn character_details(
                 }
                 { for character.custom_fields.clone().iter().map(|field| {
                     html!(
-                        <CosmoKeyValueListItem title={field.label.clone()}>{field.values.clone().into_iter().collect::<Vec<String>>().join(", ")}</CosmoKeyValueListItem>
+                        <CosmoKeyValueListItem title={field.label.clone()}>{field.values.clone().into_iter().collect::<Vec<_>>().join(", ")}</CosmoKeyValueListItem>
                     )
                 }) }
             </CosmoKeyValueList>
