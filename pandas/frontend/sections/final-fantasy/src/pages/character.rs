@@ -1,6 +1,5 @@
 use std::collections::hash_map::Entry;
 use std::collections::{BTreeSet, HashMap, HashSet};
-use std::ops::Deref;
 
 use strum::IntoEnumIterator;
 use yew::prelude::*;
@@ -11,19 +10,12 @@ use yew_hooks::{use_async, use_bool_toggle, use_map, use_mount};
 
 use bamboo_common::core::entities::*;
 use bamboo_common::frontend::api::{ApiError, CONFLICT, NOT_FOUND};
-use bamboo_pandas_frontend_base::error;
+use bamboo_pandas_frontend_base::controls::{use_dialogs, BambooErrorMessage};
 
 use crate::api;
 use crate::pages::crafter::CrafterDetails;
 use crate::pages::fighter::FighterDetails;
 use crate::pages::housing::HousingDetails;
-
-#[derive(PartialEq, Clone)]
-enum CharacterActions {
-    Edit,
-    Delete,
-    Closed,
-}
 
 #[autoprops]
 #[function_component(ModifyCharacterModal)]
@@ -33,10 +25,9 @@ fn modify_character_modal(
     save_label: &AttrValue,
     error_message: &AttrValue,
     has_error: bool,
-    has_unknown_error: bool,
+    api_error: &Option<ApiError>,
     #[prop_or_default] character: &Character,
     on_save: &Callback<Character>,
-    on_error_close: &Callback<()>,
     custom_fields: &Vec<CustomCharacterField>,
     free_companies: &Vec<FreeCompany>,
 ) -> Html {
@@ -276,11 +267,13 @@ fn modify_character_modal(
         )}
         >
             if has_error {
-                if has_unknown_error {
-                    <CosmoMessage
-                        message_type={CosmoMessageType::Negative}
+                if let Some(err) = api_error.clone() {
+                    <BambooErrorMessage
                         message={error_message.clone()}
-                        actions={html!(<CosmoButton label="Fehler melden" on_click={on_error_close.clone()} />)}
+                        header="Fehler beim Speichern"
+                        page="character"
+                        form="modify_character"
+                        error={err}
                     />
                 } else {
                     <CosmoMessage
@@ -330,30 +323,27 @@ fn character_details(
     free_companies: &Vec<FreeCompany>,
 ) -> Html {
     log::debug!("Initialize character details state and callbacks");
-    let action_state = use_state_eq(|| CharacterActions::Closed);
-
     let edit_character_ref = use_mut_ref(|| None as Option<Character>);
 
     let edit_error_toggle = use_bool_toggle(false);
-    let unreported_error_toggle = use_bool_toggle(false);
+    let edit_open_toggle = use_bool_toggle(false);
 
-    let bamboo_error_state = use_state_eq(ApiError::default);
+    let bamboo_error_state = use_state_eq(|| None as Option<ApiError>);
 
     let error_message_state = use_state_eq(|| AttrValue::from(""));
-    let error_message_form_state = use_state_eq(|| AttrValue::from(""));
+
+    let dialogs = use_dialogs();
 
     let save_state = {
         let edit_error_toggle = edit_error_toggle.clone();
-        let unreported_error_toggle = unreported_error_toggle.clone();
 
         let edit_character_ref = edit_character_ref.clone();
 
         let bamboo_error_state = bamboo_error_state.clone();
 
         let error_message_state = error_message_state.clone();
-        let error_message_form_state = error_message_form_state.clone();
 
-        let action_state = action_state.clone();
+        let edit_open_toggle = edit_open_toggle.clone();
 
         let id = character.id;
 
@@ -361,11 +351,11 @@ fn character_details(
 
         #[allow(clippy::await_holding_refcell_ref)]
         use_async(async move {
+            bamboo_error_state.set(None);
             if let Some(character) = edit_character_ref.borrow().clone() {
                 match api::update_character(id, character.clone()).await {
                     Ok(_) => {
-                        action_state.set(CharacterActions::Closed);
-                        unreported_error_toggle.set(false);
+                        edit_open_toggle.set(false);
                         edit_error_toggle.set(false);
                         on_save.emit(());
                         Ok(())
@@ -376,19 +366,15 @@ fn character_details(
                             CONFLICT => {
                                 error_message_state
                                     .set("Ein Charakter mit diesem Namen existiert bereits für diese Welt".into());
-                                unreported_error_toggle.set(false);
                             }
                             NOT_FOUND => {
                                 error_message_state
                                     .set("Der Charakter konnte nicht gefunden werden".into());
-                                unreported_error_toggle.set(false);
                             }
                             _ => {
                                 error_message_state
                                     .set("Der Charakter konnte nicht gespeichert werden".into());
-                                unreported_error_toggle.set(true);
-                                bamboo_error_state.set(err.clone());
-                                error_message_form_state.set("update_character".into());
+                                bamboo_error_state.set(Some(err.clone()));
                             }
                         }
 
@@ -401,13 +387,7 @@ fn character_details(
         })
     };
     let delete_state = {
-        let action_state = action_state.clone();
-
-        let unreported_error_toggle = unreported_error_toggle.clone();
-
         let bamboo_error_state = bamboo_error_state.clone();
-
-        let error_message_form_state = error_message_form_state.clone();
 
         let on_delete = on_delete.clone();
 
@@ -416,14 +396,9 @@ fn character_details(
         use_async(async move {
             api::delete_character(id)
                 .await
-                .map(|_| {
-                    action_state.set(CharacterActions::Closed);
-                    on_delete.emit(())
-                })
+                .map(|_| on_delete.emit(()))
                 .map_err(|err| {
-                    unreported_error_toggle.set(true);
-                    error_message_form_state.set("delete_character".into());
-                    bamboo_error_state.set(err.clone());
+                    bamboo_error_state.set(Some(err.clone()));
 
                     err
                 })
@@ -431,46 +406,39 @@ fn character_details(
     };
 
     let edit_character_click = use_callback(
-        (action_state.clone(), edit_error_toggle.clone()),
-        |_, (state, edit_error_toggle)| {
-            state.set(CharacterActions::Edit);
+        (edit_open_toggle.clone(), edit_error_toggle.clone()),
+        |_, (edit_open_toggle, edit_error_toggle)| {
+            edit_open_toggle.set(false);
             edit_error_toggle.set(false);
         },
     );
-    let delete_character_click = use_callback(action_state.clone(), |_, state| {
-        state.set(CharacterActions::Delete);
-    });
-    let on_modal_save = use_callback(
+    let on_edit_save = use_callback(
         (edit_character_ref.clone(), save_state.clone()),
         |character, (edit_character_ref, save_state)| {
             *edit_character_ref.borrow_mut() = Some(character);
             save_state.run();
         },
     );
-    let on_modal_delete = use_callback(delete_state.clone(), |_, delete_state| {
-        delete_state.run();
+    let on_edit_close = use_callback(edit_open_toggle.clone(), |_, edit_open_toggle| {
+        edit_open_toggle.set(false);
     });
-    let on_modal_close = use_callback(
-        (action_state.clone(), unreported_error_toggle.clone()),
-        |_, (state, unreported_error_toggle)| {
-            state.set(CharacterActions::Closed);
-            unreported_error_toggle.set(false);
-        },
-    );
 
-    let report_unknown_error = use_callback(
-        (
-            bamboo_error_state.clone(),
-            error_message_form_state.clone(),
-            unreported_error_toggle.clone(),
-        ),
-        |_, (bamboo_error_state, error_message_form_state, unreported_error_toggle)| {
-            error::report_unknown_error(
-                "final_fantasy_character",
-                error_message_form_state.deref().to_string(),
-                bamboo_error_state.deref().clone(),
-            );
-            unreported_error_toggle.set(false);
+    let delete_character = use_callback(delete_state.clone(), |_, delete_state| delete_state.run());
+    let delete_character_click = use_callback(
+        (character.clone(), delete_character.clone(), dialogs.clone()),
+        |_, (character, delete_character, dialogs)| {
+            dialogs.confirm(
+                "Character löschen",
+                format!(
+                    "Soll der Character {} wirklich gelöscht werden?",
+                    character.name
+                ),
+                "Character löschen",
+                "Nicht löschen",
+                CosmoModalType::Warning,
+                delete_character.clone(),
+                Callback::noop(),
+            )
         },
     );
 
@@ -482,25 +450,20 @@ fn character_details(
                     <CosmoButton on_click={delete_character_click} label="Löschen" />
                 </CosmoToolbarGroup>
             </CosmoToolbar>
-            if let Some(err) = &delete_state.error {
+            if let Some(err) = delete_state.error.clone() {
                 if err.code == NOT_FOUND {
                     <CosmoMessage
                         message_type={CosmoMessageType::Negative}
                         header="Fehler beim Löschen"
                         message="Der Charakter konnte nicht gefunden werden"
                     />
-                } else if *unreported_error_toggle {
-                    <CosmoMessage
-                        message_type={CosmoMessageType::Negative}
-                        header="Fehler beim Löschen"
-                        message="Der Charakter konnte nicht gelöscht werden"
-                        actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)}
-                    />
                 } else {
-                    <CosmoMessage
-                        message_type={CosmoMessageType::Negative}
+                    <BambooErrorMessage
+                        message="Der Charakter konnte leider nicht gelöscht werden"
                         header="Fehler beim Löschen"
-                        message="Der Charakter konnte nicht gelöscht werden"
+                        page="character"
+                        form="delete_character"
+                        error={err}
                     />
                 }
             }
@@ -525,18 +488,20 @@ fn character_details(
                     )
                 }) }
             </CosmoKeyValueList>
-            { match (*action_state).clone() {
-                CharacterActions::Edit => html!(
-                    <ModifyCharacterModal has_unknown_error={*unreported_error_toggle} free_companies={free_companies.clone()} on_error_close={report_unknown_error.clone()} title={format!("Charakter {} bearbeiten", character.name.clone())} save_label="Character speichern" on_save={on_modal_save} on_close={on_modal_close} character={character.clone()} custom_fields={custom_fields.clone()} error_message={(*error_message_state).clone()} has_error={*edit_error_toggle} />
-                ),
-                CharacterActions::Delete => {
-                    let character = character.clone();
-                    html!(
-                        <CosmoConfirm confirm_type={CosmoModalType::Warning} on_confirm={on_modal_delete} on_decline={on_modal_close} confirm_label="Character löschen" decline_label="Character behalten" title="Character löschen" message={format!("Soll der Character {} wirklich gelöscht werden?", character.name)} />
-                    )
-                }
-                CharacterActions::Closed => html!(),
-            } }
+            if *edit_open_toggle {
+                <ModifyCharacterModal
+                    api_error={(*bamboo_error_state).clone()}
+                    free_companies={free_companies.clone()}
+                    title={format!("Charakter {} bearbeiten", character.name.clone())}
+                    save_label="Character speichern"
+                    on_save={on_edit_save}
+                    on_close={on_edit_close}
+                    character={character.clone()}
+                    custom_fields={custom_fields.clone()}
+                    error_message={(*error_message_state).clone()}
+                    has_error={*edit_error_toggle}
+                />
+            }
         </>
     )
 }
@@ -546,13 +511,10 @@ pub fn character_page() -> Html {
     log::debug!("Render character page");
     log::debug!("Initialize state and callbacks");
     let open_create_character_modal_toggle = use_bool_toggle(false);
-    let unreported_error_toggle = use_state_eq(|| false);
 
     let create_character_ref = use_mut_ref(|| None as Option<Character>);
 
-    let bamboo_error_state = use_state_eq(ApiError::default);
-
-    let error_message_form_state = use_state_eq(|| AttrValue::from(""));
+    let bamboo_error_state = use_state_eq(|| None as Option<ApiError>);
 
     let selected_character_state = use_state_eq(|| 0);
 
@@ -561,36 +523,26 @@ pub fn character_page() -> Html {
     let characters_state = {
         let bamboo_error_state = bamboo_error_state.clone();
 
-        let unreported_error_toggle = unreported_error_toggle.clone();
-
         use_async(async move {
-            api::get_characters()
-                .await
-                .map_err(|err| {
-                    unreported_error_toggle.set(true);
-                    bamboo_error_state.set(err.clone());
+            bamboo_error_state.set(None);
 
-                    err
-                })
-                .map(|data| {
-                    unreported_error_toggle.set(false);
+            api::get_characters().await.map_err(|err| {
+                bamboo_error_state.set(Some(err.clone()));
 
-                    data
-                })
+                err
+            })
         })
     };
     let free_companies_state = use_async(async move { api::get_free_companies().await });
     let custom_fields_state = use_async(async move { api::get_custom_fields().await });
     let create_state = {
         let open_create_character_modal_state = open_create_character_modal_toggle.clone();
-        let unreported_error_toggle = unreported_error_toggle.clone();
 
         let characters_state = characters_state.clone();
 
         let bamboo_error_state = bamboo_error_state.clone();
 
         let error_message_state = error_message_state.clone();
-        let error_message_form_state = error_message_form_state.clone();
 
         let selected_character_state = selected_character_state.clone();
 
@@ -598,6 +550,8 @@ pub fn character_page() -> Html {
 
         #[allow(clippy::await_holding_refcell_ref)]
         use_async(async move {
+            bamboo_error_state.set(None);
+
             if let Some(character) = create_character_ref.borrow().clone() {
                 api::create_character(character)
                     .await
@@ -612,9 +566,7 @@ pub fn character_page() -> Html {
                             if err.code == CONFLICT {
                                 "Ein Charakter mit diesem Namen existiert bereits für diese Welt"
                             } else {
-                                bamboo_error_state.set(err.clone());
-                                error_message_form_state.set("character_page".into());
-                                unreported_error_toggle.set(true);
+                                bamboo_error_state.set(Some(err.clone()));
                                 "Der Charakter konnte nicht hinzugefügt werden"
                             }
                             .into(),
@@ -628,21 +580,6 @@ pub fn character_page() -> Html {
         })
     };
 
-    let report_unknown_error = use_callback(
-        (
-            bamboo_error_state.clone(),
-            error_message_form_state.clone(),
-            unreported_error_toggle.clone(),
-        ),
-        |_, (bamboo_error_state, error_message_form_state, unreported_error_toggle)| {
-            error::report_unknown_error(
-                "final_fantasy_character",
-                error_message_form_state.deref().to_string(),
-                bamboo_error_state.deref().clone(),
-            );
-            unreported_error_toggle.set(false);
-        },
-    );
     let open_create_character_modal_click = use_callback(
         open_create_character_modal_toggle.clone(),
         |_, open_create_character_modal_state| {
@@ -684,25 +621,16 @@ pub fn character_page() -> Html {
 
     if characters_state.loading {
         html!(<CosmoProgressRing />)
-    } else if characters_state.error.is_some() {
-        if *unreported_error_toggle {
-            html!(
-                <CosmoMessage
-                    header="Fehler beim Laden"
-                    message="Deine Charaktere konnten nicht geladen werden"
-                    message_type={CosmoMessageType::Negative}
-                    actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)}
-                />
-            )
-        } else {
-            html!(
-                <CosmoMessage
-                    header="Fehler beim Laden"
-                    message="Deine Charaktere konnten nicht geladen werden"
-                    message_type={CosmoMessageType::Negative}
-                />
-            )
-        }
+    } else if let Some(err) = characters_state.error.clone() {
+        html!(
+            <BambooErrorMessage
+                message="Der Charaktere konnten leider nicht geladen werden"
+                header="Fehler beim Laden"
+                page="character_page"
+                form="character_page"
+                error={err}
+            />
+        )
     } else if let Some(data) = &characters_state.data {
         let select_character = {
             let data = data.clone();
@@ -746,8 +674,7 @@ pub fn character_page() -> Html {
                 </CosmoSideList>
                 if *open_create_character_modal_toggle {
                     <ModifyCharacterModal
-                        has_unknown_error={*unreported_error_toggle}
-                        on_error_close={report_unknown_error.clone()}
+                        api_error={(*bamboo_error_state).clone()}
                         free_companies={free_companies_state.data.clone().unwrap_or(Vec::new()).clone()}
                         error_message={(*error_message_state).clone()}
                         has_error={create_state.error.is_some()}

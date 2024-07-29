@@ -1,21 +1,20 @@
-use std::ops::Deref;
-
 use bounce::helmet::Helmet;
 use bounce::{use_atom_setter, use_atom_value};
 use stylist::yew::use_style;
 use yew::prelude::*;
 use yew_autoprops::autoprops;
 use yew_cosmo::prelude::*;
-use yew_hooks::{use_async, use_bool_toggle, use_mount, use_timeout, use_update};
+use yew_hooks::{use_async, use_bool_toggle, use_mount, use_timeout, use_update, UseAsyncHandle};
 use yew_router::prelude::*;
 
 use bamboo_common::core::entities::user::UpdateProfile;
 use bamboo_common::frontend::api::{ApiError, CONFLICT, FORBIDDEN, NOT_FOUND};
+use bamboo_pandas_frontend_base::controls::{use_dialogs, BambooErrorMessage};
 use bamboo_pandas_frontend_base::routing::{
     AppRoute, BambooGroveRoute, FinalFantasyRoute, GroveRoute, LegalRoute, LicensesRoute,
     SupportRoute,
 };
-use bamboo_pandas_frontend_base::{error, storage};
+use bamboo_pandas_frontend_base::storage;
 use bamboo_pandas_frontend_section_authentication::LoginPage;
 use bamboo_pandas_frontend_section_bamboo::CalendarPage;
 use bamboo_pandas_frontend_section_bamboo::UsersPage;
@@ -24,7 +23,7 @@ use bamboo_pandas_frontend_section_final_fantasy::SettingsPage;
 use bamboo_pandas_frontend_section_groves::pages::groves::{
     AddGrovePage, GroveDetailsPage, GroveInvitePage,
 };
-use bamboo_pandas_frontend_section_groves::state::grove::use_groves;
+use bamboo_pandas_frontend_section_groves::use_groves;
 use bamboo_pandas_frontend_section_legal::{DataProtectionPage, ImprintPage};
 use bamboo_pandas_frontend_section_licenses::{
     BambooGrovePage, FontsPage, ImagesPage, SoftwareLicensesPage,
@@ -467,10 +466,6 @@ fn change_password_dialog(on_close: &Callback<()>) -> Html {
     log::debug!("Open dialog to change password");
     let navigator = use_navigator();
 
-    let unreported_error_toggle = use_bool_toggle(false);
-
-    let bamboo_error_state = use_state_eq(ApiError::default);
-
     let old_password_state = use_state_eq(|| AttrValue::from(""));
     let new_password_state = use_state_eq(|| AttrValue::from(""));
 
@@ -479,23 +474,7 @@ fn change_password_dialog(on_close: &Callback<()>) -> Html {
     let update_new_password =
         use_callback(new_password_state.clone(), |value, state| state.set(value));
 
-    let report_unknown_error = use_callback(
-        (bamboo_error_state.clone(), unreported_error_toggle.clone()),
-        |_, (bamboo_error_state, unreported_error_toggle)| {
-            error::report_unknown_error(
-                "layout",
-                "change_password_dialog",
-                bamboo_error_state.deref().clone(),
-            );
-            unreported_error_toggle.set(false);
-        },
-    );
-
     let save_state = {
-        let unreported_error_toggle = unreported_error_toggle.clone();
-
-        let bamboo_error_state = bamboo_error_state.clone();
-
         let old_password_state = old_password_state.clone();
         let new_password_state = new_password_state.clone();
 
@@ -510,12 +489,6 @@ fn change_password_dialog(on_close: &Callback<()>) -> Html {
                 navigator
                     .expect("Navigator should be available")
                     .push(&AppRoute::Login);
-                unreported_error_toggle.set(false);
-            })
-            .map_err(|err| {
-                unreported_error_toggle.set(true);
-                bamboo_error_state.set(err.clone());
-                err
             })
         })
     };
@@ -539,7 +512,7 @@ fn change_password_dialog(on_close: &Callback<()>) -> Html {
                 </>
             )}
             >
-                if let Some(err) = &save_state.error {
+                if let Some(err) = save_state.error.clone() {
                     if err.code == FORBIDDEN {
                         <CosmoMessage
                             message_type={CosmoMessageType::Negative}
@@ -552,18 +525,13 @@ fn change_password_dialog(on_close: &Callback<()>) -> Html {
                             message="Bitte versuch es erneut um einen Fehler auszuschließen"
                             header="Du wurdest scheinbar gelöscht"
                         />
-                    } else if *unreported_error_toggle {
-                        <CosmoMessage
-                            message_type={CosmoMessageType::Negative}
-                            message="Leider konnte dein Passwort nicht geändert werden"
-                            header="Fehler beim ändern"
-                            actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)}
-                        />
                     } else {
-                        <CosmoMessage
-                            message_type={CosmoMessageType::Negative}
+                        <BambooErrorMessage
                             message="Leider konnte dein Passwort nicht geändert werden"
-                            header="Fehler beim ändern"
+                            header="Fehler beim Ändern"
+                            page="layout"
+                            form="change_password_dialog"
+                            error={err}
                         />
                     }
                 }
@@ -595,11 +563,7 @@ fn update_my_profile_dialog(on_close: &Callback<()>) -> Html {
     let profile_atom_setter = use_atom_setter::<storage::CurrentUser>();
     let profile_atom = use_atom_value::<storage::CurrentUser>();
 
-    let disable_totp_open_toggle = use_bool_toggle(false);
     let app_two_factor_open_toggle = use_bool_toggle(false);
-    let unreported_error_toggle = use_bool_toggle(false);
-
-    let bamboo_error_state = use_state_eq(ApiError::default);
 
     let profile_picture_state = use_state_eq(|| None as Option<web_sys::File>);
 
@@ -608,6 +572,8 @@ fn update_my_profile_dialog(on_close: &Callback<()>) -> Html {
         use_state_eq(|| AttrValue::from(profile_atom.profile.display_name.clone()));
     let discord_name_state =
         use_state_eq(|| AttrValue::from(profile_atom.profile.discord_name.clone()));
+
+    let dialogs = use_dialogs();
 
     let update_email = use_callback(email_state.clone(), |value, state| state.set(value));
     let update_display_name =
@@ -618,23 +584,7 @@ fn update_my_profile_dialog(on_close: &Callback<()>) -> Html {
         state.set(Some(value))
     });
 
-    let report_unknown_error = use_callback(
-        (bamboo_error_state.clone(), unreported_error_toggle.clone()),
-        |_, (bamboo_error_state, unreported_error_toggle)| {
-            error::report_unknown_error(
-                "layout",
-                "update_my_profile_dialog",
-                bamboo_error_state.deref().clone(),
-            );
-            unreported_error_toggle.set(false);
-        },
-    );
-
     let save_state = {
-        let unreported_error_toggle = unreported_error_toggle.clone();
-
-        let bamboo_error_state = bamboo_error_state.clone();
-
         let profile_atom_setter = profile_atom_setter.clone();
 
         let email_state = email_state.clone();
@@ -651,26 +601,12 @@ fn update_my_profile_dialog(on_close: &Callback<()>) -> Html {
                 (*display_name_state).to_string(),
                 (*discord_name_state).to_string(),
             ))
-            .await
-            .map(|_| unreported_error_toggle.set(false))
-            .map_err(|err| {
-                unreported_error_toggle.set(true);
-                bamboo_error_state.set(err.clone());
-                err
-            });
+            .await;
             if result.is_ok() {
                 if let Some(profile_picture) = (*profile_picture_state).clone() {
                     let profile_result = api::upload_profile_picture(profile_picture)
                         .await
-                        .map(|_| {
-                            unreported_error_toggle.set(false);
-                            on_close.emit(())
-                        })
-                        .map_err(|err| {
-                            unreported_error_toggle.set(true);
-                            bamboo_error_state.set(err.clone());
-                            err
-                        });
+                        .map(|_| on_close.emit(()));
 
                     if profile_result.is_ok() {
                         if let Ok(profile) = api::get_my_profile().await {
@@ -689,23 +625,12 @@ fn update_my_profile_dialog(on_close: &Callback<()>) -> Html {
         })
     };
     let disable_totp_state = {
-        let unreported_error_toggle = unreported_error_toggle.clone();
-        let disable_totp_open_toggle = disable_totp_open_toggle.clone();
-
-        let bamboo_error_state = bamboo_error_state.clone();
-
         let profile_atom_setter = profile_atom_setter.clone();
 
         use_async(async move {
             if let Err(err) = api::disable_totp().await {
-                unreported_error_toggle.set(true);
-                disable_totp_open_toggle.set(true);
-                bamboo_error_state.set(err.clone());
-
                 Err(err)
             } else {
-                unreported_error_toggle.set(false);
-                disable_totp_open_toggle.set(false);
                 if let Ok(profile) = api::get_my_profile().await {
                     profile_atom_setter(profile.into());
                 }
@@ -715,19 +640,28 @@ fn update_my_profile_dialog(on_close: &Callback<()>) -> Html {
         })
     };
 
-    let on_open_disable_totp =
-        use_callback(disable_totp_open_toggle.clone(), |_, state| state.set(true));
-    let on_close_disable_totp = use_callback(disable_totp_open_toggle.clone(), |_, state| {
-        state.set(false)
+    let on_disable_totp = use_callback(disable_totp_state.clone(), |_, disable_totp_state| {
+        disable_totp_state.run()
     });
+    let on_open_disable_totp = use_callback(
+        (dialogs.clone(), on_disable_totp.clone()),
+        |_, (dialogs, on_disable_totp)| {
+            dialogs.confirm(
+                "Zwei Faktor Authentifizierung deaktivieren",
+                "Möchtest du deine Zwei Faktor Authentifizierung per App deaktivieren?",
+                "Deaktivieren",
+                "Nicht deaktivieren",
+                CosmoModalType::Warning,
+                on_disable_totp.clone(),
+                Callback::noop(),
+            )
+        },
+    );
     let on_enable_app_two_factor = use_callback(
         app_two_factor_open_toggle.clone(),
         |_, app_two_factor_open_toggle| app_two_factor_open_toggle.set(true),
     );
     let on_save = use_callback(save_state.clone(), |_, save_state| save_state.run());
-    let on_disable_totp = use_callback(disable_totp_state.clone(), |_, disable_totp_state| {
-        disable_totp_state.run()
-    });
     let on_close = on_close.clone();
 
     html!(
@@ -751,7 +685,7 @@ fn update_my_profile_dialog(on_close: &Callback<()>) -> Html {
                 </>
             )}
             >
-                if let Some(err) = &save_state.error {
+                if let Some(err) = save_state.error.clone() {
                     if err.code == NOT_FOUND {
                         <CosmoMessage
                             message_type={CosmoMessageType::Negative}
@@ -764,40 +698,30 @@ fn update_my_profile_dialog(on_close: &Callback<()>) -> Html {
                             message="Die Email oder der Name ist leider schon vergeben"
                             header="Leider schon vergeben"
                         />
-                    } else if *unreported_error_toggle {
-                        <CosmoMessage
-                            message_type={CosmoMessageType::Negative}
-                            message="Dein Profil konnte leider nicht gespeichert werden"
-                            header="Fehler beim Speichern"
-                            actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)}
-                        />
                     } else {
-                        <CosmoMessage
-                            message_type={CosmoMessageType::Negative}
+                        <BambooErrorMessage
                             message="Dein Profil konnte leider nicht gespeichert werden"
                             header="Fehler beim Speichern"
+                            page="layout"
+                            form="update_my_profile_dialog"
+                            error={err}
                         />
                     }
                 }
-                if let Some(err) = &disable_totp_state.error {
+                if let Some(err) = disable_totp_state.error.clone() {
                     if err.code == NOT_FOUND {
                         <CosmoMessage
                             message_type={CosmoMessageType::Negative}
                             message="Bitte versuch es erneut um einen Fehler auszuschließen"
                             header="Du wurdest scheinbar gelöscht"
                         />
-                    } else if *unreported_error_toggle {
-                        <CosmoMessage
-                            message_type={CosmoMessageType::Negative}
-                            message="Zwei Faktor per App konnte leider nicht deaktiviert werden"
-                            header="Fehler beim Deaktivieren"
-                            actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)}
-                        />
                     } else {
-                        <CosmoMessage
-                            message_type={CosmoMessageType::Negative}
+                        <BambooErrorMessage
                             message="Zwei Faktor per App konnte leider nicht deaktiviert werden"
                             header="Fehler beim Deaktivieren"
+                            page="layout"
+                            form="update_my_profile_dialog_totp_disable"
+                            error={err}
                         />
                     }
                 }
@@ -826,17 +750,6 @@ fn update_my_profile_dialog(on_close: &Callback<()>) -> Html {
                     />
                 </CosmoInputGroup>
             </CosmoModal>
-            if *disable_totp_open_toggle {
-                <CosmoConfirm
-                    confirm_type={CosmoModalType::Warning}
-                    message="Möchtest du deine Zwei Faktor Authentifizierung per App deaktivieren? Du bekommst dann wieder eine Email."
-                    title="Zwei Faktor Authentifizierung deaktivieren"
-                    on_decline={on_close_disable_totp}
-                    on_confirm={on_disable_totp}
-                    confirm_label="Deaktivieren"
-                    decline_label="Nicht deaktivieren"
-                />
-            }
             if *app_two_factor_open_toggle {
                 <EnableTotpDialog on_close={move |_| app_two_factor_open_toggle.set(false)} />
             }
@@ -848,38 +761,13 @@ fn update_my_profile_dialog(on_close: &Callback<()>) -> Html {
 #[function_component(EnableTotpDialog)]
 fn enable_totp_dialog(on_close: &Callback<()>) -> Html {
     log::debug!("Open dialog to enable totp");
-    let unreported_error_toggle = use_bool_toggle(false);
-
-    let bamboo_error_state = use_state_eq(ApiError::default);
-
     let profile_atom = use_atom_setter::<storage::CurrentUser>();
 
     let code_state = use_state_eq(|| AttrValue::from(""));
     let current_password_state = use_state_eq(|| AttrValue::from(""));
 
-    let enable_totp_state = {
-        let unreported_error_toggle = unreported_error_toggle.clone();
-
-        let bamboo_error_state = bamboo_error_state.clone();
-
-        use_async(async move {
-            api::enable_totp()
-                .await
-                .map(|data| {
-                    unreported_error_toggle.set(false);
-                    data
-                })
-                .map_err(|err| {
-                    unreported_error_toggle.set(true);
-                    bamboo_error_state.set(err.clone());
-                    err
-                })
-        })
-    };
-    let validate_totp_state = {
-        let unreported_error_toggle = unreported_error_toggle.clone();
-
-        let bamboo_error_state = bamboo_error_state.clone();
+    let enable_totp_state = use_async(async move { api::enable_totp().await });
+    let validate_totp_state: UseAsyncHandle<(), ApiError> = {
         let code_state = code_state.clone();
         let current_password_state = current_password_state.clone();
 
@@ -888,26 +776,23 @@ fn enable_totp_dialog(on_close: &Callback<()>) -> Html {
         let profile_atom = profile_atom.clone();
 
         use_async(async move {
-            if let Err(err) = api::validate_totp(
+            api::validate_totp(
                 (*code_state).to_string(),
                 (*current_password_state).to_string(),
             )
             .await
-            {
+            .map_err(|err| {
                 log::error!("Failed to validate token: {err}");
-                unreported_error_toggle.set(true);
-                bamboo_error_state.set(err.clone());
 
-                Err(err)
-            } else {
-                on_close.emit(());
-                unreported_error_toggle.set(false);
-                if let Ok(profile) = api::get_my_profile().await {
-                    profile_atom(profile.into())
-                }
+                err
+            })?;
 
-                Ok(())
+            on_close.emit(());
+            if let Ok(profile) = api::get_my_profile().await {
+                profile_atom(profile.into())
             }
+
+            Ok(())
         })
     };
 
@@ -915,17 +800,6 @@ fn enable_totp_dialog(on_close: &Callback<()>) -> Html {
     let update_password = use_callback(current_password_state.clone(), |value, state| {
         state.set(value)
     });
-    let report_unknown_error = use_callback(
-        (bamboo_error_state.clone(), unreported_error_toggle.clone()),
-        |_, (bamboo_error_state, unreported_error_toggle)| {
-            error::report_unknown_error(
-                "layout",
-                "enable_totp_dialog",
-                bamboo_error_state.deref().clone(),
-            );
-            unreported_error_toggle.set(false);
-        },
-    );
     let on_form_submit = use_callback(
         (enable_totp_state.clone(), validate_totp_state.clone()),
         |_, (enable_totp_state, validate_totp_state)| {
@@ -1051,25 +925,20 @@ padding-top: 2rem;
                             message="Zu erst musst du den QR Code mit einer App wie Authy oder dem Google Authenticator scannen.\nAnschließend gibst du in den Feldern dein aktuelles Passwort ein und der Code der dir in der App angezeigt wird."
                             message_type={CosmoMessageType::Information}
                         />
-                        if let Some(err) = &validate_totp_state.error {
+                        if let Some(err) = validate_totp_state.error.clone() {
                             if err.code == FORBIDDEN {
                                 <CosmoMessage
                                     header="Code oder Passwort falsch"
                                     message="Der von dir eingegebene Code oder dein Passwort ist ungültig, versuch es nochmal"
                                     message_type={CosmoMessageType::Negative}
                                 />
-                            } else if *unreported_error_toggle {
-                                <CosmoMessage
-                                    header="Fehler beim Aktivieren"
-                                    message="Leider konnte Zwei Faktor per App nicht aktiviert werden"
-                                    message_type={CosmoMessageType::Negative}
-                                    actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)}
-                                />
                             } else {
-                                <CosmoMessage
+                                <BambooErrorMessage
+                                    message="Zwei Faktor per App konnte leider nicht aktiviert werden"
                                     header="Fehler beim Aktivieren"
-                                    message="Leider konnte Zwei Faktor per App nicht aktiviert werden"
-                                    message_type={CosmoMessageType::Negative}
+                                    page="layout"
+                                    form="update_my_profile_dialog_totp_enable"
+                                    error={err}
                                 />
                             }
                         }
@@ -1104,7 +973,6 @@ fn top_bar() -> Html {
 
     let profile_open_toggle = use_bool_toggle(false);
     let password_open_toggle = use_bool_toggle(false);
-    let leave_grove_open_toggle = use_bool_toggle(false);
 
     let profile_user_id = use_state(|| profile_atom.profile.id);
 
@@ -1113,10 +981,14 @@ fn top_bar() -> Html {
         use_async(async move { api::leave().await.map(|_| navigator.push(&AppRoute::Login)) });
 
     let navigator = use_navigator().expect("Navigator should be available");
+
+    let dialogs = use_dialogs();
+
     let logout = use_callback(navigator, |_: (), navigator| {
         api::logout();
         navigator.push(&AppRoute::Login);
     });
+
     let open_update_my_profile = use_callback(
         (profile_user_id.clone(), profile_open_toggle.clone()),
         |_, (state, toggle)| {
@@ -1124,17 +996,28 @@ fn top_bar() -> Html {
             state.set(-1);
         },
     );
+
     let open_change_password =
         use_callback(password_open_toggle.clone(), |_, password_open_state| {
             password_open_state.set(true);
         });
-    let open_leave_grove = use_callback(leave_grove_open_toggle.clone(), |_, toggle| {
-        toggle.set(true)
-    });
-    let close_leave_grove = use_callback(leave_grove_open_toggle.clone(), |_, toggle| {
-        toggle.set(false)
-    });
+
     let leave_grove = use_callback(leave_grove_state.clone(), |_, state| state.run());
+    let open_leave_grove = use_callback(
+        (leave_grove.clone(), dialogs.clone()),
+        |_, (leave_grove, dialogs)| {
+            dialogs.confirm(
+                "Account löschen",
+                "Bist du sicher, dass du deinen Account löschen möchtest?\nWenn du deinen Account löscht, werden alle deine Daten gelöscht und können nicht wiederhergestellt werden.",
+                "Account löschen",
+                "Account behalten",
+                CosmoModalType::Negative,
+                leave_grove.clone(),
+                Callback::noop(),
+            )
+        },
+    );
+
     let profile_updated = use_callback(
         (
             profile_user_id.clone(),
@@ -1172,17 +1055,6 @@ fn top_bar() -> Html {
             }
             if *password_open_toggle {
                 <ChangePasswordDialog on_close={move |_| password_open_toggle.set(false)} />
-            }
-            if *leave_grove_open_toggle {
-                <CosmoConfirm
-                    confirm_type={CosmoModalType::Negative}
-                    on_confirm={leave_grove}
-                    on_decline={close_leave_grove}
-                    title="Account löschen"
-                    message="Bist du sicher, dass du deinen Account löschen möchtest?\nWenn du deinen Account löscht, werden alle deine Daten gelöscht und können nicht wiederhergestellt werden."
-                    confirm_label="Account löschen"
-                    decline_label="Account behalten"
-                />
             }
         </>
     )

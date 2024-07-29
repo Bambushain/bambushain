@@ -182,7 +182,7 @@ pub async fn disable_invite(
         .map(|_| no_content!())
 }
 
-#[put("/api/grove/{grove_id}/join", wrap = "authenticate!()")]
+#[post("/api/grove/{grove_id}/join", wrap = "authenticate!()")]
 pub async fn join_grove(
     path: Option<path::GrovePath>,
     body: Option<web::Json<JoinGrove>>,

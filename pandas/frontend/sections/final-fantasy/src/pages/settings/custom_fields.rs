@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::hash::Hash;
-use std::ops::Deref;
 
 use gloo_dialogs::alert;
 use stylist::yew::use_style;
@@ -16,7 +15,7 @@ use yew_icons::{get_svg, Icon, IconProps};
 
 use bamboo_common::core::entities::*;
 use bamboo_common::frontend::api::{ApiError, CONFLICT};
-use bamboo_pandas_frontend_base::error;
+use bamboo_pandas_frontend_base::controls::{use_dialogs, BambooErrorMessage};
 
 use crate::api;
 
@@ -58,10 +57,6 @@ fn custom_field_options_dialog(
 
     let actions_stack = use_list(Vec::new() as Vec<CustomFieldOptionAction>);
 
-    let bamboo_error_state = use_state_eq(ApiError::default);
-
-    let unreported_error_toggle = use_bool_toggle(false);
-
     let save_state = {
         let options_list = options_list.clone();
 
@@ -69,19 +64,15 @@ fn custom_field_options_dialog(
 
         let actions_stack = actions_stack.clone();
 
-        let bamboo_error_state = bamboo_error_state.clone();
-
-        let unreported_error_toggle = unreported_error_toggle.clone();
-
         let save = save.clone();
 
         use_async(async move {
-            let mut failed = false;
             let mut label_id_map = HashMap::new();
             for option in &*passed_options_ref.borrow() {
                 label_id_map.insert(option.label.clone(), option.id);
             }
 
+            let mut error = None as Option<ApiError>;
             while let Some(action) = actions_stack.pop() {
                 let result = match action.action_type {
                     CustomFieldOptionActionType::Add => {
@@ -109,14 +100,12 @@ fn custom_field_options_dialog(
                 };
 
                 if let Err(err) = result {
-                    bamboo_error_state.set(err.clone());
-                    unreported_error_toggle.set(err.code != CONFLICT);
-                    failed = true;
+                    error = Some(err);
                     break;
                 }
             }
 
-            if failed {
+            if let Some(error) = error {
                 label_id_map.clear();
                 if let Ok(options) = api::get_custom_field_options(id).await {
                     passed_options_ref.borrow_mut().clone_from(&options);
@@ -131,7 +120,7 @@ fn custom_field_options_dialog(
                     alert("Leider ist ein unerwarteter und nicht lösbarer Fehler aufgetreten, bitte lade die Seite neu");
                 };
 
-                Err((*bamboo_error_state).clone())
+                Err(error)
             } else {
                 save.emit(());
 
@@ -140,26 +129,11 @@ fn custom_field_options_dialog(
         })
     };
 
-    let on_save = use_callback(
-        (save_state.clone(), unreported_error_toggle.clone()),
-        |_, (state, unreported_error_toggle)| {
-            unreported_error_toggle.set(false);
-            state.run();
-        },
-    );
+    let on_save = use_callback(save_state.clone(), |_, state| {
+        state.run();
+    });
     let update_label = use_callback(label_state.clone(), |value, state| state.set(value));
     let update_edit_label = use_callback(edit_label_state.clone(), |value, state| state.set(value));
-    let report_unknown_error = use_callback(
-        (bamboo_error_state.clone(), unreported_error_toggle.clone()),
-        |_, (bamboo_error_state, unreported_error_toggle)| {
-            error::report_unknown_error(
-                "final_fantasy_settings",
-                "update_custom_field_options",
-                bamboo_error_state.deref().clone(),
-            );
-            unreported_error_toggle.set(false);
-        },
-    );
     let add_option = use_callback(
         (
             label_state.clone(),
@@ -276,19 +250,14 @@ justify-content: space-between;
             </>
         )}
         >
-            if save_state.error.is_some() {
-                if *unreported_error_toggle {
-                    <CosmoMessage
-                        message_type={CosmoMessageType::Negative}
-                        message="Die Optionen konnten nur teilweise gespeichert werden"
-                        actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)}
-                    />
-                } else {
-                    <CosmoMessage
-                        message_type={CosmoMessageType::Negative}
-                        message="Die Optionen konnten nur teilweise gespeichert werden"
-                    />
-                }
+            if let Some(error) = save_state.error.clone() {
+                <BambooErrorMessage
+                    message="Die Optionen konnte leider nicht vollständig gespeichert werden"
+                    header="Fehler beim Speichern"
+                    page="custom_fields"
+                    form="custom_field_options_dialog"
+                    error={error}
+                />
             }
             <div class={option_list_style}>
                 { for options_list.current().iter().map(|item| {
@@ -350,8 +319,6 @@ fn add_custom_field_dialog(position: usize, close: &Callback<()>, save: &Callbac
 
     let bamboo_error_state = use_state_eq(ApiError::default);
 
-    let unreported_error_toggle = use_bool_toggle(false);
-
     let save_state = {
         let save = save.clone();
 
@@ -359,42 +326,23 @@ fn add_custom_field_dialog(position: usize, close: &Callback<()>, save: &Callbac
 
         let bamboo_error_state = bamboo_error_state.clone();
 
-        let unreported_error_toggle = unreported_error_toggle.clone();
-
         use_async(async move {
             api::create_custom_field((*label_state).to_string(), position)
                 .await
                 .map_err(|err| {
-                    bamboo_error_state.set(err.clone());
-                    unreported_error_toggle.set(err.code != CONFLICT);
+                    if err.code != CONFLICT {
+                        bamboo_error_state.set(err.clone());
+                    }
                     err
                 })
-                .map(|_| {
-                    unreported_error_toggle.set(false);
-                    save.emit(())
-                })
+                .map(|_| save.emit(()))
         })
     };
 
-    let on_save = use_callback(
-        (save_state.clone(), unreported_error_toggle.clone()),
-        |_, (state, unreported_error_toggle)| {
-            unreported_error_toggle.set(false);
-            state.run();
-        },
-    );
+    let on_save = use_callback(save_state.clone(), |_, state| {
+        state.run();
+    });
     let update_label = use_callback(label_state.clone(), |value, state| state.set(value));
-    let report_unknown_error = use_callback(
-        (bamboo_error_state.clone(), unreported_error_toggle.clone()),
-        |_, (bamboo_error_state, unreported_error_toggle)| {
-            error::report_unknown_error(
-                "final_fantasy_settings",
-                "create_custom_field",
-                bamboo_error_state.deref().clone(),
-            );
-            unreported_error_toggle.set(false);
-        },
-    );
 
     html!(
         <CosmoModal
@@ -408,22 +356,19 @@ fn add_custom_field_dialog(position: usize, close: &Callback<()>, save: &Callbac
             </>
         )}
         >
-            if let Some(err) = &save_state.error {
+            if let Some(err) = save_state.error.clone() {
                 if err.code == CONFLICT {
                     <CosmoMessage
                         message_type={CosmoMessageType::Negative}
                         message="Ein Feld mit dem Namen existiert bereits"
                     />
-                } else if *unreported_error_toggle {
-                    <CosmoMessage
-                        message_type={CosmoMessageType::Negative}
-                        message="Das Feld konnte leider nicht hinzugefügt werden"
-                        actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)}
-                    />
                 } else {
-                    <CosmoMessage
-                        message_type={CosmoMessageType::Negative}
+                    <BambooErrorMessage
                         message="Das Feld konnte leider nicht hinzugefügt werden"
+                        header="Fehler beim Speichern"
+                        page="custom_field"
+                        form="add_custom_field_dialog"
+                        error={err}
                     />
                 }
             }
@@ -448,10 +393,6 @@ fn edit_custom_field_dialog(
 ) -> Html {
     let label_state = use_state_eq(|| AttrValue::from(field.label.clone()));
 
-    let bamboo_error_state = use_state_eq(ApiError::default);
-
-    let unreported_error_toggle = use_bool_toggle(false);
-
     let save_state = {
         let id = field.id;
 
@@ -459,44 +400,17 @@ fn edit_custom_field_dialog(
 
         let label_state = label_state.clone();
 
-        let bamboo_error_state = bamboo_error_state.clone();
-
-        let unreported_error_toggle = unreported_error_toggle.clone();
-
         use_async(async move {
             api::update_custom_field(id, (*label_state).to_string())
                 .await
-                .map_err(|err| {
-                    bamboo_error_state.set(err.clone());
-                    unreported_error_toggle.set(err.code != CONFLICT);
-                    err
-                })
-                .map(|_| {
-                    unreported_error_toggle.set(false);
-                    save.emit(())
-                })
+                .map(|_| save.emit(()))
         })
     };
 
-    let on_save = use_callback(
-        (save_state.clone(), unreported_error_toggle.clone()),
-        |_, (state, unreported_error_toggle)| {
-            unreported_error_toggle.set(false);
-            state.run();
-        },
-    );
+    let on_save = use_callback(save_state.clone(), |_, state| {
+        state.run();
+    });
     let update_label = use_callback(label_state.clone(), |value, state| state.set(value));
-    let report_unknown_error = use_callback(
-        (bamboo_error_state.clone(), unreported_error_toggle.clone()),
-        |_, (bamboo_error_state, unreported_error_toggle)| {
-            error::report_unknown_error(
-                "final_fantasy_settings",
-                "update_custom_field",
-                bamboo_error_state.deref().clone(),
-            );
-            unreported_error_toggle.set(false);
-        },
-    );
 
     html!(
         <CosmoModal
@@ -510,22 +424,19 @@ fn edit_custom_field_dialog(
             </>
         )}
         >
-            if let Some(err) = &save_state.error {
+            if let Some(err) = save_state.error.clone() {
                 if err.code == CONFLICT {
                     <CosmoMessage
                         message_type={CosmoMessageType::Negative}
                         message="Ein Feld mit dem Namen existiert bereits"
                     />
-                } else if *unreported_error_toggle {
-                    <CosmoMessage
-                        message_type={CosmoMessageType::Negative}
-                        message="Das Feld konnte leider nicht gespeichert werden"
-                        actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error.clone()} />)}
-                    />
                 } else {
-                    <CosmoMessage
-                        message_type={CosmoMessageType::Negative}
+                    <BambooErrorMessage
                         message="Das Feld konnte leider nicht gespeichert werden"
+                        header="Fehler beim Speichern"
+                        page="custom_field"
+                        form="edit_custom_field_dialog"
+                        error={err}
                     />
                 }
             }
@@ -851,49 +762,21 @@ pub fn custom_fields_page() -> Html {
     log::debug!("Render custom fields page");
     log::debug!("Initialize state and callbacks");
     let add_open_toggle = use_bool_toggle(false);
-    let delete_open_toggle = use_bool_toggle(false);
-    let unreported_error_toggle = use_bool_toggle(false);
 
     let dragged_item_id_ref = use_mut_ref(|| -1);
     let drop_new_position_ref = use_mut_ref(|| -1);
     let delete_id_ref = use_mut_ref(|| -1);
 
-    let error_message_form_state = use_state_eq(|| AttrValue::from(""));
-    let selected_label_state = use_state_eq(|| AttrValue::from(""));
+    let dialogs = use_dialogs();
 
-    let bamboo_error_state = use_state_eq(ApiError::default);
+    let fields_state = use_async(async move {
+        api::get_custom_fields().await.map(|mut data| {
+            data.sort();
 
-    let fields_state = {
-        let error_message_form_state = error_message_form_state.clone();
-
-        let bamboo_error_state = bamboo_error_state.clone();
-
-        let unreported_error_toggle = unreported_error_toggle.clone();
-
-        use_async(async move {
-            api::get_custom_fields()
-                .await
-                .map_err(|err| {
-                    unreported_error_toggle.set(true);
-                    error_message_form_state.set("get_custom_fields".into());
-                    bamboo_error_state.set(err.clone());
-
-                    err
-                })
-                .map(|mut data| {
-                    data.sort();
-
-                    data
-                })
+            data
         })
-    };
+    });
     let delete_state = {
-        let error_message_form_state = error_message_form_state.clone();
-
-        let bamboo_error_state = bamboo_error_state.clone();
-
-        let unreported_error_toggle = unreported_error_toggle.clone();
-
         let delete_id_ref = delete_id_ref.clone();
 
         let fields_state = fields_state.clone();
@@ -903,13 +786,6 @@ pub fn custom_fields_page() -> Html {
 
             api::delete_custom_field(id)
                 .await
-                .map_err(|err| {
-                    unreported_error_toggle.set(true);
-                    error_message_form_state.set("delete_custom_field".into());
-                    bamboo_error_state.set(err.clone());
-
-                    err
-                })
                 .map(|_| fields_state.run())
         })
     };
@@ -937,21 +813,6 @@ pub fn custom_fields_page() -> Html {
         })
     }
 
-    let report_unknown_error = use_callback(
-        (
-            bamboo_error_state.clone(),
-            error_message_form_state.clone(),
-            unreported_error_toggle.clone(),
-        ),
-        |_, (bamboo_error_state, error_message_form_state, unreported_error_toggle)| {
-            error::report_unknown_error(
-                "final_fantasy_settings",
-                error_message_form_state.deref().to_string(),
-                bamboo_error_state.deref().clone(),
-            );
-            unreported_error_toggle.set(false);
-        },
-    );
     let drag_start = use_callback(dragged_item_id_ref.clone(), |id, mut_ref| {
         *mut_ref.borrow_mut() = id;
     });
@@ -971,27 +832,26 @@ pub fn custom_fields_page() -> Html {
             toggle.set(false)
         },
     );
-    let open_delete_dialog = use_callback(
-        (
-            delete_id_ref.clone(),
-            selected_label_state.clone(),
-            delete_open_toggle.clone(),
-        ),
-        |(id, label), (id_ref, selected_label_state, toggle)| {
+
+    let on_delete = use_callback(delete_state.clone(), |_, delete_state| {
+        delete_state.run();
+    });
+    let on_delete_open = use_callback(
+        (delete_id_ref.clone(), dialogs.clone(), on_delete.clone()),
+        |(id, label), (id_ref, dialogs, on_delete)| {
             *id_ref.borrow_mut() = id;
-            selected_label_state.set(label);
-            toggle.set(true)
+            dialogs.confirm(
+                "Feld löschen",
+                format!("Soll das Feld {label} wirklich gelöscht werden?"),
+                "Feld löschen",
+                "Nicht löschen",
+                CosmoModalType::Warning,
+                on_delete.clone(),
+                Callback::noop(),
+            )
         },
     );
-    let close_delete_dialog =
-        use_callback(delete_open_toggle.clone(), |_, toggle| toggle.set(false));
-    let confirm_delete_dialog = use_callback(
-        (delete_open_toggle.clone(), delete_state.clone()),
-        |_, (toggle, delete_state)| {
-            delete_state.run();
-            toggle.set(false)
-        },
-    );
+
     let edit = use_callback(fields_state.clone(), |_, fields_state| {
         fields_state.run();
     });
@@ -1014,44 +874,33 @@ display: grid;
             </CosmoToolbar>
             if fields_state.loading {
                 <CosmoProgressRing />
-            } else if fields_state.error.is_some() {
-                if *unreported_error_toggle {
-                    <CosmoMessage
-                        header="Fehler beim Laden"
-                        message="Deine eigenen Felder konnten nicht geladen werden"
-                        message_type={CosmoMessageType::Negative}
-                        actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)}
-                    />
-                } else {
-                    <CosmoMessage
-                        header="Fehler beim Laden"
-                        message="Deine eigenen Felder konnten nicht geladen werden"
-                        message_type={CosmoMessageType::Negative}
-                    />
-                }
+            }
+            if fields_state.loading {
+                <CosmoProgressRing />
+            } else if let Some(err) = fields_state.error.clone() {
+                <BambooErrorMessage
+                    message="Deine eigenen Felder konnten leider nicht geladen werden"
+                    header="Fehler beim Laden"
+                    page="custom_field"
+                    form="custom_fields_page"
+                    error={err}
+                />
             } else if let Some(data) = &fields_state.data {
-                if delete_state.error.is_some() {
-                    if *unreported_error_toggle {
-                        <CosmoMessage
-                            header="Fehler beim Laden"
-                            message="Das Feld konnte leider nicht gelöscht werden"
-                            message_type={CosmoMessageType::Negative}
-                            actions={html!(<CosmoButton label="Fehler melden" on_click={report_unknown_error} />)}
-                        />
-                    } else {
-                        <CosmoMessage
-                            header="Fehler beim Laden"
-                            message="Das Feld konnte leider nicht gelöscht werden"
-                            message_type={CosmoMessageType::Negative}
-                        />
-                    }
+                if let Some(err) = delete_state.error.clone() {
+                    <BambooErrorMessage
+                        message="Das eigene Feld konnten leider nicht gelöscht werden"
+                        header="Fehler beim Löschen"
+                        page="custom_field"
+                        form="delete_custom_field"
+                        error={err}
+                    />
                 }
                 <div class={container_style}>
                     <DropZone drop={drop.clone()} new_position=0 />
                     { for data.iter().map(|field| {
                         html!(
                             <>
-                                <DraggableItem drag_start={drag_start.clone()} custom_field={field.clone()} edit={edit.clone()} delete={open_delete_dialog.clone()} />
+                                <DraggableItem drag_start={drag_start.clone()} custom_field={field.clone()} edit={edit.clone()} delete={on_delete_open.clone()} />
                                 <DropZone drop={drop.clone()} new_position={field.position + 1} />
                             </>
                         )
@@ -1062,17 +911,6 @@ display: grid;
                         close={close_add_dialog}
                         save={save_add_dialog}
                         position={data.len()}
-                    />
-                }
-                if *delete_open_toggle {
-                    <CosmoConfirm
-                        confirm_type={CosmoModalType::Warning}
-                        title="Feld löschen"
-                        message={format!("Soll das Feld {} wirklich gelöscht werden?", (*selected_label_state).clone())}
-                        confirm_label="Feld Löschen"
-                        decline_label="Nicht löschen"
-                        on_decline={close_delete_dialog}
-                        on_confirm={confirm_delete_dialog}
                     />
                 }
             }

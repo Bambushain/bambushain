@@ -11,6 +11,7 @@ bamboo-pandas-frontend-base = { path = "base" }
 bamboo-pandas-frontend-sections = { path = "sections" }
 
 console_log = { workspace = true }
+gloo-utils = { workspace = true }
 log = { workspace = true }
 yew = { workspace = true }
 yew-cosmo = { workspace = true }

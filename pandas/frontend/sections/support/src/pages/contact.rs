@@ -1,11 +1,10 @@
 use stylist::yew::use_style;
 use yew::prelude::*;
 use yew_cosmo::prelude::*;
-use yew_hooks::{use_async, use_bool_toggle};
-
-use bamboo_common::core::entities::SupportRequest;
 
 use crate::api;
+use bamboo_common::core::entities::SupportRequest;
+use bamboo_pandas_frontend_base::controls::use_dialogs;
 
 #[derive(Clone, PartialEq, Properties)]
 struct SupportSectionProps {
@@ -32,35 +31,50 @@ flex-flow: column;
     let subject_state = use_state_eq(|| AttrValue::from(""));
     let message_state = use_state_eq(|| AttrValue::from(""));
 
-    let send_state = use_bool_toggle(false);
+    let dialogs = use_dialogs();
 
     let update_subject = use_callback(subject_state.clone(), |value, state| state.set(value));
     let update_message = use_callback(message_state.clone(), |value, state| state.set(value));
-    let close_alert = use_callback(send_state.clone(), |_, state| state.set(false));
 
-    let request_state = {
-        let subject_state = subject_state.clone();
-        let message_state = message_state.clone();
+    let send_request = use_callback(
+        (
+            subject_state.clone(),
+            message_state.clone(),
+            dialogs.clone(),
+        ),
+        |_, (subject_state, message_state, dialogs)| {
+            let subject_state = subject_state.clone();
+            let message_state = message_state.clone();
+            let dialogs = dialogs.clone();
 
-        let send_state = send_state.clone();
-
-        use_async(async move {
-            let request = SupportRequest {
-                subject: (*subject_state).to_string(),
-                message: (*message_state).to_string(),
-            };
-            api::send_support_request(request)
-                .await
-                .map(|_| {
+            yew::platform::spawn_local(async move {
+                let request = SupportRequest {
+                    subject: (*subject_state).to_string(),
+                    message: (*message_state).to_string(),
+                };
+                if api::send_support_request(request).await.is_ok() {
                     subject_state.set("".into());
                     message_state.set("".into());
-                    send_state.set(true)
-                })
-                .map(|_| send_state.set(true))
-        })
-    };
 
-    let send_request = use_callback(request_state.clone(), |_, state| state.run());
+                    dialogs.alert(
+                        "Abgesendet",
+                        "Deine Nachricht wurde abgeschickt, wir werden uns so schnell wie möglich bei dir melden 🐼",
+                        "Alles klar",
+                        CosmoModalType::Positive,
+                        Callback::noop(),
+                    );
+                } else {
+                    dialogs.alert(
+                        "Fehler beim Senden",
+                        "Leider konnte deine Nachricht nicht gesendet werden, bitte schick uns eine Email and panda.helferlein@bambushain.app",
+                        "Alles klar",
+                        CosmoModalType::Negative,
+                        Callback::noop(),
+                    );
+                }
+            })
+        },
+    );
 
     html!(
         <>
@@ -88,23 +102,6 @@ flex-flow: column;
                     />
                 </CosmoForm>
             </div>
-            if *send_state && request_state.error.is_some() {
-                <CosmoAlert
-                    on_close={close_alert.clone()}
-                    alert_type={CosmoAlertType::Negative}
-                    close_label="Alles klar"
-                    title="Fehler beim Senden"
-                    message="Leider konnte deine Nachricht nicht gesendet werden, bitte schick uns eine Email and panda.helferlein@bambushain.app"
-                />
-            } else if *send_state {
-                <CosmoAlert
-                    on_close={close_alert.clone()}
-                    alert_type={CosmoAlertType::Positive}
-                    close_label="Alles klar"
-                    title="Abgesendet"
-                    message="Deine Nachricht wurde abgeschickt, wir werden uns so schnell wie möglich bei dir melden 🐼"
-                />
-            }
         </>
     )
 }

@@ -1,11 +1,11 @@
 use bamboo_common::core::entities::GlitchTipErrorRequest;
+use bamboo_common::core::error::BambooError;
 use bamboo_common::frontend::api;
-use bamboo_common::frontend::api::ApiError;
 
 pub fn report_unknown_error(
     page: impl Into<String> + Clone,
     form: impl Into<String> + Clone,
-    error: ApiError,
+    error: BambooError,
 ) {
     let page = page.clone().into();
     let form = form.clone().into();
@@ -14,7 +14,7 @@ pub fn report_unknown_error(
         let url = gloo_utils::window().location().href();
         let _ = api::post_no_content(
             "/api/glitchtip",
-            &GlitchTipErrorRequest::new(page, form, url.unwrap(), error.bamboo_error.clone()),
+            &GlitchTipErrorRequest::new(page, form, url.unwrap(), error.clone()),
         )
         .await;
     })

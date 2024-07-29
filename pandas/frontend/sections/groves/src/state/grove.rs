@@ -4,7 +4,7 @@ use bounce::{use_atom, Atom, UseAtomHandle};
 use yew::hook;
 use yew_hooks::use_mount;
 
-#[derive(Atom, PartialEq, Default)]
+#[derive(Atom, PartialEq, Eq, Default, Clone)]
 pub struct GrovesAtom {
     pub groves: Vec<Grove>,
 }

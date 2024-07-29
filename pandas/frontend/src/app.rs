@@ -1,13 +1,13 @@
 use std::str::FromStr;
 
+use crate::base::routing::AppRoute;
+use crate::base::storage::get_log_level;
+use crate::sections::layout::switch;
+use bamboo_pandas_frontend_base::controls::BambooDialogsProvider;
 use log::Level;
 use yew::prelude::*;
 use yew_cosmo::prelude::CosmoPageLayout;
 use yew_router::prelude::*;
-
-use crate::base::routing::AppRoute;
-use crate::base::storage::get_log_level;
-use crate::sections::layout::switch;
 
 fn format_title(s: AttrValue) -> AttrValue {
     if s.is_empty() {
@@ -26,9 +26,11 @@ pub fn app() -> Html {
             default_title="Bambushain"
             format_title={format_title}
         >
-            <BrowserRouter>
-                <Switch<AppRoute> render={switch} />
-            </BrowserRouter>
+            <BambooDialogsProvider>
+                <BrowserRouter>
+                    <Switch<AppRoute> render={switch} />
+                </BrowserRouter>
+            </BambooDialogsProvider>
         </CosmoPageLayout>
     )
 }
@@ -40,5 +42,10 @@ pub fn start_frontend() {
     )
     .expect("error initializing log");
 
-    yew::Renderer::<App>::new().render();
+    yew::Renderer::<App>::with_root(
+        gloo_utils::document()
+            .get_element_by_id("bamboo_root")
+            .unwrap(),
+    )
+    .render();
 }
