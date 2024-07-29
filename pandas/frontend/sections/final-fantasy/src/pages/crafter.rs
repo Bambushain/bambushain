@@ -147,7 +147,7 @@ pub fn crafter_details(character: &Character) -> Html {
     let create_crafter_ref = use_mut_ref(|| None as Option<Crafter>);
     let edit_crafter_ref = use_mut_ref(|| None as Option<Crafter>);
     let edit_id_crafter_ref = use_mut_ref(|| -1);
-    let delete_crafter_ref = use_mut_ref(|| None as Option<i32>);
+    let delete_crafter_ref = use_mut_ref(|| -1);
 
     let bamboo_error_state = use_state_eq(|| None as Option<ApiError>);
 
@@ -268,18 +268,15 @@ pub fn crafter_details(character: &Character) -> Html {
 
         use_async(async move {
             bamboo_error_state.set(None);
-            if let Some(crafter) = *delete_crafter_ref.borrow() {
-                api::delete_crafter(character_id, crafter)
-                    .await
-                    .map(|_| crafter_state.run())
-                    .map_err(|err| {
-                        bamboo_error_state.set(Some(err.clone()));
+            let crafter_id = *delete_crafter_ref.borrow();
+            api::delete_crafter(character_id, crafter_id)
+                .await
+                .map(|_| crafter_state.run())
+                .map_err(|err| {
+                    bamboo_error_state.set(Some(err.clone()));
 
-                        err
-                    })
-            } else {
-                Ok(())
-            }
+                    err
+                })
         })
     };
 
@@ -321,7 +318,7 @@ pub fn crafter_details(character: &Character) -> Html {
             dialogs.clone(),
         ),
         |crafter: Crafter, (delete_crafter_ref, on_delete, dialogs)| {
-            *delete_crafter_ref.borrow_mut() = Some(crafter.id);
+            *delete_crafter_ref.borrow_mut() = crafter.id;
             dialogs.confirm(
                 "Handwerker löschen",
                 format!(

@@ -183,7 +183,7 @@ fn management(
 
     let mod_list = use_list(vec![]);
 
-    let user_to_unban_state = use_state_eq(|| None as Option<GroveUser>);
+    let user_to_unban_ref = use_mut_ref(|| GroveUser::default());
 
     let current_user_atom = use_atom::<CurrentUser>();
 
@@ -321,49 +321,44 @@ width: 50%;
 
     let unban_user = use_callback(
         (
-            user_to_unban_state.clone(),
+            user_to_unban_ref.clone(),
             dialogs.clone(),
             users_state.clone(),
             id,
         ),
-        |_, (user_to_unban_state, dialogs, users_state, id)| {
-            let user_to_unban_state = user_to_unban_state.clone();
+        |_, (user_to_unban_ref, dialogs, users_state, id)| {
+            let user_to_unban_ref = user_to_unban_ref.clone();
             let dialogs = dialogs.clone();
             let users_state = users_state.clone();
             let id = id.clone();
 
-            if let Some(user) = (*user_to_unban_state).clone() {
-                let user_to_unban_state = user_to_unban_state.clone();
-                let dialogs = dialogs.clone();
-                let users_state = users_state.clone();
-                let id = id;
+            let display_name = user_to_unban_ref.borrow().display_name.clone();
+            let user_id = user_to_unban_ref.borrow().id;
 
                 yew::platform::spawn_local(async move {
-                    let res = api::unban_user(id, user.id).await;
-                    if res.is_ok() {
-                        users_state.run();
-                        user_to_unban_state.set(None);
-                    } else {
-                        dialogs.alert(
-                            "Fehler beim Ban aufheben",
-                            format!("Der Ban von {} konnte leider nicht aufgehoben werden. Bitte wende dich an den Bambussupport.", user.display_name.clone()),
-                            "Verstanden",
-                            CosmoModalType::Negative,
-                            Callback::noop(),
-                        )
-                    }
-                })
-            }
+                let res = api::unban_user(id, user_id).await;
+                if res.is_ok() {
+                    users_state.run();
+                } else {
+                    dialogs.alert(
+                        "Fehler beim Ban aufheben",
+                        format!("Der Ban von {display_name} konnte leider nicht aufgehoben werden. Bitte wende dich an den Bambussupport."),
+                        "Verstanden",
+                        CosmoModalType::Negative,
+                        Callback::noop(),
+                    )
+                }
+            })
         },
     );
     let open_unban = use_callback(
         (
-            user_to_unban_state.clone(),
+            user_to_unban_ref.clone(),
             unban_user.clone(),
             dialogs.clone(),
         ),
-        |user_to_unban: GroveUser, (user_to_unban_state, unban_user, dialogs)| {
-            user_to_unban_state.set(Some(user_to_unban.clone()));
+        |user_to_unban: GroveUser, (user_to_unban_ref, unban_user, dialogs)| {
+            *user_to_unban_ref.borrow_mut() = user_to_unban.clone();
             dialogs.confirm(
                 "Ban aufheben",
                 format!("Soll der Ban von {} wirklich aufgehoben werden? Anschließend kann {} wieder beitreten.", user_to_unban.display_name.clone(), user_to_unban.display_name.clone()),

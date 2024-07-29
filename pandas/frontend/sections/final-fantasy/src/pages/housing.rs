@@ -185,7 +185,7 @@ pub fn housing_details(character: &Character) -> Html {
     let create_housing_ref = use_mut_ref(|| None as Option<CharacterHousing>);
     let edit_housing_ref = use_mut_ref(|| None as Option<CharacterHousing>);
     let edit_id_housing_ref = use_mut_ref(|| -1);
-    let delete_housing_ref = use_mut_ref(|| None as Option<i32>);
+    let delete_housing_ref = use_mut_ref(|| -1);
 
     let bamboo_error_state = use_state_eq(|| None as Option<ApiError>);
 
@@ -310,21 +310,18 @@ pub fn housing_details(character: &Character) -> Html {
 
         use_async(async move {
             bamboo_error_state.set(None);
-            if let Some(housing) = *delete_housing_ref.borrow() {
-                api::delete_character_housing(character_id, housing)
-                    .await
-                    .map(|_| {
-                        action_state.set(HousingActions::Closed);
-                        housing_state.run();
-                    })
-                    .map_err(|err| {
-                        bamboo_error_state.set(Some(err.clone()));
+            let housing_id = *delete_housing_ref.borrow();
+            api::delete_character_housing(character_id, housing_id)
+                .await
+                .map(|_| {
+                    action_state.set(HousingActions::Closed);
+                    housing_state.run();
+                })
+                .map_err(|err| {
+                    bamboo_error_state.set(Some(err.clone()));
 
-                        err
-                    })
-            } else {
-                Ok(())
-            }
+                    err
+                })
         })
     };
 
@@ -366,7 +363,7 @@ pub fn housing_details(character: &Character) -> Html {
             dialogs.clone(),
         ),
         |housing: CharacterHousing, (delete_housing_ref, on_delete, dialogs)| {
-            *delete_housing_ref.borrow_mut() = Some(housing.id);
+            *delete_housing_ref.borrow_mut() = housing.id;
             dialogs.confirm(
                 "Unterkunft löschen",
                 format!("Soll die Unterkunft in {} im Bezirk {} mit der Nummer {} wirklich gelöscht werden?", housing.district.to_string(), housing.ward, housing.plot),

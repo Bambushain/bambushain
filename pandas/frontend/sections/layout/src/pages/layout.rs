@@ -4,11 +4,11 @@ use stylist::yew::use_style;
 use yew::prelude::*;
 use yew_autoprops::autoprops;
 use yew_cosmo::prelude::*;
-use yew_hooks::{use_async, use_bool_toggle, use_mount, use_timeout, use_update};
+use yew_hooks::{use_async, use_bool_toggle, use_mount, use_timeout, use_update, UseAsyncHandle};
 use yew_router::prelude::*;
 
 use bamboo_common::core::entities::user::UpdateProfile;
-use bamboo_common::frontend::api::{CONFLICT, FORBIDDEN, NOT_FOUND};
+use bamboo_common::frontend::api::{ApiError, CONFLICT, FORBIDDEN, NOT_FOUND};
 use bamboo_pandas_frontend_base::controls::{use_dialogs, BambooErrorMessage};
 use bamboo_pandas_frontend_base::routing::{
     AppRoute, BambooGroveRoute, FinalFantasyRoute, GroveRoute, LegalRoute, LicensesRoute,
@@ -483,13 +483,13 @@ fn change_password_dialog(on_close: &Callback<()>) -> Html {
                 (*old_password_state).to_string(),
                 (*new_password_state).to_string(),
             )
-                .await
-                .map(|_| {
-                    api::logout();
-                    navigator
-                        .expect("Navigator should be available")
-                        .push(&AppRoute::Login);
-                })
+            .await
+            .map(|_| {
+                api::logout();
+                navigator
+                    .expect("Navigator should be available")
+                    .push(&AppRoute::Login);
+            })
         })
     };
 
@@ -601,7 +601,7 @@ fn update_my_profile_dialog(on_close: &Callback<()>) -> Html {
                 (*display_name_state).to_string(),
                 (*discord_name_state).to_string(),
             ))
-                .await;
+            .await;
             if result.is_ok() {
                 if let Some(profile_picture) = (*profile_picture_state).clone() {
                     let profile_result = api::upload_profile_picture(profile_picture)
@@ -767,7 +767,7 @@ fn enable_totp_dialog(on_close: &Callback<()>) -> Html {
     let current_password_state = use_state_eq(|| AttrValue::from(""));
 
     let enable_totp_state = use_async(async move { api::enable_totp().await });
-    let validate_totp_state = {
+    let validate_totp_state: UseAsyncHandle<(), ApiError> = {
         let code_state = code_state.clone();
         let current_password_state = current_password_state.clone();
 
@@ -776,23 +776,23 @@ fn enable_totp_dialog(on_close: &Callback<()>) -> Html {
         let profile_atom = profile_atom.clone();
 
         use_async(async move {
-            if let Err(err) = api::validate_totp(
+            api::validate_totp(
                 (*code_state).to_string(),
                 (*current_password_state).to_string(),
             )
-                .await
-            {
+            .await
+            .map_err(|err| {
                 log::error!("Failed to validate token: {err}");
 
-                Err(err)
-            } else {
-                on_close.emit(());
-                if let Ok(profile) = api::get_my_profile().await {
-                    profile_atom(profile.into())
-                }
+                err
+            })?;
 
-                Ok(())
+            on_close.emit(());
+            if let Ok(profile) = api::get_my_profile().await {
+                profile_atom(profile.into())
             }
+
+            Ok(())
         })
     };
 

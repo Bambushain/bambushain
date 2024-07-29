@@ -16,9 +16,8 @@ pub fn free_companies() -> Html {
     log::debug!("Initialize state and callbacks");
     let add_open_state = use_bool_toggle(false);
     let edit_open_state = use_bool_toggle(false);
-    let delete_open_state = use_bool_toggle(false);
 
-    let selected_id_state = use_state_eq(|| -1);
+    let selected_id_ref = use_mut_ref(|| -1);
 
     let name_state = use_state_eq(|| AttrValue::from(""));
 
@@ -45,7 +44,7 @@ pub fn free_companies() -> Html {
     let edit_state = {
         let name_state = name_state.clone();
 
-        let selected_id_state = selected_id_state.clone();
+        let selected_id_ref = selected_id_ref.clone();
 
         let edit_open_state = edit_open_state.clone();
 
@@ -53,7 +52,7 @@ pub fn free_companies() -> Html {
 
         use_async(async move {
             api::update_free_company(
-                *selected_id_state,
+                *selected_id_ref.borrow(),
                 FreeCompany::new((*name_state).to_string()),
             )
             .await
@@ -65,23 +64,15 @@ pub fn free_companies() -> Html {
         })
     };
     let delete_state = {
-        let selected_id_state = selected_id_state.clone();
-
-        let delete_open_state = delete_open_state.clone();
+        let selected_id_ref = selected_id_ref.clone();
 
         let free_companies_state = free_companies_state.clone();
 
         use_async(async move {
-            api::delete_free_company(*selected_id_state)
+            api::delete_free_company(*selected_id_ref.borrow())
                 .await
                 .map(|_| {
                     free_companies_state.run();
-                    delete_open_state.set(false);
-                })
-                .map_err(|err| {
-                    delete_open_state.set(false);
-
-                    err
                 })
         })
     };
@@ -114,12 +105,12 @@ pub fn free_companies() -> Html {
     let on_add_save = use_callback(create_state.clone(), |_, state| state.run());
     let on_edit_open = use_callback(
         (
-            selected_id_state.clone(),
+            selected_id_ref.clone(),
             name_state.clone(),
             edit_open_state.clone(),
         ),
-        |(id, name): (i32, AttrValue), (selected_id_state, name_state, open_state)| {
-            selected_id_state.set(id);
+        |(id, name): (i32, AttrValue), (selected_id_ref, name_state, open_state)| {
+            *selected_id_ref.borrow_mut() = id;
             name_state.set(name);
             open_state.set(true);
         },
@@ -132,12 +123,12 @@ pub fn free_companies() -> Html {
     let on_delete = use_callback(delete_state.clone(), |_, state| state.run());
     let on_delete_open = use_callback(
         (
-            selected_id_state.clone(),
+            selected_id_ref.clone(),
             on_delete.clone(),
             dialogs.clone(),
         ),
-        |(id, name): (i32, String), (selected_id_state, on_delete, dialogs)| {
-            selected_id_state.set(id);
+        |(id, name): (i32, String), (selected_id_ref, on_delete, dialogs)| {
+            *selected_id_ref.borrow_mut() = id;
 
             dialogs.confirm(
                 "Freie Gesellschaft löschen",

@@ -160,7 +160,7 @@ pub fn fighter_details(character: &Character) -> Html {
     let create_fighter_ref = use_mut_ref(|| None as Option<Fighter>);
     let edit_fighter_ref = use_mut_ref(|| None as Option<Fighter>);
     let edit_id_fighter_ref = use_mut_ref(|| -1);
-    let delete_fighter_ref = use_mut_ref(|| None as Option<i32>);
+    let delete_fighter_ref = use_mut_ref(|| -1);
 
     let bamboo_error_state = use_state_eq(|| None as Option<ApiError>);
 
@@ -282,18 +282,15 @@ pub fn fighter_details(character: &Character) -> Html {
 
         use_async(async move {
             bamboo_error_state.set(None);
-            if let Some(fighter) = *delete_fighter_ref.borrow() {
-                api::delete_fighter(character_id, fighter)
-                    .await
-                    .map(|_| fighter_state.run())
-                    .map_err(|err| {
-                        bamboo_error_state.set(Some(err.clone()));
+            let fighter_id = *delete_fighter_ref.borrow();
+            api::delete_fighter(character_id, fighter_id)
+                .await
+                .map(|_| fighter_state.run())
+                .map_err(|err| {
+                    bamboo_error_state.set(Some(err.clone()));
 
-                        err
-                    })
-            } else {
-                Ok(())
-            }
+                    err
+                })
         })
     };
 
@@ -335,7 +332,7 @@ pub fn fighter_details(character: &Character) -> Html {
             dialogs.clone(),
         ),
         |fighter: Fighter, (delete_fighter_ref, on_delete, dialogs)| {
-            *delete_fighter_ref.borrow_mut() = Some(fighter.id);
+            *delete_fighter_ref.borrow_mut() = fighter.id;
             dialogs.confirm(
                 "Kämpfer löschen",
                 format!(
