@@ -41,7 +41,7 @@ pub async fn create_grove(name: String, invite_on: bool) -> BambooApiResult<Grov
 
 pub async fn join_grove(id: i32, invite_secret: String) -> BambooApiResult<()> {
     log::debug!("Join grove {id} with secret {invite_secret}");
-    api::post(
+    api::post_no_content(
         format!("/api/grove/{id}/join"),
         &JoinGrove { invite_secret },
     )

@@ -8,7 +8,7 @@ use yew_hooks::{use_async, use_effect_update, use_mount};
 use bamboo_common::core::entities::*;
 use bamboo_common::frontend::api::{ApiError, CONFLICT, NOT_FOUND};
 use bamboo_common::frontend::ui::{BambooCard, BambooCardList};
-use bamboo_pandas_frontend_base::controls::BambooErrorMessage;
+use bamboo_pandas_frontend_base::controls::{use_dialogs, BambooErrorMessage};
 
 use crate::api;
 
@@ -16,7 +16,6 @@ use crate::api;
 enum CrafterActions {
     Create,
     Edit(Crafter),
-    Delete(Crafter),
     Closed,
 }
 
@@ -154,6 +153,8 @@ pub fn crafter_details(character: &Character) -> Html {
 
     let error_message_state = use_state_eq(|| AttrValue::from(""));
 
+    let dialogs = use_dialogs();
+
     let crafter_state = {
         let bamboo_error_state = bamboo_error_state.clone();
 
@@ -257,8 +258,6 @@ pub fn crafter_details(character: &Character) -> Html {
         })
     };
     let delete_state = {
-        let action_state = action_state.clone();
-
         let bamboo_error_state = bamboo_error_state.clone();
 
         let crafter_state = crafter_state.clone();
@@ -272,10 +271,7 @@ pub fn crafter_details(character: &Character) -> Html {
             if let Some(crafter) = *delete_crafter_ref.borrow() {
                 api::delete_crafter(character_id, crafter)
                     .await
-                    .map(|_| {
-                        action_state.set(CrafterActions::Closed);
-                        crafter_state.run()
-                    })
+                    .map(|_| crafter_state.run())
                     .map_err(|err| {
                         bamboo_error_state.set(Some(err.clone()));
 
@@ -301,13 +297,6 @@ pub fn crafter_details(character: &Character) -> Html {
             update_state.run();
         },
     );
-    let on_modal_delete = use_callback(
-        (delete_crafter_ref.clone(), delete_state.clone()),
-        |crafter_id, (delete_crafter_ref, delete_state)| {
-            *delete_crafter_ref.borrow_mut() = Some(crafter_id);
-            delete_state.run();
-        },
-    );
     let on_modal_action_close = use_callback(action_state.clone(), |_, state| {
         state.set(CrafterActions::Closed);
     });
@@ -321,9 +310,32 @@ pub fn crafter_details(character: &Character) -> Html {
             action_state.set(CrafterActions::Edit(crafter));
         },
     );
-    let on_delete_open = use_callback(action_state.clone(), |crafter, action_state| {
-        action_state.set(CrafterActions::Delete(crafter));
+
+    let on_delete = use_callback(delete_state.clone(), |_, delete_state| {
+        delete_state.run();
     });
+    let on_delete_open = use_callback(
+        (
+            delete_crafter_ref.clone(),
+            on_delete.clone(),
+            dialogs.clone(),
+        ),
+        |crafter: Crafter, (delete_crafter_ref, on_delete, dialogs)| {
+            *delete_crafter_ref.borrow_mut() = Some(crafter.id);
+            dialogs.confirm(
+                "Handwerker löschen",
+                format!(
+                    "Soll der Handwerker {} wirklich gelöscht werden?",
+                    crafter.job.to_string(),
+                ),
+                "Handwerker löschen",
+                "Nicht löschen",
+                CosmoModalType::Warning,
+                on_delete.clone(),
+                Callback::noop(),
+            )
+        },
+    );
 
     {
         let crafter_state = crafter_state.clone();
@@ -351,7 +363,9 @@ pub fn crafter_details(character: &Character) -> Html {
         r#"
 position: absolute;
 top: 0.75rem;
-right: 0.75rem;    
+right: 0.75rem;
+width: 2rem;
+height: 2rem;
 "#
     );
 
@@ -431,9 +445,6 @@ right: 0.75rem;
                     ),
                     CrafterActions::Edit(crafter) => html!(
                         <ModifyCrafterModal api_error={(*bamboo_error_state).clone()} character_id={character.id} is_edit={true} jobs={CrafterJob::iter().collect::<Vec<_>>()} title={format!("Handwerker {} bearbeiten", crafter.job.to_string())} save_label="Handwerker speichern" on_save={on_modal_update_save} on_close={on_modal_action_close} crafter={crafter} error_message={(*error_message_state).clone()} has_error={update_state.error.is_some()} />
-                    ),
-                    CrafterActions::Delete(crafter) => html!(
-                        <CosmoConfirm confirm_type={CosmoModalType::Warning} on_confirm={move |_| on_modal_delete.emit(crafter.id)} on_decline={on_modal_action_close} confirm_label="Handwerker löschen" decline_label="Handwerker behalten" title="Handwerker löschen" message={format!("Soll der Handwerker {} auf Level {} wirklich gelöscht werden?", crafter.job.to_string(), crafter.level.unwrap_or_default())} />
                     ),
                     CrafterActions::Closed => html!(),
                 } }

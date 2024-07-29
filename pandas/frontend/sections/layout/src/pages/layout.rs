@@ -9,7 +9,7 @@ use yew_router::prelude::*;
 
 use bamboo_common::core::entities::user::UpdateProfile;
 use bamboo_common::frontend::api::{CONFLICT, FORBIDDEN, NOT_FOUND};
-use bamboo_pandas_frontend_base::controls::BambooErrorMessage;
+use bamboo_pandas_frontend_base::controls::{use_dialogs, BambooErrorMessage};
 use bamboo_pandas_frontend_base::routing::{
     AppRoute, BambooGroveRoute, FinalFantasyRoute, GroveRoute, LegalRoute, LicensesRoute,
     SupportRoute,
@@ -23,7 +23,7 @@ use bamboo_pandas_frontend_section_final_fantasy::SettingsPage;
 use bamboo_pandas_frontend_section_groves::pages::groves::{
     AddGrovePage, GroveDetailsPage, GroveInvitePage,
 };
-use bamboo_pandas_frontend_section_groves::state::grove::use_groves;
+use bamboo_pandas_frontend_section_groves::use_groves;
 use bamboo_pandas_frontend_section_legal::{DataProtectionPage, ImprintPage};
 use bamboo_pandas_frontend_section_licenses::{
     BambooGrovePage, FontsPage, ImagesPage, SoftwareLicensesPage,
@@ -483,13 +483,13 @@ fn change_password_dialog(on_close: &Callback<()>) -> Html {
                 (*old_password_state).to_string(),
                 (*new_password_state).to_string(),
             )
-            .await
-            .map(|_| {
-                api::logout();
-                navigator
-                    .expect("Navigator should be available")
-                    .push(&AppRoute::Login);
-            })
+                .await
+                .map(|_| {
+                    api::logout();
+                    navigator
+                        .expect("Navigator should be available")
+                        .push(&AppRoute::Login);
+                })
         })
     };
 
@@ -563,7 +563,6 @@ fn update_my_profile_dialog(on_close: &Callback<()>) -> Html {
     let profile_atom_setter = use_atom_setter::<storage::CurrentUser>();
     let profile_atom = use_atom_value::<storage::CurrentUser>();
 
-    let disable_totp_open_toggle = use_bool_toggle(false);
     let app_two_factor_open_toggle = use_bool_toggle(false);
 
     let profile_picture_state = use_state_eq(|| None as Option<web_sys::File>);
@@ -573,6 +572,8 @@ fn update_my_profile_dialog(on_close: &Callback<()>) -> Html {
         use_state_eq(|| AttrValue::from(profile_atom.profile.display_name.clone()));
     let discord_name_state =
         use_state_eq(|| AttrValue::from(profile_atom.profile.discord_name.clone()));
+
+    let dialogs = use_dialogs();
 
     let update_email = use_callback(email_state.clone(), |value, state| state.set(value));
     let update_display_name =
@@ -600,7 +601,7 @@ fn update_my_profile_dialog(on_close: &Callback<()>) -> Html {
                 (*display_name_state).to_string(),
                 (*discord_name_state).to_string(),
             ))
-            .await;
+                .await;
             if result.is_ok() {
                 if let Some(profile_picture) = (*profile_picture_state).clone() {
                     let profile_result = api::upload_profile_picture(profile_picture)
@@ -624,17 +625,12 @@ fn update_my_profile_dialog(on_close: &Callback<()>) -> Html {
         })
     };
     let disable_totp_state = {
-        let disable_totp_open_toggle = disable_totp_open_toggle.clone();
-
         let profile_atom_setter = profile_atom_setter.clone();
 
         use_async(async move {
             if let Err(err) = api::disable_totp().await {
-                disable_totp_open_toggle.set(true);
-
                 Err(err)
             } else {
-                disable_totp_open_toggle.set(false);
                 if let Ok(profile) = api::get_my_profile().await {
                     profile_atom_setter(profile.into());
                 }
@@ -644,19 +640,28 @@ fn update_my_profile_dialog(on_close: &Callback<()>) -> Html {
         })
     };
 
-    let on_open_disable_totp =
-        use_callback(disable_totp_open_toggle.clone(), |_, state| state.set(true));
-    let on_close_disable_totp = use_callback(disable_totp_open_toggle.clone(), |_, state| {
-        state.set(false)
+    let on_disable_totp = use_callback(disable_totp_state.clone(), |_, disable_totp_state| {
+        disable_totp_state.run()
     });
+    let on_open_disable_totp = use_callback(
+        (dialogs.clone(), on_disable_totp.clone()),
+        |_, (dialogs, on_disable_totp)| {
+            dialogs.confirm(
+                "Zwei Faktor Authentifizierung deaktivieren",
+                "Möchtest du deine Zwei Faktor Authentifizierung per App deaktivieren?",
+                "Deaktivieren",
+                "Nicht deaktivieren",
+                CosmoModalType::Warning,
+                on_disable_totp.clone(),
+                Callback::noop(),
+            )
+        },
+    );
     let on_enable_app_two_factor = use_callback(
         app_two_factor_open_toggle.clone(),
         |_, app_two_factor_open_toggle| app_two_factor_open_toggle.set(true),
     );
     let on_save = use_callback(save_state.clone(), |_, save_state| save_state.run());
-    let on_disable_totp = use_callback(disable_totp_state.clone(), |_, disable_totp_state| {
-        disable_totp_state.run()
-    });
     let on_close = on_close.clone();
 
     html!(
@@ -745,17 +750,6 @@ fn update_my_profile_dialog(on_close: &Callback<()>) -> Html {
                     />
                 </CosmoInputGroup>
             </CosmoModal>
-            if *disable_totp_open_toggle {
-                <CosmoConfirm
-                    confirm_type={CosmoModalType::Warning}
-                    message="Möchtest du deine Zwei Faktor Authentifizierung per App deaktivieren? Du bekommst dann wieder eine Email."
-                    title="Zwei Faktor Authentifizierung deaktivieren"
-                    on_decline={on_close_disable_totp}
-                    on_confirm={on_disable_totp}
-                    confirm_label="Deaktivieren"
-                    decline_label="Nicht deaktivieren"
-                />
-            }
             if *app_two_factor_open_toggle {
                 <EnableTotpDialog on_close={move |_| app_two_factor_open_toggle.set(false)} />
             }
@@ -786,7 +780,7 @@ fn enable_totp_dialog(on_close: &Callback<()>) -> Html {
                 (*code_state).to_string(),
                 (*current_password_state).to_string(),
             )
-            .await
+                .await
             {
                 log::error!("Failed to validate token: {err}");
 
@@ -979,7 +973,6 @@ fn top_bar() -> Html {
 
     let profile_open_toggle = use_bool_toggle(false);
     let password_open_toggle = use_bool_toggle(false);
-    let leave_grove_open_toggle = use_bool_toggle(false);
 
     let profile_user_id = use_state(|| profile_atom.profile.id);
 
@@ -988,10 +981,14 @@ fn top_bar() -> Html {
         use_async(async move { api::leave().await.map(|_| navigator.push(&AppRoute::Login)) });
 
     let navigator = use_navigator().expect("Navigator should be available");
+
+    let dialogs = use_dialogs();
+
     let logout = use_callback(navigator, |_: (), navigator| {
         api::logout();
         navigator.push(&AppRoute::Login);
     });
+
     let open_update_my_profile = use_callback(
         (profile_user_id.clone(), profile_open_toggle.clone()),
         |_, (state, toggle)| {
@@ -999,17 +996,28 @@ fn top_bar() -> Html {
             state.set(-1);
         },
     );
+
     let open_change_password =
         use_callback(password_open_toggle.clone(), |_, password_open_state| {
             password_open_state.set(true);
         });
-    let open_leave_grove = use_callback(leave_grove_open_toggle.clone(), |_, toggle| {
-        toggle.set(true)
-    });
-    let close_leave_grove = use_callback(leave_grove_open_toggle.clone(), |_, toggle| {
-        toggle.set(false)
-    });
+
     let leave_grove = use_callback(leave_grove_state.clone(), |_, state| state.run());
+    let open_leave_grove = use_callback(
+        (leave_grove.clone(), dialogs.clone()),
+        |_, (leave_grove, dialogs)| {
+            dialogs.confirm(
+                "Account löschen",
+                "Bist du sicher, dass du deinen Account löschen möchtest?\nWenn du deinen Account löscht, werden alle deine Daten gelöscht und können nicht wiederhergestellt werden.",
+                "Account löschen",
+                "Account behalten",
+                CosmoModalType::Negative,
+                leave_grove.clone(),
+                Callback::noop(),
+            )
+        },
+    );
+
     let profile_updated = use_callback(
         (
             profile_user_id.clone(),
@@ -1047,17 +1055,6 @@ fn top_bar() -> Html {
             }
             if *password_open_toggle {
                 <ChangePasswordDialog on_close={move |_| password_open_toggle.set(false)} />
-            }
-            if *leave_grove_open_toggle {
-                <CosmoConfirm
-                    confirm_type={CosmoModalType::Negative}
-                    on_confirm={leave_grove}
-                    on_decline={close_leave_grove}
-                    title="Account löschen"
-                    message="Bist du sicher, dass du deinen Account löschen möchtest?\nWenn du deinen Account löscht, werden alle deine Daten gelöscht und können nicht wiederhergestellt werden."
-                    confirm_label="Account löschen"
-                    decline_label="Account behalten"
-                />
             }
         </>
     )

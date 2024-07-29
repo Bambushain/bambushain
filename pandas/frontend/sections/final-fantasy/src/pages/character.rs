@@ -10,19 +10,12 @@ use yew_hooks::{use_async, use_bool_toggle, use_map, use_mount};
 
 use bamboo_common::core::entities::*;
 use bamboo_common::frontend::api::{ApiError, CONFLICT, NOT_FOUND};
-use bamboo_pandas_frontend_base::controls::BambooErrorMessage;
+use bamboo_pandas_frontend_base::controls::{use_dialogs, BambooErrorMessage};
 
 use crate::api;
 use crate::pages::crafter::CrafterDetails;
 use crate::pages::fighter::FighterDetails;
 use crate::pages::housing::HousingDetails;
-
-#[derive(PartialEq, Clone)]
-enum CharacterActions {
-    Edit,
-    Delete,
-    Closed,
-}
 
 #[autoprops]
 #[function_component(ModifyCharacterModal)]
@@ -330,16 +323,16 @@ fn character_details(
     free_companies: &Vec<FreeCompany>,
 ) -> Html {
     log::debug!("Initialize character details state and callbacks");
-    let action_state = use_state_eq(|| CharacterActions::Closed);
-
     let edit_character_ref = use_mut_ref(|| None as Option<Character>);
 
     let edit_error_toggle = use_bool_toggle(false);
+    let edit_open_toggle = use_bool_toggle(false);
 
     let bamboo_error_state = use_state_eq(|| None as Option<ApiError>);
 
     let error_message_state = use_state_eq(|| AttrValue::from(""));
-    let error_message_form_state = use_state_eq(|| AttrValue::from(""));
+
+    let dialogs = use_dialogs();
 
     let save_state = {
         let edit_error_toggle = edit_error_toggle.clone();
@@ -349,9 +342,8 @@ fn character_details(
         let bamboo_error_state = bamboo_error_state.clone();
 
         let error_message_state = error_message_state.clone();
-        let error_message_form_state = error_message_form_state.clone();
 
-        let action_state = action_state.clone();
+        let edit_open_toggle = edit_open_toggle.clone();
 
         let id = character.id;
 
@@ -363,7 +355,7 @@ fn character_details(
             if let Some(character) = edit_character_ref.borrow().clone() {
                 match api::update_character(id, character.clone()).await {
                     Ok(_) => {
-                        action_state.set(CharacterActions::Closed);
+                        edit_open_toggle.set(false);
                         edit_error_toggle.set(false);
                         on_save.emit(());
                         Ok(())
@@ -383,7 +375,6 @@ fn character_details(
                                 error_message_state
                                     .set("Der Charakter konnte nicht gespeichert werden".into());
                                 bamboo_error_state.set(Some(err.clone()));
-                                error_message_form_state.set("update_character".into());
                             }
                         }
 
@@ -396,11 +387,7 @@ fn character_details(
         })
     };
     let delete_state = {
-        let action_state = action_state.clone();
-
         let bamboo_error_state = bamboo_error_state.clone();
-
-        let error_message_form_state = error_message_form_state.clone();
 
         let on_delete = on_delete.clone();
 
@@ -409,12 +396,8 @@ fn character_details(
         use_async(async move {
             api::delete_character(id)
                 .await
-                .map(|_| {
-                    action_state.set(CharacterActions::Closed);
-                    on_delete.emit(())
-                })
+                .map(|_| on_delete.emit(()))
                 .map_err(|err| {
-                    error_message_form_state.set("delete_character".into());
                     bamboo_error_state.set(Some(err.clone()));
 
                     err
@@ -423,28 +406,41 @@ fn character_details(
     };
 
     let edit_character_click = use_callback(
-        (action_state.clone(), edit_error_toggle.clone()),
-        |_, (state, edit_error_toggle)| {
-            state.set(CharacterActions::Edit);
+        (edit_open_toggle.clone(), edit_error_toggle.clone()),
+        |_, (edit_open_toggle, edit_error_toggle)| {
+            edit_open_toggle.set(false);
             edit_error_toggle.set(false);
         },
     );
-    let delete_character_click = use_callback(action_state.clone(), |_, state| {
-        state.set(CharacterActions::Delete);
-    });
-    let on_modal_save = use_callback(
+    let on_edit_save = use_callback(
         (edit_character_ref.clone(), save_state.clone()),
         |character, (edit_character_ref, save_state)| {
             *edit_character_ref.borrow_mut() = Some(character);
             save_state.run();
         },
     );
-    let on_modal_delete = use_callback(delete_state.clone(), |_, delete_state| {
-        delete_state.run();
+    let on_edit_close = use_callback(edit_open_toggle.clone(), |_, edit_open_toggle| {
+        edit_open_toggle.set(false);
     });
-    let on_modal_close = use_callback(action_state.clone(), |_, state| {
-        state.set(CharacterActions::Closed);
-    });
+
+    let delete_character = use_callback(delete_state.clone(), |_, delete_state| delete_state.run());
+    let delete_character_click = use_callback(
+        (character.clone(), delete_character.clone(), dialogs.clone()),
+        |_, (character, delete_character, dialogs)| {
+            dialogs.confirm(
+                "Character löschen",
+                format!(
+                    "Soll der Character {} wirklich gelöscht werden?",
+                    character.name
+                ),
+                "Character löschen",
+                "Nicht löschen",
+                CosmoModalType::Warning,
+                delete_character.clone(),
+                Callback::noop(),
+            )
+        },
+    );
 
     html!(
         <>
@@ -492,18 +488,20 @@ fn character_details(
                     )
                 }) }
             </CosmoKeyValueList>
-            { match (*action_state).clone() {
-                CharacterActions::Edit => html!(
-                    <ModifyCharacterModal api_error={(*bamboo_error_state).clone()} free_companies={free_companies.clone()} title={format!("Charakter {} bearbeiten", character.name.clone())} save_label="Character speichern" on_save={on_modal_save} on_close={on_modal_close} character={character.clone()} custom_fields={custom_fields.clone()} error_message={(*error_message_state).clone()} has_error={*edit_error_toggle} />
-                ),
-                CharacterActions::Delete => {
-                    let character = character.clone();
-                    html!(
-                        <CosmoConfirm confirm_type={CosmoModalType::Warning} on_confirm={on_modal_delete} on_decline={on_modal_close} confirm_label="Character löschen" decline_label="Character behalten" title="Character löschen" message={format!("Soll der Character {} wirklich gelöscht werden?", character.name)} />
-                    )
-                }
-                CharacterActions::Closed => html!(),
-            } }
+            if *edit_open_toggle {
+                <ModifyCharacterModal
+                    api_error={(*bamboo_error_state).clone()}
+                    free_companies={free_companies.clone()}
+                    title={format!("Charakter {} bearbeiten", character.name.clone())}
+                    save_label="Character speichern"
+                    on_save={on_edit_save}
+                    on_close={on_edit_close}
+                    character={character.clone()}
+                    custom_fields={custom_fields.clone()}
+                    error_message={(*error_message_state).clone()}
+                    has_error={*edit_error_toggle}
+                />
+            }
         </>
     )
 }
@@ -517,8 +515,6 @@ pub fn character_page() -> Html {
     let create_character_ref = use_mut_ref(|| None as Option<Character>);
 
     let bamboo_error_state = use_state_eq(|| None as Option<ApiError>);
-
-    let error_message_form_state = use_state_eq(|| AttrValue::from(""));
 
     let selected_character_state = use_state_eq(|| 0);
 
@@ -547,7 +543,6 @@ pub fn character_page() -> Html {
         let bamboo_error_state = bamboo_error_state.clone();
 
         let error_message_state = error_message_state.clone();
-        let error_message_form_state = error_message_form_state.clone();
 
         let selected_character_state = selected_character_state.clone();
 
@@ -572,7 +567,6 @@ pub fn character_page() -> Html {
                                 "Ein Charakter mit diesem Namen existiert bereits für diese Welt"
                             } else {
                                 bamboo_error_state.set(Some(err.clone()));
-                                error_message_form_state.set("character_page".into());
                                 "Der Charakter konnte nicht hinzugefügt werden"
                             }
                             .into(),

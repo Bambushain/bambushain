@@ -8,7 +8,7 @@ use yew_hooks::{use_async, use_effect_update, use_mount};
 use bamboo_common::core::entities::*;
 use bamboo_common::frontend::api::{ApiError, CONFLICT, NOT_FOUND};
 use bamboo_common::frontend::ui::{BambooCard, BambooCardList};
-use bamboo_pandas_frontend_base::controls::BambooErrorMessage;
+use bamboo_pandas_frontend_base::controls::{use_dialogs, BambooErrorMessage};
 
 use crate::api;
 
@@ -16,7 +16,6 @@ use crate::api;
 enum HousingActions {
     Create,
     Edit(CharacterHousing),
-    Delete(CharacterHousing),
     Closed,
 }
 
@@ -191,12 +190,11 @@ pub fn housing_details(character: &Character) -> Html {
     let bamboo_error_state = use_state_eq(|| None as Option<ApiError>);
 
     let error_message_state = use_state_eq(|| AttrValue::from(""));
-    let error_message_form_state = use_state_eq(|| AttrValue::from(""));
+
+    let dialogs = use_dialogs();
 
     let housing_state = {
         let character_id = character.id;
-
-        let error_message_form_state = error_message_form_state.clone();
 
         let bamboo_error_state = bamboo_error_state.clone();
 
@@ -205,7 +203,6 @@ pub fn housing_details(character: &Character) -> Html {
                 .await
                 .map_err(|err| {
                     bamboo_error_state.set(Some(err.clone()));
-                    error_message_form_state.set("get_character_housing".into());
 
                     err
                 })
@@ -217,7 +214,6 @@ pub fn housing_details(character: &Character) -> Html {
         let bamboo_error_state = bamboo_error_state.clone();
 
         let error_message_state = error_message_state.clone();
-        let error_message_form_state = error_message_form_state.clone();
 
         let character_id = character.id;
 
@@ -235,7 +231,6 @@ pub fn housing_details(character: &Character) -> Html {
                         housing_state.run();
                     })
                     .map_err(|err| {
-                        error_message_form_state.set("create_character_housing".into());
                         if err.code == CONFLICT {
                             error_message_state
                                 .set("Eine Unterkunft an dieser Adresse existiert bereits".into());
@@ -258,7 +253,6 @@ pub fn housing_details(character: &Character) -> Html {
         let bamboo_error_state = bamboo_error_state.clone();
 
         let error_message_state = error_message_state.clone();
-        let error_message_form_state = error_message_form_state.clone();
 
         let character_id = character.id;
 
@@ -279,7 +273,6 @@ pub fn housing_details(character: &Character) -> Html {
                         housing_state.run();
                     })
                     .map_err(|err| {
-                        error_message_form_state.set("update_character_housing".into());
                         match err.code {
                             CONFLICT => {
                                 error_message_state.set(
@@ -309,8 +302,6 @@ pub fn housing_details(character: &Character) -> Html {
 
         let bamboo_error_state = bamboo_error_state.clone();
 
-        let error_message_form_state = error_message_form_state.clone();
-
         let character_id = character.id;
 
         let delete_housing_ref = delete_housing_ref.clone();
@@ -327,7 +318,6 @@ pub fn housing_details(character: &Character) -> Html {
                         housing_state.run();
                     })
                     .map_err(|err| {
-                        error_message_form_state.set("delete_character_housing".into());
                         bamboo_error_state.set(Some(err.clone()));
 
                         err
@@ -352,13 +342,6 @@ pub fn housing_details(character: &Character) -> Html {
             update_state.run();
         },
     );
-    let on_modal_delete = use_callback(
-        (delete_housing_ref.clone(), delete_state.clone()),
-        |housing_id, (delete_housing_ref, delete_state)| {
-            *delete_housing_ref.borrow_mut() = Some(housing_id);
-            delete_state.run();
-        },
-    );
     let on_modal_action_close = use_callback(action_state.clone(), |_, state| {
         state.set(HousingActions::Closed);
     });
@@ -372,9 +355,29 @@ pub fn housing_details(character: &Character) -> Html {
             action_state.set(HousingActions::Edit(housing));
         },
     );
-    let on_delete_open = use_callback(action_state.clone(), |housing, action_state| {
-        action_state.set(HousingActions::Delete(housing));
+
+    let on_delete = use_callback(delete_state.clone(), |_, delete_state| {
+        delete_state.run();
     });
+    let on_delete_open = use_callback(
+        (
+            delete_housing_ref.clone(),
+            on_delete.clone(),
+            dialogs.clone(),
+        ),
+        |housing: CharacterHousing, (delete_housing_ref, on_delete, dialogs)| {
+            *delete_housing_ref.borrow_mut() = Some(housing.id);
+            dialogs.confirm(
+                "Unterkunft löschen",
+                format!("Soll die Unterkunft in {} im Bezirk {} mit der Nummer {} wirklich gelöscht werden?", housing.district.to_string(), housing.ward, housing.plot),
+                "Unterkunft löschen",
+                "Nicht löschen",
+                CosmoModalType::Warning,
+                on_delete.clone(),
+                Callback::noop(),
+            )
+        },
+    );
 
     {
         let housing_state = housing_state.clone();
@@ -462,9 +465,6 @@ font-style: normal;
                     ),
                     HousingActions::Edit(housing) => html!(
                         <ModifyHousingModal api_error={(*bamboo_error_state).clone()} character_id={character.id} title="Unterkunft bearbeiten" save_label="Unterkunft speichern" on_save={on_modal_update_save} on_close={on_modal_action_close} housing={housing} error_message={(*error_message_state).clone()} has_error={update_state.error.is_some()} />
-                    ),
-                    HousingActions::Delete(housing) => html!(
-                        <CosmoConfirm confirm_type={CosmoModalType::Warning} on_confirm={move |_| on_modal_delete.emit(housing.id)} on_decline={on_modal_action_close} confirm_label="Unterkunft löschen" decline_label="Unterkunft behalten" title="Unterkunft löschen" message={format!("Soll die Unterkunft in {} im Bezirk {} mit der Nummer {} wirklich gelöscht werden?", housing.district.to_string(), housing.ward, housing.plot)} />
                     ),
                     HousingActions::Closed => html!(),
                 } }

@@ -3,8 +3,10 @@ use crate::api::BannedStatus;
 use crate::state::grove::{use_groves, GrovesAtom};
 use bamboo_common::core::entities::user::{GroveUser, JoinStatus};
 use bamboo_common::frontend::ui::{BambooCard, BambooCardList};
-use bamboo_pandas_frontend_base::controls::{use_events, BambooErrorMessage, Calendar};
-use bamboo_pandas_frontend_base::routing::{AppRoute, GroveRoute};
+use bamboo_pandas_frontend_base::controls::{
+    use_dialogs, use_events, BambooErrorMessage, Calendar,
+};
+use bamboo_pandas_frontend_base::routing::{AppRoute, GroveRoute, SupportRoute};
 use bamboo_pandas_frontend_base::storage::CurrentUser;
 use bounce::helmet::Helmet;
 use bounce::use_atom;
@@ -15,7 +17,7 @@ use yew::prelude::*;
 use yew::virtual_dom::Key;
 use yew_autoprops::autoprops;
 use yew_cosmo::prelude::*;
-use yew_hooks::{use_async, use_async_with_options, use_bool_toggle, use_list, UseAsyncOptions};
+use yew_hooks::{use_async, use_bool_toggle, use_list, use_mount, UseAsyncHandle};
 use yew_router::hooks::use_navigator;
 use yew_router::prelude::Redirect;
 
@@ -61,41 +63,50 @@ height: calc(var(--page-height) - var(--title-font-size) - var(--tab-links-heigh
 fn users(id: i32) -> Html {
     log::debug!("Render users page");
     log::debug!("Initialize state and callbacks");
-    let selected_user_state = use_state_eq(|| None as Option<GroveUser>);
+    let selected_user_id_ref = use_mut_ref(|| -1);
 
     let current_user_atom = use_atom::<CurrentUser>();
 
     let users_state = use_async(async move { api::get_users(id, BannedStatus::Unbanned).await });
 
+    let dialogs = use_dialogs();
+
     let ban_user_state = {
-        let selected_user_state = selected_user_state.clone();
+        let selected_user_id_ref = selected_user_id_ref.clone();
 
         let users_state = users_state.clone();
 
         use_async(async move {
-            if let Some(user) = (*selected_user_state).clone() {
-                let res = api::ban_user(id, user.id).await;
-                selected_user_state.set(None);
-                users_state.run();
-                res
-            } else {
-                Ok(())
-            }
+            let user_id = *(*selected_user_id_ref).borrow();
+            let res = api::ban_user(id, user_id).await;
+            users_state.run();
+            res
         })
     };
 
-    let open_ban_user = use_callback(
-        selected_user_state.clone(),
-        |user: GroveUser, selected_user_state| {
-            selected_user_state.set(Some(user));
+    let on_ban_user = use_callback(ban_user_state.clone(), |_, ban_user_state| {
+        ban_user_state.run();
+    });
+    let on_ban_user_open = use_callback(
+        (
+            selected_user_id_ref.clone(),
+            on_ban_user.clone(),
+            dialogs.clone(),
+        ),
+        |user: GroveUser, (selected_user_id_ref, on_ban_user, dialogs)| {
+            *selected_user_id_ref.borrow_mut() = user.id;
+            let display_name = user.display_name.clone();
+            dialogs.confirm(
+                format!("{display_name} bannen"),
+                format!("Soll der Panda {display_name} wirklich gebannt werden?"),
+                format!("{display_name} bannen"),
+                "Nicht bannen",
+                CosmoModalType::Warning,
+                on_ban_user.clone(),
+                Callback::noop(),
+            )
         },
     );
-    let ban_user = use_callback(ban_user_state.clone(), |_, ban_user_state| {
-        ban_user_state.run()
-    });
-    let close_ban = use_callback(selected_user_state.clone(), |_, selected_user_state| {
-        selected_user_state.set(None)
-    });
 
     {
         let users_state = users_state.clone();
@@ -135,13 +146,13 @@ fn users(id: i32) -> Html {
                                 user.id,
                                 chrono::offset::Local::now().timestamp_millis()
                             );
-                            let open_ban_user = open_ban_user.clone();
+                            let on_ban_user_open = on_ban_user_open.clone();
                             let user_to_ban = user.clone();
 
                             html!(
                                 <BambooCard title={user.display_name.clone()} prepend={html!(<img style="max-height:7rem;" src={profile_picture} />)} buttons={html!(
                                     if current_user_is_mod_in_grove {
-                                        <CosmoButton on_click={move |_| open_ban_user.emit(user_to_ban.clone())} label={format!("{} bannen", user.display_name.clone())} enabled={user.id != current_user_id} />
+                                        <CosmoButton on_click={move |_| on_ban_user_open.emit(user_to_ban.clone())} label={format!("{} bannen", user.display_name.clone())} enabled={user.id != current_user_id} />
                                     }
                                 )}>
                                     <CosmoAnchor href={format!("mailto:{}", user.email.clone())}>{user.email.clone()}</CosmoAnchor>
@@ -153,17 +164,6 @@ fn users(id: i32) -> Html {
                         }
                     ) }
                 </BambooCardList>
-                if let Some(user) = (*selected_user_state).clone() {
-                    <CosmoConfirm
-                        confirm_type={CosmoModalType::Negative}
-                        title={format!("{} bannen", user.display_name.clone())}
-                        message={format!("Soll der Panda {} wirklich gebannt werden?", user.display_name.clone())}
-                        confirm_label={format!("{} bannen", user.display_name.clone())}
-                        decline_label={format!("{} nicht bannen", user.display_name.clone())}
-                        on_confirm={ban_user}
-                        on_decline={close_ban.clone()}
-                    />
-                }
             </>
         )
     } else {
@@ -183,13 +183,13 @@ fn management(
 
     let mod_list = use_list(vec![]);
 
-    let delete_grove_open_toggle = use_bool_toggle(false);
-
     let user_to_unban_state = use_state_eq(|| None as Option<GroveUser>);
 
     let current_user_atom = use_atom::<CurrentUser>();
 
     let navigator = use_navigator().unwrap();
+
+    let dialogs = use_dialogs();
 
     let users_state = {
         let mod_list = mod_list.clone();
@@ -226,39 +226,16 @@ fn management(
             .await
         })
     };
-    let delete_grove_state = {
-        let navigator = navigator.clone();
-        use_async(async move {
-            let res = api::delete_grove(id).await;
-            if res.is_ok() {
-                yew::platform::spawn_local(async move {
-                    if let Ok(groves) = api::get_groves().await {
-                        groves_atom.set(GrovesAtom { groves })
-                    }
+    let load_groves_state = {
+        let groves_atom = groves_atom.clone();
 
-                    navigator.push(&AppRoute::GrovesRoot);
-                });
+        use_async(async move {
+            let res = api::get_groves().await;
+            if let Ok(groves) = res.clone() {
+                groves_atom.set(GrovesAtom { groves })
             }
 
             res
-        })
-    };
-    let unban_user_state = {
-        let users_state = users_state.clone();
-        let user_to_unban_state = user_to_unban_state.clone();
-
-        use_async(async move {
-            if let Some(user) = (*user_to_unban_state).clone() {
-                let res = api::unban_user(id, user.id).await;
-                if res.is_ok() {
-                    users_state.run();
-                    user_to_unban_state.set(None);
-                }
-
-                res
-            } else {
-                Ok(())
-            }
         })
     };
 
@@ -288,32 +265,114 @@ width: 50%;
     let mod_select = use_callback(mod_list.clone(), |id: AttrValue, mod_list| {
         mod_list.push(id.to_string().parse::<i32>().unwrap());
     });
-    let delete_grove = use_callback(delete_grove_state.clone(), |_, delete_grove_state| {
-        delete_grove_state.run()
-    });
-    let close_delete = use_callback(
-        delete_grove_open_toggle.clone(),
-        |_, delete_grove_open_toggle| {
-            delete_grove_open_toggle.set(false);
+
+    let delete_confirm = use_callback(
+        (
+            name.clone(),
+            navigator.clone(),
+            dialogs.clone(),
+            load_groves_state.clone(),
+            id,
+        ),
+        |_, (name, navigator, dialogs, load_groves_state, id)| {
+            let name = name.clone();
+            let navigator = navigator.clone();
+            let dialogs = dialogs.clone();
+            let load_groves_state = load_groves_state.clone();
+            let id = id.clone();
+
+            yew::platform::spawn_local(async move {
+                let name = name.clone();
+                let navigator = navigator.clone();
+                let dialogs = dialogs.clone();
+                let load_groves_state = load_groves_state.clone();
+
+                let res = api::delete_grove(id).await;
+                if res.is_ok() {
+                    load_groves_state.run();
+
+                    navigator.push(&AppRoute::GrovesRoot);
+                } else {
+                    dialogs.alert(
+                        "Fehler beim Löschen",
+                        format!("Der Hain {} konnte nicht gelöscht werden. Bitte wende dich an den Bambussupport.", name.clone()),
+                        "Verstanden",
+                        CosmoModalType::Negative,
+                        Callback::noop(),
+                    );
+                }
+            })
         },
     );
     let open_delete = use_callback(
-        delete_grove_open_toggle.clone(),
-        |_, delete_grove_open_toggle| {
-            delete_grove_open_toggle.set(true);
+        (name.clone(), delete_confirm.clone(), dialogs.clone()),
+        |_, (name, delete_confirm, dialogs)| {
+            dialogs.confirm(
+                "Hain löschen",
+                format!("Soll der Hain {name} wirklich gelöscht werden? Dies löscht auch den Eventkalender."),
+                "Hain löschen",
+                "Nicht löschen",
+                CosmoModalType::Negative,
+                delete_confirm.clone(),
+                Callback::noop(),
+            );
         },
     );
 
-    let unban_user = use_callback(unban_user_state.clone(), |_, unban_user_state| {
-        unban_user_state.run()
-    });
-    let close_unban = use_callback(user_to_unban_state.clone(), |_, user_to_unban_state| {
-        user_to_unban_state.set(None);
-    });
+    let unban_user = use_callback(
+        (
+            user_to_unban_state.clone(),
+            dialogs.clone(),
+            users_state.clone(),
+            id,
+        ),
+        |_, (user_to_unban_state, dialogs, users_state, id)| {
+            let user_to_unban_state = user_to_unban_state.clone();
+            let dialogs = dialogs.clone();
+            let users_state = users_state.clone();
+            let id = id.clone();
+
+            if let Some(user) = (*user_to_unban_state).clone() {
+                let user_to_unban_state = user_to_unban_state.clone();
+                let dialogs = dialogs.clone();
+                let users_state = users_state.clone();
+                let id = id;
+
+                yew::platform::spawn_local(async move {
+                    let res = api::unban_user(id, user.id).await;
+                    if res.is_ok() {
+                        users_state.run();
+                        user_to_unban_state.set(None);
+                    } else {
+                        dialogs.alert(
+                            "Fehler beim Ban aufheben",
+                            format!("Der Ban von {} konnte leider nicht aufgehoben werden. Bitte wende dich an den Bambussupport.", user.display_name.clone()),
+                            "Verstanden",
+                            CosmoModalType::Negative,
+                            Callback::noop(),
+                        )
+                    }
+                })
+            }
+        },
+    );
     let open_unban = use_callback(
-        user_to_unban_state.clone(),
-        |user: GroveUser, user_to_unban_state| {
-            user_to_unban_state.set(Some(user));
+        (
+            user_to_unban_state.clone(),
+            unban_user.clone(),
+            dialogs.clone(),
+        ),
+        |user_to_unban: GroveUser, (user_to_unban_state, unban_user, dialogs)| {
+            user_to_unban_state.set(Some(user_to_unban.clone()));
+            dialogs.confirm(
+                "Ban aufheben",
+                format!("Soll der Ban von {} wirklich aufgehoben werden? Anschließend kann {} wieder beitreten.", user_to_unban.display_name.clone(), user_to_unban.display_name.clone()),
+                "Ban aufheben",
+                "Ban nicht aufheben",
+                CosmoModalType::Positive,
+                unban_user.clone(),
+                Callback::noop(),
+            );
         },
     );
 
@@ -448,46 +507,6 @@ width: 50%;
                 message="Achtung, hier beginnt die Gefahrenzone, wenn du unten auf Hain löschen klickst wird dein Hain gelöscht. Du wirst nochmal um eine Bestätigung gebeten, danach ist der Hain unwiderbringlich gelöscht."
                 actions={html!(<CosmoButton label="Hain löschen" on_click={open_delete} />)}
             />
-            if *delete_grove_open_toggle {
-                <CosmoConfirm
-                    confirm_type={CosmoModalType::Negative}
-                    title="Hain löschen"
-                    message={format!("Soll der Hain {} wirklich gelöscht werden? Dies löscht auch den Eventkalender.", name.clone())}
-                    confirm_label="Hain löschen"
-                    decline_label="Hain nicht löschen"
-                    on_confirm={delete_grove}
-                    on_decline={close_delete.clone()}
-                />
-            }
-            if *delete_grove_open_toggle && delete_grove_state.error.is_some() {
-                <CosmoAlert
-                    alert_type={CosmoModalType::Negative}
-                    title="Fehler beim Löschen"
-                    message={format!("Der Hain {} konnte nicht gelöscht werden. Bitte wende dich an den Bambussupport.", name.clone())}
-                    close_label="Verstanden"
-                    on_close={close_delete}
-                />
-            }
-            if let Some(user_to_unban) = (*user_to_unban_state).clone() {
-                <CosmoConfirm
-                    confirm_type={CosmoModalType::Positive}
-                    title="Ban aufheben"
-                    message={format!("Soll der Ban von {} wirklich aufgehoben werden? Anschließend kann {} wieder beitreten.", user_to_unban.display_name.clone(), user_to_unban.display_name.clone())}
-                    confirm_label="Ban aufheben"
-                    decline_label="Ban nicht aufheben"
-                    on_confirm={unban_user}
-                    on_decline={close_unban.clone()}
-                />
-                if unban_user_state.error.is_some() {
-                    <CosmoAlert
-                        alert_type={CosmoModalType::Negative}
-                        title="Fehler beim Ban aufheben"
-                        message={format!("Der Ban von {} konnte leider nicht aufgehoben werden. Bitte wende dich an den Bambussupport.", user_to_unban.display_name.clone())}
-                        close_label="Verstanden"
-                        on_close={close_unban}
-                    />
-                }
-            }
         </div>
     )
 }
@@ -665,64 +684,97 @@ width: min(50rem, 50%);
 pub fn grove_invite(id: i32, name: AttrValue, invite_secret: AttrValue) -> Html {
     let navigator = use_navigator().unwrap();
 
-    let join_grove_state = {
-        let invite_secret = invite_secret.clone();
-        let name = name.clone();
+    let groves_atom = use_groves();
+
+    let dialogs = use_dialogs();
+
+    let dont_join_grove = use_callback(navigator.clone(), |_, navigator| {
+        navigator.push(&AppRoute::Home)
+    });
+    let go_to_support = use_callback(navigator.clone(), |_, navigator| {
+        navigator.push(&SupportRoute::Contact)
+    });
+
+    let reload_groves_action: UseAsyncHandle<(), ()> = {
+        let groves_atom = groves_atom.clone();
 
         let navigator = navigator.clone();
 
+        let name = name.to_string();
+
         use_async(async move {
-            let res = api::join_grove(id, invite_secret.to_string()).await;
-            if res.is_ok() {
+            if let Ok(groves) = api::get_groves().await {
+                groves_atom.set(GrovesAtom { groves });
+                navigator.push(&GroveRoute::Grove { id, name })
+            }
+
+            Ok(())
+        })
+    };
+
+    let join_grove = use_callback(
+        (
+            dialogs.clone(),
+            reload_groves_action.clone(),
+            go_to_support.clone(),
+            invite_secret.clone(),
+            id,
+        ),
+        |_, (dialogs, reload_groves_action, go_to_support, invite_secret, id)| {
+            let id = id.clone();
+            let dialogs = dialogs.clone();
+            let invite_secret = invite_secret.to_string();
+            let reload_groves_action = reload_groves_action.clone();
+            let go_to_support = go_to_support.clone();
+
+            yew::platform::spawn_local(async move {
+                let res = api::join_grove(id, invite_secret).await;
+                if res.is_ok() {
+                    reload_groves_action.run()
+                } else {
+                    dialogs.alert(
+                        "Fehler beim Beitritt",
+                        "Leider konntest du dem Hain nicht beitreten, melde dich bitte beim Bambussupport damit wir dir helfen können.",
+                        "Alles klar",
+                        CosmoModalType::Negative,
+                        go_to_support.clone(),
+                    )
+                }
+            })
+        },
+    );
+
+    use_mount(move || {
+        yew::platform::spawn_local(async move {
+            let join_status = api::check_join_status(id).await;
+            if let Ok(JoinStatus::Banned) = join_status {
+                dialogs.alert(
+                    "Gebannt",
+                    format!("Du wurdest aus dem Hain {name} gebannt und kannst nicht beitreten."),
+                    "Zum Kalender",
+                    CosmoModalType::Warning,
+                    dont_join_grove.clone(),
+                )
+            } else if let Ok(JoinStatus::Joined) = join_status {
                 navigator.push(&GroveRoute::Grove {
                     id,
                     name: name.to_string(),
                 })
+            } else if let Ok(JoinStatus::NotJoined) = join_status {
+                dialogs.confirm(
+                    format!("{name} beitreten"),
+                    format!("Du wurdest eingeladen dem Hain {name} beizutreten. Wenn du das machst hast du Zugriff auf den gemeinsamen Kalender und die Pandaliste."),
+                    "Hain beitreten",
+                    "Hain nicht beitreten",
+                    CosmoModalType::Warning,
+                    join_grove.clone(),
+                    dont_join_grove.clone(),
+                )
+            } else if join_status.is_err() {
+                navigator.push(&AppRoute::Home)
             }
-
-            res
         })
-    };
-
-    let check_join_status_state = use_async_with_options(
-        async move { api::check_join_status(id).await },
-        UseAsyncOptions::enable_auto(),
-    );
-
-    let join_grove = use_callback(join_grove_state.clone(), |_, join_grove_state| {
-        join_grove_state.run()
-    });
-    let dont_join_grove = use_callback(navigator.clone(), |_, navigator| {
-        navigator.push(&AppRoute::Home)
     });
 
-    html!(
-        if check_join_status_state.loading {
-            <CosmoModal title="Lädt..." buttons={html!()}>
-                <CosmoProgressRing />
-            </CosmoModal>
-        } else if let Some(status) = &check_join_status_state.data {
-            if status == &JoinStatus::Banned {
-                <CosmoAlert
-                    title="Gebannt"
-                    message={format!("Du wurdest aus dem Hain {name} gebannt und kannst nicht beitreten.")}
-                    close_label="Zum Kalender"
-                    on_close={dont_join_grove.clone()}
-                />
-            } else if status == &JoinStatus::Joined {
-                <Redirect<GroveRoute> to={GroveRoute::Grove {id, name: name.to_string()}} />
-            } else if status == &JoinStatus::NotJoined {
-                <CosmoConfirm
-                    title={format!("{name} beitreten")}
-                    message={format!("Du wurdest eingeladen dem Hain {name} beizutreten. Wenn du das machst hast du Zugriff auf den gemeinsamen Kalender und die Pandaliste.")}
-                    on_confirm={join_grove}
-                    on_decline={dont_join_grove}
-                    confirm_label="Hain beitreten"
-                    decline_label="Hain nicht beitreten"
-                />
-            }
-        } else if check_join_status_state.error.is_some() {
-            <Redirect<AppRoute> to={AppRoute::Home} />
-        }
-    )
+    html!()
 }

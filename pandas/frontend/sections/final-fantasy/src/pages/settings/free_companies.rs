@@ -6,7 +6,7 @@ use yew_icons::Icon;
 
 use bamboo_common::core::entities::*;
 use bamboo_common::frontend::api::CONFLICT;
-use bamboo_pandas_frontend_base::controls::BambooErrorMessage;
+use bamboo_pandas_frontend_base::controls::{use_dialogs, BambooErrorMessage};
 
 use crate::api;
 
@@ -21,7 +21,8 @@ pub fn free_companies() -> Html {
     let selected_id_state = use_state_eq(|| -1);
 
     let name_state = use_state_eq(|| AttrValue::from(""));
-    let selected_name_state = use_state_eq(|| AttrValue::from(""));
+
+    let dialogs = use_dialogs();
 
     let free_companies_state = use_async(async move { api::get_free_companies().await });
     let create_state = {
@@ -127,22 +128,28 @@ pub fn free_companies() -> Html {
         open_state.set(false);
     });
     let on_edit_save = use_callback(edit_state.clone(), |_, state| state.run());
+
+    let on_delete = use_callback(delete_state.clone(), |_, state| state.run());
     let on_delete_open = use_callback(
         (
             selected_id_state.clone(),
-            selected_name_state.clone(),
-            delete_open_state.clone(),
+            on_delete.clone(),
+            dialogs.clone(),
         ),
-        |(id, name), (selected_id_state, selected_name_state, open_state)| {
+        |(id, name): (i32, String), (selected_id_state, on_delete, dialogs)| {
             selected_id_state.set(id);
-            selected_name_state.set(name);
-            open_state.set(true);
+
+            dialogs.confirm(
+                "Freie Gesellschaft löschen",
+                format!("Soll die Freie Gesellschaft {name} wirklich gelöscht werden?"),
+                "Freie Gesellschaft Löschen",
+                "Nicht löschen",
+                CosmoModalType::Warning,
+                on_delete.clone(),
+                Callback::noop(),
+            )
         },
     );
-    let on_delete_close = use_callback(delete_open_state.clone(), |_, state| {
-        state.set(false);
-    });
-    let on_delete = use_callback(delete_state.clone(), |_, state| state.run());
     let update_name = use_callback(name_state.clone(), |val, state| state.set(val));
 
     let list_style = use_style!(
@@ -284,17 +291,6 @@ align-items: center;
                         />
                     </CosmoInputGroup>
                 </CosmoModal>
-            }
-            if *delete_open_state {
-                <CosmoConfirm
-                    confirm_type={CosmoModalType::Warning}
-                    title="Freie Gesellschaft löschen"
-                    message={format!("Soll die Freie Gesellschaft {} wirklich gelöscht werden?", (*selected_name_state).clone())}
-                    confirm_label="Freie Gesellschaft Löschen"
-                    decline_label="Nicht löschen"
-                    on_decline={on_delete_close}
-                    on_confirm={on_delete}
-                />
             }
         </>
     )

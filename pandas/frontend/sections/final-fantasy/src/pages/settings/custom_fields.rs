@@ -15,7 +15,7 @@ use yew_icons::{get_svg, Icon, IconProps};
 
 use bamboo_common::core::entities::*;
 use bamboo_common::frontend::api::{ApiError, CONFLICT};
-use bamboo_pandas_frontend_base::controls::BambooErrorMessage;
+use bamboo_pandas_frontend_base::controls::{use_dialogs, BambooErrorMessage};
 
 use crate::api;
 
@@ -762,13 +762,12 @@ pub fn custom_fields_page() -> Html {
     log::debug!("Render custom fields page");
     log::debug!("Initialize state and callbacks");
     let add_open_toggle = use_bool_toggle(false);
-    let delete_open_toggle = use_bool_toggle(false);
 
     let dragged_item_id_ref = use_mut_ref(|| -1);
     let drop_new_position_ref = use_mut_ref(|| -1);
     let delete_id_ref = use_mut_ref(|| -1);
 
-    let selected_label_state = use_state_eq(|| AttrValue::from(""));
+    let dialogs = use_dialogs();
 
     let fields_state = use_async(async move {
         api::get_custom_fields().await.map(|mut data| {
@@ -833,27 +832,26 @@ pub fn custom_fields_page() -> Html {
             toggle.set(false)
         },
     );
-    let open_delete_dialog = use_callback(
-        (
-            delete_id_ref.clone(),
-            selected_label_state.clone(),
-            delete_open_toggle.clone(),
-        ),
-        |(id, label), (id_ref, selected_label_state, toggle)| {
+
+    let on_delete = use_callback(delete_state.clone(), |_, delete_state| {
+        delete_state.run();
+    });
+    let on_delete_open = use_callback(
+        (delete_id_ref.clone(), dialogs.clone(), on_delete.clone()),
+        |(id, label), (id_ref, dialogs, on_delete)| {
             *id_ref.borrow_mut() = id;
-            selected_label_state.set(label);
-            toggle.set(true)
+            dialogs.confirm(
+                "Feld löschen",
+                format!("Soll das Feld {label} wirklich gelöscht werden?"),
+                "Feld löschen",
+                "Nicht löschen",
+                CosmoModalType::Warning,
+                on_delete.clone(),
+                Callback::noop(),
+            )
         },
     );
-    let close_delete_dialog =
-        use_callback(delete_open_toggle.clone(), |_, toggle| toggle.set(false));
-    let confirm_delete_dialog = use_callback(
-        (delete_open_toggle.clone(), delete_state.clone()),
-        |_, (toggle, delete_state)| {
-            delete_state.run();
-            toggle.set(false)
-        },
-    );
+
     let edit = use_callback(fields_state.clone(), |_, fields_state| {
         fields_state.run();
     });
@@ -902,7 +900,7 @@ display: grid;
                     { for data.iter().map(|field| {
                         html!(
                             <>
-                                <DraggableItem drag_start={drag_start.clone()} custom_field={field.clone()} edit={edit.clone()} delete={open_delete_dialog.clone()} />
+                                <DraggableItem drag_start={drag_start.clone()} custom_field={field.clone()} edit={edit.clone()} delete={on_delete_open.clone()} />
                                 <DropZone drop={drop.clone()} new_position={field.position + 1} />
                             </>
                         )
@@ -913,17 +911,6 @@ display: grid;
                         close={close_add_dialog}
                         save={save_add_dialog}
                         position={data.len()}
-                    />
-                }
-                if *delete_open_toggle {
-                    <CosmoConfirm
-                        confirm_type={CosmoModalType::Warning}
-                        title="Feld löschen"
-                        message={format!("Soll das Feld {} wirklich gelöscht werden?", (*selected_label_state).clone())}
-                        confirm_label="Feld Löschen"
-                        decline_label="Nicht löschen"
-                        on_decline={close_delete_dialog}
-                        on_confirm={confirm_delete_dialog}
                     />
                 }
             }

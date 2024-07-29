@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter};
 
-use crate::api;
 use crate::ui::error::BambooErrorMessage;
+use crate::{api, use_dialogs};
 use bamboo_common::core::entities::{Grove, GroveEvent};
 use bamboo_common::frontend::api::ApiError;
 use chrono::prelude::*;
@@ -335,10 +335,11 @@ fn edit_event_dialog(
     let grove_id_state = use_state_eq(|| event.clone().grove.map(|grove| grove.id));
 
     let is_private_state = use_state_eq(|| event.is_private);
-    let delete_event_open_state = use_state_eq(|| false);
     let unreported_error_toggle = use_state_eq(|| false);
 
     let bamboo_error_state = use_state_eq(ApiError::default);
+
+    let dialogs = use_dialogs();
 
     {
         let title_state = title_state.clone();
@@ -441,9 +442,25 @@ fn edit_event_dialog(
         state.set(Some(value.to_string().parse::<i32>().unwrap()))
     });
     let form_submit = use_callback(save_state.clone(), |_, state| state.run());
+
     let delete_confirm = use_callback(delete_state.clone(), |_, state| state.run());
-    let open_delete = use_callback(delete_event_open_state.clone(), |_, state| state.set(true));
-    let delete_decline = use_callback(delete_event_open_state.clone(), |_, state| state.set(false));
+    let open_delete = use_callback(
+        (dialogs.clone(), delete_confirm.clone(), event.clone()),
+        |_, (dialogs, delete_confirm, event)| {
+            dialogs.confirm(
+                "Event löschen",
+                format!(
+                    "Soll das Event {} wirklich gelöscht werden?",
+                    event.title.clone()
+                ),
+                "Event löschen",
+                "Nicht löschen",
+                CosmoModalType::Warning,
+                delete_confirm.clone(),
+                Callback::noop(),
+            )
+        },
+    );
 
     log::debug!("Color {}", event.color.clone());
 
@@ -578,17 +595,6 @@ fn edit_event_dialog(
                     </CosmoInputGroup>
                 }
             </CosmoModal>
-            if *delete_event_open_state {
-                <CosmoConfirm
-                    confirm_type={CosmoModalType::Warning}
-                    title="Event löschen"
-                    message={format!("Soll das Event {} wirklich gelöscht werden?", event.title.clone())}
-                    confirm_label="Event löschen"
-                    decline_label="Nicht löschen"
-                    on_confirm={delete_confirm}
-                    on_decline={delete_decline}
-                />
-            }
         </>
     )
 }

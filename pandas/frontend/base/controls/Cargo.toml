@@ -12,6 +12,7 @@ chrono = { workspace = true }
 date-range = { workspace = true }
 futures = { workspace = true }
 gloo-events = { workspace = true }
+gloo-utils = { workspace = true }
 log = { workspace = true }
 serde_json = { workspace = true }
 stylist = { workspace = true }
