@@ -1,9 +1,9 @@
 use actix_web::web;
 use sea_orm::DatabaseConnection;
 
-use bamboo_common::backend::dbal;
-use bamboo_common::core::entities::*;
-use bamboo_common::core::error::{BambooError, BambooResult};
+use bamboo_common_backend_dbal as dbal;
+use bamboo_common_core::entities::*;
+use bamboo_common_core::error::{BambooError, BambooResult};
 
 use crate::cookie;
 use crate::header;

@@ -1,7 +1,6 @@
 use actix_web::{web, HttpResponse};
+use bamboo_common::backend::actix::middleware::authenticate;
 use bamboo_common::backend::services::{EnvService, EnvironmentService};
-
-use crate::middleware::authenticate_user::authenticate;
 
 mod authentication;
 mod character;
@@ -14,7 +13,6 @@ mod free_company;
 mod grove;
 mod licenses;
 mod my;
-mod sse;
 mod support;
 mod user;
 
@@ -97,7 +95,6 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
         .service(character_housing::delete_character_housing)
         .service(support::send_support_request)
         .service(licenses::get_licenses)
-        .service(sse::event_sse_client)
         .service(
             actix_web_lab::web::spa()
                 .index_file(format!("{frontend_base_path}/dist/index.html"))

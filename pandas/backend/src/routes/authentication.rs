@@ -1,5 +1,6 @@
 use actix_web::cookie::Cookie;
 use actix_web::{delete, post, web, HttpResponse};
+use bamboo_common::backend::actix::cookie;
 use bamboo_common::backend::dbal;
 use bamboo_common::backend::dbal::create_token;
 use bamboo_common::backend::response::*;
@@ -7,7 +8,7 @@ use bamboo_common::backend::services::DbConnection;
 use bamboo_common::core::entities::*;
 use bamboo_common::core::error::*;
 
-use crate::middleware::authenticate_user::{authenticate, Authentication};
+use bamboo_common::backend::actix::middleware::{authenticate, Authentication};
 
 #[post("/api/login")]
 pub async fn login(body: Option<web::Json<Login>>, db: DbConnection) -> BambooApiResponseResult {
@@ -37,7 +38,7 @@ pub async fn login(body: Option<web::Json<Login>>, db: DbConnection) -> BambooAp
             .map(|data| {
                 let mut response = list!(data.clone());
                 let _ = response.add_cookie(
-                    &Cookie::build(crate::cookie::BAMBOO_AUTH_COOKIE, data.token.clone())
+                    &Cookie::build(cookie::BAMBOO_AUTH_COOKIE, data.token.clone())
                         .path("/")
                         .http_only(true)
                         .finish(),

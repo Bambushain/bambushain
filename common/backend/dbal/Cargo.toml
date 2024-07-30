@@ -8,6 +8,7 @@ license.workspace = true
 
 [dependencies]
 bamboo-common-core = { path = "../../core" }
+bamboo-common-backend-notification = { path = "../notification" }
 
 base64 = { workspace = true }
 bcrypt = { workspace = true }

@@ -1,6 +1,6 @@
 use actix_web::{error, http::header, HttpMessage};
 
-pub(crate) struct AuthorizationHeader {
+pub struct AuthorizationHeader {
     pub authorization: Option<String>,
 }
 

@@ -6,9 +6,8 @@ use bamboo_common::backend::response::*;
 use bamboo_common::backend::services::DbConnection;
 use bamboo_common::core::entities;
 
-use crate::middleware::helpers;
 use crate::path;
-use crate::{cookie, header};
+use bamboo_common::backend::actix::{cookie, header, middleware};
 
 pub(crate) async fn extract_character(
     path: Option<path::CharacterPath>,
@@ -19,9 +18,9 @@ pub(crate) async fn extract_character(
     next: Next<impl body::MessageBody>,
 ) -> Result<dev::ServiceResponse<impl body::MessageBody>, Error> {
     let (_, user) = if authorization.is_some() {
-        helpers::get_user_and_token_by_header(&db, authorization).await?
+        middleware::get_user_and_token_by_header(&db, authorization).await?
     } else {
-        helpers::get_user_and_token_by_cookie(&db, auth_cookie).await?
+        middleware::get_user_and_token_by_cookie(&db, auth_cookie).await?
     };
 
     let path = check_invalid_path!(path, "character")?;

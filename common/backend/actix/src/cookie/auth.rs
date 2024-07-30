@@ -2,7 +2,7 @@ use std::future::{ready, Ready};
 
 use actix_web::{dev, FromRequest, HttpRequest};
 
-use bamboo_common::core::error::*;
+use bamboo_common_core::error::*;
 
 pub const BAMBOO_AUTH_COOKIE: &str = "BambooAuth";
 

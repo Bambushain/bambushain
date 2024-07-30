@@ -8,9 +8,9 @@ use bamboo_common::core::entities::user::JoinStatus;
 use bamboo_common::core::entities::*;
 use bamboo_common::core::error::*;
 
-use crate::middleware::authenticate_user::{authenticate, Authentication};
 use crate::middleware::check_grove_mod::grove_mod;
 use crate::path;
+use bamboo_common::backend::actix::middleware::{authenticate, Authentication};
 
 #[get("/api/grove", wrap = "authenticate!()")]
 pub async fn get_groves(

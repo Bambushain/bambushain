@@ -10,7 +10,7 @@ use fast_qr::convert::svg::SvgBuilder;
 use fast_qr::convert::{Builder, Shape};
 use fast_qr::QRBuilder;
 
-use crate::middleware::authenticate_user::{authenticate, Authentication};
+use bamboo_common::backend::actix::middleware::{authenticate, Authentication};
 
 #[put("/api/my/password", wrap = "authenticate!()")]
 pub async fn change_password(

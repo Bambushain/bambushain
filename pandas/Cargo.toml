@@ -8,8 +8,12 @@ license.workspace = true
 [dependencies]
 bamboo-pandas-backend = { path = "backend", optional = true }
 bamboo-pandas-frontend = { path = "frontend", optional = true }
+bamboo-pandas-events = { path = "events", optional = true }
+bamboo-pandas-mailer = { path = "mailer", optional = true }
 
 [features]
 default = []
-frontend = ["dep:bamboo-pandas-frontend"]
 backend = ["dep:bamboo-pandas-backend"]
+frontend = ["dep:bamboo-pandas-frontend"]
+events = ["dep:bamboo-pandas-events"]
+mailer = ["dep:bamboo-pandas-mailer"]

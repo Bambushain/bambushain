@@ -335,7 +335,7 @@ width: 50%;
             let display_name = user_to_unban_ref.borrow().display_name.clone();
             let user_id = user_to_unban_ref.borrow().id;
 
-                yew::platform::spawn_local(async move {
+            yew::platform::spawn_local(async move {
                 let res = api::unban_user(id, user_id).await;
                 if res.is_ok() {
                     users_state.run();

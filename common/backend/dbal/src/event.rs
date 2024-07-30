@@ -1,4 +1,5 @@
 use crate::error_tag;
+use bamboo_common_backend_notification::EventAction;
 use bamboo_common_core::entities::event;
 use bamboo_common_core::entities::event::GroveEvent;
 use bamboo_common_core::entities::user::WebUser;
@@ -101,16 +102,16 @@ fn get_event_query(
         )
         .join_rev(
             JoinType::LeftJoin,
-            grove::Entity::belongs_to(grove_user::Entity)
+            grove::Entity::belongs_to(event::Entity)
                 .from(grove::Column::Id)
-                .to(grove_user::Column::GroveId)
+                .to(event::Column::GroveId)
                 .into(),
         )
         .join_rev(
             JoinType::LeftJoin,
-            user::Entity::belongs_to(grove_user::Entity)
+            user::Entity::belongs_to(event::Entity)
                 .from(user::Column::Id)
-                .to(grove_user::Column::UserId)
+                .to(event::Column::UserId)
                 .into(),
         )
         .filter(
@@ -195,7 +196,10 @@ pub async fn create_event(
         .await
         .map_err(|_| BambooError::database(error_tag!(), "Failed to create event"))?;
 
-    get_event(created.id, user_id, db).await
+    let event = get_event(created.id, user_id, db).await?;
+    bamboo_common_backend_notification::enqueue_event(EventAction::Created(event.clone())).await;
+
+    Ok(event)
 }
 
 pub async fn update_event(
@@ -214,16 +218,32 @@ pub async fn update_event(
         .col_expr(event::Column::Color, Expr::value(event.color))
         .exec(db)
         .await
-        .map_err(|_| BambooError::database(error_tag!(), "Failed to update event"))
-        .map(|_| ())
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to update event"))?;
+
+    if let Ok(event) = get_event(id, user_id, db).await {
+        bamboo_common_backend_notification::enqueue_event(EventAction::Updated(event.clone()))
+            .await;
+    }
+
+    Ok(())
 }
 
 pub async fn delete_event(user_id: i32, id: i32, db: &DatabaseConnection) -> BambooErrorResult {
-    event::Entity::delete_many()
+    let event = get_event(id, user_id, db).await?;
+
+    let res = event::Entity::delete_many()
         .filter(event::Column::Id.eq(id))
         .filter(event::Column::UserId.eq(user_id))
         .exec(db)
         .await
-        .map_err(|_| BambooError::database(error_tag!(), "Failed to delete event"))
-        .map(|_| ())
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to delete event"))?;
+
+    if res.rows_affected > 0 {
+        bamboo_common_backend_notification::enqueue_event(EventAction::Deleted(event.clone()))
+            .await;
+
+        Ok(())
+    } else {
+        Err(BambooError::not_found(error_tag!(), "Event not found"))
+    }
 }

@@ -373,9 +373,9 @@ fn edit_event_dialog(
 
         use_async(async move {
             let grove = if *is_private_state {
-                grove_id_state.map(|id| groves.iter().cloned().find(|grove| grove.id == id))
-            } else {
                 Some(None)
+            } else {
+                grove_id_state.map(|id| groves.iter().cloned().find(|grove| grove.id == id))
             }
             .unwrap();
 

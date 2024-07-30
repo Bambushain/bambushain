@@ -6,7 +6,7 @@ use bamboo_common::backend::services::EnvService;
 use bamboo_common::core::entities::SupportRequest;
 use bamboo_common::core::error::*;
 
-use crate::middleware::authenticate_user::{authenticate, Authentication};
+use bamboo_common::backend::actix::middleware::{authenticate, Authentication};
 
 #[post("/api/support", wrap = "authenticate!()")]
 pub async fn send_support_request(

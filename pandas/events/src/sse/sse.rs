@@ -1,7 +1,7 @@
 use actix_web::{get, Responder};
 
-use crate::middleware::authenticate_user::{authenticate, Authentication};
 use crate::notifier::Notifier;
+use bamboo_common::backend::actix::middleware::{authenticate, Authentication};
 
 #[get("/sse/event", wrap = "authenticate!()")]
 pub async fn event_sse_client(

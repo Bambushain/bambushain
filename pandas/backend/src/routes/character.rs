@@ -6,8 +6,8 @@ use bamboo_common::backend::services::DbConnection;
 use bamboo_common::core::entities::*;
 use bamboo_common::core::error::*;
 
-use crate::middleware::authenticate_user::{authenticate, Authentication};
 use crate::path;
+use bamboo_common::backend::actix::middleware::{authenticate, Authentication};
 
 #[get("/api/final-fantasy/character", wrap = "authenticate!()")]
 pub async fn get_characters(

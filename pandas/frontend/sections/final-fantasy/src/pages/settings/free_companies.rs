@@ -122,11 +122,7 @@ pub fn free_companies() -> Html {
 
     let on_delete = use_callback(delete_state.clone(), |_, state| state.run());
     let on_delete_open = use_callback(
-        (
-            selected_id_ref.clone(),
-            on_delete.clone(),
-            dialogs.clone(),
-        ),
+        (selected_id_ref.clone(), on_delete.clone(), dialogs.clone()),
         |(id, name): (i32, String), (selected_id_ref, on_delete, dialogs)| {
             *selected_id_ref.borrow_mut() = id;
 

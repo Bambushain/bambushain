@@ -1,6 +1,6 @@
-use crate::middleware::authenticate_user::{authenticate, Authentication};
 use crate::path;
 use actix_web::{get, web, Responder};
+use bamboo_common::backend::actix::middleware::{authenticate, Authentication};
 use bamboo_common::backend::dbal;
 use bamboo_common::backend::dbal::BannedStatus;
 use bamboo_common::backend::response::*;

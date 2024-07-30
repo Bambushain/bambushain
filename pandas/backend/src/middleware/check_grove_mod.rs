@@ -1,8 +1,7 @@
-use crate::header;
-use crate::middleware::helpers;
-use crate::{cookie, path};
+use crate::path;
 use actix_web::{body, dev, web, Error};
 use actix_web_lab::middleware::Next;
+use bamboo_common::backend::actix::{cookie, header, middleware};
 use bamboo_common::backend::dbal;
 use bamboo_common::backend::services::DbConnection;
 use bamboo_common::core::error::BambooError;
@@ -16,9 +15,9 @@ pub(crate) async fn check_grove_mod(
     next: Next<impl body::MessageBody>,
 ) -> Result<dev::ServiceResponse<impl body::MessageBody>, Error> {
     let (_, user) = if authorization.is_some() {
-        helpers::get_user_and_token_by_header(&db, authorization).await?
+        middleware::get_user_and_token_by_header(&db, authorization).await?
     } else {
-        helpers::get_user_and_token_by_cookie(&db, auth_cookie).await?
+        middleware::get_user_and_token_by_cookie(&db, auth_cookie).await?
     };
 
     if let Some(path) = path {

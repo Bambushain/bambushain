@@ -4,7 +4,6 @@ use bamboo_common::backend::migration::{Migrator, MigratorTrait};
 use bamboo_common::backend::services::minio_service::MinioClient;
 use bamboo_common::backend::services::DbConnection;
 
-use crate::notifier;
 use crate::routes;
 
 async fn setup_google_playstore_grove(
@@ -81,19 +80,16 @@ pub fn start_server() -> std::io::Result<()> {
 
         setup_google_playstore_user(&db).await?;
 
-        let notifier = notifier::NotifierState::new();
-
         HttpServer::new(move || {
             App::new()
                 .wrap(middleware::Compress::default())
                 .app_data(bamboo_common::backend::services::MinioService::new(
                     minio_client.clone(),
                 ))
-                .app_data(notifier::Notifier::new(notifier.clone()))
                 .app_data(DbConnection::new(db.clone()))
                 .configure(routes::configure_routes)
         })
-        .bind(("0.0.0.0", 8070))?
+        .bind(("0.0.0.0", 4010))?
         .run()
         .await
     })?;

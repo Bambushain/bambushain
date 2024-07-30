@@ -9,9 +9,8 @@ use bamboo_common::backend::services::DbConnection;
 use bamboo_common::core::entities::event::GroveEvent;
 use bamboo_common::core::error::*;
 
-use crate::middleware::authenticate_user::{authenticate, Authentication};
-use crate::notifier;
 use crate::path;
+use bamboo_common::backend::actix::middleware::{authenticate, Authentication};
 
 #[derive(Deserialize)]
 pub struct GetEventsQuery {
@@ -40,14 +39,11 @@ pub async fn get_events(
 #[post("/api/bamboo-grove/event", wrap = "authenticate!()")]
 pub async fn create_event(
     body: Option<web::Json<GroveEvent>>,
-    notifier: notifier::Notifier,
     authentication: Authentication,
     db: DbConnection,
 ) -> BambooApiResult<GroveEvent> {
     let body = check_missing_fields!(body, "event")?;
     let data = dbal::create_event(body.into_inner(), authentication.user.id, &db).await?;
-
-    notifier.notify_event_create(data.clone(), &db).await;
 
     Ok(created!(data))
 }
@@ -56,7 +52,6 @@ pub async fn create_event(
 pub async fn update_event(
     path: Option<path::EventPath>,
     body: Option<web::Json<GroveEvent>>,
-    notifier: notifier::Notifier,
     authentication: Authentication,
     db: DbConnection,
 ) -> BambooApiResponseResult {
@@ -71,24 +66,18 @@ pub async fn update_event(
     )
     .await?;
 
-    let event = dbal::get_event(path.event_id, authentication.user.id, &db).await?;
-    notifier.notify_event_update(event, &db).await;
-
     Ok(no_content!())
 }
 
 #[delete("/api/bamboo-grove/event/{event_id}", wrap = "authenticate!()")]
 pub async fn delete_event(
     path: Option<path::EventPath>,
-    notifier: notifier::Notifier,
     authentication: Authentication,
     db: DbConnection,
 ) -> BambooApiResponseResult {
     let path = check_invalid_path!(path, "event")?;
 
-    let event = dbal::get_event(path.event_id, authentication.user.id, &db).await?;
     dbal::delete_event(authentication.user.id, path.event_id, &db).await?;
-    notifier.notify_event_delete(event, &db).await;
 
     Ok(no_content!())
 }
