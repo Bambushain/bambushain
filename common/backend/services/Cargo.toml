@@ -13,4 +13,6 @@ actix-web = { workspace = true }
 bytes = { workspace = true }
 rust-s3 = { workspace = true }
 sea-orm = { workspace = true }
-log = { workspace = true }
+
+[package.metadata.cargo-machete]
+ignored = ["rust-s3"]

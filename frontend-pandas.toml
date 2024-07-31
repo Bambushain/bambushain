@@ -1,0 +1,13 @@
+[build]
+# The index HTML file to drive the bundling process.
+target = "frontend/pandas/index.html"
+# Build in release mode.
+release = false
+# The output dir for all final assets.
+dist = "dist-pandas"
+# The public URL from which assets are to be served.
+public_url = "/pandas/static/"
+wasm-opt = "z"
+
+[watch]
+watch = ["common/core", "common/frontend", "frontend/pandas"]

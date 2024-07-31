@@ -6,26 +6,30 @@ license.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-bamboo-pandas = { path = "pandas", optional = true }
+bamboo-backend = { path = "backend", optional = true }
+bamboo-frontend = { path = "frontend", optional = true }
 
 actix = { workspace = true, optional = true }
-actix-web = { workspace = true, optional = true }
-tokio = { workspace = true, optional = true }
 
 [[bin]]
-path = "src/bin/pandas-server.rs"
-name = "pandas-server"
-required-features = ["pandas-backend"]
+path = "src/bin/backend-api.rs"
+name = "backend-api"
+required-features = ["backend-api"]
 
 [[bin]]
-path = "src/bin/pandas-events.rs"
-name = "pandas-events"
-required-features = ["pandas-events"]
+path = "src/bin/backend-events.rs"
+name = "backend-events"
+required-features = ["backend-events"]
 
 [[bin]]
-path = "src/bin/pandas-web.rs"
-name = "pandas-web"
-required-features = ["pandas-frontend"]
+path = "src/bin/backend-pandas.rs"
+name = "backend-pandas"
+required-features = ["backend-pandas"]
+
+[[bin]]
+path = "src/bin/frontend-pandas.rs"
+name = "frontend-pandas"
+required-features = ["frontend-pandas"]
 
 [workspace]
 members = [
@@ -46,27 +50,28 @@ members = [
     "common/frontend",
     "common/frontend/api",
     "common/frontend/ui",
-    "pandas",
-    "pandas/backend",
-    "pandas/events",
-    "pandas/frontend",
-    "pandas/frontend/base",
-    "pandas/frontend/base/controls",
-    "pandas/frontend/base/error",
-    "pandas/frontend/base/routing",
-    "pandas/frontend/base/storage",
-    "pandas/frontend/sections",
-    "pandas/frontend/sections/authentication",
-    "pandas/frontend/sections/bamboo",
-    "pandas/frontend/sections/final-fantasy",
-    "pandas/frontend/sections/groves",
-    "pandas/frontend/sections/layout",
-    "pandas/frontend/sections/legal",
-    "pandas/frontend/sections/licenses",
-    "pandas/frontend/sections/support",
-    "pandas/mailer",
-    "pandas/mailer/listener",
-    "pandas/mailer/service",
+    "backend",
+    "backend/api",
+    "backend/events",
+    "backend/mailer",
+    "backend/mailer/listener",
+    "backend/mailer/service",
+    "frontend",
+    "frontend/pandas",
+    "frontend/pandas/base",
+    "frontend/pandas/base/controls",
+    "frontend/pandas/base/error",
+    "frontend/pandas/base/routing",
+    "frontend/pandas/base/storage",
+    "frontend/pandas/sections",
+    "frontend/pandas/sections/authentication",
+    "frontend/pandas/sections/bamboo",
+    "frontend/pandas/sections/final-fantasy",
+    "frontend/pandas/sections/groves",
+    "frontend/pandas/sections/layout",
+    "frontend/pandas/sections/legal",
+    "frontend/pandas/sections/licenses",
+    "frontend/pandas/sections/support",
 ]
 
 [workspace.package]
@@ -139,9 +144,10 @@ yew-router = "0.18.0"
 
 [features]
 default = []
-pandas-backend = ["dep:tokio", "dep:bamboo-pandas", "bamboo-pandas/backend"]
-pandas-frontend = ["dep:bamboo-pandas", "bamboo-pandas/frontend"]
-pandas-events = ["dep:tokio", "dep:actix", "dep:bamboo-pandas", "bamboo-pandas/events"]
+backend-api = ["dep:bamboo-backend", "bamboo-backend/api"]
+backend-events = ["dep:actix", "dep:bamboo-backend", "bamboo-backend/events"]
+backend-pandas = ["dep:actix", "dep:bamboo-backend", "bamboo-backend/pandas"]
+frontend-pandas = ["dep:bamboo-frontend", "bamboo-frontend/pandas"]
 
 [profile.web-dev]
 inherits = "dev"

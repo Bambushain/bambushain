@@ -1,0 +1,18 @@
+[package]
+name = "bamboo-frontend-pandas"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bamboo-frontend-pandas-base = { path = "base" }
+bamboo-frontend-pandas-sections = { path = "sections" }
+
+console_log = { workspace = true }
+gloo-utils = { workspace = true }
+log = { workspace = true }
+yew = { workspace = true, features = ["ssr"] }
+yew-cosmo = { workspace = true }
+yew-router = { workspace = true }

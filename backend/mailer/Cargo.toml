@@ -1,0 +1,9 @@
+[package]
+name = "bamboo-backend-mailer"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bamboo-backend-mailer-service = { path = "service" }
+bamboo-backend-mailer-listener = { path = "listener" }

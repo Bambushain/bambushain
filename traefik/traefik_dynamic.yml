@@ -5,18 +5,25 @@ http:
       service: api@internal
       entryPoints:
         - traefik
-    api:
-      rule: PathPrefix(`/api`) || PathPrefix(`/pandas`)
-      service: api
-    events:
+    services-api:
+      rule: PathPrefix(`/api`)
+      service: services-api
+    services-events:
       rule: Path(`/sse/event`)
-      service: events
+      service: services-events
+    pandas-ui:
+      rule: PathPrefix(`/pandas`)
+      service: pandas-ui
   services:
-    api:
+    services-api:
       loadBalancer:
         servers:
           - url: "http://host.docker.internal:4010"
-    events:
+    services-events:
       loadBalancer:
         servers:
           - url: "http://host.docker.internal:4020"
+    pandas-ui:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:4080"

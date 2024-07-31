@@ -1,0 +1,10 @@
+[package]
+name = "bamboo-frontend-pandas-base-storage"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bamboo-common = { path = "../../../../common", features = ["core"] }
+bounce = { workspace = true }
+gloo-storage = { workspace = true }

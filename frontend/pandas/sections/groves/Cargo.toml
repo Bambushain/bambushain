@@ -1,0 +1,19 @@
+[package]
+name = "bamboo-frontend-pandas-section-groves"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bamboo-common = { path = "../../../../common", features = ["frontend"] }
+bamboo-frontend-pandas-base = { path = "../../base" }
+
+bounce = { workspace = true }
+chrono = { workspace = true }
+log = { workspace = true }
+stylist = { workspace = true }
+yew = { workspace = true }
+yew-autoprops = { workspace = true }
+yew-cosmo = { workspace = true }
+yew-hooks = { workspace = true }
+yew-router = { workspace = true }

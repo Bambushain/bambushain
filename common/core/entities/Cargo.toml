@@ -12,21 +12,21 @@ bcrypt = { workspace = true }
 chrono = { workspace = true }
 color-art = { workspace = true }
 hex = { workspace = true }
-log = { workspace = true }
 serde = { workspace = true }
-serde_json = { workspace = true }
 sha2 = { workspace = true }
 
 actix-web = { workspace = true, optional = true }
 sea-orm = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
 
 strum = { workspace = true, optional = true }
 strum_macros = { workspace = true, optional = true }
-uuid = { version = "1.10.0", features = ["v4"] }
+
+uuid = { workspace = true }
 
 [features]
-backend = ["dep:actix-web", "dep:sea-orm", "dep:bamboo-common-backend-macros"]
+backend = ["dep:actix-web", "dep:sea-orm", "dep:serde_json", "dep:bamboo-common-backend-macros"]
 frontend = ["dep:strum", "dep:strum_macros"]
 
 [package.metadata.cargo-machete]
-ignored = ["actix-web", "strum"]
+ignored = ["actix-web", "strum", "serde_json"]

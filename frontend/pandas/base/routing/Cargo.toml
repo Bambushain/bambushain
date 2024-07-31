@@ -1,0 +1,8 @@
+[package]
+name = "bamboo-frontend-pandas-base-routing"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+yew-router = { workspace = true }

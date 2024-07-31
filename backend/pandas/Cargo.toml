@@ -1,0 +1,11 @@
+[package]
+name = "bamboo-backend-pandas"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+actix-web = { workspace = true }
+actix-web-lab = { workspace = true }
+env_logger = { workspace = true }
+log = { workspace = true }

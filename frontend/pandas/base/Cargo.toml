@@ -1,0 +1,12 @@
+[package]
+name = "bamboo-frontend-pandas-base"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bamboo-common = { path = "../../../common" }
+bamboo-frontend-pandas-base-controls = { path = "controls" }
+bamboo-frontend-pandas-base-error = { path = "error" }
+bamboo-frontend-pandas-base-routing = { path = "routing" }
+bamboo-frontend-pandas-base-storage = { path = "storage" }

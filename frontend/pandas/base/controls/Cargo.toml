@@ -1,0 +1,25 @@
+[package]
+name = "bamboo-frontend-pandas-base-controls"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bamboo-common = { path = "../../../../common", features = ["frontend"] }
+bamboo-frontend-pandas-base-error = { path = "../error" }
+
+chrono = { workspace = true }
+date-range = { workspace = true }
+futures = { workspace = true }
+gloo-events = { workspace = true }
+gloo-utils = { workspace = true }
+log = { workspace = true }
+serde_json = { workspace = true }
+stylist = { workspace = true }
+wasm-bindgen = { workspace = true }
+web-sys = { workspace = true }
+yew = { workspace = true }
+yew-cosmo = { workspace = true }
+yew-autoprops = { workspace = true }
+yew_icons = { workspace = true }
+yew-hooks = { workspace = true }
