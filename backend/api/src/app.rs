@@ -48,50 +48,47 @@ async fn setup_google_playstore_user(db: &sea_orm::DatabaseConnection) -> std::i
     }
 }
 
-pub fn start_server() -> std::io::Result<()> {
-    env_logger::init();
+pub async fn start_server() -> std::io::Result<()> {
+    bamboo_common::backend::logging::init();
 
-    actix_web::rt::System::new().block_on(async {
-        log::info!("Open the bamboo grove");
-        let db = bamboo_common::backend::database::get_database()
-            .await
-            .map_err(std::io::Error::other)?;
-
-        let migrations = Migrator::get_pending_migrations(&db)
-            .await
-            .map_err(std::io::Error::other)?;
-        log::info!("Running {} migrations", migrations.len());
-
-        Migrator::up(&db, None)
-            .await
-            .map_err(std::io::Error::other)?;
-        log::info!("Successfully migrated database");
-        let minio_client = MinioClient::new(
-            std::env::var("S3_BUCKET").map_err(std::io::Error::other)?,
-            std::env::var("S3_ACCESS_KEY").map_err(std::io::Error::other)?,
-            std::env::var("S3_SECRET_KEY").map_err(std::io::Error::other)?,
-            std::env::var("S3_REGION").map_err(std::io::Error::other)?,
-            std::env::var("S3_ENDPOINT").ok(),
-            std::env::var("S3_USE_PATH_STYLE")
-                .ok()
-                .map_or(false, |val| val.to_lowercase() == "true"),
-        )
+    log::info!("Open the bamboo grove");
+    let db = bamboo_common::backend::database::get_database()
+        .await
         .map_err(std::io::Error::other)?;
 
-        setup_google_playstore_user(&db).await?;
-
-        HttpServer::new(move || {
-            App::new()
-                .wrap(middleware::Compress::default())
-                .app_data(bamboo_common::backend::services::MinioService::new(
-                    minio_client.clone(),
-                ))
-                .app_data(DbConnection::new(db.clone()))
-                .configure(routes::configure_routes)
-        })
-        .bind(("0.0.0.0", 4010))?
-        .run()
+    let migrations = Migrator::get_pending_migrations(&db)
         .await
-    })?;
-    Ok(())
+        .map_err(std::io::Error::other)?;
+    log::info!("Running {} migrations", migrations.len());
+
+    Migrator::up(&db, None)
+        .await
+        .map_err(std::io::Error::other)?;
+    log::info!("Successfully migrated database");
+    let minio_client = MinioClient::new(
+        std::env::var("S3_BUCKET").map_err(std::io::Error::other)?,
+        std::env::var("S3_ACCESS_KEY").map_err(std::io::Error::other)?,
+        std::env::var("S3_SECRET_KEY").map_err(std::io::Error::other)?,
+        std::env::var("S3_REGION").map_err(std::io::Error::other)?,
+        std::env::var("S3_ENDPOINT").ok(),
+        std::env::var("S3_USE_PATH_STYLE")
+            .ok()
+            .map_or(false, |val| val.to_lowercase() == "true"),
+    )
+    .map_err(std::io::Error::other)?;
+
+    setup_google_playstore_user(&db).await?;
+
+    HttpServer::new(move || {
+        App::new()
+            .wrap(middleware::Compress::default())
+            .app_data(bamboo_common::backend::services::MinioService::new(
+                minio_client.clone(),
+            ))
+            .app_data(DbConnection::new(db.clone()))
+            .configure(routes::configure_routes)
+    })
+    .bind(("0.0.0.0", 4010))?
+    .run()
+    .await
 }

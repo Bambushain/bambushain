@@ -74,6 +74,8 @@
       <sourceFolder url="file://$MODULE_DIR$/frontend/pandas/sections/mod-area/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/frontend/pandas/sections/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/frontend/pandas/sections/support/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/common/backend/logging/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/common/backend/message_queue/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/frontend/pandas/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/common/backend/target" />
       <excludeFolder url="file://$MODULE_DIR$/common/core/target" />

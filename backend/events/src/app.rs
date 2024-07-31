@@ -5,7 +5,7 @@ use actix_web::{middleware, App, HttpServer};
 use bamboo_common::backend::services::DbConnection;
 
 pub async fn start_server() -> std::io::Result<()> {
-    env_logger::init();
+    bamboo_common::backend::logging::init();
 
     log::info!("Listening for sse connections");
     let db = bamboo_common::backend::database::get_database()
@@ -14,7 +14,9 @@ pub async fn start_server() -> std::io::Result<()> {
 
     let notifier_state = NotifierState::new();
 
-    let (handle, stop_signal) = start_listening(notifier_state.clone()).await.map_err(std::io::Error::other)?;
+    let (handle, stop_signal) = start_listening(notifier_state.clone())
+        .await
+        .map_err(std::io::Error::other)?;
 
     HttpServer::new(move || {
         App::new()

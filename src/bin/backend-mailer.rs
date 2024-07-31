@@ -1,4 +1,4 @@
 #[actix::main]
 async fn main() -> std::io::Result<()> {
-    bamboo_backend::api::start_server().await
+    bamboo_backend::mailer::start().await
 }

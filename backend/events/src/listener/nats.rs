@@ -2,9 +2,8 @@ use crate::notifier::NotifierState;
 use async_nats::{Client, Message};
 use bamboo_common::backend::database::get_database;
 use bamboo_common::backend::dbal;
-use bamboo_common::backend::notification::{
-    get_nats, EventAction, FromMessage, NotificationError, Queue,
-};
+use bamboo_common::backend::mq::{get_nats, FromMessage, NotificationError, Queue};
+use bamboo_common::backend::notification::EventAction;
 use futures_util::StreamExt;
 use sea_orm::DatabaseConnection;
 use tokio::task::JoinHandle;

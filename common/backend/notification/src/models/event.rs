@@ -1,16 +1,6 @@
-use crate::impl_nats;
-use async_nats::Message;
 use bamboo_common_core::entities::*;
-use bytes::Bytes;
 use serde::{Deserialize, Serialize};
-
-pub trait IntoBytes {
-    fn into_bytes(self) -> Result<Bytes, NotificationError>;
-}
-
-pub trait FromMessage<T: Sized> {
-    fn from_message(message: Message) -> Result<T, NotificationError>;
-}
+use bamboo_common_backend_mq::impl_nats;
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Clone)]
 pub enum EventAction {

@@ -16,9 +16,9 @@ bytes = { workspace = true }
 bytestring = { workspace = true }
 chrono = { workspace = true }
 date-range = { workspace = true }
-env_logger = { workspace = true }
 fast_qr = { workspace = true }
 log = { workspace = true }
+maud = { workspace = true }
 parking_lot = { workspace = true }
 sea-orm = { workspace = true }
 serde = { workspace = true }

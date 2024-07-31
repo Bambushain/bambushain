@@ -1,2 +1,5 @@
-pub use bamboo_services_mailer_listener::*;
-pub use bamboo_services_mailer_service::*;
+mod app;
+mod listener;
+pub(crate) mod mailer;
+
+pub use crate::app::start;

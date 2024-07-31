@@ -1,7 +1,0 @@
-[package]
-name = "bamboo-backend-mailer-service"
-version.workspace = true
-edition.workspace = true
-license.workspace = true
-
-[dependencies]

@@ -1,11 +1,10 @@
 [package]
-name = "bamboo-common-backend-notification"
+name = "bamboo-common-backend-mq"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [dependencies]
-bamboo-common-backend-mq = { path = "../message_queue" }
 bamboo-common-core = { path = "../../core" }
 
 async-nats = { workspace = true }

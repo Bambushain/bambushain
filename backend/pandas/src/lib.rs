@@ -1,7 +1,7 @@
 use actix_web::{App, HttpServer};
 
 pub async fn start_server() -> std::io::Result<()> {
-    env_logger::init();
+    bamboo_common::backend::logging::init();
     let frontend_base_path = std::env::var("FRONTEND_DIR").unwrap_or(".".to_string());
     log::info!("Frontend base path: {frontend_base_path}");
 
