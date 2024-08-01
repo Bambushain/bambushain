@@ -31,6 +31,7 @@ mod m20240719_224810_assign_groves_to_users_not_users_to_groves;
 mod m20240723_200654_add_grove_invite_secret;
 mod m20240723_201052_grove_name_none_unique;
 mod m20240724_222658_grove_user_add_ban_column;
+mod m20240731_233956_user_add_forgot_password_token_column;
 
 pub struct Migrator;
 
@@ -69,6 +70,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20240723_200654_add_grove_invite_secret::Migration),
             Box::new(m20240723_201052_grove_name_none_unique::Migration),
             Box::new(m20240724_222658_grove_user_add_ban_column::Migration),
+            Box::new(m20240731_233956_user_add_forgot_password_token_column::Migration),
         ]
     }
 }

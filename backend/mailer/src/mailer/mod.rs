@@ -1,11 +1,14 @@
+use crate::template;
 use bamboo_common::backend::mailing::Mail;
 use bamboo_common::backend::services::EnvironmentService;
 use bamboo_common::core::error::{BambooError, BambooErrorResult, BambooResult};
-use lettre::message::MessageBuilder;
-use lettre::message::{Mailbox, MultiPart};
+use lettre::message::header::ContentType;
+use lettre::message::{Attachment, Body, Mailbox, MultiPart};
+use lettre::message::{MessageBuilder, SinglePart};
 use lettre::transport::smtp;
 use lettre::transport::smtp::client::TlsParameters;
 use lettre::{AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor};
+use maud::PreEscaped;
 
 fn get_transport(
     env_service: &EnvironmentService,
@@ -69,21 +72,62 @@ fn build_message(
         .subject(subject))
 }
 
-pub async fn send_mail(mail: Mail, env_service: EnvironmentService) -> BambooErrorResult {
-    let plain_body = html2text::config::plain()
-        .string_from_read(mail.body.as_bytes(), 40)
-        .map_err(|_| BambooError::mailing("Failed to strip html tags"))?;
+fn convert_html_body(mail: Mail) -> String {
+    if mail.templated {
+        template::mail(
+            mail.subject,
+            maud::Markup::from(PreEscaped(mail.body)),
+            mail.action_label,
+            mail.action_link,
+        )
+    } else {
+        mail.body
+    }
+}
 
-    let email = if let Some(reply_to) = mail.reply_to {
-        build_message(&env_service, mail.subject, mail.to)?.reply_to(
+fn convert_plain_body(mail: Mail) -> BambooResult<String> {
+    let body = if mail.templated {
+        template::mail(
+            mail.subject,
+            maud::Markup::from(PreEscaped(mail.body)),
+            mail.action_label.map(|res| {
+                format!(
+                    "{res}: {}",
+                    mail.action_link.clone().unwrap_or("".to_string())
+                )
+            }),
+            mail.action_link,
+        )
+    } else {
+        mail.body
+    };
+    html2text::config::rich()
+        .string_from_read(body.as_bytes(), 140)
+        .map_err(|_| BambooError::mailing("Failed to strip html tags"))
+}
+
+pub async fn send_mail(mail: Mail, env_service: EnvironmentService) -> BambooErrorResult {
+    let email = if let Some(reply_to) = mail.reply_to.clone() {
+        build_message(&env_service, mail.subject.clone(), mail.to.clone())?.reply_to(
             reply_to
                 .parse()
                 .map_err(|_| BambooError::mailing("Failed to parse reply to address"))?,
         )
     } else {
-        build_message(&env_service, mail.subject, mail.to)?
+        build_message(&env_service, mail.subject.clone(), mail.to.clone())?
     }
-    .multipart(MultiPart::alternative_plain_html(plain_body, mail.body))
+    .multipart(
+        MultiPart::alternative()
+            .singlepart(SinglePart::plain(convert_plain_body(mail.clone())?))
+            .multipart(
+                MultiPart::related()
+                    .singlepart(SinglePart::html(convert_html_body(mail.clone())))
+                    .singlepart(Attachment::new_inline("logo".to_string()).body(
+                        Body::new(include_bytes!("logo.png").to_vec()),
+                        ContentType::parse("image/png").unwrap(),
+                    )),
+            ),
+    )
     .map_err(|_| BambooError::mailing("Failed to construct the email message"))?;
 
     get_transport(&env_service)?

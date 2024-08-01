@@ -22,6 +22,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     cfg.app_data(environment_service)
         .service(authentication::login)
         .service(authentication::forgot_password)
+        .service(authentication::reset_password)
         .service(authentication::logout)
         .route(
             "/api/login",

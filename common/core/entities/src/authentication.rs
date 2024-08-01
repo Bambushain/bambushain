@@ -57,3 +57,11 @@ pub struct ChangeMyPassword {
 pub struct ForgotPassword {
     pub email: String,
 }
+
+#[derive(Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Clone, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ResetPassword {
+    pub email: String,
+    pub token: String,
+    pub password: String,
+}

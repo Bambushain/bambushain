@@ -63,11 +63,16 @@ fn login_content() -> Html {
     let forgot_password = {
         let email_state = email_state.clone();
 
+        let forgot_password_toggle = forgot_password_toggle.clone();
+
         use_async(async move {
-            api::forgot_password(ForgotPassword {
+            let res = api::forgot_password(ForgotPassword {
                 email: (*email_state).to_string(),
             })
-            .await
+            .await;
+            forgot_password_toggle.set(false);
+
+            res
         })
     };
 
@@ -156,14 +161,14 @@ align-items: center;
                 <CosmoTitle title="Anmelden" />
                 <p class={login_message_style}>
                     if *forgot_password_toggle {
-                        { "Gib deine Emailadresse oder deinen Namen ein, wenn du im Hain bist, schicken wir allen Mods eine Email mit der Bitte dein Passwort zurückzusetzen" }
+                        { "Gib deine Emailadresse oder deinen Namen ein, wenn du in Bambushain registriert bist, schicken wir dir eine Email mit einem Link" }
                     } else if forgot_password.error.is_some() {
-                        { "Leider konnten wir die Mods nicht erreichen, bitte wende dich direkt an einen Mod wenn du kannst oder an " }
+                        { "Leider konnten wir dir die Email nicht schicken, bitte schreib direkt eine Email an " }
                         <CosmoAnchor href="mailto:panda.helferlein@bambushain.app">
                             { "panda.helferlein@bambushain.app" }
                         </CosmoAnchor>
                     } else if forgot_password.data.is_some() {
-                        { "Wir haben den Mods geschrieben, bitte warte bis sich jemand bei dir meldet" }
+                        { "Eine Email mit einem Link zum zurücksetzen vom Passwort ist unterwegs" }
                     } else if let Some(error) = &login.error {
                         <Icon
                             icon_id={IconId::LucideXOctagon}
