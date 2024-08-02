@@ -52,12 +52,12 @@ stages:
   - build
   - deploy
 
-lint-server:
+lint-backend:
   extends:
     - .base-server-cache
   stage: lint
   script:
-    - cargo clippy --release --features pandas-backend --bin pandas-server
+    - cargo clippy --release --features backend-api --features backend-events --features backend-mailer --features backend-pandas --bin backend-api --bin backend-events --bin backend-mailer --bin backend-pandas
   parallel:
     matrix:
       - ARCH: amd64
@@ -70,93 +70,58 @@ lint-web:
     - .base-web-cache
   stage: lint
   script:
-    - cargo clippy --release --features pandas-frontend --no-default-features --bin pandas-web
+    - cargo clippy --release --features frontend-pandas --no-default-features --bin frontend-pandas
 
-build-server:
-  stage: build
-  extends:
-    - .base-server-cache
-  script:
-    - cargo build --release --bin pandas-server --features pandas-backend
-    - mkdir $ARCH
-    - cp target/release/pandas-server $ARCH/pandas-server
-  needs:
-    - lint-server
-  artifacts:
-    paths:
-      - $ARCH/pandas-server
-  parallel:
-    matrix:
-      - ARCH: amd64
-      - ARCH: arm64
-  tags:
-    - runner-${ARCH}
-
-build-web:
-  stage: build
-  extends:
-    - .base-web-cache
-  script:
-    - trunk build
-  needs:
-    - lint-web
-  parallel:
-    matrix:
-      # pandas
-      - TRUNK_BUILD_TARGET: pandas/frontend/index.html
-        TRUNK_BUILD_DIST: dist-pandas
-  artifacts:
-    paths:
-      - dist-pandas
-
-docker-build-pandas:
+docker-build:
   stage: deploy
-  variables:
-    SENTRY_RELEASE: $CI_COMMIT_TAG
   extends:
     - .base-kaniko
   script:
-    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/pandas.${ARCH}.dockerfile" --destination "${CI_REGISTRY_IMAGE}/pandas/${ARCH}:${CI_COMMIT_TAG}" --destination "${CI_REGISTRY_IMAGE}/pandas/${ARCH}:latest"
-  needs:
-    - build-server
-    - build-web
+    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/docker/${APP}.dockerfile" --destination "${CI_REGISTRY_IMAGE}/${APP}/${ARCH}:${CI_COMMIT_TAG}" --destination "${CI_REGISTRY_IMAGE}/${APP}/${ARCH}:latest"
   rules:
     - if: $CI_COMMIT_TAG
   parallel:
     matrix:
-      - ARCH: amd64
-      - ARCH: arm64
+      - ARCH:
+          - amd64
+          - arm64
+      - APP:
+          - pandas
+          - mailer
+          - api
+          - events
   tags:
     - runner-${ARCH}
 
-docker-build-pandas-testing:
+docker-build-testing:
   stage: deploy
-  variables:
-    SENTRY_RELEASE: $CI_COMMIT_BRANCH
   extends:
     - .base-kaniko
   script:
-    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/pandas.${ARCH}.dockerfile" --destination "${CI_REGISTRY_IMAGE}/pandas/${ARCH}:$CI_PIPELINE_IID-test"
-  needs:
-    - build-server
-    - build-web
+    - /kaniko/executor --context "dir://${CI_PROJECT_DIR}" --dockerfile "${CI_PROJECT_DIR}/docker/${APP}.dockerfile" --destination "${CI_REGISTRY_IMAGE}/${APP}:$CI_PIPELINE_IID-test"
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
   parallel:
     matrix:
-      - ARCH: amd64
-      - ARCH: arm64
+      - ARCH:
+          - amd64
+          - arm64
+      - APP:
+          - pandas
+          - mailer
+          - api
+          - events
   tags:
     - runner-${ARCH}
 
-merge-pandas-testing-manifests:
+merge-manifests:
   stage: deploy
   needs:
-    - job: docker-build-pandas-testing
+    - job: docker-build
       artifacts: false
   image:
     name: mplatform/manifest-tool:alpine
-    entrypoint: [""]
+    entrypoint: [ "" ]
   script:
     - >-
       manifest-tool
@@ -164,19 +129,29 @@ merge-pandas-testing-manifests:
       --password=${CI_REGISTRY_PASSWORD}
       push from-args
       --platforms linux/amd64,linux/arm64
-      --template ${CI_REGISTRY_IMAGE}/pandas/ARCH:$CI_PIPELINE_IID-test
-      --target ${CI_REGISTRY_IMAGE}/pandas:$CI_PIPELINE_IID-test
+      --template ${CI_REGISTRY_IMAGE}/${APP}/ARCH:$TAG
+      --target ${CI_REGISTRY_IMAGE}/${APP}:$TAG
   rules:
-    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_TAG
+  parallel:
+    matrix:
+      - TAG:
+          - $CI_COMMIT_TAG
+          - latest
+      - APP:
+          - pandas
+          - mailer
+          - api
+          - events
 
-merge-pandas-manifests:
+merge-testing-manifests:
   stage: deploy
   needs:
-    - job: docker-build-pandas
+    - job: docker-build-testing
       artifacts: false
   image:
     name: mplatform/manifest-tool:alpine
-    entrypoint: [""]
+    entrypoint: [ "" ]
   script:
     - >-
       manifest-tool
@@ -184,14 +159,17 @@ merge-pandas-manifests:
       --password=${CI_REGISTRY_PASSWORD}
       push from-args
       --platforms linux/amd64,linux/arm64
-      --template ${CI_REGISTRY_IMAGE}/pandas/ARCH:$TAG
-      --target ${CI_REGISTRY_IMAGE}/pandas:$TAG
+      --template ${CI_REGISTRY_IMAGE}/${APP}/ARCH:$CI_PIPELINE_IID-test
+      --target ${CI_REGISTRY_IMAGE}/${APP}:$CI_PIPELINE_IID-test
   rules:
-    - if: $CI_COMMIT_TAG
+    - if: $CI_COMMIT_BRANCH == "main"
   parallel:
     matrix:
-      - TAG: $CI_COMMIT_TAG
-      - TAG: latest
+      - APP:
+          - pandas
+          - mailer
+          - api
+          - events
 
 pages:
   image: library/node:latest

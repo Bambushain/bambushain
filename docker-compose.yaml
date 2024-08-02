@@ -1,4 +1,3 @@
-version: "3"
 services:
   bamboo-postgres:
     image: library/postgres:14-alpine
