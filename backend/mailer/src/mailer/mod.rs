@@ -8,7 +8,7 @@ use lettre::message::{MessageBuilder, SinglePart};
 use lettre::transport::smtp;
 use lettre::transport::smtp::client::TlsParameters;
 use lettre::{AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor};
-use maud::PreEscaped;
+use maud::{Markup, PreEscaped};
 
 fn get_transport(
     env_service: &EnvironmentService,
@@ -72,24 +72,25 @@ fn build_message(
         .subject(subject))
 }
 
-fn convert_html_body(mail: Mail) -> String {
+async fn convert_html_body(mail: Mail) -> BambooResult<String> {
     if mail.templated {
         template::mail(
             mail.subject,
-            maud::Markup::from(PreEscaped(mail.body)),
+            Markup::from(PreEscaped(mail.body)),
             mail.action_label,
             mail.action_link,
         )
+        .await
     } else {
-        mail.body
+        Ok(mail.body)
     }
 }
 
-fn convert_plain_body(mail: Mail) -> BambooResult<String> {
+async fn convert_plain_body(mail: Mail) -> BambooResult<String> {
     let body = if mail.templated {
         template::mail(
             mail.subject,
-            maud::Markup::from(PreEscaped(mail.body)),
+            Markup::from(PreEscaped(mail.body)),
             mail.action_label.map(|res| {
                 format!(
                     "{res}: {}",
@@ -98,9 +99,10 @@ fn convert_plain_body(mail: Mail) -> BambooResult<String> {
             }),
             mail.action_link,
         )
+        .await
     } else {
-        mail.body
-    };
+        Ok(mail.body)
+    }?;
     html2text::config::rich()
         .string_from_read(body.as_bytes(), 140)
         .map_err(|_| BambooError::mailing("Failed to strip html tags"))
@@ -118,13 +120,17 @@ pub async fn send_mail(mail: Mail, env_service: EnvironmentService) -> BambooErr
     }
     .multipart(
         MultiPart::alternative()
-            .singlepart(SinglePart::plain(convert_plain_body(mail.clone())?))
+            .singlepart(SinglePart::plain(convert_plain_body(mail.clone()).await?))
             .multipart(
                 MultiPart::related()
-                    .singlepart(SinglePart::html(convert_html_body(mail.clone())))
+                    .singlepart(SinglePart::html(convert_html_body(mail.clone()).await?))
                     .singlepart(Attachment::new_inline("logo".to_string()).body(
-                        Body::new(include_bytes!("logo.png").to_vec()),
-                        ContentType::parse("image/png").unwrap(),
+                        Body::new(include_bytes!("logo.gif").to_vec()),
+                        ContentType::parse("image/gif").unwrap(),
+                    ))
+                    .singlepart(Attachment::new_inline("background".to_string()).body(
+                        Body::new(include_bytes!("background.jpg").to_vec()),
+                        ContentType::parse("image/jpeg").unwrap(),
                     )),
             ),
     )

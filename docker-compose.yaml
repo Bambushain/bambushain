@@ -23,6 +23,8 @@ services:
       - "4222:4222"
       - "6222:6222"
       - "8222:8222"
+    command:
+      - -js
   bamboo-proxy:
     image: library/traefik:latest
     extra_hosts:

@@ -61,20 +61,22 @@ pub async fn forgot_password(
     if let Ok(user) = dbal::get_user_by_email_or_username(body.email, &db).await {
         if let Ok((token, valid_until)) = dbal::set_forgot_password_token(user.id, &db).await {
             let mail_body = html! {
-                p {
-                    (format!("Hey {},", user.display_name))
-                }
-                p {
-                    "du willst dein Passwort zurücksetzen?" br;
-                    "Falls ja, klick einfach unten auf den Button du kannst dann ein neues Passwort vergeben." br;
-                    (format!("Der Link ist bis {} gültig.", valid_until.format_localized("%A den %-d. %B %C%y", Locale::de_DE_euro)))
-                }
-                p {
-                    "Bitte beachte, dass deine Zwei Faktor Authentifizierung zurückgesetzt wird."
-                }
-                p {
-                    "Viele Grüße" br;
-                    "Dein Panda Helferlein"
+                mj-text {
+                    p {
+                        (format!("Hey {},", user.display_name))
+                    }
+                    p {
+                        "du willst dein Passwort zurücksetzen?" br;
+                        "Falls ja, klick einfach unten auf den Button du kannst dann ein neues Passwort vergeben." br;
+                        (format!("Der Link ist bis {} gültig.", valid_until.format_localized("%A den %-d. %B %C%y", Locale::de_DE_euro)))
+                    }
+                    p {
+                       "Bitte beachte, dass deine Zwei Faktor Authentifizierung zurückgesetzt wird."
+                    }
+                    p {
+                        "Alles Gute" br;
+                        "Dein Panda Helferlein"
+                    }
                 }
             }.into_string();
 

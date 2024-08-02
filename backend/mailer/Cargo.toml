@@ -8,10 +8,9 @@ license.workspace = true
 bamboo-common = { path = "../../common", features = ["backend"] }
 
 async-nats = { workspace = true }
-bytes = { workspace = true }
-ciborium = { workspace = true }
 futures-util = { workspace = true }
 html2text = { workspace = true }
 lettre = { workspace = true }
 log = { workspace = true }
+mrml = { workspace = true }
 maud = { workspace = true }
