@@ -82,11 +82,11 @@ pub async fn forgot_password(
 
             enqueue_mail(Mail::new_templated(
                 "Passwort vergessen",
-                user.email,
+                user.email.clone(),
                 mail_body,
                 None as Option<String>,
                 "Passwort zurücksetzen",
-                format!("https://bambushain.app/pandas/forgot-password?token={token}"),
+                format!("https://bambushain.app/pandas/reset-password?token={token}&email={}", user.email),
             ))
             .await;
         }

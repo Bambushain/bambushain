@@ -27,3 +27,8 @@ pub async fn forgot_password(data: ForgotPassword) -> BambooApiResult<()> {
     log::debug!("Request new password");
     api::post_no_content("/api/forgot-password", &data).await
 }
+
+pub async fn reset_password(data: ResetPassword) -> BambooApiResult<()> {
+    log::debug!("Reset password");
+    api::post_no_content("/api/reset-password", &data).await
+}

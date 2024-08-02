@@ -15,7 +15,7 @@ use bamboo_frontend_pandas_base::routing::{
     SupportRoute,
 };
 use bamboo_frontend_pandas_base::storage;
-use bamboo_frontend_pandas_section_authentication::LoginPage;
+use bamboo_frontend_pandas_section_authentication::{LoginPage, ResetPasswordPage};
 use bamboo_frontend_pandas_section_bamboo::CalendarPage;
 use bamboo_frontend_pandas_section_bamboo::UsersPage;
 use bamboo_frontend_pandas_section_final_fantasy::CharacterPage;
@@ -40,6 +40,14 @@ pub fn switch(route: AppRoute) -> Html {
                     <title>{ "Anmelden" }</title>
                 </Helmet>
                 <LoginPage />
+            </>
+        ),
+        AppRoute::ResetPassword => html!(
+            <>
+                <Helmet>
+                    <title>{ "Passwort zurücksetzen" }</title>
+                </Helmet>
+                <ResetPasswordPage />
             </>
         ),
         _ => html!(<Layout />),
@@ -324,7 +332,7 @@ fn switch_app(route: AppRoute) -> Html {
                 <Switch<LicensesRoute> render={switch_licenses} />
             </>
         ),
-        AppRoute::Login => html!(),
+        AppRoute::Login | AppRoute::ResetPassword => html!(),
     }
 }
 

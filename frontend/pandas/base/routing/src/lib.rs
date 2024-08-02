@@ -31,6 +31,8 @@ pub enum AppRoute {
     Licenses,
     #[at("/pandas/login")]
     Login,
+    #[at("/pandas/reset-password")]
+    ResetPassword,
 }
 
 #[derive(Clone, Routable, PartialEq)]

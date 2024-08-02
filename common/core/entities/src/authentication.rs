@@ -65,3 +65,13 @@ pub struct ResetPassword {
     pub token: String,
     pub password: String,
 }
+
+impl ResetPassword {
+    pub fn new(email: String, token: String, password: String) -> Self {
+        Self {
+            email,
+            token,
+            password,
+        }
+    }
+}
