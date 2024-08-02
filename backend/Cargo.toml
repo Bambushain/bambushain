@@ -1,0 +1,19 @@
+[package]
+name = "bamboo-backend"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies]
+bamboo-backend-api = { path = "api", optional = true }
+bamboo-backend-events = { path = "events", optional = true }
+bamboo-backend-mailer = { path = "mailer", optional = true }
+bamboo-backend-pandas = { path = "pandas", optional = true }
+
+[features]
+default = []
+api = ["dep:bamboo-backend-api"]
+events = ["dep:bamboo-backend-events"]
+mailer = ["dep:bamboo-backend-mailer"]
+pandas = ["dep:bamboo-backend-pandas"]

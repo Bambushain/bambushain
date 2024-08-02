@@ -1,3 +1,4 @@
+use chrono::NaiveDate;
 #[cfg(feature = "backend")]
 use sea_orm::entity::prelude::*;
 #[cfg(feature = "backend")]
@@ -34,6 +35,10 @@ pub struct Model {
     pub totp_secret_encrypted: bool,
     #[serde(rename = "appTotpEnabled")]
     pub totp_validated: Option<bool>,
+    #[serde(skip)]
+    pub forgot_password_code: Option<String>,
+    #[serde(skip)]
+    pub forgot_password_valid_until: Option<NaiveDate>,
 }
 
 #[cfg(feature = "backend")]
@@ -105,6 +110,8 @@ impl Model {
             #[cfg(feature = "backend")]
             totp_secret_encrypted: false,
             totp_validated: None,
+            forgot_password_code: None,
+            forgot_password_valid_until: None,
         }
     }
 

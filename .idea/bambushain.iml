@@ -26,24 +26,7 @@
       <sourceFolder url="file://$MODULE_DIR$/frontend/sections/mod-area/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/frontend/sections/support/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/frontend/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/pandas/backend/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/pandas/frontend/base/api/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/pandas/frontend/base/error/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/pandas/frontend/base/routing/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/pandas/frontend/base/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/pandas/frontend/base/storage/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/pandas/frontend/sections/authentication/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/pandas/frontend/sections/bamboo/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/pandas/frontend/sections/final-fantasy/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/pandas/frontend/sections/layout/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/pandas/frontend/sections/legal/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/pandas/frontend/sections/licenses/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/pandas/frontend/sections/mod-area/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/pandas/frontend/sections/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/pandas/frontend/sections/support/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/pandas/frontend/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/pandas/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/pandas/sse/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/groves/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/common/backend/database/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/common/backend/macros/src" isTestSource="false" />
@@ -65,17 +48,44 @@
       <sourceFolder url="file://$MODULE_DIR$/common/backend/utils/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/groves/frontend/sections/groves/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/groves/frontend/sections/users/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/pandas/frontend/base/controls/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/pandas/frontend/sections/groves/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/common/backend/actix/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/common/backend/notification/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/backend/api/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/backend/events/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/backend/mailer/listener/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/backend/mailer/service/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/backend/mailer/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/backend/pandas/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/backend/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/backend/sse/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/pandas/base/api/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/pandas/base/controls/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/pandas/base/error/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/pandas/base/routing/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/pandas/base/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/pandas/base/storage/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/pandas/sections/authentication/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/pandas/sections/bamboo/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/pandas/sections/final-fantasy/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/pandas/sections/groves/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/pandas/sections/layout/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/pandas/sections/legal/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/pandas/sections/licenses/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/pandas/sections/mod-area/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/pandas/sections/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/pandas/sections/support/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/common/backend/logging/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/common/backend/message_queue/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/frontend/pandas/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/common/backend/target" />
       <excludeFolder url="file://$MODULE_DIR$/common/core/target" />
       <excludeFolder url="file://$MODULE_DIR$/common/frontend/target" />
       <excludeFolder url="file://$MODULE_DIR$/common/target" />
       <excludeFolder url="file://$MODULE_DIR$/frontend/target" />
-      <excludeFolder url="file://$MODULE_DIR$/pandas/target" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
       <excludeFolder url="file://$MODULE_DIR$/groves/target" />
       <excludeFolder url="file://$MODULE_DIR$/dist-pandas/dist" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

@@ -1,0 +1,15 @@
+[package]
+name = "bamboo-frontend-pandas-sections"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bamboo-frontend-pandas-section-authentication = { path = "authentication" }
+bamboo-frontend-pandas-section-bamboo = { path = "bamboo" }
+bamboo-frontend-pandas-section-final-fantasy = { path = "final-fantasy" }
+bamboo-frontend-pandas-section-groves = { path = "groves" }
+bamboo-frontend-pandas-section-layout = { path = "layout" }
+bamboo-frontend-pandas-section-legal = { path = "legal" }
+bamboo-frontend-pandas-section-licenses = { path = "licenses" }
+bamboo-frontend-pandas-section-support = { path = "support" }

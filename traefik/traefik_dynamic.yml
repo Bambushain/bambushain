@@ -1,0 +1,29 @@
+http:
+  routers:
+    traefik:
+      rule: Host(`localhost`)
+      service: api@internal
+      entryPoints:
+        - traefik
+    services-api:
+      rule: PathPrefix(`/api`)
+      service: services-api
+    services-events:
+      rule: Path(`/sse/event`)
+      service: services-events
+    pandas-ui:
+      rule: PathPrefix(`/pandas`)
+      service: pandas-ui
+  services:
+    services-api:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:4010"
+    services-events:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:4020"
+    pandas-ui:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:4080"

@@ -1,14 +1,15 @@
-use sea_orm::prelude::*;
-use sea_orm::sea_query::{Alias, Expr, IntoCondition};
-use sea_orm::{
-    ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, EntityTrait, FromQueryResult,
-    IntoActiveModel, JoinType, NotSet, QueryFilter, QueryOrder, QuerySelect, RelationTrait,
-};
-
 use crate::error_tag;
 use bamboo_common_core::entities::user::WebUser;
 use bamboo_common_core::entities::*;
 use bamboo_common_core::error::*;
+use chrono::{Days, Local, NaiveDate};
+use sea_orm::prelude::*;
+use sea_orm::sea_query::{Alias, Expr, IntoCondition};
+use sea_orm::ActiveValue::Set;
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, EntityTrait, FromQueryResult,
+    IntoActiveModel, JoinType, NotSet, QueryFilter, QueryOrder, QuerySelect, RelationTrait,
+};
 
 pub async fn get_user(id: i32, db: &DatabaseConnection) -> BambooResult<User> {
     user::Entity::find_by_id(id)
@@ -220,4 +221,84 @@ pub async fn set_password(id: i32, password: String, db: &DatabaseConnection) ->
         .await
         .map_err(|_| BambooError::database(error_tag!(), "Failed to update user"))
         .map(|_| ())
+}
+
+pub async fn set_forgot_password_token(
+    id: i32,
+    db: &DatabaseConnection,
+) -> BambooResult<(String, NaiveDate)> {
+    let user = get_user(id, db).await?;
+    let valid_until = chrono::prelude::Local::now()
+        .checked_add_days(Days::new(7))
+        .ok_or(BambooError::invalid_data(
+            error_tag!(),
+            "Failed to add a week to the date",
+        ))?;
+    let mut token = [0u8; 32];
+    getrandom::getrandom(&mut token)
+        .map_err(|_| BambooError::crypto(error_tag!(), "Failed to generate secure random code"))?;
+
+    let token = hex::encode(token);
+    let hashed_token = bcrypt::hash(token.clone(), 12)
+        .map_err(|_| BambooError::crypto(error_tag!(), "Failed to generate secure random code"))?;
+
+    let mut active_user = user.into_active_model();
+    active_user.forgot_password_valid_until = Set(Some(valid_until.date_naive()));
+    active_user.forgot_password_code = Set(Some(hashed_token));
+    active_user
+        .update(db)
+        .await
+        .map_err(|_| BambooError::database(error_tag!(), "Failed to update user"))?;
+
+    Ok((token, valid_until.date_naive()))
+}
+
+pub async fn reset_password_by_token(
+    email: String,
+    token: String,
+    password: String,
+    db: &DatabaseConnection,
+) -> BambooErrorResult {
+    let user = get_user_by_email_or_username(email, db).await?;
+    if let (Some(code), Some(until)) = (
+        user.forgot_password_code.clone(),
+        user.forgot_password_valid_until.clone(),
+    ) {
+        if until >= Local::now().date_naive()
+            && bcrypt::verify(token, code.as_str()).unwrap_or(false)
+        {
+            let mut active_user = user.clone().into_active_model();
+            active_user
+                .set_password(&password)
+                .map_err(|_| BambooError::crypto(error_tag!(), "Failed to hash password"))?;
+            active_user.forgot_password_code = Set(None);
+            active_user.forgot_password_valid_until = Set(None);
+            active_user.totp_secret = Set(None);
+            active_user.totp_validated = Set(Some(false));
+            active_user.totp_secret_encrypted = Set(false);
+
+            active_user
+                .update(db)
+                .await
+                .map_err(|_| BambooError::database(error_tag!(), "Failed to save the user"))
+                .map(|_| ())?;
+
+            token::Entity::delete_many()
+                .filter(token::Column::UserId.eq(user.id))
+                .exec(db)
+                .await
+                .map_err(|_| BambooError::database(error_tag!(), "Failed to delete auth tokens"))
+                .map(|_| ())
+        } else {
+            Err(BambooError::insufficient_rights(
+                error_tag!(),
+                "The token is either invalid or expired",
+            ))
+        }
+    } else {
+        Err(BambooError::insufficient_rights(
+            error_tag!(),
+            "No data set for forgot password",
+        ))
+    }
 }

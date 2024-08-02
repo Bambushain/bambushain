@@ -1,0 +1,17 @@
+services:
+  api:
+    build:
+      dockerfile: docker/api.dockerfile
+      context: .
+  events:
+    build:
+      dockerfile: docker/events.dockerfile
+      context: .
+  mailer:
+    build:
+      dockerfile: docker/mailer.dockerfile
+      context: .
+  pandas:
+    build:
+      dockerfile: docker/pandas.dockerfile
+      context: .

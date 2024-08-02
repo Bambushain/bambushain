@@ -6,29 +6,49 @@ license.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-bamboo-pandas = { path = "pandas", optional = true }
+bamboo-backend = { path = "backend", optional = true }
+bamboo-frontend = { path = "frontend", optional = true }
 
-actix-web = { workspace = true, optional = true }
-
-[[bin]]
-path = "src/bin/pandas-server.rs"
-name = "pandas-server"
-required-features = ["pandas-backend"]
+actix = { workspace = true, optional = true }
 
 [[bin]]
-path = "src/bin/pandas-web.rs"
-name = "pandas-web"
-required-features = ["pandas-frontend"]
+path = "src/bin/backend-api.rs"
+name = "backend-api"
+required-features = ["backend-api"]
+
+[[bin]]
+path = "src/bin/backend-events.rs"
+name = "backend-events"
+required-features = ["backend-events"]
+
+[[bin]]
+path = "src/bin/backend-mailer.rs"
+name = "backend-mailer"
+required-features = ["backend-mailer"]
+
+[[bin]]
+path = "src/bin/backend-pandas.rs"
+name = "backend-pandas"
+required-features = ["backend-pandas"]
+
+[[bin]]
+path = "src/bin/frontend-pandas.rs"
+name = "frontend-pandas"
+required-features = ["frontend-pandas"]
 
 [workspace]
 members = [
     "common",
     "common/backend",
+    "common/backend/actix",
     "common/backend/database",
     "common/backend/dbal",
+    "common/backend/logging",
     "common/backend/macros",
     "common/backend/mailing",
+    "common/backend/message_queue",
     "common/backend/migration",
+    "common/backend/notification",
     "common/backend/response",
     "common/backend/services",
     "common/core",
@@ -37,23 +57,26 @@ members = [
     "common/frontend",
     "common/frontend/api",
     "common/frontend/ui",
-    "pandas",
-    "pandas/backend",
-    "pandas/frontend",
-    "pandas/frontend/base",
-    "pandas/frontend/base/controls",
-    "pandas/frontend/base/error",
-    "pandas/frontend/base/routing",
-    "pandas/frontend/base/storage",
-    "pandas/frontend/sections",
-    "pandas/frontend/sections/authentication",
-    "pandas/frontend/sections/bamboo",
-    "pandas/frontend/sections/final-fantasy",
-    "pandas/frontend/sections/groves",
-    "pandas/frontend/sections/layout",
-    "pandas/frontend/sections/legal",
-    "pandas/frontend/sections/licenses",
-    "pandas/frontend/sections/support"
+    "backend",
+    "backend/api",
+    "backend/events",
+    "backend/mailer",
+    "frontend",
+    "frontend/pandas",
+    "frontend/pandas/base",
+    "frontend/pandas/base/controls",
+    "frontend/pandas/base/error",
+    "frontend/pandas/base/routing",
+    "frontend/pandas/base/storage",
+    "frontend/pandas/sections",
+    "frontend/pandas/sections/authentication",
+    "frontend/pandas/sections/bamboo",
+    "frontend/pandas/sections/final-fantasy",
+    "frontend/pandas/sections/groves",
+    "frontend/pandas/sections/layout",
+    "frontend/pandas/sections/legal",
+    "frontend/pandas/sections/licenses",
+    "frontend/pandas/sections/support",
 ]
 
 [workspace.package]
@@ -62,8 +85,10 @@ edition = "2021"
 license = "MIT"
 
 [workspace.dependencies]
+actix = "0.13.5"
 actix-web = "4.8.0"
 actix-web-lab = { version = "0.20.2", features = ["spa"] }
+async-nats = "0.35.1"
 async-trait = "0.1.81"
 base64 = "0.22.1"
 bcrypt = "0.15.1"
@@ -73,6 +98,7 @@ bytestring = "1.3.1"
 cargo_metadata = "0.18.1"
 chacha20poly1305 = "0.10.1"
 chrono = { version = "0.4.38", features = ["serde", "unstable-locales"] }
+ciborium = "0.2.2"
 color-art = "0.3.8"
 console_log = { version = "1.0.0", features = ["color"] }
 date-range = "0.3.0"
@@ -81,6 +107,7 @@ env_logger = "0.11.5"
 fast_qr = { version = "0.12.5", features = ["svg"] }
 futures = "0.3.30"
 futures-util = "0.3.30"
+getrandom = "0.2.15"
 gloo-dialogs = "0.2.0"
 gloo-events = "0.2.0"
 gloo-net = "0.6.0"
@@ -88,17 +115,20 @@ gloo-storage = "0.3.0"
 gloo-utils = "0.2.0"
 handlebars = "6.0.0"
 hex = "0.4.3"
+html2text = "0.12.5"
 itertools = "0.13.0"
 lettre = { version = "0.11.7", features = ["tokio1-rustls-tls", "smtp-transport", "pool", "hostname", "builder"], default-features = false }
 log = "0.4.22"
+maud = "0.26.0"
+mrml = { version = "4.0.1", features = ["async", "parse", "render"] }
 openidconnect = "3.5.0"
 parking_lot = "0.12.3"
 pbkdf2 = "0.12.2"
 quote = "1.0.36"
 rand = "0.8.5"
 rust-s3 = "0.34.0"
-sea-orm = { version = "0.12.15", features = ["with-json", "runtime-actix-rustls", "sqlx-postgres"] }
-sea-orm-migration = { version = "0.12.15", features = ["sqlx-mysql", "runtime-tokio-rustls"] }
+sea-orm = { version = "1.0.0", features = ["with-json", "runtime-actix-rustls", "sqlx-postgres"] }
+sea-orm-migration = { version = "1.0.0", features = ["sqlx-mysql", "runtime-tokio-rustls"] }
 serde = { version = "1.0.204", features = ["derive"] }
 serde_json = "1.0.120"
 strum = "0.26.3"
@@ -107,6 +137,7 @@ strum_macros = "0.26.4"
 stylist = { version = "0.13.0", features = ["yew"] }
 syn = "2.0.72"
 tokio = "1.39.1"
+tokio-util = "0.7.11"
 totp-rs = { version = "5.6.0", features = ["qr", "gen_secret"] }
 uuid = { version = "1.10.0", features = ["v4"] }
 wasm-bindgen = "0.2.92"
@@ -122,8 +153,13 @@ yew-router = "0.18.0"
 
 [features]
 default = []
-pandas-frontend = ["dep:bamboo-pandas", "bamboo-pandas/frontend"]
-pandas-backend = ["dep:bamboo-pandas", "bamboo-pandas/backend"]
+backend = ["dep:actix", "dep:bamboo-backend"]
+frontend = ["dep:bamboo-frontend"]
+backend-api = ["backend", "bamboo-backend/api"]
+backend-events = ["backend", "bamboo-backend/events"]
+backend-mailer = ["backend", "bamboo-backend/mailer"]
+backend-pandas = ["backend", "bamboo-backend/pandas"]
+frontend-pandas = ["frontend", "bamboo-frontend/pandas"]
 
 [profile.web-dev]
 inherits = "dev"

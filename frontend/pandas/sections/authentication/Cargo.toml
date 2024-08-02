@@ -1,0 +1,21 @@
+[package]
+name = "bamboo-frontend-pandas-section-authentication"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bamboo-common = { path = "../../../../common", features = ["frontend"] }
+bamboo-frontend-pandas-base = { path = "../../base" }
+
+either = { workspace = true }
+log = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+stylist = { workspace = true }
+yew = { workspace = true }
+yew-autoprops = { workspace = true }
+yew-cosmo = { workspace = true }
+yew_icons = { workspace = true }
+yew-hooks = { workspace = true }
+yew-router = { workspace = true }
