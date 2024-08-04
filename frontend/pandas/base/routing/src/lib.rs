@@ -21,6 +21,10 @@ pub enum AppRoute {
     SupportRoot,
     #[at("/pandas/support/*")]
     Support,
+    #[at("/pandas/profile")]
+    MyProfileRoot,
+    #[at("/pandas/profile/*")]
+    MyProfile,
     #[at("/pandas/legal")]
     LegalRoot,
     #[at("/pandas/legal/*")]
@@ -55,6 +59,12 @@ pub enum BambooGroveRoute {
     Calendar,
     #[at("/pandas/bamboo/user")]
     User,
+}
+
+#[derive(Clone, Routable, PartialEq)]
+pub enum MyProfileRoute {
+    #[at("/pandas/profile")]
+    MyProfile,
 }
 
 #[derive(Clone, Routable, PartialEq)]

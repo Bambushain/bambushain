@@ -76,6 +76,7 @@ members = [
     "frontend/pandas/sections/layout",
     "frontend/pandas/sections/legal",
     "frontend/pandas/sections/licenses",
+    "frontend/pandas/sections/my-profile",
     "frontend/pandas/sections/support",
 ]
 

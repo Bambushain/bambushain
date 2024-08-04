@@ -127,10 +127,7 @@ align-items: center;
                 } else if forgot_password.data.is_some() {
                     { "Eine Email mit einem Link zum Zurücksetzen vom Passwort ist unterwegs" }
                 } else if let Some(error) = &login.error {
-                    <Icon
-                        icon_id={IconId::LucideXOctagon}
-                        style="stroke: var(--negative-color);"
-                    />
+                    <Icon icon_id={IconId::LucideXOctagon} style="stroke: var(--negative-color);" />
                     { error }
                 } else {
                     <Icon icon_id={IconId::LucideLogIn} />

@@ -12,4 +12,5 @@ bamboo-frontend-pandas-section-groves = { path = "groves" }
 bamboo-frontend-pandas-section-layout = { path = "layout" }
 bamboo-frontend-pandas-section-legal = { path = "legal" }
 bamboo-frontend-pandas-section-licenses = { path = "licenses" }
+bamboo-frontend-pandas-section-profile = { path = "my-profile" }
 bamboo-frontend-pandas-section-support = { path = "support" }

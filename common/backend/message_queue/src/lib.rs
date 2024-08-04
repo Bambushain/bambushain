@@ -1,11 +1,11 @@
-use std::error::Error;
-use std::fmt::{Debug, Display, Formatter};
-use async_nats::{jetstream, Message, Subject};
-use async_nats::jetstream::{Context, stream};
 use async_nats::jetstream::stream::Stream;
+use async_nats::jetstream::{stream, Context};
 use async_nats::subject::ToSubject;
+use async_nats::{jetstream, Message, Subject};
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
+use std::error::Error;
+use std::fmt::{Debug, Display, Formatter};
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 

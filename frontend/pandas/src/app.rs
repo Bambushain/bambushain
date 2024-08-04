@@ -42,7 +42,6 @@ pub fn start_ui() {
     )
     .expect("error initializing log");
 
-    
     yew::Renderer::<App>::with_root(
         gloo_utils::document()
             .get_element_by_id("bamboo_root")

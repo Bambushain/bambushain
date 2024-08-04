@@ -1,10 +1,10 @@
+use bamboo_frontend_pandas_base::routing::{AppRoute, LegalRoute};
+pub use login::*;
+pub use reset_password::*;
 use stylist::yew::use_style;
 use yew::prelude::*;
 use yew_autoprops::autoprops;
 use yew_cosmo::prelude::{CosmoAnchorLink, CosmoTitle};
-use bamboo_frontend_pandas_base::routing::{AppRoute, LegalRoute};
-pub use login::*;
-pub use reset_password::*;
 
 mod login;
 mod reset_password;
@@ -65,7 +65,7 @@ input {
         <div class={classes!("is--light", around_style)}>
             <div class={container_style}>
                 <CosmoTitle title={title} />
-                {children}
+                { children }
                 <div style="display: flex; gap: 1rem; margin-top: 2rem">
                     <CosmoAnchorLink<AppRoute> to={AppRoute::LegalRoot}>
                         { "Impressum" }

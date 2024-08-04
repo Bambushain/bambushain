@@ -71,9 +71,9 @@ align-items: center;
         <AuthLayout title="Passwort zurücksetzen">
             <p class={reset_message_style}>
                 if reset_password.error.is_some() {
-                    {"Das hat leider nicht geklappt, der Link ist wahrscheinlich abgelaufen, bitte fordere einen neuen an"}
+                    { "Das hat leider nicht geklappt, der Link ist wahrscheinlich abgelaufen, bitte fordere einen neuen an" }
                 } else {
-                    {"Wenn du dein Passwort zurücksetzen willst, musst du unten einfach nur dein neues Passwort eingeben"}
+                    { "Wenn du dein Passwort zurücksetzen willst, musst du unten einfach nur dein neues Passwort eingeben" }
                 }
             </p>
             <CosmoForm

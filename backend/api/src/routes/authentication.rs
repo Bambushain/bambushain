@@ -86,7 +86,10 @@ pub async fn forgot_password(
                 mail_body,
                 None as Option<String>,
                 "Passwort zurücksetzen",
-                format!("https://bambushain.app/pandas/reset-password?token={token}&email={}", user.email),
+                format!(
+                    "https://bambushain.app/pandas/reset-password?token={token}&email={}",
+                    user.email
+                ),
             ))
             .await;
         }

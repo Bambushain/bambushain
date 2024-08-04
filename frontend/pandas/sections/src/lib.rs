@@ -5,4 +5,5 @@ pub use bamboo_frontend_pandas_section_groves as groves;
 pub use bamboo_frontend_pandas_section_layout as layout;
 pub use bamboo_frontend_pandas_section_legal as legal;
 pub use bamboo_frontend_pandas_section_licenses as licenses;
+pub use bamboo_frontend_pandas_section_profile as profile;
 pub use bamboo_frontend_pandas_section_support as support;
