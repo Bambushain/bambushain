@@ -84,7 +84,7 @@ license = "MIT"
 
 [workspace.dependencies]
 actix-web = "4.8.0"
-actix-web-lab = { version = "0.20.2", features = ["spa"] }
+actix-web-lab = { version = "0.21.0", features = ["spa"] }
 async-trait = "0.1.80"
 base64 = "0.22.1"
 bcrypt = "0.15.1"
