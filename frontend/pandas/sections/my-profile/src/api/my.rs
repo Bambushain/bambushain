@@ -1,6 +1,6 @@
 use bamboo_common::core::entities::*;
 use bamboo_common::frontend::api::BambooApiResult;
-use bamboo_frontend_pandas_base::api;
+use bamboo_frontend_pandas_base::{api, storage};
 
 pub async fn change_my_password(old_password: String, new_password: String) -> BambooApiResult<()> {
     log::debug!("Change my password");
@@ -42,4 +42,12 @@ pub async fn leave() -> BambooApiResult<()> {
 pub async fn upload_profile_picture(file: web_sys::File) -> BambooApiResult<()> {
     log::debug!("Change profile picture");
     api::upload_file("/api/my/picture", file).await
+}
+
+pub fn logout() {
+    log::debug!("Execute logout");
+    storage::delete_token();
+    yew::platform::spawn_local(async {
+        let _ = api::delete("/api/login").await;
+    });
 }

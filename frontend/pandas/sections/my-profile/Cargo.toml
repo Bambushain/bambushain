@@ -1,0 +1,22 @@
+[package]
+name = "bamboo-frontend-pandas-section-profile"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bamboo-common = { path = "../../../../common", features = ["frontend"] }
+bamboo-frontend-pandas-base = { path = "../../base" }
+bamboo-frontend-pandas-section-authentication = { path = "../authentication" }
+bamboo-frontend-pandas-section-groves = { path = "../groves" }
+
+bounce = { workspace = true }
+chrono = { workspace = true }
+log = { workspace = true }
+stylist = { workspace = true }
+web-sys = { workspace = true }
+yew = { workspace = true }
+yew-autoprops = { workspace = true }
+yew-cosmo = { workspace = true }
+yew-hooks = { workspace = true }
+yew-router = { workspace = true }

@@ -5,7 +5,6 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-bamboo-common = { path = "../../../../common", features = ["frontend"] }
 bamboo-frontend-pandas-base = { path = "../../base" }
 bamboo-frontend-pandas-section-authentication = { path = "../authentication" }
 bamboo-frontend-pandas-section-bamboo = { path = "../bamboo" }
@@ -13,15 +12,13 @@ bamboo-frontend-pandas-section-final-fantasy = { path = "../final-fantasy" }
 bamboo-frontend-pandas-section-groves = { path = "../groves" }
 bamboo-frontend-pandas-section-legal = { path = "../legal" }
 bamboo-frontend-pandas-section-licenses = { path = "../licenses" }
+bamboo-frontend-pandas-section-profile = { path = "../my-profile" }
 bamboo-frontend-pandas-section-support = { path = "../support" }
 
 bounce = { workspace = true }
 chrono = { workspace = true }
 log = { workspace = true }
-stylist = { workspace = true }
-web-sys = { workspace = true }
 yew = { workspace = true }
-yew-autoprops = { workspace = true }
 yew-cosmo = { workspace = true }
 yew-hooks = { workspace = true }
 yew-router = { workspace = true }

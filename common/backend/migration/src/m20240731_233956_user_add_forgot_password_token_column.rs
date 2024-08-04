@@ -11,16 +11,8 @@ impl MigrationTrait for Migration {
             .alter_table(
                 Table::alter()
                     .table((Schemas::Authentication, User::Table))
-                    .add_column(
-                        ColumnDef::new(User::ForgotPasswordCode)
-                            .string()
-                            .null()
-                    )
-                    .add_column(
-                        ColumnDef::new(User::ForgotPasswordValidUntil)
-                            .date()
-                            .null()
-                    )
+                    .add_column(ColumnDef::new(User::ForgotPasswordCode).string().null())
+                    .add_column(ColumnDef::new(User::ForgotPasswordValidUntil).date().null())
                     .to_owned(),
             )
             .await

@@ -13,7 +13,9 @@ pub struct NotifierState {
 
 impl NotifierState {
     pub(crate) async fn send_event(&self, event_action: EventAction, groves: Vec<Model>) {
-        self.event_broadcaster.send_event(event_action, groves).await
+        self.event_broadcaster
+            .send_event(event_action, groves)
+            .await
     }
 }
 

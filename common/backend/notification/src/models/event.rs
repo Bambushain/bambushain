@@ -1,6 +1,6 @@
+use bamboo_common_backend_mq::impl_nats;
 use bamboo_common_core::entities::*;
 use serde::{Deserialize, Serialize};
-use bamboo_common_backend_mq::impl_nats;
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Clone)]
 pub enum EventAction {

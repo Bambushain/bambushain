@@ -1,5 +1,5 @@
-use maud::{html, Markup};
 use bamboo_common::core::error::{BambooError, BambooResult};
+use maud::{html, Markup};
 use mrml::prelude::render::RenderOptions;
 
 pub async fn mail(
