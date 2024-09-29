@@ -114,7 +114,7 @@ parking_lot = "0.12.3"
 pbkdf2 = "0.12.2"
 quote = "1.0.36"
 rand = "0.8.5"
-rust-s3 = "0.34.0"
+rust-s3 = "0.35.1"
 sea-orm = { version = "0.12.15", features = ["with-json", "runtime-actix-rustls", "sqlx-postgres"] }
 sea-orm-migration = { version = "0.12.15", features = ["sqlx-mysql", "runtime-tokio-rustls"] }
 serde = { version = "1.0.204", features = ["derive"] }
