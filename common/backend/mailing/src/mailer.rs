@@ -29,9 +29,9 @@ fn get_transport(
         .get_env("MAILER_PORT", "25")
         .parse::<u16>()
         .unwrap_or(25u16);
-    let builder = if env_service.get_env("MAILER_ENCRYPTION", "false") == "false" {
-        builder.tls(smtp::client::Tls::None)
-    } else {
+    let encryption = env_service.get_env("MAILER_ENCRYPTION", "none");
+
+    let builder = if encryption == "tls" {
         builder.tls(smtp::client::Tls::Required(
             TlsParameters::new(mail_server).map_err(|err| {
                 log::error!("Failed to parse the server domain {err}");
@@ -39,6 +39,16 @@ fn get_transport(
                 BambooError::mailing("Failed to parse the server domain")
             })?,
         ))
+    } else if encryption == "ssl" {
+        builder.tls(smtp::client::Tls::Wrapper(
+            TlsParameters::new(mail_server).map_err(|err| {
+                log::error!("Failed to parse the server domain {err}");
+
+                BambooError::mailing("Failed to parse the server domain")
+            })?,
+        ))
+    } else {
+        builder.tls(smtp::client::Tls::None)
     };
 
     Ok(builder
