@@ -106,7 +106,7 @@ gloo-events = "0.2.0"
 gloo-net = "0.5.0"
 gloo-storage = "0.3.0"
 gloo-utils = "0.2.0"
-handlebars = "5.1.2"
+handlebars = "6.2.0"
 lettre = { version = "0.11.7", features = ["tokio1-rustls-tls", "smtp-transport", "pool", "hostname", "builder"], default-features = false }
 log = "0.4.22"  
 openidconnect = "3.5.0"
