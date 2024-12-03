@@ -91,7 +91,7 @@ bcrypt = "0.15.1"
 bounce = { version = "0.9.0", features = ["query", "helmet"] }
 bytes = "1.6.0"
 bytestring = "1.3.1"
-cargo_metadata = "0.18.1"
+cargo_metadata = "0.19.1"
 chacha20poly1305 = "0.10.1"
 chrono = { version = "0.4.38", features = ["serde", "unstable-locales"] }
 color-art = "0.3.8"
